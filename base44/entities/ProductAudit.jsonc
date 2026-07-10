@@ -1,0 +1,50 @@
+{
+  "name": "ProductAudit",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "field_changed": {
+      "type": "string"
+    },
+    "previous_value": {
+      "type": "string"
+    },
+    "new_value": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "change_origin": {
+      "type": "string",
+      "enum": [
+        "tela_vendas",
+        "gerenciamento_estoque",
+        "valor_errado",
+        "cadastro_rapido"
+      ]
+    },
+    "sale_number": {
+      "type": "number"
+    },
+    "observation": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "product_id",
+    "product_name",
+    "field_changed",
+    "user_id",
+    "user_name",
+    "change_origin"
+  ]
+}
