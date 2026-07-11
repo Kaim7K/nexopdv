@@ -1,6 +1,41 @@
 import React, { useRef, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { X, Printer, FileText, Plus } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
+
+async function loadLogoForPdf(source) {
+  if (!source) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  let objectUrl;
+  try {
+    const response = await fetch(source, { signal: controller.signal });
+    if (!response.ok) throw new Error('Logo indisponível');
+    const blob = await response.blob();
+    objectUrl = URL.createObjectURL(blob);
+    const image = await new Promise((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error('Logo inválida'));
+      element.src = objectUrl;
+    });
+    const maxPixels = 900;
+    const scale = Math.min(1, maxPixels / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
+    const width = Math.max(1, Math.round((image.naturalWidth || 1) * scale));
+    const height = Math.max(1, Math.round((image.naturalHeight || 1) * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    return { dataUrl: canvas.toDataURL('image/png'), width, height };
+  } finally {
+    clearTimeout(timeout);
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
+}
+
 
 export default function ReceiptModal({ sale, config, onClose, onNewSale }) {
   const receiptRef = useRef(null);
@@ -46,6 +81,22 @@ export default function ReceiptModal({ sale, config, onClose, onNewSale }) {
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
     let y = 8;
+    if (config.logo_url) {
+      try {
+        const logo = await loadLogoForPdf(config.logo_url);
+        if (logo) {
+          const maxWidth = 28;
+          const maxHeight = 15;
+          const ratio = Math.min(maxWidth / logo.width, maxHeight / logo.height);
+          const logoWidth = logo.width * ratio;
+          const logoHeight = logo.height * ratio;
+          doc.addImage(logo.dataUrl, 'PNG', 40 - (logoWidth / 2), y, logoWidth, logoHeight, undefined, 'FAST');
+          y += logoHeight + 3;
+        }
+      } catch {
+        toast.error('A logo não pôde ser adicionada ao PDF. Verifique o arquivo salvo nas configurações.');
+      }
+    }
     const line = (text, bold = false, center = false, size = 9) => {
       doc.setFontSize(size); doc.setFont(undefined, bold ? 'bold' : 'normal');
       if (center) doc.text(text, 40, y, { align: 'center' }); else doc.text(text, 4, y);

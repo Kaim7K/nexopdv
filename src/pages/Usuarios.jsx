@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Mail, Pencil, Search, Shield, User, UserPlus, Users, X } from 'lucide-react';
+import { Mail, Pencil, Search, Shield, Trash2, User, UserPlus, Users, X } from 'lucide-react';
 import EditUserModal from '@/components/users/EditUserModal';
 import ImageUploadField from '@/components/ImageUploadField';
 
@@ -27,6 +27,7 @@ export default function Usuarios() {
   const [showCreate, setShowCreate] = useState(false);
   const [edit, setEdit] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -59,6 +60,24 @@ export default function Usuarios() {
       || String(ROLE_LABELS[item.role] || item.role).toLowerCase().includes(query)
     ));
   }, [users, search]);
+
+  const removeUser = async item => {
+    if (item.id === user.id || deletingId) return;
+    const confirmed = window.confirm(`Excluir o usuário "${item.full_name || item.email}"? O acesso será removido permanentemente.`);
+    if (!confirmed) return;
+
+    setDeletingId(item.id);
+    try {
+      await nexoApi.entities.User.delete(item.id);
+      setUsers(current => current.filter(candidate => candidate.id !== item.id));
+      if (edit?.id === item.id) setEdit(null);
+      toast.success('Usuário excluído.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível excluir o usuário.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const create = async event => {
     event.preventDefault();
@@ -136,6 +155,7 @@ export default function Usuarios() {
             const isActive = item.active !== false;
             const isManager = ['admin', 'gerente'].includes(item.role);
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
+            const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
               <article key={item.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-start gap-3">
@@ -160,16 +180,30 @@ export default function Usuarios() {
                       <span className="rounded-lg bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-secondary-foreground">
                         {ROLE_LABELS[item.role] || item.role}
                       </span>
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          onClick={() => setEdit(item)}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          aria-label={`Editar ${item.full_name || item.email}`}
-                        >
-                          <Pencil className="h-3.5 w-3.5" /> Editar
-                        </button>
-                      ) : <span className="text-xs text-muted-foreground">Acesso protegido</span>}
+                      <div className="flex items-center gap-1.5">
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            onClick={() => setEdit(item)}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`Editar ${item.full_name || item.email}`}
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Editar
+                          </button>
+                        ) : <span className="text-xs text-muted-foreground">Acesso protegido</span>}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            disabled={deletingId === item.id}
+                            onClick={() => removeUser(item)}
+                            className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/25 text-destructive transition hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
+                            aria-label={`Excluir ${item.full_name || item.email}`}
+                            title="Excluir usuário"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

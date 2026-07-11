@@ -56,6 +56,9 @@ export const nexoApi = {
     update: (id, data) => request(`/markets/${id}`, { method: 'PATCH', body: data }),
   },
   stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products } }) },
+  maintenance: {
+    reset: (target, confirmation) => request('/maintenance/reset', { method: 'POST', body: { target, confirmation } }),
+  },
   media: {
     importProductImage: (url, productName) => request('/media/import', { method: 'POST', body: { url, productName } }),
   },

@@ -29,6 +29,14 @@ Imagens:
 - `GOOGLE_CSE_API_KEY` e `GOOGLE_CSE_ID` são opcionais e ampliam a busca automática.
 - A busca tenta primeiro o código de barras e, quando não encontra resultado, usa o nome do produto sem filtro de adequação.
 
+
+Administração:
+
+- Administradores e gerentes podem excluir produtos pelo estoque.
+- A exclusão de usuários respeita o perfil de acesso e protege a conta atual e o último administrador.
+- Administradores podem zerar separadamente estoque, fiados, vendas ou auditoria em **Configurações**.
+- O recibo em PDF inclui a logo configurada para o mercado.
+
 Depois de alterar variáveis, faça um novo deploy sem reutilizar o cache antigo.
 
 ## Validação

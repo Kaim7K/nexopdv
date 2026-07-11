@@ -15,6 +15,7 @@ import {
   Save,
   Search,
   Upload,
+  Trash2,
 } from 'lucide-react';
 import ProductForm from '@/components/stock/ProductForm';
 import { usePagination } from '@/hooks/use-pagination';
@@ -54,6 +55,7 @@ export default function Estoque() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -202,6 +204,28 @@ export default function Estoque() {
     if (!options.keepOpen) closeModal();
   };
 
+  const handleDeleteProduct = async product => {
+    if (!['admin', 'gerente'].includes(user.role) || deletingId) return;
+    const confirmed = window.confirm(`Excluir "${product.name}" do estoque? O produto será removido do cadastro, mas vendas antigas continuarão no histórico.`);
+    if (!confirmed) return;
+
+    setDeletingId(product.id);
+    try {
+      await nexoApi.entities.Product.delete(product.id);
+      setProducts(current => current.filter(item => item.id !== product.id));
+      setDirty(current => {
+        const next = new Set(current);
+        next.delete(product.id);
+        return next;
+      });
+      toast.success('Produto excluído do estoque.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível excluir o produto.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const hasFilters = Boolean(search || category || minPrice || maxPrice || stock !== 'todos');
   const clearFilters = () => {
     setSearch('');
@@ -329,6 +353,9 @@ export default function Estoque() {
                     <div className="flex justify-end gap-1">
                       <button type="button" onClick={() => setProductModal({ mode: 'edit', product })} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${product.name} no formulário`} title="Editar no formulário"><Pencil className="h-[18px] w-[18px]" /></button>
                       <button type="button" onClick={() => setProductModal({ mode: 'duplicate', product })} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Duplicar ${product.name}`} title="Duplicar produto"><Copy className="h-[18px] w-[18px]" /></button>
+                      {['admin', 'gerente'].includes(user.role) && (
+                        <button type="button" disabled={deletingId === product.id} onClick={() => handleDeleteProduct(product)} className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/25 text-destructive transition hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50" aria-label={`Excluir ${product.name}`} title="Excluir produto"><Trash2 className="h-[18px] w-[18px]" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>

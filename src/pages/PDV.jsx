@@ -413,7 +413,7 @@ export default function PDV() {
           onClose={() => setShowQuickProduct(null)}
         />
       )}
-      {showReceipt && <ReceiptModal sale={showReceipt} config={config} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
+      {showReceipt && <ReceiptModal sale={showReceipt} config={{ ...config, logo_url: config.logo_url || user.logo_url, nome_mercado: config.nome_mercado || user.market_name }} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
       {showPriceCorrection && <PriceCorrectionModal items={activeSale.items} onSave={handlePriceCorrection} onClose={() => setShowPriceCorrection(false)} />}
       <MinimizedSalesBar sales={minimizedSales} onRestore={handleRestore} onDiscard={handleDiscardMinimized} onReorder={handleReorderMinimized} />
     </div>

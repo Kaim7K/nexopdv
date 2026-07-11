@@ -23,8 +23,8 @@ const EMPTY = {
   admin_name: '',
   admin_email: '',
   admin_password: '',
-  primary_color: '#17a06a',
-  secondary_color: '#1e2532',
+  primary_color: '#16a06a',
+  secondary_color: '#0f5132',
 };
 
 export default function AdminMercados() {
@@ -153,7 +153,7 @@ export default function AdminMercados() {
             return (
               <article className={`rounded-2xl border border-border bg-card p-5 shadow-sm transition ${updating ? 'opacity-75' : 'hover:-translate-y-0.5 hover:shadow-md'}`} key={market.id}>
                 <div className="flex items-start gap-3">
-                  <div className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-2xl" style={{ background: market.primary_color || '#17a06a' }}>
+                  <div className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-2xl" style={{ background: market.primary_color || '#16a06a' }}>
                     {market.logo_url ? <img src={market.logo_url} alt={`Logo de ${market.name}`} className="h-full w-full object-contain p-1" loading="lazy" /> : <Store className="h-5 w-5 text-white" />}
                   </div>
                   <div className="min-w-0 flex-1">

@@ -6,6 +6,7 @@ import { nexoApi } from '@/api/nexoApi';
 const providerLabel = image => {
   if (image.provider === 'google-cse') return 'Google';
   if (image.provider === 'open-food-facts-barcode') return 'Código de barras';
+  if (image.provider === 'wikimedia-commons') return 'Wikimedia';
   return 'Catálogo';
 };
 
@@ -19,7 +20,6 @@ export default function ProductImageSearch({ barcode, productName, category, onS
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [preview, setPreview] = useState(null);
-  const [providers, setProviders] = useState(null);
   const [queryMode, setQueryMode] = useState('');
 
   const loadImages = async (pageNumber, append = false) => {
@@ -31,7 +31,6 @@ export default function ProductImageSearch({ barcode, productName, category, onS
         category: category || '',
         page: pageNumber,
       });
-      setProviders(data.providers || null);
       setQueryMode(data.queryMode || '');
       setHasMore(Boolean(data.hasMore));
       setPage(pageNumber);
@@ -149,11 +148,6 @@ export default function ProductImageSearch({ barcode, productName, category, onS
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     Buscar mais imagens
                   </button>
-                )}
-                {providers && !providers.googleCustomSearch && (
-                  <p className="text-center text-[11px] text-muted-foreground">
-                    Google Imagens indisponível: configure GOOGLE_CSE_API_KEY e GOOGLE_CSE_ID na Vercel.
-                  </p>
                 )}
               </div>
             </>

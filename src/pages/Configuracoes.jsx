@@ -2,8 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Hash, Layers, MapPin, Save, Store } from 'lucide-react';
+import { AlertTriangle, Hash, Layers, MapPin, RotateCcw, Save, Store } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
+
+const RESET_OPTIONS = [
+  { value: 'products', label: 'Estoque e produtos', description: 'Exclui todos os produtos e o histórico de alterações de produtos.' },
+  { value: 'fiados', label: 'Vendas fiadas', description: 'Exclui todos os registros da tela de fiados.' },
+  { value: 'sales', label: 'Histórico de vendas', description: 'Exclui os registros da tela de vendas. Os fiados e a sequência de numeração são mantidos.' },
+  { value: 'audits', label: 'Auditoria', description: 'Exclui o histórico geral e o histórico de alterações dos produtos.' },
+  { value: 'operational', label: 'Todos os dados operacionais', description: 'Exclui estoque, vendas, fiados e auditorias. Usuários e configurações são mantidos.' },
+];
 
 export default function Configuracoes() {
   const { user } = /** @type {any} */ (useOutletContext());
@@ -11,6 +19,9 @@ export default function Configuracoes() {
   const [initialValues, setInitialValues] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetTarget, setResetTarget] = useState('');
+  const [resetConfirmation, setResetConfirmation] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   const loadConfigs = async () => {
     setLoading(true);
@@ -62,6 +73,28 @@ export default function Configuracoes() {
       toast.error(error.message || 'Erro ao salvar configurações.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    const option = RESET_OPTIONS.find(item => item.value === resetTarget);
+    if (!option) return toast.error('Selecione a área que deseja zerar.');
+    if (resetConfirmation.trim().toUpperCase() !== 'ZERAR') return toast.error('Digite ZERAR para confirmar.');
+    const confirmed = window.confirm(`Zerar ${option.label.toLowerCase()}? Esta ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    setResetting(true);
+    try {
+      const response = await nexoApi.maintenance.reset(resetTarget, resetConfirmation);
+      const values = Object.values(response.deleted || {}).filter(value => Number.isFinite(Number(value))).map(Number);
+      const removed = Number(response.deleted?.total ?? values.reduce((sum, value) => sum + value, 0));
+      toast.success(`${option.label} zerado${removed ? `: ${removed} registro${removed === 1 ? '' : 's'} removido${removed === 1 ? '' : 's'}` : ''}.`);
+      setResetTarget('');
+      setResetConfirmation('');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível zerar os dados.');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -122,6 +155,38 @@ export default function Configuracoes() {
           </section>
         </div>
       </div>
+
+      {user?.role === 'admin' && (
+        <section className="mt-6 rounded-2xl border border-destructive/30 bg-card p-5 shadow-sm sm:p-6" aria-labelledby="reset-data-title">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 id="reset-data-title" className="font-black">Zerar dados de uma tela</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Escolha somente a área que deseja limpar. Usuários e configurações não são removidos, exceto quando indicado.</p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-[1fr_240px_auto] md:items-end">
+            <label className="text-sm font-semibold">
+              Área para limpar
+              <select value={resetTarget} onChange={event => { setResetTarget(event.target.value); setResetConfirmation(''); }} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-destructive focus:ring-2 focus:ring-destructive/20">
+                <option value="">Selecione uma área</option>
+                {RESET_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label className="text-sm font-semibold">
+              Confirmação
+              <input value={resetConfirmation} onChange={event => setResetConfirmation(event.target.value)} autoComplete="off" placeholder="Digite ZERAR" className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm uppercase outline-none focus:border-destructive focus:ring-2 focus:ring-destructive/20" />
+            </label>
+            <button type="button" onClick={handleReset} disabled={!resetTarget || resetConfirmation.trim().toUpperCase() !== 'ZERAR' || resetting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-destructive px-5 text-sm font-bold text-destructive-foreground transition hover:bg-destructive/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">
+              <RotateCcw className={`h-4 w-4 ${resetting ? 'animate-spin' : ''}`} /> {resetting ? 'Zerando...' : 'Zerar dados'}
+            </button>
+          </div>
+          {resetTarget && <p className="mt-3 rounded-xl bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">{RESET_OPTIONS.find(option => option.value === resetTarget)?.description}</p>}
+        </section>
+      )}
 
       {hasChanges && <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-800 dark:text-amber-200">Há alterações ainda não salvas.</div>}
     </form>

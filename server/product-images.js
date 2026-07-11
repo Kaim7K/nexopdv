@@ -1,5 +1,7 @@
 import { AppError } from './errors.js';
 
+const ALLOWED_REMOTE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+
 const normalizeText = (value = '') => String(value)
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -12,7 +14,9 @@ function cleanResults(results, limit = 5) {
   return results
     .filter(result => {
       const url = String(result?.url || '').trim();
+      const mime = String(result?.mime || '').toLowerCase();
       if (!url || seen.has(url) || !/^https:\/\//i.test(url)) return false;
+      if (mime && !ALLOWED_REMOTE_IMAGE_TYPES.has(mime)) return false;
       seen.add(url);
       return true;
     })
@@ -64,7 +68,7 @@ async function searchBarcodeCatalog(barcode) {
       return result ? [result] : [];
     }
   } catch {
-    // O catálogo é complementar; a busca do Google continua normalmente.
+    // O catálogo é complementar; outras fontes continuam sendo consultadas.
   }
   return [];
 }
@@ -82,6 +86,46 @@ async function searchNameCatalog(name, page) {
     url.searchParams.set('fields', 'code,product_name,generic_name,brands,categories,image_url,image_front_url,image_small_url,image_front_small_url,selected_images');
     const data = await fetchJson(url, 'Open Food Facts');
     return (data?.products || []).map(product => openFoodFactsImage(product, 'open-food-facts-text')).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function searchWikimediaImages(query, page) {
+  if (!query) return [];
+  try {
+    const url = new URL('https://commons.wikimedia.org/w/api.php');
+    url.searchParams.set('action', 'query');
+    url.searchParams.set('generator', 'search');
+    url.searchParams.set('gsrsearch', query);
+    url.searchParams.set('gsrnamespace', '6');
+    url.searchParams.set('gsrlimit', '20');
+    url.searchParams.set('gsroffset', String((page - 1) * 20));
+    url.searchParams.set('prop', 'imageinfo');
+    url.searchParams.set('iiprop', 'url|mime|size');
+    url.searchParams.set('iiurlwidth', '420');
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('formatversion', '2');
+    url.searchParams.set('origin', '*');
+
+    const data = await fetchJson(url, 'Wikimedia Commons');
+    return (data?.query?.pages || []).flatMap(pageItem => {
+      const info = pageItem?.imageinfo?.[0];
+      if (!info?.url || !ALLOWED_REMOTE_IMAGE_TYPES.has(String(info.mime || '').toLowerCase())) return [];
+      const title = String(pageItem.title || query).replace(/^File:/i, '').replace(/_/g, ' ');
+      return [{
+        url: info.url,
+        thumbnailUrl: info.thumburl || info.url,
+        source: 'Wikimedia Commons',
+        sourceUrl: info.descriptionurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(pageItem.title || '')}`,
+        title,
+        context: '',
+        width: info.width,
+        height: info.height,
+        mime: info.mime,
+        provider: 'wikimedia-commons',
+      }];
+    });
   } catch {
     return [];
   }
@@ -120,12 +164,17 @@ async function searchGoogleImages(query, page) {
   }
 }
 
-export async function searchProductImages({ barcode = '', name = '', category = '', page = 1 }) {
+const providerState = () => ({
+  openFoodFacts: true,
+  wikimediaCommons: true,
+  googleCustomSearch: Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID),
+});
+
+export async function searchProductImages({ barcode = '', name = '', page = 1 }) {
   const safePage = Math.max(1, Math.min(10, Number(page) || 1));
   const context = {
     barcode: normalizeText(barcode).replace(/\s/g, '').slice(0, 180),
     name: String(name || '').trim().slice(0, 180),
-    category: String(category || '').trim().slice(0, 180),
   };
 
   if (!context.barcode && !context.name) {
@@ -133,23 +182,20 @@ export async function searchProductImages({ barcode = '', name = '', category = 
   }
 
   if (context.barcode) {
-    const [catalogResults, googleResults] = await Promise.all([
+    const [catalogResults, commonsResults, googleResults] = await Promise.all([
       safePage === 1 ? searchBarcodeCatalog(context.barcode) : Promise.resolve([]),
+      searchWikimediaImages(context.barcode, safePage),
       searchGoogleImages(context.barcode, safePage),
     ]);
-    const barcodePool = [...catalogResults, ...googleResults];
-    const barcodeResults = cleanResults(barcodePool, 5);
+    const barcodeResults = cleanResults([...catalogResults, ...commonsResults, ...googleResults], 5);
     if (barcodeResults.length) {
       return {
         results: barcodeResults,
         queryMode: 'barcode',
         query: context.barcode,
         page: safePage,
-        hasMore: googleResults.length >= 5 && safePage < 10,
-        providers: {
-          openFoodFacts: true,
-          googleCustomSearch: Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID),
-        },
+        hasMore: (commonsResults.length >= 5 || googleResults.length >= 5) && safePage < 10,
+        providers: providerState(),
       };
     }
   }
@@ -161,29 +207,23 @@ export async function searchProductImages({ barcode = '', name = '', category = 
       query: context.barcode,
       page: safePage,
       hasMore: false,
-      providers: {
-        openFoodFacts: true,
-        googleCustomSearch: Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID),
-      },
+      providers: providerState(),
     };
   }
 
-  const [googleNameResults, catalogNameResults] = await Promise.all([
-    searchGoogleImages(context.name, safePage),
+  const [commonsNameResults, catalogNameResults, googleNameResults] = await Promise.all([
+    searchWikimediaImages(context.name, safePage),
     searchNameCatalog(context.name, safePage),
+    searchGoogleImages(context.name, safePage),
   ]);
-  const namePool = [...googleNameResults, ...catalogNameResults];
-  const nameResults = cleanResults(namePool, 5);
+  const nameResults = cleanResults([...commonsNameResults, ...catalogNameResults, ...googleNameResults], 5);
 
   return {
     results: nameResults,
     queryMode: 'name',
     query: context.name,
     page: safePage,
-    hasMore: (googleNameResults.length >= 5 || catalogNameResults.length >= 5) && safePage < 10,
-    providers: {
-      openFoodFacts: true,
-      googleCustomSearch: Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID),
-    },
+    hasMore: (commonsNameResults.length >= 5 || catalogNameResults.length >= 5 || googleNameResults.length >= 5) && safePage < 10,
+    providers: providerState(),
   };
 }

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-const [api, http, media, app, sales, fiados, audits, stock, metadata, robots, vercel] = await Promise.all([
+const [api, http, media, app, sales, fiados, audits, stock, users, settings, receipt, metadata, robots, vercel] = await Promise.all([
   read('api/index.js'),
   read('server/http.js'),
   read('server/media.js'),
@@ -12,6 +12,9 @@ const [api, http, media, app, sales, fiados, audits, stock, metadata, robots, ve
   read('src/pages/Fiados.jsx'),
   read('src/pages/AuditoriaGeral.jsx'),
   read('src/pages/Estoque.jsx'),
+  read('src/pages/Usuarios.jsx'),
+  read('src/pages/Configuracoes.jsx'),
+  read('src/components/pdv/ReceiptModal.jsx'),
   read('src/hooks/use-page-metadata.js'),
   read('public/robots.txt'),
   read('vercel.json'),
@@ -33,6 +36,11 @@ assert.match(sales, /usePagination\(filtered, 20\)/, 'O histórico de vendas dev
 assert.match(fiados, /usePagination\(filtered, 20\)/, 'Fiados devem paginar resultados renderizados.');
 assert.match(audits, /usePagination\(filtered, 25\)/, 'Auditoria deve paginar resultados renderizados.');
 assert.match(stock, /usePagination\(filtered, 50\)/, 'Estoque deve paginar resultados renderizados.');
+assert.match(stock, /entities\.Product\.delete/, 'Produtos devem poder ser excluídos pela tela de estoque.');
+assert.match(users, /entities\.User\.delete/, 'Usuários devem poder ser excluídos pela tela administrativa.');
+assert.match(settings, /maintenance\.reset/, 'A limpeza seletiva deve usar uma rota de manutenção protegida.');
+assert.match(receipt, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
+assert.match(api, /user\.role !== 'admin'.*zerar dados do mercado/s, 'Somente administradores podem zerar dados.');
 
 assert.match(metadata, /og:title/, 'Metadados Open Graph devem acompanhar a página atual.');
 assert.match(metadata, /twitter:description/, 'Metadados do Twitter devem acompanhar a página atual.');

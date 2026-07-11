@@ -188,7 +188,7 @@ async function routeHandler(req, res) {
     return send(res, 200, publicUser(user));
   }
   const entityModules = { Sale:'vendas', FiadoRecord:'fiados', User:'usuarios' };
-  const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'sales' ? (path[1] === 'complete' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'entities' ? entityModules[path[1]] : null;
+  const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'sales' ? (path[1] === 'complete' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
   if (user.role !== 'super_admin' && requiredModule && !(user.enabled_modules || []).includes(requiredModule)) return send(res, 403, { message: 'Esta funcionalidade não está habilitada para o mercado.' });
   if (user.role !== 'super_admin' && path[0] === 'entities' && path[1] === 'Product' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
 
@@ -219,6 +219,81 @@ async function routeHandler(req, res) {
     return send(res, 201, imported);
   }
 
+  if (path[0] === 'maintenance' && path[1] === 'reset') {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem zerar dados do mercado.' });
+    if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
+    if (String(req.body.confirmation || '').trim().toUpperCase() !== 'ZERAR') {
+      return send(res, 400, { message: 'Digite ZERAR para confirmar a operação.' });
+    }
+
+    const target = String(req.body.target || '');
+    const labels = {
+      products: 'estoque',
+      fiados: 'vendas fiadas',
+      sales: 'histórico de vendas',
+      audits: 'auditoria',
+      operational: 'dados operacionais',
+    };
+    if (!labels[target]) return send(res, 400, { message: 'Selecione uma área válida para zerar.' });
+
+    let result;
+    if (target === 'products') {
+      [result] = await sql`WITH products AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='products' RETURNING 1
+      ), product_audits AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='product_audits' RETURNING 1
+      ) SELECT (SELECT count(*)::int FROM products) AS products, (SELECT count(*)::int FROM product_audits) AS product_audits`;
+    } else if (target === 'fiados') {
+      [result] = await sql`WITH removed AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='fiado_records' RETURNING 1
+      ) SELECT count(*)::int AS fiados FROM removed`;
+    } else if (target === 'sales') {
+      [result] = await sql`WITH removed AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='sales' RETURNING 1
+      ) SELECT count(*)::int AS sales FROM removed`;
+    } else if (target === 'audits') {
+      [result] = await sql`WITH general_audits AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='general_audits' RETURNING 1
+      ), product_audits AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='product_audits' RETURNING 1
+      ) SELECT (SELECT count(*)::int FROM general_audits) AS general_audits, (SELECT count(*)::int FROM product_audits) AS product_audits`;
+    } else {
+      [result] = await sql`WITH removed AS (
+        DELETE FROM nexo.records
+        WHERE market_id=${user.market_id}
+          AND entity=ANY(ARRAY['products','sales','fiado_records','general_audits','product_audits'])
+        RETURNING entity
+      ), counter AS (
+        UPDATE nexo.markets SET next_sale_number=1,updated_date=now() WHERE id=${user.market_id}
+      ) SELECT
+        count(*)::int AS total,
+        count(*) FILTER (WHERE entity='products')::int AS products,
+        count(*) FILTER (WHERE entity='sales')::int AS sales,
+        count(*) FILTER (WHERE entity='fiado_records')::int AS fiados,
+        count(*) FILTER (WHERE entity IN ('general_audits','product_audits'))::int AS audits
+      FROM removed`;
+    }
+
+    if (!['audits', 'operational'].includes(target)) {
+      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+        ${user.market_id},
+        'general_audits',
+        ${JSON.stringify({
+          action_type: 'dados_zerados',
+          entity_type: 'maintenance',
+          entity_id: null,
+          user_id: user.id,
+          user_name: user.full_name || user.email,
+          description: `Dados de ${labels[target]} zerados nas configurações`,
+          details: { target },
+        })}::jsonb
+      )`;
+    }
+
+    return send(res, 200, { ok: true, target, label: labels[target], deleted: result || {} });
+  }
+
   if (path[0] === 'markets') {
     if (user.role !== 'super_admin') return send(res, 403, { message: 'Acesso restrito.' });
     if (req.method === 'GET') return send(res, 200, await sql`SELECT id,name,slug,logo_url,primary_color,secondary_color,enabled_modules,active,created_date FROM nexo.markets ORDER BY name`);
@@ -233,7 +308,7 @@ async function routeHandler(req, res) {
       if (!Array.isArray(modules) || modules.some(module => !MARKET_MODULES.includes(module))) return send(res, 400, { message: 'Módulos inválidos.' });
       const hash = await bcrypt.hash(req.body.admin_password, 12);
       const logoUrl = normalizeImageValue(req.body.logo_url || '');
-      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#17a06a'},${req.body.secondary_color || '#1e2532'},${JSON.stringify(modules)}::jsonb) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
+      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
       return send(res, 201, market);
     }
     if (req.method === 'PATCH') {
@@ -474,6 +549,30 @@ async function routeHandler(req, res) {
     if (table === 'users') {
       if (!['admin','gerente'].includes(user.role)) return send(res, 403, { message: 'Sem permissão para gerenciar usuários.' });
       if (req.method === 'GET') return send(res, 200, await sql`SELECT id,email,full_name,role,photo_url,active,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id}`);
+      if (req.method === 'DELETE') {
+        if (!isUuid(id)) return send(res, 400, { message: 'Usuário inválido.' });
+        if (id === user.id) return send(res, 400, { message: 'Você não pode excluir o próprio usuário.' });
+        const [target] = await sql`SELECT id,email,full_name,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id}`;
+        if (!target) return send(res, 404, { message: 'Usuário não encontrado.' });
+        if (user.role === 'gerente' && target.role !== 'vendedor') return send(res, 403, { message: 'Gerentes podem excluir apenas usuários vendedores.' });
+        if (target.role === 'admin') {
+          const [state] = await sql`SELECT count(*)::int AS active_admins FROM nexo.users WHERE market_id=${user.market_id} AND role='admin' AND active=true`;
+          if (Number(state?.active_admins || 0) <= 1) return send(res, 409, { message: 'Mantenha pelo menos um administrador ativo no mercado.' });
+        }
+        await sql`WITH removed AS (
+          DELETE FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role
+        ) INSERT INTO nexo.records(market_id,entity,data)
+          SELECT ${user.market_id},'general_audits',jsonb_build_object(
+            'action_type','usuario_excluido',
+            'entity_type','user',
+            'entity_id',removed.id,
+            'user_id',${user.id},
+            'user_name',${user.full_name || user.email},
+            'description','Usuário ' || COALESCE(removed.full_name, removed.email) || ' excluído',
+            'details',jsonb_build_object('email',removed.email,'role',removed.role)
+          ) FROM removed`;
+        return send(res, 200, { ok: true });
+      }
       if (req.method === 'PATCH') {
         if (!isUuid(id)) return send(res, 400, { message: 'Usuário inválido.' });
         if (req.body.role && !USER_ROLES.includes(req.body.role)) return send(res, 400, { message: 'Perfil de usuário inválido.' });
@@ -558,6 +657,25 @@ async function routeHandler(req, res) {
       if (table === 'system_configs') recordPayload = { value: String(req.body.value || '').startsWith('data:image/') ? normalizeImageValue(req.body.value) : text(req.body.value, 5000) };
       const [r]=await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(recordPayload)}::jsonb,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND entity=${table} RETURNING id,data,created_date,updated_date`;
       return send(res,r?200:404,r?{id:r.id,...r.data,created_date:r.created_date,updated_date:r.updated_date}:{message:'Registro não encontrado.'});
+    }
+    if (table === 'products' && req.method === 'DELETE') {
+      if (!isUuid(id)) return send(res, 400, { message: 'Produto inválido.' });
+      const [removed] = await sql`DELETE FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity='products' RETURNING id,data`;
+      if (!removed) return send(res, 404, { message: 'Produto não encontrado.' });
+      const auditPayload = {
+        action_type: 'produto_excluido',
+        entity_type: 'product',
+        entity_id: removed.id,
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Produto ${text(removed.data?.name, 180) || 'sem nome'} excluído do estoque`,
+        details: {
+          barcode: text(removed.data?.barcode, 80),
+          internal_code: text(removed.data?.internal_code, 80),
+        },
+      };
+      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditPayload)}::jsonb)`;
+      return send(res, 200, { ok: true });
     }
     if (req.method === 'DELETE') { if (!isUuid(id)) return send(res, 400, { message: 'Identificador inválido.' }); await sql`DELETE FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity=${table}`; return send(res,200,{ok:true}); }
   }
