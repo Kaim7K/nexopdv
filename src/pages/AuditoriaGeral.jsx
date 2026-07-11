@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Search, ScrollText } from 'lucide-react';
 import { formatDateTime } from '@/lib/helpers';
@@ -17,8 +17,8 @@ export default function AuditoriaGeral() {
   const loadAudits = async () => {
     try {
       const [general, product] = await Promise.all([
-        base44.entities.GeneralAudit.list('-created_date', 300),
-        base44.entities.ProductAudit.list('-created_date', 300),
+        nexoApi.entities.GeneralAudit.list('-created_date', 300),
+        nexoApi.entities.ProductAudit.list('-created_date', 300),
       ]);
       setAudits(general);
       setProductAudits(product);

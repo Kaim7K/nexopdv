@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useOutletContext } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Package, Edit, History } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
@@ -18,9 +18,9 @@ export default function ProdutoDetalhe() {
 
   const load = async () => {
     try {
-      const p = await base44.entities.Product.get(id);
+      const p = await nexoApi.entities.Product.get(id);
       setProduct(p);
-      const a = await base44.entities.ProductAudit.filter({ product_id: id }, '-created_date', 50);
+      const a = await nexoApi.entities.ProductAudit.filter({ product_id: id }, '-created_date', 50);
       setAudits(a);
     } catch { toast.error('Erro ao carregar produto'); }
     setLoading(false);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Search, Eye, Ban, Trash2, X, History } from 'lucide-react';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/helpers';
@@ -20,7 +20,7 @@ export default function Vendas() {
   const loadSales = async () => {
     setLoading(true);
     try {
-      let data = await base44.entities.Sale.list('-created_date', 200);
+      let data = await nexoApi.entities.Sale.list('-created_date', 200);
       data = data.filter(s => s.status === 'concluida' || s.status === 'cancelada');
       if (!isGerente) data = data.filter(s => s.seller_id === user.id);
       setSales(data);
@@ -43,7 +43,7 @@ export default function Vendas() {
     const reason = prompt('Motivo do cancelamento (opcional):') || '';
     if (!confirm(`Confirmar cancelamento da venda #${sale.sale_number}?`)) return;
     try {
-      await base44.sales.cancel(sale.id, reason);
+      await nexoApi.sales.cancel(sale.id, reason);
       toast.success('Venda cancelada');
       loadSales();
     } catch (error) { toast.error(error.message || 'Erro ao cancelar venda'); }
@@ -52,7 +52,7 @@ export default function Vendas() {
   const handleDelete = async (sale) => {
     if (!confirm(`Excluir definitivamente a venda #${sale.sale_number}?`)) return;
     try {
-      await base44.sales.delete(sale.id);
+      await nexoApi.sales.delete(sale.id);
       toast.success('Venda excluída');
       loadSales();
     } catch (error) { toast.error(error.message || 'Erro ao excluir venda'); }

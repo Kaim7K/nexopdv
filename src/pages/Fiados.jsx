@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Search, Check, Ban, Phone, X, Clock } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
@@ -19,7 +19,7 @@ export default function Fiados() {
   const loadFiados = async () => {
     setLoading(true);
     try {
-      let data = await base44.entities.FiadoRecord.list('-created_date', 200);
+      let data = await nexoApi.entities.FiadoRecord.list('-created_date', 200);
       if (!isGerente) data = data.filter(f => f.seller_id === user.id);
       setFiados(data);
     } catch { toast.error('Erro ao carregar fiados'); }
@@ -36,8 +36,8 @@ export default function Fiados() {
 
   const handleSettle = async (fiado, method) => {
     try {
-      await base44.entities.FiadoRecord.update(fiado.id, { status: 'quitado', settlement_date: new Date().toISOString(), settlement_method: method, settled_by_id: user.id, settled_by_name: user.full_name || user.email });
-      await base44.entities.GeneralAudit.create({ action_type: 'fiado_quitado', entity_type: 'fiado', entity_id: fiado.id, user_id: user.id, user_name: user.full_name || user.email, description: `Fiado #${fiado.sale_number} (${fiado.responsible_name}) quitado - ${formatCurrency(fiado.total_amount)}`, details: JSON.stringify({ method }) });
+      await nexoApi.entities.FiadoRecord.update(fiado.id, { status: 'quitado', settlement_date: new Date().toISOString(), settlement_method: method, settled_by_id: user.id, settled_by_name: user.full_name || user.email });
+      await nexoApi.entities.GeneralAudit.create({ action_type: 'fiado_quitado', entity_type: 'fiado', entity_id: fiado.id, user_id: user.id, user_name: user.full_name || user.email, description: `Fiado #${fiado.sale_number} (${fiado.responsible_name}) quitado - ${formatCurrency(fiado.total_amount)}`, details: JSON.stringify({ method }) });
       toast.success('Fiado quitado');
       setSettleFiado(null);
       loadFiados();
@@ -47,8 +47,8 @@ export default function Fiados() {
   const handleCancel = async (fiado) => {
     if (!confirm(`Cancelar fiado de ${fiado.responsible_name}?`)) return;
     try {
-      await base44.entities.FiadoRecord.update(fiado.id, { status: 'cancelado', settled_by_id: user.id, settled_by_name: user.full_name || user.email });
-      await base44.entities.GeneralAudit.create({ action_type: 'fiado_cancelado', entity_type: 'fiado', entity_id: fiado.id, user_id: user.id, user_name: user.full_name || user.email, description: `Fiado #${fiado.sale_number} (${fiado.responsible_name}) cancelado`, details: '' });
+      await nexoApi.entities.FiadoRecord.update(fiado.id, { status: 'cancelado', settled_by_id: user.id, settled_by_name: user.full_name || user.email });
+      await nexoApi.entities.GeneralAudit.create({ action_type: 'fiado_cancelado', entity_type: 'fiado', entity_id: fiado.id, user_id: user.id, user_name: user.full_name || user.email, description: `Fiado #${fiado.sale_number} (${fiado.responsible_name}) cancelado`, details: '' });
       toast.success('Fiado cancelado');
       loadFiados();
     } catch { toast.error('Erro ao cancelar fiado'); }

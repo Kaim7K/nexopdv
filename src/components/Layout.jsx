@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { ShoppingCart, Package, History, HandCoins, BarChart3, Users, Settings, ScrollText, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -38,7 +38,7 @@ export default function Layout() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const u = await base44.auth.me();
+        const u = await nexoApi.auth.me();
         setUser(u);
         if (u.primary_color) {
           const root=document.documentElement,accent=hexToHsl(u.primary_color);
@@ -49,7 +49,7 @@ export default function Layout() {
         return;
       }
       try {
-        const configs = await base44.entities.SystemConfig.list();
+        const configs = await nexoApi.entities.SystemConfig.list();
         const map = {};
         configs.forEach(c => { map[c.key] = c.value; });
         setConfig(map);
@@ -127,7 +127,7 @@ export default function Layout() {
           <div className="flex items-center gap-1 px-1">
             <ThemeToggle />
             <button
-              onClick={() => base44.auth.logout('/login')}
+              onClick={() => nexoApi.auth.logout('/login')}
               className="flex items-center gap-1.5 px-3 py-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors flex-1"
             >
               <LogOut className="w-3.5 h-3.5" /> Sair

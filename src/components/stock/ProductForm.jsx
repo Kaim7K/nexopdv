@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, ImageIcon } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ProductImageSearch from './ProductImageSearch';
@@ -45,17 +45,17 @@ export default function ProductForm({ product = null, categories = [], user, onS
       let saved;
       if (product) {
         if (product.sale_price !== data.sale_price) {
-          await base44.entities.ProductAudit.create({
+          await nexoApi.entities.ProductAudit.create({
             product_id: product.id, product_name: data.name, field_changed: 'sale_price',
             previous_value: String(product.sale_price), new_value: String(data.sale_price),
             user_id: user.id, user_name: user.full_name || user.email,
             change_origin: 'gerenciamento_estoque', observation: 'Alteração no cadastro de produto',
           });
         }
-        saved = await base44.entities.Product.update(product.id, data);
+        saved = await nexoApi.entities.Product.update(product.id, data);
       } else {
-        saved = await base44.entities.Product.create(data);
-        await base44.entities.GeneralAudit.create({
+        saved = await nexoApi.entities.Product.create(data);
+        await nexoApi.entities.GeneralAudit.create({
           action_type: 'produto_cadastrado', entity_type: 'product', entity_id: saved.id,
           user_id: user.id, user_name: user.full_name || user.email,
           description: `Produto "${data.name}" cadastrado`, details: JSON.stringify(data),

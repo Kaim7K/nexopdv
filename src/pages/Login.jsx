@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { nexoApi } from "@/api/nexoApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +17,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
-      const user = await base44.auth.me();
+      await nexoApi.auth.login(email, password);
+      const user = await nexoApi.auth.me();
       window.location.href = user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");

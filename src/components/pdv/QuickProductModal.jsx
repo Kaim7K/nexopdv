@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Loader2, ImageIcon } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 
@@ -48,7 +48,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
     }
     setSaving(true);
     try {
-      const product = await base44.entities.Product.create({
+      const product = await nexoApi.entities.Product.create({
         name: name.trim(),
         barcode: barcode || '',
         internal_code: generateInternalCode(),

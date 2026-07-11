@@ -1,4 +1,316 @@
-import React,{useEffect,useMemo,useRef,useState} from 'react';import {useOutletContext} from 'react-router-dom';import {base44} from '@/api/base44Client';import {toast} from 'react-hot-toast';import {Plus,Search,Download,Upload,Save,Package} from 'lucide-react';import * as XLSX from 'xlsx';import ProductForm from '@/components/stock/ProductForm';
-const COLUMNS=[['name','Produto','text'],['category','Categoria','text'],['barcode','Código de barras','text'],['internal_code','Código interno','text'],['sale_price','Preço venda','number'],['cost_price','Preço custo','number'],['quantity','Estoque','number'],['unit','Unidade','text'],['status','Status','text']];
-const normalize=(value,type)=>type==='number'?(value===''?'':Number(value)):String(value??'');
-export default function Estoque(){const {user}=/** @type {any} */(useOutletContext());const fileRef=useRef(null);const [products,setProducts]=useState([]),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[minPrice,setMinPrice]=useState(''),[maxPrice,setMaxPrice]=useState(''),[stock,setStock]=useState('todos'),[dirty,setDirty]=useState(new Set()),[showForm,setShowForm]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);const load=async()=>{setLoading(true);try{setProducts(await base44.entities.Product.list('-updated_date',1000));setDirty(new Set())}catch(e){toast.error(e.message)}finally{setLoading(false)}};useEffect(()=>{load()},[]);const categories=[...new Set(products.map(product=>product.category).filter(Boolean))];const filtered=useMemo(()=>products.filter(product=>(!search||[product.name,product.barcode,product.internal_code].some(value=>String(value||'').toLowerCase().includes(search.toLowerCase())))&&(!category||product.category===category)&&(!minPrice||Number(product.sale_price)>=Number(minPrice))&&(!maxPrice||Number(product.sale_price)<=Number(maxPrice))&&(stock==='todos'||(stock==='disponivel'?Number(product.quantity)>0:Number(product.quantity)<=0))),[products,search,category,minPrice,maxPrice,stock]);const edit=(id,key,value,type)=>{setProducts(current=>current.map(product=>product.id===id?{...product,[key]:normalize(value,type)}:product));setDirty(current=>new Set(current).add(id))};const save=async()=>{const changed=products.filter(product=>dirty.has(product.id));if(changed.some(product=>!product.name?.trim()||Number(product.sale_price)<0||Number(product.quantity)<0)){toast.error('Revise nome, preço e quantidade dos produtos alterados');return}setSaving(true);try{await base44.stock.bulkUpdate(changed);toast.success('Estoque atualizado');await load()}catch(e){toast.error(e.message)}finally{setSaving(false)}};const download=()=>{const rows=products.map(product=>Object.fromEntries([['ID',product.id],...COLUMNS.map(([key,label])=>[label,product[key]??''])]));const sheet=XLSX.utils.json_to_sheet(rows),book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Estoque');XLSX.writeFile(book,'estoque-nexo-pdv.xlsx')};const upload=async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{const book=XLSX.read(await file.arrayBuffer()),sheet=book.Sheets[book.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:''});if(!rows.length)throw new Error('A planilha está vazia.');const mapped=rows.map(row=>({id:row.ID||undefined,...Object.fromEntries(COLUMNS.map(([key,label,type])=>[key,normalize(row[label],type)]))}));if(mapped.some(product=>!product.name.trim()||Number(product.sale_price)<0||Number(product.quantity)<0))throw new Error('Há produtos com nome, preço ou quantidade inválidos.');await base44.stock.bulkUpdate(mapped);toast.success(`${mapped.length} produtos importados`);await load()}catch(e){toast.error(e.message||'Não foi possível importar a planilha')}};return <div className="p-4 sm:p-6"><div className="flex flex-wrap justify-between gap-3 mb-5"><div><h1 className="text-2xl font-bold">Estoque em planilha</h1><p className="text-sm text-muted-foreground">{filtered.length} produtos · clique em qualquer célula para editar</p></div><div className="flex flex-wrap gap-2"><button onClick={download} className="border px-3 py-2 rounded-lg flex gap-2 text-sm"><Download className="w-4"/>Baixar</button><button onClick={()=>fileRef.current?.click()} className="border px-3 py-2 rounded-lg flex gap-2 text-sm"><Upload className="w-4"/>Importar</button><input ref={fileRef} hidden type="file" accept=".xlsx,.xls,.csv" onChange={upload}/><button disabled={!dirty.size||saving} onClick={save} className="bg-accent text-white px-3 py-2 rounded-lg flex gap-2 text-sm disabled:opacity-40"><Save className="w-4"/>{saving?'Salvando...':`Salvar ${dirty.size||''}`}</button><button aria-label="Novo produto" onClick={()=>setShowForm(true)} className="bg-accent text-white px-3 py-2 rounded-lg"><Plus className="w-4"/></button></div></div><div className="grid md:grid-cols-5 gap-2 mb-4"><label className="relative md:col-span-2"><Search className="absolute left-3 top-2.5 w-4 text-muted-foreground"/><input className="border rounded-lg py-2 pl-9 w-full text-sm" placeholder="Pesquisar produto, código ou barras" value={search} onChange={e=>setSearch(e.target.value)}/></label><select className="border rounded-lg px-2 text-sm" value={category} onChange={e=>setCategory(e.target.value)}><option value="">Todas categorias</option>{categories.map(value=><option key={value}>{value}</option>)}</select><div className="flex gap-1"><input className="border rounded-lg p-2 w-1/2 text-sm" type="number" min="0" placeholder="Preço mín." value={minPrice} onChange={e=>setMinPrice(e.target.value)}/><input className="border rounded-lg p-2 w-1/2 text-sm" type="number" min="0" placeholder="Preço máx." value={maxPrice} onChange={e=>setMaxPrice(e.target.value)}/></div><select className="border rounded-lg px-2 text-sm" value={stock} onChange={e=>setStock(e.target.value)}><option value="todos">Qualquer estoque</option><option value="disponivel">Disponível</option><option value="zerado">Sem estoque</option></select></div><div className="border rounded-xl overflow-auto bg-card max-h-[calc(100vh-240px)]">{loading?<p className="p-12 text-center">Carregando...</p>:<table className="w-full text-sm whitespace-nowrap"><thead className="sticky top-0 bg-secondary z-10"><tr><th className="p-3"><Package className="w-4"/></th>{COLUMNS.map(([key,label])=><th key={key} className="p-3 text-left">{label}</th>)}</tr></thead><tbody>{filtered.map(product=><tr key={product.id} className={`border-t ${dirty.has(product.id)?'bg-amber-50 dark:bg-amber-950/20':''}`}><td className="p-2">{product.image_url?<img src={product.image_url} alt="" className="w-8 h-8 rounded object-cover"/>:<Package className="w-4 text-muted-foreground"/>}</td>{COLUMNS.map(([key,,type])=><td key={key} className="p-1"><input className="bg-transparent border border-transparent hover:border-border focus:border-accent rounded p-2 w-full min-w-[100px]" type={type} min={type==='number'?'0':undefined} step="any" value={product[key]??''} onChange={e=>edit(product.id,key,e.target.value,type)}/></td>)}</tr>)}</tbody></table>}</div>{showForm&&<ProductForm product={null} categories={categories} user={user} onClose={()=>setShowForm(false)} onSave={()=>{setShowForm(false);load()}}/>}</div>}
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import { nexoApi } from "@/api/nexoApi";
+import { toast } from "react-hot-toast";
+import { Plus, Search, Download, Upload, Save, Package } from "lucide-react";
+import * as XLSX from "xlsx";
+import ProductForm from "@/components/stock/ProductForm";
+const COLUMNS = [
+  ["name", "Produto", "text"],
+  ["category", "Categoria", "text"],
+  ["barcode", "Código de barras", "text"],
+  ["internal_code", "Código interno", "text"],
+  ["sale_price", "Preço venda", "number"],
+  ["cost_price", "Preço custo", "number"],
+  ["quantity", "Estoque", "number"],
+  ["unit", "Unidade", "text"],
+  ["status", "Status", "text"],
+];
+const normalize = (value, type) =>
+  type === "number" ? (value === "" ? "" : Number(value)) : String(value ?? "");
+export default function Estoque() {
+  const { user } = /** @type {any} */ (useOutletContext());
+  const fileRef = useRef(null);
+  const [products, setProducts] = useState([]),
+    [search, setSearch] = useState(""),
+    [category, setCategory] = useState(""),
+    [minPrice, setMinPrice] = useState(""),
+    [maxPrice, setMaxPrice] = useState(""),
+    [stock, setStock] = useState("todos"),
+    [dirty, setDirty] = useState(new Set()),
+    [showForm, setShowForm] = useState(false),
+    [loading, setLoading] = useState(true),
+    [saving, setSaving] = useState(false);
+  const load = async () => {
+    setLoading(true);
+    try {
+      setProducts(await nexoApi.entities.Product.list("-updated_date", 1000));
+      setDirty(new Set());
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const categories = [
+    ...new Set(products.map((product) => product.category).filter(Boolean)),
+  ];
+  const filtered = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          (!search ||
+            [product.name, product.barcode, product.internal_code].some(
+              (value) =>
+                String(value || "")
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+            )) &&
+          (!category || product.category === category) &&
+          (!minPrice || Number(product.sale_price) >= Number(minPrice)) &&
+          (!maxPrice || Number(product.sale_price) <= Number(maxPrice)) &&
+          (stock === "todos" ||
+            (stock === "disponivel"
+              ? Number(product.quantity) > 0
+              : Number(product.quantity) <= 0)),
+      ),
+    [products, search, category, minPrice, maxPrice, stock],
+  );
+  const edit = (id, key, value, type) => {
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === id
+          ? { ...product, [key]: normalize(value, type) }
+          : product,
+      ),
+    );
+    setDirty((current) => new Set(current).add(id));
+  };
+  const save = async () => {
+    const changed = products.filter((product) => dirty.has(product.id));
+    if (
+      changed.some(
+        (product) =>
+          !product.name?.trim() ||
+          Number(product.sale_price) < 0 ||
+          Number(product.quantity) < 0,
+      )
+    ) {
+      toast.error("Revise nome, preço e quantidade dos produtos alterados");
+      return;
+    }
+    setSaving(true);
+    try {
+      await nexoApi.stock.bulkUpdate(changed);
+      toast.success("Estoque atualizado");
+      await load();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const download = () => {
+    const rows = products.map((product) =>
+      Object.fromEntries([
+        ["ID", product.id],
+        ...COLUMNS.map(([key, label]) => [label, product[key] ?? ""]),
+      ]),
+    );
+    const sheet = XLSX.utils.json_to_sheet(rows),
+      book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "Estoque");
+    XLSX.writeFile(book, "estoque-nexo-pdv.xlsx");
+  };
+  const upload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const book = XLSX.read(await file.arrayBuffer()),
+        sheet = book.Sheets[book.SheetNames[0]],
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      if (!rows.length) throw new Error("A planilha está vazia.");
+      const mapped = rows.map((row) => ({
+        id: row.ID || undefined,
+        ...Object.fromEntries(
+          COLUMNS.map(([key, label, type]) => [
+            key,
+            normalize(row[label], type),
+          ]),
+        ),
+      }));
+      if (
+        mapped.some(
+          (product) =>
+            !product.name.trim() ||
+            Number(product.sale_price) < 0 ||
+            Number(product.quantity) < 0,
+        )
+      )
+        throw new Error("Há produtos com nome, preço ou quantidade inválidos.");
+      await nexoApi.stock.bulkUpdate(mapped);
+      toast.success(`${mapped.length} produtos importados`);
+      await load();
+    } catch (e) {
+      toast.error(e.message || "Não foi possível importar a planilha");
+    }
+  };
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-wrap justify-between gap-3 mb-5">
+        <div>
+          <h1 className="text-2xl font-bold">Estoque em planilha</h1>
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} produtos · clique em qualquer célula para editar
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={download}
+            className="border px-3 py-2 rounded-lg flex gap-2 text-sm"
+          >
+            <Download className="w-4" />
+            Baixar
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="border px-3 py-2 rounded-lg flex gap-2 text-sm"
+          >
+            <Upload className="w-4" />
+            Importar
+          </button>
+          <input
+            ref={fileRef}
+            hidden
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={upload}
+          />
+          <button
+            disabled={!dirty.size || saving}
+            onClick={save}
+            className="bg-accent text-white px-3 py-2 rounded-lg flex gap-2 text-sm disabled:opacity-40"
+          >
+            <Save className="w-4" />
+            {saving ? "Salvando..." : `Salvar ${dirty.size || ""}`}
+          </button>
+          <button
+            aria-label="Novo produto"
+            onClick={() => setShowForm(true)}
+            className="bg-accent text-white px-3 py-2 rounded-lg"
+          >
+            <Plus className="w-4" />
+          </button>
+        </div>
+      </div>
+      <div className="grid md:grid-cols-5 gap-2 mb-4">
+        <label className="relative md:col-span-2">
+          <Search className="absolute left-3 top-2.5 w-4 text-muted-foreground" />
+          <input
+            className="border rounded-lg py-2 pl-9 w-full text-sm"
+            placeholder="Pesquisar produto, código ou barras"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <select
+          className="border rounded-lg px-2 text-sm"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="">Todas categorias</option>
+          {categories.map((value) => (
+            <option key={value}>{value}</option>
+          ))}
+        </select>
+        <div className="flex gap-1">
+          <input
+            className="border rounded-lg p-2 w-1/2 text-sm"
+            type="number"
+            min="0"
+            placeholder="Preço mín."
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+          />
+          <input
+            className="border rounded-lg p-2 w-1/2 text-sm"
+            type="number"
+            min="0"
+            placeholder="Preço máx."
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+          />
+        </div>
+        <select
+          className="border rounded-lg px-2 text-sm"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+        >
+          <option value="todos">Qualquer estoque</option>
+          <option value="disponivel">Disponível</option>
+          <option value="zerado">Sem estoque</option>
+        </select>
+      </div>
+      <div className="border rounded-xl overflow-auto bg-card max-h-[calc(100vh-240px)]">
+        {loading ? (
+          <p className="p-12 text-center">Carregando...</p>
+        ) : (
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="sticky top-0 bg-secondary z-10">
+              <tr>
+                <th className="p-3">
+                  <Package className="w-4" />
+                </th>
+                {COLUMNS.map(([key, label]) => (
+                  <th key={key} className="p-3 text-left">
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((product) => (
+                <tr
+                  key={product.id}
+                  className={`border-t ${dirty.has(product.id) ? "bg-amber-50 dark:bg-amber-950/20" : ""}`}
+                >
+                  <td className="p-2">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt=""
+                        className="w-8 h-8 rounded object-cover"
+                      />
+                    ) : (
+                      <Package className="w-4 text-muted-foreground" />
+                    )}
+                  </td>
+                  {COLUMNS.map(([key, , type]) => (
+                    <td key={key} className="p-1">
+                      <input
+                        className="bg-transparent border border-transparent hover:border-border focus:border-accent rounded p-2 w-full min-w-[100px]"
+                        type={type}
+                        min={type === "number" ? "0" : undefined}
+                        step="any"
+                        value={product[key] ?? ""}
+                        onChange={(e) =>
+                          edit(product.id, key, e.target.value, type)
+                        }
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      {showForm && (
+        <ProductForm
+          product={null}
+          categories={categories}
+          user={user}
+          onClose={() => setShowForm(false)}
+          onSave={() => {
+            setShowForm(false);
+            load();
+          }}
+        />
+      )}
+    </div>
+  );
+}

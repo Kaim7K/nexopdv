@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { BarChart3, TrendingUp, TrendingDown, AlertTriangle, Lightbulb, DollarSign, ShoppingCart, Receipt } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
@@ -28,9 +28,9 @@ export default function Relatorios() {
 
   const loadData = async () => {
     try {
-      const s = await base44.entities.Sale.list('-created_date', 500);
+      const s = await nexoApi.entities.Sale.list('-created_date', 500);
       setSales(s.filter(x => x.status === 'concluida'));
-      const f = await base44.entities.FiadoRecord.list('-created_date', 200);
+      const f = await nexoApi.entities.FiadoRecord.list('-created_date', 200);
       setFiados(f);
     } catch { toast.error('Erro ao carregar dados'); }
     setLoading(false);

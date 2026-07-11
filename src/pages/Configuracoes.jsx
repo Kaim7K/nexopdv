@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Save, Store, Hash, MapPin, Image, Layers } from 'lucide-react';
 
@@ -12,7 +12,7 @@ export default function Configuracoes() {
 
   const loadConfigs = async () => {
     try {
-      const data = await base44.entities.SystemConfig.list();
+      const data = await nexoApi.entities.SystemConfig.list();
       const map = {};
       data.forEach(c => { map[c.key] = c; });
       setConfigs(map);
@@ -35,9 +35,9 @@ export default function Configuracoes() {
       for (const key of Object.keys(configs)) {
         const cfg = configs[key];
         if (cfg.id) {
-          await base44.entities.SystemConfig.update(cfg.id, { value: cfg.value });
+          await nexoApi.entities.SystemConfig.update(cfg.id, { value: cfg.value });
         } else {
-          await base44.entities.SystemConfig.create({ key: cfg.key, value: cfg.value, label: cfg.label || cfg.key });
+          await nexoApi.entities.SystemConfig.create({ key: cfg.key, value: cfg.value, label: cfg.label || cfg.key });
         }
       }
       toast.success('Configurações salvas');

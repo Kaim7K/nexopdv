@@ -1,3 +1,178 @@
-import React,{useEffect,useState} from 'react';
-import {base44} from '@/api/base44Client';import {toast} from 'react-hot-toast';import {UserPlus,Shield,User,Mail,Pencil,X} from 'lucide-react';import EditUserModal from '@/components/users/EditUserModal';
-export default function Usuarios(){const [users,setUsers]=useState([]),[loading,setLoading]=useState(true),[show,setShow]=useState(false),[edit,setEdit]=useState(null),[saving,setSaving]=useState(false),[form,setForm]=useState({full_name:'',email:'',password:'',role:'vendedor'});const load=async()=>{setLoading(true);try{setUsers(await base44.entities.User.list())}catch(e){toast.error(e.message)}finally{setLoading(false)}};useEffect(()=>{load()},[]);const create=async e=>{e.preventDefault();if(form.password.length<8){toast.error('A senha deve ter ao menos 8 caracteres');return}setSaving(true);try{await base44.users.create(form);toast.success('Funcionário criado');setShow(false);setForm({full_name:'',email:'',password:'',role:'vendedor'});load()}catch(err){toast.error(err.message)}finally{setSaving(false)}};return <div className="p-4 sm:p-6"><div className="flex flex-wrap gap-3 justify-between mb-6"><div><h1 className="text-2xl font-bold">Usuários</h1><p className="text-sm text-muted-foreground">{users.length} funcionários cadastrados</p></div><button onClick={()=>setShow(true)} className="flex gap-2 px-4 py-2 bg-accent text-white rounded-lg"><UserPlus className="w-4"/>Novo funcionário</button></div>{loading?<p className="text-center p-12">Carregando...</p>:<div className="grid gap-3">{users.map(u=><div key={u.id} className="bg-card border rounded-lg p-4 flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-secondary grid place-items-center">{['admin','gerente'].includes(u.role)?<Shield className="w-5"/>:<User className="w-5"/>}</div><div className="flex-1 min-w-0"><b>{u.full_name||u.email}</b><div className="text-xs text-muted-foreground flex gap-1 truncate"><Mail className="w-3"/>{u.email} · {u.role}</div></div><button onClick={()=>setEdit(u)} className="border rounded-lg p-2 flex gap-1 text-sm"><Pencil className="w-4"/><span className="hidden sm:inline">Editar</span></button></div>)}</div>}{edit&&<EditUserModal user={edit} onClose={()=>setEdit(null)} onSaved={load}/>} {show&&<div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4" onMouseDown={e=>e.target===e.currentTarget&&setShow(false)}><form onSubmit={create} className="bg-card rounded-xl p-6 w-full max-w-sm space-y-3"><div className="flex justify-between"><h2 className="font-bold text-lg">Novo funcionário</h2><button type="button" onClick={()=>setShow(false)}><X className="w-5"/></button></div><label className="text-xs block">Nome<input required value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})} className="block border rounded p-2 mt-1 w-full"/></label><label className="text-xs block">Email<input required type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="block border rounded p-2 mt-1 w-full"/></label><label className="text-xs block">Senha inicial<input required minLength={8} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} className="block border rounded p-2 mt-1 w-full"/></label><label className="text-xs block">Perfil<select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} className="block border rounded p-2 mt-1 w-full"><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option><option value="admin">Administrador</option></select></label><button disabled={saving} className="w-full bg-accent text-white rounded-lg p-2 disabled:opacity-50">{saving?'Criando...':'Criar funcionário'}</button></form></div>}</div>}
+import React, { useEffect, useState } from "react";
+import { nexoApi } from "@/api/nexoApi";
+import { toast } from "react-hot-toast";
+import { UserPlus, Shield, User, Mail, Pencil, X } from "lucide-react";
+import EditUserModal from "@/components/users/EditUserModal";
+export default function Usuarios() {
+  const [users, setUsers] = useState([]),
+    [loading, setLoading] = useState(true),
+    [show, setShow] = useState(false),
+    [edit, setEdit] = useState(null),
+    [saving, setSaving] = useState(false),
+    [form, setForm] = useState({
+      full_name: "",
+      email: "",
+      password: "",
+      role: "vendedor",
+    });
+  const load = async () => {
+    setLoading(true);
+    try {
+      setUsers(await nexoApi.entities.User.list());
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const create = async (e) => {
+    e.preventDefault();
+    if (form.password.length < 8) {
+      toast.error("A senha deve ter ao menos 8 caracteres");
+      return;
+    }
+    setSaving(true);
+    try {
+      await nexoApi.users.create(form);
+      toast.success("Funcionário criado");
+      setShow(false);
+      setForm({ full_name: "", email: "", password: "", role: "vendedor" });
+      load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-wrap gap-3 justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Usuários</h1>
+          <p className="text-sm text-muted-foreground">
+            {users.length} funcionários cadastrados
+          </p>
+        </div>
+        <button
+          onClick={() => setShow(true)}
+          className="flex gap-2 px-4 py-2 bg-accent text-white rounded-lg"
+        >
+          <UserPlus className="w-4" />
+          Novo funcionário
+        </button>
+      </div>
+      {loading ? (
+        <p className="text-center p-12">Carregando...</p>
+      ) : (
+        <div className="grid gap-3">
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="bg-card border rounded-lg p-4 flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary grid place-items-center">
+                {["admin", "gerente"].includes(u.role) ? (
+                  <Shield className="w-5" />
+                ) : (
+                  <User className="w-5" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <b>{u.full_name || u.email}</b>
+                <div className="text-xs text-muted-foreground flex gap-1 truncate">
+                  <Mail className="w-3" />
+                  {u.email} · {u.role}
+                </div>
+              </div>
+              <button
+                onClick={() => setEdit(u)}
+                className="border rounded-lg p-2 flex gap-1 text-sm"
+              >
+                <Pencil className="w-4" />
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {edit && (
+        <EditUserModal
+          user={edit}
+          onClose={() => setEdit(null)}
+          onSaved={load}
+        />
+      )}{" "}
+      {show && (
+        <div
+          className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4"
+          onMouseDown={(e) => e.target === e.currentTarget && setShow(false)}
+        >
+          <form
+            onSubmit={create}
+            className="bg-card rounded-xl p-6 w-full max-w-sm space-y-3"
+          >
+            <div className="flex justify-between">
+              <h2 className="font-bold text-lg">Novo funcionário</h2>
+              <button type="button" onClick={() => setShow(false)}>
+                <X className="w-5" />
+              </button>
+            </div>
+            <label className="text-xs block">
+              Nome
+              <input
+                required
+                value={form.full_name}
+                onChange={(e) =>
+                  setForm({ ...form, full_name: e.target.value })
+                }
+                className="block border rounded p-2 mt-1 w-full"
+              />
+            </label>
+            <label className="text-xs block">
+              Email
+              <input
+                required
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="block border rounded p-2 mt-1 w-full"
+              />
+            </label>
+            <label className="text-xs block">
+              Senha inicial
+              <input
+                required
+                minLength={8}
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="block border rounded p-2 mt-1 w-full"
+              />
+            </label>
+            <label className="text-xs block">
+              Perfil
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className="block border rounded p-2 mt-1 w-full"
+              >
+                <option value="vendedor">Vendedor</option>
+                <option value="gerente">Gerente</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </label>
+            <button
+              disabled={saving}
+              className="w-full bg-accent text-white rounded-lg p-2 disabled:opacity-50"
+            >
+              {saving ? "Criando..." : "Criar funcionário"}
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}

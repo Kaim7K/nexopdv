@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Edit3, LayoutGrid } from 'lucide-react';
 import ProductSearch from '@/components/pdv/ProductSearch';
@@ -59,7 +59,7 @@ export default function PDV() {
   const loadProducts = async () => {
     setProductsLoading(true);
     try {
-      const data = await base44.entities.Product.list('-updated_date', 500);
+      const data = await nexoApi.entities.Product.list('-updated_date', 500);
       setProducts(data.filter(p => p.status === 'ativo'));
     } catch { toast.error('Erro ao carregar produtos'); }
     setProductsLoading(false);
@@ -67,14 +67,14 @@ export default function PDV() {
 
   const loadMaxMinimized = async () => {
     try {
-      const configs = await base44.entities.SystemConfig.filter({ key: 'limite_vendas_minimizadas' });
+      const configs = await nexoApi.entities.SystemConfig.filter({ key: 'limite_vendas_minimizadas' });
       if (configs.length > 0) setMaxMinimized(parseInt(configs[0].value) || 3);
     } catch {}
   };
 
   const getNextSaleNumber = async () => {
     try {
-      const data = await base44.sales.nextNumber();
+      const data = await nexoApi.sales.nextNumber();
       setSaleNumber(data.sale_number);
     } catch {}
   };
@@ -177,10 +177,10 @@ export default function PDV() {
     const product = products.find(p => p.id === item.product_id);
     if (!product) return;
     const oldPrice = product.sale_price;
-    await base44.entities.Product.update(product.id, { sale_price: newPrice });
+    await nexoApi.entities.Product.update(product.id, { sale_price: newPrice });
     setActiveSale(prev => ({ ...prev, items: prev.items.map((it, i) => i === idx ? { ...it, unit_price: newPrice, subtotal: (it.weight || it.quantity) * newPrice } : it) }));
-    await base44.entities.ProductAudit.create({ product_id: product.id, product_name: product.name, field_changed: 'sale_price', previous_value: String(oldPrice), new_value: String(newPrice), user_id: user.id, user_name: user.full_name || user.email, change_origin: 'valor_errado', sale_number: saleNumber, observation: 'Correção de valor na tela de vendas' });
-    await base44.entities.GeneralAudit.create({ action_type: 'alteracao_preco', entity_type: 'product', entity_id: product.id, user_id: user.id, user_name: user.full_name || user.email, description: `Preço de ${product.name} alterado de ${formatCurrency(oldPrice)} para ${formatCurrency(newPrice)}`, details: JSON.stringify({ old: oldPrice, new: newPrice, sale_number: saleNumber }) });
+    await nexoApi.entities.ProductAudit.create({ product_id: product.id, product_name: product.name, field_changed: 'sale_price', previous_value: String(oldPrice), new_value: String(newPrice), user_id: user.id, user_name: user.full_name || user.email, change_origin: 'valor_errado', sale_number: saleNumber, observation: 'Correção de valor na tela de vendas' });
+    await nexoApi.entities.GeneralAudit.create({ action_type: 'alteracao_preco', entity_type: 'product', entity_id: product.id, user_id: user.id, user_name: user.full_name || user.email, description: `Preço de ${product.name} alterado de ${formatCurrency(oldPrice)} para ${formatCurrency(newPrice)}`, details: JSON.stringify({ old: oldPrice, new: newPrice, sale_number: saleNumber }) });
     toast.success('Valor atualizado e auditoria registrada');
     setShowPriceCorrection(false);
     loadProducts();
@@ -210,7 +210,7 @@ export default function PDV() {
 
   const completeSale = async (paymentData) => {
     try {
-      const sale = await base44.sales.complete({ ...activeSale, ...paymentData });
+      const sale = await nexoApi.sales.complete({ ...activeSale, ...paymentData });
       setShowPayment(false); setShowReceipt(sale); setActiveSale(EMPTY_SALE); setSearchQuery('');
       loadProducts(); getNextSaleNumber();
     } catch (error) { toast.error(error.message || 'Erro ao concluir venda'); }
