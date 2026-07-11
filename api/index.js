@@ -42,9 +42,18 @@ async function routeHandler(req, res) {
   if (!process.env.DATABASE_URL) return send(res, 503, { message: 'Configure DATABASE_URL na Vercel.' });
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) return send(res, 503, { message: 'Configure JWT_SECRET com pelo menos 32 caracteres.' });
   const sql = neon(process.env.DATABASE_URL);
-  await init(sql);
   const routedPath = req.query.path || req.url.split('?')[0].replace(/^\/api(?:\/index)?/, '');
   const path = String(routedPath || '/').split('/').filter(Boolean);
+  if (path[0] === 'health') {
+    await sql`SELECT 1 AS connected`;
+    return send(res, 200, {
+      ok: true,
+      database: 'connected',
+      jwt: 'configured',
+      superAdmin: Boolean(process.env.SUPER_ADMIN_EMAIL && process.env.SUPER_ADMIN_PASSWORD),
+    });
+  }
+  await init(sql);
 
   if (path[0] === 'auth' && path[1] === 'login' && req.method === 'POST') {
     const rows = await sql`SELECT * FROM users WHERE lower(email)=lower(${req.body.email || ''}) AND active=true`;
@@ -196,6 +205,11 @@ export default async function handler(req, res) {
     console.error('API error', error);
     if (error?.code === '23505') return send(res, 409, { message: 'Já existe um registro com esses dados.' });
     if (error?.code === '23503') return send(res, 409, { message: 'O registro está em uso e não pode ser removido.' });
-    return send(res, 500, { message: 'Não foi possível concluir a operação.' });
+    const detail = String(error?.message || '');
+    if (/ENOTFOUND|fetch failed|invalid.*url|connection string/i.test(detail)) return send(res, 503, { code:'DATABASE_CONNECTION', message:'A DATABASE_URL é inválida ou o servidor do banco não está acessível.' });
+    if (error?.code === '28P01' || /password authentication failed/i.test(detail)) return send(res, 503, { code:'DATABASE_AUTH', message:'O PostgreSQL recusou o usuário ou a senha da DATABASE_URL.' });
+    if (error?.code === '3D000') return send(res, 503, { code:'DATABASE_NOT_FOUND', message:'O banco informado na DATABASE_URL não existe.' });
+    if (error?.code === '42501') return send(res, 503, { code:'DATABASE_PERMISSION', message:'O usuário do PostgreSQL não possui permissão para preparar as tabelas.' });
+    return send(res, 500, { code:'INTERNAL_ERROR', message:'Não foi possível preparar o banco de dados. Consulte os logs da função api/index.' });
   }
 }
