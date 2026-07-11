@@ -63,7 +63,8 @@ export default function ImageUploadField({
       onChange(blob.url);
       toast.success('Imagem enviada.');
     } catch (error) {
-      toast.error(error.code === 'BLOB_NOT_CONFIGURED' ? blobHelp : error.message || 'Não foi possível enviar a imagem.');
+      const message = String(error?.message || '');
+      toast.error(error.code === 'BLOB_NOT_CONFIGURED' || /unavailable|503|blob/i.test(message) ? blobHelp : message || 'Não foi possível enviar a imagem.');
     } finally {
       setUploading(false);
       setProgress(0);

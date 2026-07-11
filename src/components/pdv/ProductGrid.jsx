@@ -15,7 +15,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
     return products.filter(p => {
       const matchCat = !category || p.category === category;
       const q = localSearch.toLowerCase();
-      const matchSearch = !q || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
+      const matchSearch = !q || String(p.name || '').toLowerCase().includes(q) || String(p.barcode || '').includes(q);
       return matchCat && matchSearch;
     }).slice(0, 100);
   }, [products, category, localSearch]);
@@ -77,8 +77,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
               <button
                 key={product.id}
                 onClick={() => onSelect(product)}
-                disabled={product.quantity <= 0}
-                className="group flex flex-col bg-card rounded-xl border border-border p-2.5 text-left hover:border-accent hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:shadow-none"
+                className="group flex flex-col bg-card rounded-xl border border-border p-2.5 text-left hover:border-accent hover:shadow-md transition-all"
               >
                 <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden mb-2">
                   {product.image_url ? (

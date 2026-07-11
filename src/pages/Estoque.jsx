@@ -69,12 +69,15 @@ export default function Estoque() {
   ), [products]);
 
   const filtered = useMemo(() => {
+    const searchText = search.toLowerCase();
+    const min = minPrice === '' ? null : Number(minPrice);
+    const max = maxPrice === '' ? null : Number(maxPrice);
     const visible = products.filter(product => (
-      (!search || [product.name, product.category, product.barcode, product.internal_code].some(value => String(value || '').toLowerCase().includes(search.toLowerCase())))
+      (!searchText || [product.name, product.category, product.barcode, product.internal_code].some(value => String(value || '').toLowerCase().includes(searchText)))
       && (!category || product.category === category)
-      && (!minPrice || Number(product.sale_price) >= Number(minPrice))
-      && (!maxPrice || Number(product.sale_price) <= Number(maxPrice))
-      && (stock === 'todos' || (stock === 'disponivel' ? Number(product.quantity) > 0 : Number(product.quantity) <= 0))
+      && (min === null || Number(product.sale_price || 0) >= min)
+      && (max === null || Number(product.sale_price || 0) <= max)
+      && (stock === 'todos' || (stock === 'disponivel' ? Number(product.quantity || 0) > 0 : Number(product.quantity || 0) <= 0))
     ));
 
     const column = COLUMNS.find(([key]) => key === sort.key);
@@ -109,6 +112,7 @@ export default function Estoque() {
 
   const saveInline = async () => {
     const changed = products.filter(product => dirty.has(product.id));
+    if (!changed.length) return;
     if (changed.some(product => !product.name?.trim() || Number(product.sale_price) < 0 || Number(product.quantity) < 0)) {
       toast.error('Revise nome, preço e quantidade dos produtos alterados.');
       return;

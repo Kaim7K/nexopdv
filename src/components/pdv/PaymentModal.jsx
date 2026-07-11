@@ -18,6 +18,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   const [showFiadoForm, setShowFiadoForm] = useState((sale.payments || []).some(payment => payment.method === 'fiado'));
   const [fiadoData, setFiadoData] = useState(sale.fiado || { responsible_name: '', phone: '', observation: '' });
   const [focusIndex, setFocusIndex] = useState(null);
+  const [completing, setCompleting] = useState(false);
   const amountRefs = useRef([]);
 
   const { subtotal, discount, total } = calculateSaleTotals(sale);
@@ -63,20 +64,30 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
     if (payment.method === 'fiado') setShowFiadoForm(false);
   };
 
+  const completeOnce = async payload => {
+    if (completing) return;
+    setCompleting(true);
+    try {
+      await onComplete(payload);
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const handleComplete = () => {
     if (hasFiado) {
       if (!fiadoData.responsible_name.trim()) {
         toast.error('Nome do responsável é obrigatório para venda fiado.');
         return;
       }
-      onComplete({ payments, observation, sale_type: 'fiado', fiado: fiadoData });
+      completeOnce({ payments, observation, sale_type: 'fiado', fiado: fiadoData });
       return;
     }
     if (remaining > 0.01) {
       toast.error(`Pagamento incompleto. Falta ${formatCurrency(remaining)}.`);
       return;
     }
-    onComplete({ payments, observation, sale_type: 'normal' });
+    completeOnce({ payments, observation, sale_type: 'normal' });
   };
 
   return (
@@ -194,9 +205,9 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border px-5 py-4 sm:flex-row sm:px-7">
-          <button onClick={onDiscard} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /> Descartar</button>
-          <button onClick={() => onMinimize({ payments, observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted"><Minimize2 className="h-5 w-5" /> Minimizar</button>
-          <button onClick={handleComplete} disabled={!payments.length} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> Concluir venda</button>
+          <button onClick={onDiscard} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-5 w-5" /> Descartar</button>
+          <button onClick={() => onMinimize({ payments, observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-5 w-5" /> Minimizar</button>
+          <button onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
         </div>
       </div>
     </div>

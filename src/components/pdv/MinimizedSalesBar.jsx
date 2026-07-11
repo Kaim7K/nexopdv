@@ -31,10 +31,18 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard, onReord
               return (
                 <Draggable key={String(sale._localId)} draggableId={String(sale._localId)} index={index}>
                   {(dragProvided, snapshot) => (
-                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} {...dragProvided.dragHandleProps} style={dragProvided.draggableProps.style} className={`relative cursor-grab rounded-xl shadow-lg active:cursor-grabbing ${snapshot.isDragging ? 'ring-2 ring-white/70' : ''}`}>
-                      <button
-                        type="button"
+                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} style={dragProvided.draggableProps.style} className={`relative rounded-xl shadow-lg ${snapshot.isDragging ? 'ring-2 ring-white/70' : ''}`}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        {...dragProvided.dragHandleProps}
                         onClick={() => onRestore(index)}
+                        onKeyDown={event => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onRestore(index);
+                          }
+                        }}
                         className={`${color} flex min-h-[104px] w-full flex-col items-center justify-center rounded-xl px-2 py-3 text-white transition hover:brightness-110`}
                         title="Abrir esta venda sem precisar minimizar a atual"
                       >
@@ -42,7 +50,7 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard, onReord
                         <span className="text-2xl font-black">#{sale.temporary_number}</span>
                         <span className="text-[11px] opacity-90">{sale.items?.length || 0} itens</span>
                         <span className="mt-1 text-sm font-black tabular-nums">{formatCurrency(total)}</span>
-                      </button>
+                      </div>
                       <button
                         type="button"
                         aria-label="Descartar venda aberta"

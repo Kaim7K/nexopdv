@@ -16,6 +16,10 @@ const MENU_ITEMS = [
   { path: '/admin/mercados', label: 'Mercados', icon: Users, roles: ['super_admin'] },
 ];
 
+const ROUTE_ACCESS_ALIASES = {
+  '/produto': '/estoque',
+};
+
 function hexToHsl(hex) {
   const value = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex.slice(1) : '16a06a';
   const [r,g,b] = [0,2,4].map(index => parseInt(value.slice(index,index+2),16)/255);
@@ -69,7 +73,8 @@ export default function Layout() {
 
   const enabled = user.enabled_modules || [];
   const filteredItems = MENU_ITEMS.filter(item => item.roles.includes(user.role) && (user.role === 'super_admin' || enabled.includes(item.path.split('/')[1])));
-  const currentItem = MENU_ITEMS.find(item => location.pathname.startsWith(item.path));
+  const accessPath = Object.entries(ROUTE_ACCESS_ALIASES).find(([path]) => location.pathname.startsWith(path))?.[1] || location.pathname;
+  const currentItem = MENU_ITEMS.find(item => accessPath.startsWith(item.path));
   const hasAccess = currentItem && filteredItems.some(item => item.path === currentItem.path);
 
   if (!hasAccess) {

@@ -23,15 +23,27 @@ const createEmptySale = () => ({
   sale_type: 'normal',
 });
 
+const readSavedPdv = key => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(key) || 'null');
+    return saved && typeof saved === 'object' ? saved : null;
+  } catch {
+    return null;
+  }
+};
+
 const Kbd = ({ children }) => (
   <kbd className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs font-bold leading-none">{children}</kbd>
 );
 
 export default function PDV() {
   const { user, config } = /** @type {any} */ (useOutletContext());
+  const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
+  const savedDraft = readSavedPdv(draftStorageKey);
   const [products, setProducts] = useState([]);
-  const [activeSale, setActiveSale] = useState(createEmptySale);
-  const [minimizedSales, setMinimizedSales] = useState([]);
+  const [activeSale, setActiveSale] = useState(() => savedDraft?.activeSale || createEmptySale());
+  const [minimizedSales, setMinimizedSales] = useState(() => Array.isArray(savedDraft?.minimizedSales) ? savedDraft.minimizedSales : []);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -54,6 +66,24 @@ export default function PDV() {
   }, []);
 
   useEffect(() => {
+    const highestTemporary = Math.max(0, ...minimizedSales.map(sale => Number(sale.temporary_number || 0)), Number(activeSale.temporary_number || 0));
+    nextMinimizedId.current = Math.max(nextMinimizedId.current, highestTemporary + 1);
+  }, []);
+
+  useEffect(() => {
+    const hasDraft = activeSale.items.length || minimizedSales.length;
+    if (!hasDraft) {
+      window.localStorage.removeItem(draftStorageKey);
+      return;
+    }
+    window.localStorage.setItem(draftStorageKey, JSON.stringify({
+      activeSale,
+      minimizedSales,
+      savedAt: new Date().toISOString(),
+    }));
+  }, [activeSale, minimizedSales, draftStorageKey]);
+
+  useEffect(() => {
     const handler = event => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) setShowResults(false);
     };
@@ -68,10 +98,10 @@ export default function PDV() {
     }
     const query = searchQuery.toLowerCase();
     setSearchResults(products.filter(product => (
-      product.name.toLowerCase().includes(query)
-      || (product.category && product.category.toLowerCase().includes(query))
-      || (product.barcode && product.barcode.includes(query))
-      || (product.internal_code && product.internal_code.toLowerCase().includes(query))
+      String(product.name || '').toLowerCase().includes(query)
+      || String(product.category || '').toLowerCase().includes(query)
+      || String(product.barcode || '').includes(query)
+      || String(product.internal_code || '').toLowerCase().includes(query)
     )).slice(0, 10));
     setShowResults(true);
   }, [searchQuery, products]);
@@ -168,7 +198,7 @@ export default function PDV() {
       addProductToSale(exact);
       return;
     }
-    const nameMatch = products.find(product => product.name.toLowerCase() === code.toLowerCase());
+    const nameMatch = products.find(product => String(product.name || '').toLowerCase() === code.toLowerCase());
     if (nameMatch) {
       addProductToSale(nameMatch);
       return;
