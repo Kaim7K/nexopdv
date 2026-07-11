@@ -5,12 +5,11 @@ import { nexoApi } from '@/api/nexoApi';
 
 const providerLabel = image => {
   if (image.provider === 'google-cse') return 'Google';
-  if (image.background === 'transparent') return 'Transparente';
-  if (image.background === 'white') return 'Fundo branco';
-  return 'Catalogo';
+  if (image.provider === 'open-food-facts-barcode') return 'Código de barras';
+  return 'Catálogo';
 };
 
-const EMPTY_MESSAGE = 'Nenhuma imagem adequada foi encontrada para este produto. Tente revisar o nome, código de barras ou categoria.';
+const EMPTY_MESSAGE = 'Nenhuma imagem foi encontrada. Revise o código de barras ou o nome do produto.';
 
 export default function ProductImageSearch({ barcode, productName, category, onSelect, onClose }) {
   const [images, setImages] = useState([]);
@@ -21,6 +20,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
   const [hasMore, setHasMore] = useState(false);
   const [preview, setPreview] = useState(null);
   const [providers, setProviders] = useState(null);
+  const [queryMode, setQueryMode] = useState('');
 
   const loadImages = async (pageNumber, append = false) => {
     setLoading(true);
@@ -32,6 +32,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
         page: pageNumber,
       });
       setProviders(data.providers || null);
+      setQueryMode(data.queryMode || '');
       setHasMore(Boolean(data.hasMore));
       setPage(pageNumber);
       setImages(current => {
@@ -61,12 +62,6 @@ export default function ProductImageSearch({ barcode, productName, category, onS
       onClose();
       toast.success('Imagem salva no produto.');
     } catch (error) {
-      if (error.code === 'BLOB_NOT_CONFIGURED' || error.status === 503) {
-        onSelect(selected.url);
-        onClose();
-        toast.success('Imagem vinculada por URL. Conecte o Vercel Blob depois para armazenar uma cópia própria.');
-        return;
-      }
       toast.error(error.message || 'Não foi possível salvar a imagem selecionada.');
     } finally {
       setSaving(false);
@@ -82,7 +77,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
               <ImageIcon className="h-5 w-5 text-accent" /> Buscar imagem do produto
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Busca comum do Google Imagens. Quando houver código de barras, ele entra primeiro na pesquisa.
+              Primeiro buscamos qualquer imagem pelo código de barras. Se não houver resultado, buscamos pelo nome do produto.
             </p>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -91,6 +86,11 @@ export default function ProductImageSearch({ barcode, productName, category, onS
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+          {queryMode && images.length > 0 && (
+            <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-semibold text-accent">
+              {queryMode === 'barcode' ? 'Resultados encontrados pelo código de barras.' : 'Nenhum resultado pelo código de barras. Mostrando resultados pelo nome do produto.'}
+            </div>
+          )}
           {loading && images.length === 0 ? (
             <div className="flex min-h-64 items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Buscando imagens...

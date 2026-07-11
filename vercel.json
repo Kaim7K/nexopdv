@@ -18,7 +18,7 @@
       "destination": "/api/sitemap.xml"
     },
     {
-      "source": "/((?!api/|assets/|landing/|manifest.json|robots.txt|sitemap.xml|nexo-icon.svg|nexo-pdv-og.png).*)",
+      "source": "/((?!api/|assets/|landing/|brand/|manifest.json|robots.txt|sitemap.xml|nexo-icon.svg|nexo-pdv-og.png).*)",
       "destination": "/index.html"
     }
   ],
@@ -44,7 +44,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://vercel-storage.com https://*.vercel-storage.com; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://vercel-storage.com https://*.vercel-storage.com; upgrade-insecure-requests"
         }
       ]
     },

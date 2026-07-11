@@ -17,9 +17,9 @@ const [api, form, imageUpload, stock, payment, minimized, pdv, reports, layout, 
 ]);
 
 assert.match(api, /product-images.*search/s, 'A API deve expor busca de imagens.');
-assert.match(api, /media.*upload/s, 'A API deve expor upload de imagens.');
 assert.match(form, /ImageUploadField/, 'O formulário deve usar o campo compartilhado de upload.');
-assert.match(imageUpload, /@vercel\/blob\/client/, 'O campo de imagem deve usar upload direto para o Blob.');
+assert.match(imageUpload, /optimizeImageFile/, 'O campo de imagem deve otimizar o arquivo local antes de salvar.');
+assert.doesNotMatch(imageUpload, /@vercel\/blob\/client/, 'O upload local não deve depender do Vercel Blob.');
 assert.match(form, /Criar e duplicar/, 'O cadastro completo deve permitir criar e duplicar.');
 assert.match(stock, /toggleSort/, 'O estoque deve permitir ordenação de colunas.');
 assert.match(stock, /mode: 'duplicate'/, 'O estoque deve permitir duplicar produtos.');
@@ -29,7 +29,8 @@ assert.match(minimized, /DragDropContext/, 'Vendas minimizadas devem permitir re
 assert.match(pdv, /nextMinimized = minimizedSales\.map/, 'A venda atual deve ser trocada sem exigir nova minimização manual.');
 assert.doesNotMatch(reports, /bg-white/, 'Relatórios não devem forçar cartões brancos no tema escuro.');
 assert.doesNotMatch(layout, /active \? 'text-sidebar-primary'/, 'O ícone ativo não pode perder contraste no menu.');
-assert.match(search, /background: 'transparent'/, 'A busca deve tentar imagens transparentes.');
-assert.match(search, /background: 'white'/, 'A busca deve usar fundo branco como alternativa.');
+assert.match(search, /searchGoogleImages\(context\.barcode/, 'A busca deve consultar primeiro o código de barras.');
+assert.match(search, /searchGoogleImages\(context\.name/, 'Sem resultado pelo código, a busca deve consultar o nome do produto.');
+assert.doesNotMatch(search, /imageGeometryScore|productSimilarity/, 'A busca não deve filtrar imagens por adequação, formato ou similaridade.');
 
 console.log('Teste das novas funcionalidades aprovado.');

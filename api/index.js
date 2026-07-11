@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import { handleUpload } from '@vercel/blob/client';
 import { assertDatabaseReady, CURRENT_SCHEMA_VERSION, getDb } from '../server/db.js';
 import {
   authenticateCredentials,
@@ -11,7 +10,7 @@ import {
 import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
 import { AppError } from '../server/errors.js';
 import { searchProductImages } from '../server/product-images.js';
-import { IMAGE_UPLOAD_KINDS, importRemoteProductImage, PRODUCT_IMAGE_UPLOAD_RULES } from '../server/media.js';
+import { importRemoteProductImage } from '../server/media.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -26,6 +25,21 @@ const PRODUCT_UNITS = new Set(['unidade','peso','pacote']);
 const PRODUCT_STATUSES = new Set(['ativo','inativo']);
 
 const text = (value, max = 500) => String(value ?? '').trim().slice(0, max);
+const MAX_INLINE_IMAGE_LENGTH = 1_650_000;
+
+function normalizeImageValue(value) {
+  const image = String(value ?? '').trim();
+  if (!image) return '';
+  if (/^https:\/\//i.test(image)) {
+    if (image.length > 2048) throw new AppError(400, 'INVALID_IMAGE', 'O endereço da imagem é muito longo.');
+    return image;
+  }
+  if (/^data:image\/(jpeg|png|webp|avif);base64,[a-z0-9+/=\s]+$/i.test(image)) {
+    if (image.length > MAX_INLINE_IMAGE_LENGTH) throw new AppError(413, 'IMAGE_TOO_LARGE', 'A imagem otimizada ultrapassa o tamanho permitido.');
+    return image.replace(/\s+/g, '');
+  }
+  throw new AppError(400, 'INVALID_IMAGE', 'A imagem informada não é válida.');
+}
 const roundMoney = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 function normalizeProductPayload(data, partial = false) {
@@ -37,7 +51,8 @@ function normalizeProductPayload(data, partial = false) {
       clean[field] = source[field] === null || source[field] === '' ? (field === 'cost_price' ? null : 0) : Number(source[field]);
     } else if (field === 'unit') clean[field] = PRODUCT_UNITS.has(source[field]) ? source[field] : 'unidade';
     else if (field === 'status') clean[field] = PRODUCT_STATUSES.has(source[field]) ? source[field] : 'ativo';
-    else clean[field] = text(source[field], field === 'image_url' ? 2048 : 180);
+    else if (field === 'image_url') clean[field] = normalizeImageValue(source[field]);
+    else clean[field] = text(source[field], 180);
   }
   return clean;
 }
@@ -191,37 +206,6 @@ async function routeHandler(req, res) {
     return send(res, 200, result);
   }
 
-  if (path[0] === 'media' && path[1] === 'upload') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-    if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
-      throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'O armazenamento de imagens ainda não foi conectado. Na Vercel, abra Storage, crie/conecte um Blob Store ao projeto e redeploye para gerar BLOB_READ_WRITE_TOKEN.');
-    }
-    const json = await handleUpload({
-      body: req.body,
-      request: req,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
-        let payload = {};
-        try { payload = clientPayload ? JSON.parse(clientPayload) : {}; } catch { payload = {}; }
-        const kind = IMAGE_UPLOAD_KINDS[payload.kind] ? payload.kind : '';
-        if (!kind) throw new AppError(400, 'INVALID_UPLOAD_KIND', 'Tipo de upload inválido.');
-        if (kind === 'market' && user.role !== 'super_admin' && !['admin','gerente'].includes(user.role)) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar logo do mercado.');
-        if (kind === 'user' && !['admin','gerente','super_admin'].includes(user.role)) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar foto de usuário.');
-        if (kind === 'product' && (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))))) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar imagens de produtos.');
-        const scope = user.market_id || user.id;
-        const prefix = `${IMAGE_UPLOAD_KINDS[kind]}/${scope}/`;
-        if (!String(pathname || '').startsWith(prefix)) throw new AppError(400, 'INVALID_UPLOAD_PATH', 'Destino de upload inválido.');
-        return {
-          ...PRODUCT_IMAGE_UPLOAD_RULES,
-          addRandomSuffix: true,
-          cacheControlMaxAge: 60 * 60 * 24 * 365,
-          tokenPayload: JSON.stringify({ userId: user.id, marketId: user.market_id, kind }),
-        };
-      },
-      onUploadCompleted: async () => {},
-    });
-    return send(res, 200, json);
-  }
-
   if (path[0] === 'media' && path[1] === 'import') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
@@ -248,7 +232,8 @@ async function routeHandler(req, res) {
       const modules = req.body.enabled_modules || ['pdv','estoque','vendas','fiados','relatorios','auditoria','usuarios','configuracoes'];
       if (!Array.isArray(modules) || modules.some(module => !MARKET_MODULES.includes(module))) return send(res, 400, { message: 'Módulos inválidos.' });
       const hash = await bcrypt.hash(req.body.admin_password, 12);
-      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules) VALUES(${marketName},${marketSlug},${req.body.logo_url || ''},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
+      const logoUrl = normalizeImageValue(req.body.logo_url || '');
+      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#17a06a'},${req.body.secondary_color || '#1e2532'},${JSON.stringify(modules)}::jsonb) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
       return send(res, 201, market);
     }
     if (req.method === 'PATCH') {
@@ -259,7 +244,8 @@ async function routeHandler(req, res) {
       if (b.name !== undefined && !updatedName) return send(res, 400, { message: 'Nome do mercado é obrigatório.' });
       if (b.primary_color && !/^#[0-9a-f]{6}$/i.test(b.primary_color)) return send(res, 400, { message: 'Cor principal inválida.' });
       if (b.secondary_color && !/^#[0-9a-f]{6}$/i.test(b.secondary_color)) return send(res, 400, { message: 'Cor secundária inválida.' });
-      const [market] = await sql`UPDATE nexo.markets SET name=COALESCE(${updatedName},name), logo_url=COALESCE(${b.logo_url ?? null},logo_url), primary_color=COALESCE(${b.primary_color || null},primary_color), secondary_color=COALESCE(${b.secondary_color || null},secondary_color), enabled_modules=COALESCE(${b.enabled_modules ? JSON.stringify(b.enabled_modules) : null}::jsonb,enabled_modules), active=COALESCE(${typeof b.active === 'boolean' ? b.active : null},active), updated_date=now() WHERE id=${id} RETURNING *`;
+      const logoUrl = b.logo_url === undefined ? null : normalizeImageValue(b.logo_url);
+      const [market] = await sql`UPDATE nexo.markets SET name=COALESCE(${updatedName},name), logo_url=COALESCE(${logoUrl},logo_url), primary_color=COALESCE(${b.primary_color || null},primary_color), secondary_color=COALESCE(${b.secondary_color || null},secondary_color), enabled_modules=COALESCE(${b.enabled_modules ? JSON.stringify(b.enabled_modules) : null}::jsonb,enabled_modules), active=COALESCE(${typeof b.active === 'boolean' ? b.active : null},active), updated_date=now() WHERE id=${id} RETURNING *`;
       return send(res, market ? 200 : 404, market || { message: 'Mercado não encontrado.' });
     }
   }
@@ -272,7 +258,8 @@ async function routeHandler(req, res) {
     if (user.role === 'gerente' && (req.body.role || 'vendedor') !== 'vendedor') return send(res, 403, { message: 'Gerentes podem criar apenas usuários vendedores.' });
     const hash = await bcrypt.hash(req.body.password, 12);
     const email = String(req.body.email).trim().toLowerCase();
-    const [created] = await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${req.body.photo_url || null}) RETURNING id,email,full_name,role,photo_url`;
+    const photoUrl = req.body.photo_url ? normalizeImageValue(req.body.photo_url) : null;
+    const [created] = await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl}) RETURNING id,email,full_name,role,photo_url`;
     return send(res, 201, created);
   }
   if (path[0] === 'sales' && path[1] === 'next' && req.method === 'GET') {
@@ -500,7 +487,8 @@ async function routeHandler(req, res) {
         }
         const fullName = req.body.full_name === undefined ? null : text(req.body.full_name, 180);
         if (req.body.full_name !== undefined && !fullName) return send(res, 400, { message: 'Nome do usuário é obrigatório.' });
-        const [u] = await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${req.body.photo_url === undefined ? null : text(req.body.photo_url, 2048)},photo_url),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,active`;
+        const photoUrl = req.body.photo_url === undefined ? null : normalizeImageValue(req.body.photo_url);
+        const [u] = await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,active`;
         return send(res, 200, u);
       }
     }
@@ -531,7 +519,7 @@ async function routeHandler(req, res) {
       }
       if (['general_audits','product_audits'].includes(table)) recordPayload = normalizeAuditPayload(req.body, user, table);
       if (table === 'system_configs') {
-        recordPayload = { key: text(req.body.key, 100), value: text(req.body.value, 5000) };
+        recordPayload = { key: text(req.body.key, 100), value: String(req.body.value || '').startsWith('data:image/') ? normalizeImageValue(req.body.value) : text(req.body.value, 5000) };
         if (!recordPayload.key) return send(res, 400, { message: 'Chave de configuração inválida.' });
         const [existing]=await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(recordPayload)}::jsonb,updated_date=now() WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=${recordPayload.key} RETURNING id,data,created_date,updated_date`;
         if(existing)return send(res,200,{id:existing.id,...existing.data,created_date:existing.created_date,updated_date:existing.updated_date});
@@ -567,7 +555,7 @@ async function routeHandler(req, res) {
         validateProductPayload(recordPayload, true);
         if (recordPayload.barcode !== undefined) await assertProductBarcodeAvailable(sql, user.market_id, recordPayload.barcode, id);
       }
-      if (table === 'system_configs') recordPayload = { value: text(req.body.value, 5000) };
+      if (table === 'system_configs') recordPayload = { value: String(req.body.value || '').startsWith('data:image/') ? normalizeImageValue(req.body.value) : text(req.body.value, 5000) };
       const [r]=await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(recordPayload)}::jsonb,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND entity=${table} RETURNING id,data,created_date,updated_date`;
       return send(res,r?200:404,r?{id:r.id,...r.data,created_date:r.created_date,updated_date:r.updated_date}:{message:'Registro não encontrado.'});
     }

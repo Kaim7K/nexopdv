@@ -64,14 +64,11 @@ const FAQS = [
 
 function Logo({ light = false }) {
   return (
-    <div className="flex items-center gap-2.5" aria-label="Nexo PDV">
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-600 text-lg font-black text-white shadow-sm">
-        N
-      </div>
-      <div className={`text-xl font-black tracking-tight ${light ? 'text-white' : 'text-slate-950'}`}>
-        Nexo <span className="text-emerald-600">PDV</span>
-      </div>
-    </div>
+    <img
+      src={light ? '/brand/nexo-logo-white.svg' : '/brand/nexo-logo.svg'}
+      alt="Nexo PDV"
+      className="h-10 w-auto max-w-[170px]"
+    />
   );
 }
 
@@ -83,8 +80,8 @@ function PrimaryCta({ href, children, dark = false, className = '' }) {
       rel={href.startsWith('https://') ? 'noreferrer' : undefined}
       className={`group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-extrabold transition duration-300 ${
         dark
-          ? 'bg-white text-emerald-900 shadow-lg shadow-black/10 hover:-translate-y-0.5 hover:bg-emerald-50'
-          : 'bg-emerald-600 text-white shadow-lg shadow-emerald-700/20 hover:-translate-y-0.5 hover:bg-emerald-700'
+          ? 'bg-white text-[#116e4c] shadow-lg shadow-black/10 hover:-translate-y-0.5 hover:bg-[#17a06a]/5'
+          : 'bg-[#17a06a] text-white shadow-lg shadow-[#17a06a]/20 hover:-translate-y-0.5 hover:bg-[#13875a]'
       } ${className}`}
     >
       {children}
@@ -100,7 +97,7 @@ function SecondaryCta({ href, children, dark = false }) {
       className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold transition duration-300 hover:-translate-y-0.5 ${
         dark
           ? 'border-white/25 bg-white/5 text-white hover:bg-white/10'
-          : 'border-slate-200 bg-white text-slate-900 hover:border-emerald-300 hover:bg-emerald-50/50'
+          : 'border-slate-200 bg-white text-slate-900 hover:border-[#17a06a]/35 hover:bg-[#17a06a]/5/50'
       }`}
     >
       {children}
@@ -116,7 +113,7 @@ function ProductFrame({ src, alt, eager = false, className = '' }) {
       <div className="mb-2 flex h-6 items-center gap-1.5 px-2">
         <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
         <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-        <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#3bc48c]" />
         <div className="ml-3 h-2 w-28 rounded-full bg-white/10" />
       </div>
       <div className="overflow-hidden rounded-[1.1rem] bg-[#eef3f0]">
@@ -136,7 +133,7 @@ function ProductFrame({ src, alt, eager = false, className = '' }) {
 
 function SectionLabel({ children }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] text-emerald-800">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#17a06a]/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] text-[#116e4c]">
       {children}
     </span>
   );
@@ -145,7 +142,7 @@ function SectionLabel({ children }) {
 function Bullet({ children }) {
   return (
     <li className="flex items-start gap-2.5 text-sm font-semibold leading-6 text-slate-600 sm:text-[15px]">
-      <span className="mt-1 grid h-5 w-5 flex-none place-items-center rounded-full bg-emerald-100 text-emerald-700">
+      <span className="mt-1 grid h-5 w-5 flex-none place-items-center rounded-full bg-[#17a06a]/10 text-[#13875a]">
         <Check className="h-3.5 w-3.5" strokeWidth={3} />
       </span>
       <span>{children}</span>
@@ -155,8 +152,8 @@ function Bullet({ children }) {
 
 function QuickBenefit({ title, text, Icon }) {
   return (
-    <article className="group flex min-h-[132px] items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-900/5">
-      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white">
+    <article className="group flex min-h-[132px] items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#17a06a]/20 hover:shadow-xl hover:shadow-[#17a06a]/5">
+      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#17a06a]/5 text-[#13875a] transition group-hover:bg-[#17a06a] group-hover:text-white">
         <Icon className="h-6 w-6" />
       </div>
       <div>
@@ -214,7 +211,7 @@ export default function Landing() {
   const contactHref = whatsapp ? `https://wa.me/${whatsapp}?text=${message}` : '#demonstracao';
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7faf8] text-slate-950 selection:bg-emerald-200">
+    <div className="min-h-screen overflow-x-hidden bg-[#f7faf8] text-slate-950 selection:bg-[#17a06a]/20">
       <header className="sticky top-0 z-50 border-b border-white/70 bg-[#f7faf8]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
@@ -222,15 +219,15 @@ export default function Landing() {
           </a>
 
           <nav className="hidden items-center gap-8 text-sm font-bold text-slate-600 md:flex" aria-label="Navegação principal">
-            <a className="transition hover:text-emerald-700" href="#recursos">Recursos</a>
-            <a className="transition hover:text-emerald-700" href="#demonstracao">Como funciona</a>
-            <a className="transition hover:text-emerald-700" href="#faq">FAQ</a>
+            <a className="transition hover:text-[#13875a]" href="#recursos">Recursos</a>
+            <a className="transition hover:text-[#13875a]" href="#demonstracao">Como funciona</a>
+            <a className="transition hover:text-[#13875a]" href="#faq">FAQ</a>
           </nav>
 
           <div className="flex items-center gap-2.5">
             <Link
               to="/login"
-              className="hidden min-h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-extrabold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:inline-flex"
+              className="hidden min-h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-extrabold text-slate-800 transition hover:border-[#17a06a]/35 hover:bg-[#17a06a]/5 sm:inline-flex"
             >
               Entrar
             </Link>
@@ -238,7 +235,7 @@ export default function Landing() {
               href={contactHref}
               target={contactHref.startsWith('https://') ? '_blank' : undefined}
               rel={contactHref.startsWith('https://') ? 'noreferrer' : undefined}
-              className="inline-flex min-h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-extrabold text-white shadow-md shadow-emerald-700/15 transition hover:-translate-y-0.5 hover:bg-emerald-700"
+              className="inline-flex min-h-10 items-center rounded-xl bg-[#17a06a] px-4 text-sm font-extrabold text-white shadow-md shadow-[#17a06a]/15 transition hover:-translate-y-0.5 hover:bg-[#13875a]"
             >
               Quero conhecer
             </a>
@@ -248,19 +245,19 @@ export default function Landing() {
 
       <main>
         <section id="inicio" className="relative isolate overflow-hidden pt-14 sm:pt-20 lg:pt-24">
-          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_82%_18%,rgba(16,185,129,0.15),transparent_28%),radial-gradient(circle_at_12%_12%,rgba(110,231,183,0.13),transparent_22%)]" />
-          <div className="absolute inset-0 -z-10 opacity-[0.16] [background-image:radial-gradient(#10b981_1px,transparent_1px)] [background-size:26px_26px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
+          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_82%_18%,rgba(23,160,106,0.15),transparent_28%),radial-gradient(circle_at_12%_12%,rgba(23,160,106,0.10),transparent_22%)]" />
+          <div className="absolute inset-0 -z-10 opacity-[0.16] [background-image:radial-gradient(#17a06a_1px,transparent_1px)] [background-size:26px_26px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
 
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 sm:px-6 lg:grid-cols-[0.84fr_1.16fr] lg:px-8 lg:pb-24">
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-black text-emerald-800 shadow-sm backdrop-blur">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#17a06a]/20 bg-white/80 px-3 py-1.5 text-xs font-black text-[#116e4c] shadow-sm backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" />
                 Sistema completo para mercadinhos
               </div>
 
               <h1 className="mt-5 text-[2.65rem] font-black leading-[1.02] tracking-[-0.045em] text-slate-950 sm:text-5xl lg:text-[3.65rem]">
                 O PDV inteligente para mercadinhos{' '}
-                <span className="text-emerald-600">rápidos, organizados e no controle.</span>
+                <span className="text-[#17a06a]">rápidos, organizados e no controle.</span>
               </h1>
 
               <p className="mt-5 max-w-xl text-base font-medium leading-7 text-slate-600 sm:text-lg">
@@ -282,7 +279,7 @@ export default function Landing() {
                   [FileSpreadsheet, 'Estoque inteligente'],
                 ].map(([Icon, label]) => (
                   <span key={label} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700 shadow-sm">
-                    <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                    <Icon className="h-3.5 w-3.5 text-[#17a06a]" />
                     {label}
                   </span>
                 ))}
@@ -290,7 +287,7 @@ export default function Landing() {
             </div>
 
             <div className="relative mx-auto w-full max-w-[780px] lg:-mr-16">
-              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-emerald-300/20 blur-3xl" />
+              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-[#17a06a]/20 blur-3xl" />
               <ProductFrame
                 src="/landing/pdv-preview.png"
                 alt="Tela real do Nexo PDV com produtos, venda atual e vendas abertas"
@@ -298,14 +295,14 @@ export default function Landing() {
                 className="rotate-[0.35deg]"
               />
 
-              <div className="absolute -bottom-5 right-4 hidden min-w-[205px] rounded-2xl border border-emerald-950/20 bg-[#0f2a21] p-4 text-white shadow-2xl shadow-emerald-950/30 sm:block lg:-right-3">
+              <div className="absolute -bottom-5 right-4 hidden min-w-[205px] rounded-2xl border border-[#1e2532]/20 bg-[#0f2a21] p-4 text-white shadow-2xl shadow-[#1e2532]/30 sm:block lg:-right-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-500/15 text-emerald-300">
+                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#17a06a]/50/15 text-[#6dd4aa]">
                     <LayoutDashboard className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="text-2xl font-black leading-none">3</div>
-                    <div className="mt-1 text-xs font-bold text-emerald-100">vendas abertas</div>
+                    <div className="mt-1 text-xs font-bold text-[#dff5eb]">vendas abertas</div>
                   </div>
                 </div>
               </div>
@@ -338,17 +335,17 @@ export default function Landing() {
             </div>
 
             <div className="relative">
-              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-emerald-200/35 blur-3xl" />
+              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-[#17a06a]/20 blur-3xl" />
               <ProductFrame
                 src="/landing/pdv-preview.png"
                 alt="Frente de caixa do Nexo PDV"
               />
               <div className="absolute -right-2 bottom-7 hidden w-[170px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl lg:block">
                 <div className="flex items-center justify-between">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#17a06a]/10 text-[#13875a]">
                     <ShoppingCart className="h-[18px] w-[18px]" />
                   </div>
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#17a06a]/50" />
                 </div>
                 <div className="mt-5 text-4xl font-black text-slate-950">3</div>
                 <div className="mt-1 text-xs font-bold text-slate-500">vendas em andamento</div>
@@ -360,7 +357,7 @@ export default function Landing() {
         <section className="relative py-16 sm:py-20 lg:py-28">
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.35fr_0.65fr] lg:px-8">
             <div className="relative order-2 lg:order-1">
-              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-emerald-200/30 blur-3xl" />
+              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-[#17a06a]/18 blur-3xl" />
               <ProductFrame
                 src="/landing/estoque-preview.png"
                 alt="Estoque do Nexo PDV em formato de planilha"
@@ -386,10 +383,10 @@ export default function Landing() {
               </ul>
               <div className="mt-7 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
-                  <Upload className="h-4 w-4 text-emerald-600" /> Importação em massa
+                  <Upload className="h-4 w-4 text-[#17a06a]" /> Importação em massa
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
-                  <ScanBarcode className="h-4 w-4 text-emerald-600" /> Códigos de barras
+                  <ScanBarcode className="h-4 w-4 text-[#17a06a]" /> Códigos de barras
                 </span>
               </div>
             </div>
@@ -419,7 +416,7 @@ export default function Landing() {
             </div>
 
             <div className="relative">
-              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-emerald-200/30 blur-3xl" />
+              <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-[#17a06a]/18 blur-3xl" />
               <ProductFrame
                 src="/landing/relatorios-preview.png"
                 alt="Relatórios gerenciais do Nexo PDV"
@@ -434,7 +431,7 @@ export default function Landing() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#17a06a]/10 text-[#13875a]">
                       <ShieldCheck className="h-[22px] w-[22px]" />
                     </div>
                     <div>
@@ -446,7 +443,7 @@ export default function Landing() {
                 <LockKeyhole className="h-5 w-5 text-slate-300" />
               </div>
               <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
-                <RoleCard iconBg="bg-emerald-100" iconClass="text-emerald-700" title="Gerente" description="Acesso amplo" />
+                <RoleCard iconBg="bg-[#17a06a]/10" iconClass="text-[#13875a]" title="Gerente" description="Acesso amplo" />
                 <RoleCard iconBg="bg-blue-100" iconClass="text-blue-700" title="Caixa" description="PDV e vendas" />
                 <RoleCard iconBg="bg-violet-100" iconClass="text-violet-700" title="Estoque" description="Produtos e custos" />
               </div>
@@ -454,7 +451,7 @@ export default function Landing() {
 
             <article className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#17a06a]/10 text-[#13875a]">
                   <History className="h-[22px] w-[22px]" />
                 </div>
                 <div>
@@ -469,7 +466,7 @@ export default function Landing() {
                   ['Planilha de estoque importada', 'Hoje, 09:42'],
                 ].map(([label, time]) => (
                   <div key={label} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3">
-                    <Activity className="h-4 w-4 flex-none text-emerald-600" />
+                    <Activity className="h-4 w-4 flex-none text-[#17a06a]" />
                     <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{label}</span>
                     <span className="text-xs font-medium text-slate-400">{time}</span>
                   </div>
@@ -487,10 +484,10 @@ export default function Landing() {
             </div>
             <div className="mt-8 grid gap-3 lg:grid-cols-3">
               {FAQS.map(item => (
-                <details key={item.question} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm open:border-emerald-200 open:shadow-lg open:shadow-emerald-900/5">
+                <details key={item.question} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm open:border-[#17a06a]/20 open:shadow-lg open:shadow-[#17a06a]/5">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-extrabold text-slate-900">
                     <span>{item.question}</span>
-                    <ChevronDown className="h-4 w-4 flex-none text-slate-400 transition group-open:rotate-180 group-open:text-emerald-600" />
+                    <ChevronDown className="h-4 w-4 flex-none text-slate-400 transition group-open:rotate-180 group-open:text-[#17a06a]" />
                   </summary>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{item.answer}</p>
                 </details>
@@ -500,9 +497,9 @@ export default function Landing() {
         </section>
 
         <section id="contato" className="px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-[#0c3a2a] px-6 py-10 text-white shadow-2xl shadow-emerald-950/20 sm:px-10 sm:py-12 lg:px-14">
-            <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(#6ee7b7_1px,transparent_1px)] [background-size:30px_30px] [mask-image:linear-gradient(to_right,black,transparent_70%)]" />
-            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-[#0c3a2a] px-6 py-10 text-white shadow-2xl shadow-[#1e2532]/20 sm:px-10 sm:py-12 lg:px-14">
+            <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(#6dd4aa_1px,transparent_1px)] [background-size:30px_30px] [mask-image:linear-gradient(to_right,black,transparent_70%)]" />
+            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#3bc48c]/20 blur-3xl" />
 
             <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_auto]">
               <div className="flex items-start gap-5">
@@ -511,9 +508,9 @@ export default function Landing() {
                 </div>
                 <div>
                   <h2 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-[-0.035em] sm:text-4xl">
-                    Seu mercado pode vender melhor com o <span className="text-emerald-300">Nexo PDV.</span>
+                    Seu mercado pode vender melhor com o <span className="text-[#6dd4aa]">Nexo PDV.</span>
                   </h2>
-                  <p className="mt-3 text-sm font-medium text-emerald-50/75 sm:text-base">
+                  <p className="mt-3 text-sm font-medium text-white/75 sm:text-base">
                     Caixa, estoque, fiados, equipe e relatórios em um só sistema.
                   </p>
                 </div>
@@ -535,8 +532,8 @@ export default function Landing() {
                 [ShieldCheck, 'Perfis de acesso'],
                 [BarChart3, 'Relatórios integrados'],
               ].map(([Icon, label]) => (
-                <div key={label} className="flex items-center gap-2.5 text-sm font-bold text-emerald-50/85">
-                  <Icon className="h-4 w-4 text-emerald-300" />
+                <div key={label} className="flex items-center gap-2.5 text-sm font-bold text-white/85">
+                  <Icon className="h-4 w-4 text-[#6dd4aa]" />
                   {label}
                 </div>
               ))}

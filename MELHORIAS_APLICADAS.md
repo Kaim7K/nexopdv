@@ -171,14 +171,14 @@ Não foi possível executar neste ambiente:
 - lint completo com os plugins do projeto;
 - testes que importam dependências externas;
 - migrações e testes reais no Neon;
-- upload real no Vercel Blob;
+- upload local otimizado, sem dependência obrigatória do Vercel Blob;
 - Lighthouse e Core Web Vitals em um domínio publicado.
 
 O ambiente não possui acesso ao registro do npm, portanto o Corepack não conseguiu obter a versão do pnpm declarada pelo projeto.
 
 ## Configurações e verificações manuais antes da publicação
 
-1. Configurar as variáveis descritas em `.env.example`, principalmente banco, sessão, Vercel Blob e dados iniciais do superadministrador.
+1. Configurar as variáveis descritas em `.env.example`, principalmente banco, sessão e dados iniciais do superadministrador. O Vercel Blob é opcional.
 2. Em um ambiente com internet, executar:
    - `corepack enable`
    - `pnpm install --frozen-lockfile`
@@ -193,5 +193,5 @@ O ambiente não possui acesso ao registro do npm, portanto o Corepack não conse
 
 - As consultas de listagem ainda usam limites fixos e não possuem cursor/paginação no banco. Isso deve ser priorizado quando cada mercado começar a ultrapassar milhares de vendas, auditorias ou produtos.
 - A atualização futura do Recharts para a versão principal atual deve ser feita isoladamente, porque pode exigir ajustes nos gráficos.
-- A CSP e os domínios do Vercel Blob devem ser confirmados no ambiente real após o primeiro deploy.
+- A CSP e o carregamento da fonte Montserrat devem ser confirmados no ambiente real após o primeiro deploy.
 - O sistema gera recibo comum; não deve ser divulgado como emissor fiscal ou NFC-e sem uma implementação fiscal específica.

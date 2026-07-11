@@ -22,11 +22,12 @@ Variáveis obrigatórias:
 - `SUPER_ADMIN_EMAIL`
 - `SUPER_ADMIN_PASSWORD`
 
-Imagens de produtos:
+Imagens:
 
-- Conecte um Vercel Blob ao projeto. A integração cria `BLOB_READ_WRITE_TOKEN`.
+- Uploads de logo, perfil e produto são otimizados no navegador e salvos sem exigir Vercel Blob.
+- Um Blob Store é opcional. Quando conectado, imagens escolhidas na busca externa podem ser copiadas para o armazenamento próprio.
 - `GOOGLE_CSE_API_KEY` e `GOOGLE_CSE_ID` são opcionais e ampliam a busca automática.
-- Sem Google CSE, a busca por código de barras e catálogo continua funcionando pelo Open Food Facts.
+- A busca tenta primeiro o código de barras e, quando não encontra resultado, usa o nome do produto sem filtro de adequação.
 
 Depois de alterar variáveis, faça um novo deploy sem reutilizar o cache antigo.
 

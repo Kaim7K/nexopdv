@@ -3,10 +3,10 @@
 ## Implementado
 
 - Upload de imagens de produtos em JPG, PNG, WEBP ou AVIF, com limite de 8 MB.
-- Armazenamento das imagens no Vercel Blob, sem depender de URLs externas temporárias.
-- Busca de imagens por código de barras, nome e nome com categoria.
+- Upload local otimizado e salvo no próprio cadastro, sem exigir Vercel Blob.
+- Busca de qualquer imagem pelo código de barras; quando não há resultado, busca pelo nome do produto.
 - Cinco sugestões por página, botão “Buscar mais imagens”, visualização ampliada, fonte e seleção.
-- Priorização de catálogo exato, transparência e fundo branco, com filtros contra banners, anúncios, lojas, prateleiras, pessoas e montagens.
+- Resultados sem filtro de adequação, formato, fundo ou similaridade, permitindo inclusive imagens apenas com o nome do produto.
 - Busca opcional no cadastro rápido; produto pode ser salvo e vendido sem imagem.
 - Modal completo para criar, editar e duplicar produtos.
 - Botão “Criar e duplicar” no cadastro completo.
@@ -19,12 +19,10 @@
 - Correções de contraste e componentes no tema escuro.
 - Ícones, botões e indicadores de atalhos ampliados.
 
-## Configuração necessária na Vercel
+## Configuração opcional na Vercel
 
-1. Abra o projeto e acesse **Storage**.
-2. Crie ou conecte um **Blob Store** ao projeto.
-3. Confirme em **Settings → Environment Variables** a variável `BLOB_READ_WRITE_TOKEN`.
-4. Para busca ampliada, adicione `GOOGLE_CSE_API_KEY` e `GOOGLE_CSE_ID` em **Production**.
-5. Faça um novo deploy sem usar o cache anterior.
+1. Para ampliar os resultados da busca, adicione `GOOGLE_CSE_API_KEY` e `GOOGLE_CSE_ID` em **Production**.
+2. Um Blob Store é opcional e não é necessário para enviar logo, foto de perfil ou imagem de produto.
+3. Faça um novo deploy sem usar o cache anterior após alterar variáveis.
 
 A busca do Google é complementar. Falhas de cota ou indisponibilidade não impedem cadastro, edição ou venda do produto.

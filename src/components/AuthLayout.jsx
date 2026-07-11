@@ -6,8 +6,8 @@ export default function AuthLayout({ title, subtitle, children }) {
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center mb-4 overflow-hidden">
-            <span className="text-2xl font-black text-accent">N</span>
+          <div className="mb-4 flex h-20 items-center justify-center">
+            <img src="/brand/nexo-logo.svg" alt="Nexo PDV" className="h-16 w-auto max-w-[220px]" />
           </div>
           {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           <h1 className="text-2xl font-bold tracking-tight text-foreground mt-1">{title}</h1>

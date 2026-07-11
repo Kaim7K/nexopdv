@@ -120,7 +120,7 @@ export default function Layout() {
           {logoUrl ? (
             <img src={logoUrl} alt={brandName} className="max-h-12 max-w-[180px] object-contain object-left" />
           ) : (
-            <div className="flex items-center gap-2.5"><div className="grid h-10 w-10 place-items-center rounded-xl bg-sidebar-primary text-lg font-black text-sidebar-primary-foreground">N</div><div className="text-xl font-black">Nexo <span style={{ color: 'var(--market-primary)' }}>PDV</span></div></div>
+            <img src="/brand/nexo-logo-white.svg" alt="Nexo PDV" className="h-11 w-auto max-w-[180px] object-contain object-left" />
           )}
         </div>
 

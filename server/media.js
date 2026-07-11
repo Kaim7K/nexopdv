@@ -6,10 +6,8 @@ import { AppError } from './errors.js';
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 
-function assertBlobConfigured() {
-  if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
-    throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'O armazenamento de imagens ainda não foi conectado ao projeto na Vercel.');
-  }
+function isBlobConfigured() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 function isPrivateAddress(address) {
@@ -101,7 +99,6 @@ export function safeName(value = 'imagem') {
 }
 
 export async function importRemoteProductImage({ url, productName, marketId }) {
-  assertBlobConfigured();
   const remote = await safeRemoteUrl(url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
@@ -118,6 +115,15 @@ export async function importRemoteProductImage({ url, productName, marketId }) {
     if (body.byteLength > MAX_IMAGE_SIZE) throw new AppError(413, 'IMAGE_TOO_LARGE', 'A imagem deve ter no máximo 8 MB.');
     if (!matchesImageSignature(body, contentType)) throw new AppError(415, 'INVALID_IMAGE_CONTENT', 'O arquivo recebido não corresponde a uma imagem válida.');
 
+    if (!isBlobConfigured()) {
+      return {
+        url: response.url || remote.toString(),
+        pathname: null,
+        contentType,
+        external: true,
+      };
+    }
+
     const pathname = `products/${marketId}/${Date.now()}-${safeName(productName)}.${extensionFor(contentType)}`;
     const blob = await put(pathname, body, {
       access: 'public',
@@ -125,7 +131,7 @@ export async function importRemoteProductImage({ url, productName, marketId }) {
       contentType,
       cacheControlMaxAge: 60 * 60 * 24 * 365,
     });
-    return { url: blob.url, pathname: blob.pathname, contentType: blob.contentType };
+    return { url: blob.url, pathname: blob.pathname, contentType: blob.contentType, external: false };
   } finally {
     clearTimeout(timeout);
   }
