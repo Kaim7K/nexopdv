@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,8 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      const user = await base44.auth.me();
+      window.location.href = user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");
     } finally {
@@ -28,7 +28,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Acesse sua conta" subtitle="MercadoFlow PDV">
+    <AuthLayout title="Acesse sua conta" subtitle="Nexo PDV">
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
@@ -56,9 +56,7 @@ export default function Login() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Senha</Label>
-            <Link to="/forgot-password" className="text-xs text-accent hover:underline">
-              Esqueceu a senha?
-            </Link>
+            <span className="text-xs text-muted-foreground">Contate o administrador para redefinir</span>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />

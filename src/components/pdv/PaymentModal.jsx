@@ -23,7 +23,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   const addPayment = (method) => {
     if (method === 'fiado') {
       setShowFiadoForm(true);
-      setPayments(prev => prev.some(p => p.method === 'fiado') ? prev : [...prev, { method, amount: total }]);
+      setPayments(prev => prev.some(p => p.method === 'fiado') ? prev : [...prev, { method, amount: Math.max(0, remaining) }]);
       return;
     }
     if (remaining <= 0 && !hasFiado) return;
@@ -158,7 +158,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
           <button onClick={onMinimize} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-border bg-secondary hover:bg-muted text-sm font-medium">
             <Minimize2 className="w-4 h-4" /> Minimizar
           </button>
-          <button onClick={handleComplete} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-bold">
+          <button onClick={handleComplete} disabled={payments.length === 0} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-40 text-sm font-bold">
             <Check className="w-4 h-4" /> Concluir Venda
           </button>
         </div>

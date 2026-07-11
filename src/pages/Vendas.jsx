@@ -6,7 +6,7 @@ import { Search, Eye, Ban, Trash2, X, History } from 'lucide-react';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/helpers';
 
 export default function Vendas() {
-  const { user } = useOutletContext();
+  const { user } = /** @type {any} */ (useOutletContext());
   const isGerente = user.role === 'gerente' || user.role === 'admin';
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,21 +43,19 @@ export default function Vendas() {
     const reason = prompt('Motivo do cancelamento (opcional):') || '';
     if (!confirm(`Confirmar cancelamento da venda #${sale.sale_number}?`)) return;
     try {
-      await base44.entities.Sale.update(sale.id, { status: 'cancelada', cancellation_reason: reason, cancelled_by_id: user.id, cancelled_by_name: user.full_name || user.email });
-      await base44.entities.GeneralAudit.create({ action_type: 'venda_cancelada', entity_type: 'sale', entity_id: sale.id, user_id: user.id, user_name: user.full_name || user.email, description: `Venda #${sale.sale_number} cancelada`, details: JSON.stringify({ reason, total: sale.total }) });
+      await base44.sales.cancel(sale.id, reason);
       toast.success('Venda cancelada');
       loadSales();
-    } catch { toast.error('Erro ao cancelar venda'); }
+    } catch (error) { toast.error(error.message || 'Erro ao cancelar venda'); }
   };
 
   const handleDelete = async (sale) => {
     if (!confirm(`Excluir definitivamente a venda #${sale.sale_number}?`)) return;
     try {
-      await base44.entities.Sale.delete(sale.id);
-      await base44.entities.GeneralAudit.create({ action_type: 'venda_excluida', entity_type: 'sale', entity_id: sale.id, user_id: user.id, user_name: user.full_name || user.email, description: `Venda #${sale.sale_number} excluída`, details: JSON.stringify({ total: sale.total, items: sale.items?.length }) });
+      await base44.sales.delete(sale.id);
       toast.success('Venda excluída');
       loadSales();
-    } catch { toast.error('Erro ao excluir venda'); }
+    } catch (error) { toast.error(error.message || 'Erro ao excluir venda'); }
   };
 
   return (
@@ -131,12 +129,8 @@ export default function Vendas() {
                     <td className="px-4 py-2.5">
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => setDetailSale(s)} className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" title="Ver detalhes"><Eye className="w-4 h-4" /></button>
-                        {s.status === 'concluida' && canCancel(s) && (
-                          <>
-                            <button onClick={() => handleCancel(s)} className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors" title="Cancelar"><Ban className="w-4 h-4" /></button>
-                            <button onClick={() => handleDelete(s)} className="w-8 h-8 flex items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-                          </>
-                        )}
+                        {s.status === 'concluida' && canCancel(s) && <button onClick={() => handleCancel(s)} className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors" title="Cancelar"><Ban className="w-4 h-4" /></button>}
+                        {s.status === 'cancelada' && user.role === 'admin' && <button onClick={() => handleDelete(s)} className="w-8 h-8 flex items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </td>
                   </tr>

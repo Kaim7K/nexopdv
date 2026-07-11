@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    --market-primary: #16a06a;
     --background: 150 20% 99%;
     --foreground: 160 30% 10%;
     --card: 0 0% 100%;
@@ -73,6 +74,7 @@
     --sidebar-ring: 158 64% 42%;
   }
 }
+
 
 @layer base {
   * {

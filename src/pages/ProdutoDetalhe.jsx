@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'react-hot-toast';
-import { ArrowLeft, Package, Edit, Save, History, X } from 'lucide-react';
+import { ArrowLeft, Package, Edit, History } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import ProductForm from '@/components/stock/ProductForm';
 
 export default function ProdutoDetalhe() {
   const { id } = useParams();
-  const { user } = useOutletContext();
+  const { user } = /** @type {any} */ (useOutletContext());
   const [product, setProduct] = useState(null);
   const [audits, setAudits] = useState([]);
   const [loading, setLoading] = useState(true);

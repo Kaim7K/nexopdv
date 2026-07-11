@@ -5,7 +5,7 @@ import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ProductImageSearch from './ProductImageSearch';
 
-export default function ProductForm({ product, categories, user, onSave, onClose }) {
+export default function ProductForm({ product = null, categories = [], user, onSave, onClose }) {
   const [form, setForm] = useState({
     name: '', category: '', barcode: '', internal_code: '',
     image_url: '', sale_price: '', cost_price: '', quantity: '', unit: 'unidade', status: 'ativo',
@@ -31,7 +31,7 @@ export default function ProductForm({ product, categories, user, onSave, onClose
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nome é obrigatório'); return; }
-    if (!form.sale_price && form.sale_price !== 0) { toast.error('Preço de venda é obrigatório'); return; }
+    if (form.sale_price === '' || Number(form.sale_price) < 0) { toast.error('Informe um preço de venda válido'); return; }
     setSaving(true);
     try {
       const data = {

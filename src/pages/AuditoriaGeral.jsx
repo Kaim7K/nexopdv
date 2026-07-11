@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'react-hot-toast';
 import { Search, ScrollText } from 'lucide-react';
-import { formatDateTime, getPaymentLabel } from '@/lib/helpers';
+import { formatDateTime } from '@/lib/helpers';
 
 export default function AuditoriaGeral() {
   const [audits, setAudits] = useState([]);
@@ -46,7 +45,7 @@ export default function AuditoriaGeral() {
       description: `${a.product_name}: ${a.field_changed} alterado de "${a.previous_value}" para "${a.new_value}"${a.sale_number ? ` (Venda #${a.sale_number})` : ''}`,
       details: a.observation || '', category: 'Produto',
     })),
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const filtered = allEntries.filter(e => {
     const matchSearch = !search || e.description.toLowerCase().includes(search.toLowerCase());

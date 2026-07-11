@@ -3,8 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'react-hot-toast';
 import { BarChart3, TrendingUp, TrendingDown, AlertTriangle, Lightbulb, DollarSign, ShoppingCart, Receipt } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts';
-import { formatCurrency, PAYMENT_METHODS, formatDate } from '@/lib/helpers';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
+import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
 
 const PERIODS = [
   { key: 'week', label: 'Semanal' },
@@ -16,7 +16,7 @@ const PERIODS = [
 const CHART_COLORS = ['hsl(87 51% 48%)', 'hsl(125 30% 35%)', 'hsl(45 90% 55%)', 'hsl(0 70% 55%)', 'hsl(200 60% 50%)', 'hsl(280 65% 60%)'];
 
 export default function Relatorios() {
-  const { user } = useOutletContext();
+  const { user } = /** @type {any} */ (useOutletContext());
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
@@ -57,7 +57,7 @@ export default function Relatorios() {
     } else {
       start = customStart ? new Date(customStart + 'T00:00:00') : new Date(0);
       end = customEnd ? new Date(customEnd + 'T23:59:59') : new Date();
-      const diffMs = end - start;
+      const diffMs = end.getTime() - start.getTime();
       prevStart = new Date(start.getTime() - diffMs);
       prevEnd = new Date(start.getTime() - 1);
     }
@@ -257,7 +257,7 @@ export default function Relatorios() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, change, alert }) {
+function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
   return (
     <div className={`bg-white border rounded-lg p-4 ${alert ? 'border-orange-300' : ''}`}>
       <div className="flex items-center justify-between mb-1">

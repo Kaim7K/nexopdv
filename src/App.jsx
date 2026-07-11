@@ -4,27 +4,18 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import { lazy, Suspense } from 'react';
+import { Toaster as HotToaster } from 'react-hot-toast';
 // Add page imports here
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import PDV from '@/pages/PDV';
-import Estoque from '@/pages/Estoque';
-import Vendas from '@/pages/Vendas';
-import Fiados from '@/pages/Fiados';
-import Relatorios from '@/pages/Relatorios';
-import Usuarios from '@/pages/Usuarios';
-import Configuracoes from '@/pages/Configuracoes';
-import AuditoriaGeral from '@/pages/AuditoriaGeral';
-import ProdutoDetalhe from '@/pages/ProdutoDetalhe';
+import Landing from '@/pages/Landing';
+const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),AdminMercados=lazy(()=>import('@/pages/AdminMercados'));
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -35,27 +26,13 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
-
   // Render the main app
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/pdv" replace />} />
           <Route path="/pdv" element={<PDV />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/produto/:id" element={<ProdutoDetalhe />} />
@@ -65,6 +42,7 @@ const AuthenticatedApp = () => {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/auditoria" element={<AuditoriaGeral />} />
+          <Route path="/admin/mercados" element={<AdminMercados />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -80,9 +58,10 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <Suspense fallback={<div className="fixed inset-0 grid place-items-center bg-background"><div className="w-8 h-8 border-4 border-secondary border-t-accent rounded-full animate-spin"/></div>}><AuthenticatedApp /></Suspense>
         </Router>
         <Toaster />
+        <HotToaster position="top-right" />
       </QueryClientProvider>
     </AuthProvider>
   )

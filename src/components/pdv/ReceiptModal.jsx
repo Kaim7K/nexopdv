@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { X, Printer, FileText, Plus } from 'lucide-react';
-import { formatCurrency, formatDateTime, LOGO_URL } from '@/lib/helpers';
+import { formatCurrency, formatDateTime } from '@/lib/helpers';
 
 export default function ReceiptModal({ sale, config, onClose, onNewSale }) {
   const receiptRef = useRef(null);
@@ -51,7 +51,7 @@ export default function ReceiptModal({ sale, config, onClose, onNewSale }) {
       if (center) doc.text(text, 40, y, { align: 'center' }); else doc.text(text, 4, y);
       y += size === 9 ? 5 : 4;
     };
-    line(config.nome_mercado || 'MercadoFlow PDV', true, true, 11);
+    line(config.nome_mercado || 'Nexo PDV', true, true, 11);
     if (config.cnpj) line(`CNPJ: ${config.cnpj}`, false, true);
     if (config.endereco) line(config.endereco, false, true);
     line('- - - - - - - - - - - - - - -', false, true);
@@ -91,8 +91,8 @@ export default function ReceiptModal({ sale, config, onClose, onNewSale }) {
         {/* Receipt content */}
         <div className="flex-1 overflow-y-auto p-6 bg-white text-black" ref={receiptRef}>
           <div className="r-header text-center">
-            <img src={config.logo_url || LOGO_URL} alt="Logo" className="r-header-img h-14 mx-auto object-contain mb-2" />
-            <div className="r-store font-bold text-sm">{config.nome_mercado || 'MercadoFlow PDV'}</div>
+            {config.logo_url && <img src={config.logo_url} alt="Logo" className="r-header-img h-14 mx-auto object-contain mb-2" />}
+            <div className="r-store font-bold text-sm">{config.nome_mercado || 'Nexo PDV'}</div>
             {config.cnpj && <div className="r-info text-[10px] text-gray-600 mt-0.5">CNPJ: {config.cnpj}</div>}
             {config.endereco && <div className="r-info text-[10px] text-gray-600">{config.endereco}</div>}
           </div>

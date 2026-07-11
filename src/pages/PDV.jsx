@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'react-hot-toast';
-import { Edit3, Package, ShoppingCart, LayoutGrid } from 'lucide-react';
+import { Edit3, LayoutGrid } from 'lucide-react';
 import ProductSearch from '@/components/pdv/ProductSearch';
 import SearchResults from '@/components/pdv/SearchResults';
-import SaleItemsList from '@/components/pdv/SaleItemsList';
 import SaleSummary from '@/components/pdv/SaleSummary';
 import ProductGrid from '@/components/pdv/ProductGrid';
 import PaymentModal from '@/components/pdv/PaymentModal';
@@ -13,12 +12,12 @@ import QuickProductModal from '@/components/pdv/QuickProductModal';
 import ReceiptModal from '@/components/pdv/ReceiptModal';
 import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
 import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
-import { calculateSaleTotals, formatCurrency } from '@/lib/helpers';
+import { formatCurrency } from '@/lib/helpers';
 
 const EMPTY_SALE = { items: [], payments: [], discount_value: 0, discount_type: 'valor', observation: '', sale_type: 'normal' };
 
 export default function PDV() {
-  const { user, config } = useOutletContext();
+  const { user, config } = /** @type {any} */ (useOutletContext());
   const [products, setProducts] = useState([]);
   const [activeSale, setActiveSale] = useState(EMPTY_SALE);
   const [minimizedSales, setMinimizedSales] = useState([]);
@@ -31,7 +30,7 @@ export default function PDV() {
   const [showPriceCorrection, setShowPriceCorrection] = useState(false);
   const [maxMinimized, setMaxMinimized] = useState(3);
   const [saleNumber, setSaleNumber] = useState(1);
-  const [activeTab, setActiveTab] = useState('cart');
+  const nextMinimizedId = useRef(1);
   const [productsLoading, setProductsLoading] = useState(true);
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
@@ -75,8 +74,8 @@ export default function PDV() {
 
   const getNextSaleNumber = async () => {
     try {
-      const sales = await base44.entities.Sale.list('-sale_number', 1);
-      setSaleNumber((sales[0]?.sale_number || 0) + 1);
+      const data = await base44.sales.nextNumber();
+      setSaleNumber(data.sale_number);
     } catch {}
   };
 
@@ -85,7 +84,7 @@ export default function PDV() {
     let buffer = ''; let timeout;
     const handler = (e) => {
       const active = document.activeElement;
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.getAttribute('contenteditable') === 'true')) return;
       if (modalsOpen) return;
       if (e.key === 'Enter') { if (buffer.length > 0) { handleCapture(buffer); buffer = ''; } return; }
       if (e.key.length === 1) {
@@ -162,7 +161,6 @@ export default function PDV() {
       }
       return { ...prev, items: newItems };
     });
-    setActiveTab('cart');
     if ((product.quantity || 0) <= 0) toast(`⚠️ Estoque baixo: ${product.name}`);
   };
 
@@ -191,11 +189,13 @@ export default function PDV() {
   const handleMinimize = () => {
     if (activeSale.items.length === 0) return;
     if (minimizedSales.length >= maxMinimized) { toast.error(`Limite de ${maxMinimized} vendas minimizadas`); return; }
-    setMinimizedSales([...minimizedSales, { ...activeSale, sale_number: saleNumber, _localId: Date.now() }]);
+    const temporary_number = nextMinimizedId.current++;
+    setMinimizedSales([...minimizedSales, { ...activeSale, temporary_number, _localId: Date.now() }]);
     setActiveSale(EMPTY_SALE); setSearchQuery(''); getNextSaleNumber();
-    toast.success(`Venda #${saleNumber} minimizada`);
+    toast.success(`Venda aberta ${temporary_number} minimizada`);
   };
   const handleRestore = (idx) => {
+    if (activeSale.items.length > 0) { toast.error('Minimize ou descarte a venda atual antes de restaurar outra.'); return; }
     setActiveSale(minimizedSales[idx]);
     setMinimizedSales(minimizedSales.filter((_, i) => i !== idx));
     setSearchQuery('');
@@ -210,33 +210,10 @@ export default function PDV() {
 
   const completeSale = async (paymentData) => {
     try {
-      const { subtotal, discount, total } = calculateSaleTotals({ ...activeSale, ...paymentData });
-      const paidAmount = paymentData.payments.filter(p => p.method !== 'fiado').reduce((s, p) => s + (p.amount || 0), 0);
-      const change = paidAmount > total ? paidAmount - total : 0;
-      const sale = await base44.entities.Sale.create({
-        sale_number: saleNumber, seller_id: user.id, seller_name: user.full_name || user.email, status: 'concluida',
-        items: activeSale.items, payments: paymentData.payments, subtotal, discount_value: activeSale.discount_value,
-        discount_type: activeSale.discount_type, total, paid_amount: paidAmount, change_amount: change,
-        observation: paymentData.observation, sale_type: paymentData.sale_type,
-      });
-      for (const item of activeSale.items) {
-        const product = products.find(p => p.id === item.product_id);
-        if (product) {
-          const qtyChange = item.unit === 'peso' ? item.weight : item.quantity;
-          await base44.entities.Product.update(product.id, { quantity: (product.quantity || 0) - qtyChange });
-        }
-      }
-      if (paymentData.sale_type === 'fiado' && paymentData.fiado) {
-        await base44.entities.FiadoRecord.create({
-          sale_id: sale.id, sale_number: sale.sale_number, responsible_name: paymentData.fiado.responsible_name,
-          phone: paymentData.fiado.phone || '', observation: paymentData.fiado.observation || '',
-          total_amount: total, seller_id: user.id, seller_name: user.full_name || user.email, status: 'pendente',
-        });
-      }
-      await base44.entities.GeneralAudit.create({ action_type: 'venda_concluida', entity_type: 'sale', entity_id: sale.id, user_id: user.id, user_name: user.full_name || user.email, description: `Venda #${sale.sale_number} concluída - ${formatCurrency(total)}`, details: JSON.stringify({ total, items: activeSale.items.length, sale_type: paymentData.sale_type }) });
+      const sale = await base44.sales.complete({ ...activeSale, ...paymentData });
       setShowPayment(false); setShowReceipt(sale); setActiveSale(EMPTY_SALE); setSearchQuery('');
       loadProducts(); getNextSaleNumber();
-    } catch { toast.error('Erro ao concluir venda'); }
+    } catch (error) { toast.error(error.message || 'Erro ao concluir venda'); }
   };
 
   return (
@@ -263,66 +240,30 @@ export default function PDV() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Search + Tabs + Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Produtos sempre visíveis em uma coluna compacta */}
+        <div className="w-full md:w-[36%] md:min-w-[300px] h-[42%] md:h-auto flex flex-col overflow-hidden border-r">
           {/* Search */}
           <div className="p-4 pb-2 flex-shrink-0">
             <div className="relative" ref={searchContainerRef}>
               <ProductSearch query={searchQuery} onQueryChange={setSearchQuery} inputRef={inputRef} onFocus={() => setShowResults(true)} />
-              {showResults && searchQuery && <SearchResults results={searchResults} onSelect={(p) => { addProductToSale(p); setSearchQuery(''); setShowResults(false); }} />}
+              {showResults && searchQuery && <SearchResults results={searchResults} loading={false} onSelect={(p) => { addProductToSale(p); setSearchQuery(''); setShowResults(false); }} />}
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="px-4 flex gap-1 flex-shrink-0">
-            <button
-              onClick={() => setActiveTab('cart')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
-                activeTab === 'cart' ? 'border-accent text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              Carrinho
-              {activeSale.items.length > 0 && (
-                <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold bg-accent text-accent-foreground rounded-full">{activeSale.items.length}</span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('products')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
-                activeTab === 'products' ? 'border-accent text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-              Produtos
-            </button>
-          </div>
-
-          {/* Tab content */}
           <div className="flex-1 overflow-hidden px-4 pb-4">
             <div className="h-full flex flex-col bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-              {activeTab === 'cart' ? (
-                <>
-                  <div className="px-4 py-2.5 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground flex items-center gap-2 flex-shrink-0">
-                    <Package className="w-4 h-4" /> Itens da Venda
-                  </div>
-                  <SaleItemsList items={activeSale.items} onUpdateQuantity={updateQuantity} onUpdateWeight={updateWeight} onRemoveItem={removeItem} />
-                </>
-              ) : (
-                <ProductGrid products={products} onSelect={addProductToSale} loading={productsLoading} />
-              )}
+              <div className="px-4 py-2.5 border-b bg-muted/30 text-xs font-medium flex gap-2"><LayoutGrid className="w-4"/>Produtos</div>
+              <ProductGrid products={products} onSelect={addProductToSale} loading={productsLoading} />
             </div>
           </div>
         </div>
-
-        {/* Right: Summary */}
-        <div className="w-80 flex flex-col bg-card border-l border-border flex-shrink-0">
+        <div className="flex-1 flex flex-col bg-card min-w-0">
           <SaleSummary sale={activeSale} onPaymentClick={() => setShowPayment(true)} onMinimizeClick={handleMinimize} onDiscardClick={handleDiscard} onDiscountChange={setActiveSale} canDiscount={true} minimizedCount={minimizedSales.length} maxMinimized={maxMinimized} />
         </div>
       </div>
 
-      {showPayment && <PaymentModal sale={activeSale} config={config} onClose={() => setShowPayment(false)} onComplete={completeSale} onMinimize={() => { setShowPayment(false); handleMinimize(); }} onDiscard={() => { setShowPayment(false); handleDiscard(); }} />}
+      {showPayment && <PaymentModal sale={activeSale} onClose={() => setShowPayment(false)} onComplete={completeSale} onMinimize={() => { setShowPayment(false); handleMinimize(); }} onDiscard={() => { setShowPayment(false); handleDiscard(); }} />}
       {showQuickProduct && <QuickProductModal barcode={showQuickProduct.barcode} onSave={(product) => { setProducts(prev => [...prev, product]); addProductToSale(product); setShowQuickProduct(null); }} onClose={() => setShowQuickProduct(null)} />}
       {showReceipt && <ReceiptModal sale={showReceipt} config={config} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
       {showPriceCorrection && <PriceCorrectionModal items={activeSale.items} onSave={handlePriceCorrection} onClose={() => setShowPriceCorrection(false)} />}

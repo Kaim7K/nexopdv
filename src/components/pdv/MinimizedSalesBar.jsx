@@ -9,7 +9,7 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard }) {
   if (sales.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 flex gap-2 z-40">
+    <div className="fixed top-24 right-3 flex flex-col gap-2 z-40">
       {sales.map((sale, idx) => {
         const color = COLORS[idx % COLORS.length];
         const total = (sale.items || []).reduce((sum, item) => sum + (item.subtotal || 0), 0);
@@ -18,7 +18,7 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard }) {
             <button onClick={() => onRestore(idx)}
               className={`${color} text-white rounded-lg shadow-lg px-4 py-3 flex flex-col items-center min-w-[80px] hover:scale-105 transition-transform`}>
               <span className="text-xs font-medium opacity-90">Venda</span>
-              <span className="text-lg font-bold">#{sale.sale_number || idx + 1}</span>
+              <span className="text-lg font-bold">#{sale.temporary_number}</span>
               <span className="text-xs opacity-90">{sale.items?.length || 0} itens</span>
               <span className="text-sm font-semibold">R$ {total.toFixed(2)}</span>
             </button>

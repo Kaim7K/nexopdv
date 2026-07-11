@@ -45,8 +45,9 @@ export default function SaleSummary({ sale, onPaymentClick, onMinimizeClick, onD
         </div>
       )}
 
-      {/* Items + Subtotal */}
-      <div className="px-5 py-3.5 space-y-1.5 flex-1">
+      {/* Carrinho completo da venda atual */}
+      <div className="px-5 py-3.5 space-y-1.5 flex-1 overflow-y-auto">
+        {sale.items.length === 0 ? <div className="h-full grid place-items-center text-sm text-muted-foreground">Nenhum produto adicionado</div> : sale.items.map((item,index)=><div key={`${item.product_id}-${index}`} className="grid grid-cols-[1fr_auto] gap-3 py-2.5 border-b"><div className="min-w-0"><p className="font-medium text-sm truncate">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.unit==='peso'?`${item.weight||0} kg`:`${item.quantity} un.`} × {formatCurrency(item.unit_price)}</p></div><b className="text-sm tabular-nums">{formatCurrency(item.subtotal)}</b></div>)}
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
           <span className="tabular-nums">{formatCurrency(subtotal)}</span>

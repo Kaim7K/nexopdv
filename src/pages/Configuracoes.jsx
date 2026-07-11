@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'react-hot-toast';
 import { Save, Store, Hash, MapPin, Image, Layers } from 'lucide-react';
-import { LOGO_URL } from '@/lib/helpers';
 
 export default function Configuracoes() {
   const [configs, setConfigs] = useState({});
@@ -43,7 +41,8 @@ export default function Configuracoes() {
         }
       }
       toast.success('Configurações salvas');
-    } catch { toast.error('Erro ao salvar configurações'); }
+      await loadConfigs();
+    } catch (error) { toast.error(error.message || 'Erro ao salvar configurações'); }
     setSaving(false);
   };
 
@@ -78,9 +77,9 @@ export default function Configuracoes() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" /> URL do Logo</label>
-            <input type="text" value={getValue('logo_url', LOGO_URL)} onChange={(e) => handleChange('logo_url', e.target.value)}
+            <input type="url" value={getValue('logo_url')} onChange={(e) => handleChange('logo_url', e.target.value)}
               className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-            <img src={getValue('logo_url', LOGO_URL)} alt="Logo" className="h-16 mt-2 object-contain" />
+            {getValue('logo_url') && <img src={getValue('logo_url')} alt="Logo" className="h-16 mt-2 object-contain" />}
           </div>
         </div>
 

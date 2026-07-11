@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search, Check, Loader2, ImageIcon } from 'lucide-react';
+import { X, Check, Loader2, ImageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';

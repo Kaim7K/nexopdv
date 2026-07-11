@@ -6,8 +6,8 @@ import { Search, Check, Ban, Phone, X, Clock } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 
 export default function Fiados() {
-  const { user } = useOutletContext();
-  const isGerente = user.role === 'gerente';
+  const { user } = /** @type {any} */ (useOutletContext());
+  const isGerente = user.role === 'gerente' || user.role === 'admin';
   const [fiados, setFiados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -80,7 +80,7 @@ export default function Fiados() {
       {loading ? <div className="text-center py-12 text-muted-foreground">Carregando...</div> : (
         <div className="grid gap-3">
           {filtered.map(f => (
-            <div key={f.id} className="bg-white border rounded-lg p-4 flex items-center gap-4">
+            <div key={f.id} className="bg-card border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${f.status === 'pendente' ? 'bg-orange-100 text-orange-600' : f.status === 'quitado' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                 {f.status === 'pendente' ? <Clock className="w-5 h-5" /> : f.status === 'quitado' ? <Check className="w-5 h-5" /> : <Ban className="w-5 h-5" />}
               </div>

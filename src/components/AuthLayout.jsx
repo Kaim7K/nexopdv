@@ -1,5 +1,4 @@
 import React from "react";
-import { LOGO_URL } from "@/lib/helpers";
 
 export default function AuthLayout({ title, subtitle, children }) {
   return (
@@ -8,7 +7,7 @@ export default function AuthLayout({ title, subtitle, children }) {
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center mb-4 overflow-hidden">
-            <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain p-1.5" />
+            <span className="text-2xl font-black text-accent">N</span>
           </div>
           {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           <h1 className="text-2xl font-bold tracking-tight text-foreground mt-1">{title}</h1>
@@ -20,7 +19,7 @@ export default function AuthLayout({ title, subtitle, children }) {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          © {new Date().getFullYear()} MercadoFlow PDV
+          © {new Date().getFullYear()} Nexo PDV
         </p>
       </div>
     </div>

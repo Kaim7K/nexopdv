@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ShoppingCart, Package, History, HandCoins, BarChart3, Users, Settings, ScrollText, LogOut, User as UserIcon } from 'lucide-react';
-import { LOGO_URL } from '@/lib/helpers';
+import { ShoppingCart, Package, History, HandCoins, BarChart3, Users, Settings, ScrollText, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const MENU_ITEMS = [
@@ -14,12 +13,25 @@ const MENU_ITEMS = [
   { path: '/auditoria', label: 'Auditoria', icon: ScrollText, roles: ['gerente', 'admin'] },
   { path: '/usuarios', label: 'Usuários', icon: Users, roles: ['gerente', 'admin'] },
   { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['gerente', 'admin'] },
+  { path: '/admin/mercados', label: 'Mercados', icon: Users, roles: ['super_admin'] },
 ];
+
+function hexToHsl(hex) {
+  const value = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex.slice(1) : '16a06a';
+  const [r,g,b] = [0,2,4].map(index => parseInt(value.slice(index,index+2),16)/255);
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),light=(max+min)/2,diff=max-min;
+  if (!diff) return `0 0% ${Math.round(light*100)}%`;
+  const saturation=diff/(1-Math.abs(2*light-1));
+  let hue=max===r?((g-b)/diff)%6:max===g?(b-r)/diff+2:(r-g)/diff+4;
+  hue=Math.round(hue*60);if(hue<0)hue+=360;
+  return `${hue} ${Math.round(saturation*100)}% ${Math.round(light*100)}%`;
+}
 
 export default function Layout() {
   const [user, setUser] = useState(null);
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -28,6 +40,10 @@ export default function Layout() {
       try {
         const u = await base44.auth.me();
         setUser(u);
+        if (u.primary_color) {
+          const root=document.documentElement,accent=hexToHsl(u.primary_color);
+          root.style.setProperty('--accent',accent);root.style.setProperty('--ring',accent);root.style.setProperty('--sidebar-primary',accent);root.style.setProperty('--market-primary',u.primary_color);
+        }
       } catch {
         navigate('/login');
         return;
@@ -41,7 +57,7 @@ export default function Layout() {
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [navigate]);
 
   if (loading || !user) {
     return (
@@ -51,14 +67,24 @@ export default function Layout() {
     );
   }
 
-  const filteredItems = MENU_ITEMS.filter(item => item.roles.includes(user.role));
+  const enabled = user.enabled_modules || [];
+  const filteredItems = MENU_ITEMS.filter(item => item.roles.includes(user.role) && (user.role === 'super_admin' || enabled.includes(item.path.split('/')[1])));
+  const currentItem = MENU_ITEMS.find(item => location.pathname.startsWith(item.path));
+  const hasAccess = currentItem && filteredItems.some(item => item.path === currentItem.path);
+
+  if (!hasAccess) {
+    const fallback = filteredItems[0]?.path;
+    return fallback ? <NavigateTo path={fallback} /> : <div className="h-screen grid place-items-center">Nenhum módulo está habilitado para esta conta.</div>;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <aside className="w-60 bg-sidebar text-sidebar-foreground flex flex-col flex-shrink-0">
+      {mobileMenu && <button aria-label="Fechar menu" className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={()=>setMobileMenu(false)} />}
+      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-60 bg-sidebar text-sidebar-foreground flex flex-col flex-shrink-0 transition-transform ${mobileMenu?'translate-x-0':'-translate-x-full md:translate-x-0'}`}>
         {/* Logo */}
         <div className="px-5 py-5 border-b border-sidebar-border">
-          <img src={config.logo_url || LOGO_URL} alt="Logo" className="h-11 w-full object-contain" />
+          <button aria-label="Fechar menu" onClick={()=>setMobileMenu(false)} className="absolute right-3 top-3 md:hidden"><X className="w-5"/></button>
+          {user.logo_url || config.logo_url ? <img src={user.logo_url || config.logo_url} alt={user.market_name || 'Nexo PDV'} className="h-11 w-full object-contain" /> : <div className="text-xl font-black text-center">Nexo <span style={{color:'var(--market-primary)'}}>PDV</span></div>}
         </div>
 
         {/* Navigation */}
@@ -69,6 +95,7 @@ export default function Layout() {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={()=>setMobileMenu(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
                   active
                     ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
@@ -109,9 +136,12 @@ export default function Layout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-muted/30">
+      <main className="flex-1 min-w-0 overflow-auto bg-muted/30">
+        <div className="md:hidden sticky top-0 z-30 h-14 bg-card border-b flex items-center px-3 gap-3"><button aria-label="Abrir menu" onClick={()=>setMobileMenu(true)} className="p-2"><Menu className="w-5"/></button><b>{user.market_name || 'Nexo PDV'}</b></div>
         <Outlet context={{ user, config }} />
       </main>
     </div>
   );
 }
+
+function NavigateTo({path}) { const navigate=useNavigate(); useEffect(()=>navigate(path,{replace:true}),[navigate,path]); return null; }
