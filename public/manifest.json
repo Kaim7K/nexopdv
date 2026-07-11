@@ -1,0 +1,17 @@
+{
+  "name": "Nexo PDV",
+  "short_name": "Nexo PDV",
+  "description": "Sistema de ponto de venda e gestão para mercados.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7faf8",
+  "theme_color": "#16a06a",
+  "icons": [
+    {
+      "src": "/nexo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
