@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Search, Eye, Ban, Trash2, X, History } from 'lucide-react';
-import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/helpers';
+import { formatCurrency, formatDateTime, getPaymentLabel, PAYMENT_METHODS } from '@/lib/helpers';
 
 export default function Vendas() {
   const { user } = /** @type {any} */ (useOutletContext());
@@ -118,7 +118,7 @@ export default function Vendas() {
                     <td className="px-4 py-2.5 font-medium">#{s.sale_number}</td>
                     <td className="px-4 py-2.5 text-muted-foreground">{formatDateTime(s.created_date)}</td>
                     {isGerente && <td className="px-4 py-2.5">{s.seller_name}</td>}
-                    <td className="px-4 py-2.5 text-muted-foreground">{(s.payments || []).map(p => PAYMENT_METHODS.find(m => m.method === p.method)?.label || p.method).join(', ')}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{(s.payments || []).map(p => getPaymentLabel(p.method)).join(', ')}</td>
                     <td className="px-4 py-2.5">
                       {s.sale_type === 'fiado' ? <span className="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700 font-medium">Fiado</span> : <span className="text-muted-foreground text-xs">Normal</span>}
                     </td>

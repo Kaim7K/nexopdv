@@ -13,25 +13,15 @@ import ReceiptModal from '@/components/pdv/ReceiptModal';
 import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
 import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
 import { formatCurrency } from '@/lib/helpers';
-
-const createEmptySale = () => ({
-  items: [],
-  payments: [],
-  discount_value: 0,
-  discount_type: 'valor',
-  observation: '',
-  sale_type: 'normal',
-});
-
-const readSavedPdv = key => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(key) || 'null');
-    return saved && typeof saved === 'object' ? saved : null;
-  } catch {
-    return null;
-  }
-};
+import {
+  addProductToSaleItems,
+  createEmptySale,
+  findProductByCapture,
+  readSavedPdvDraft,
+  removeSaleItem,
+  updateSaleItemQuantity,
+  updateSaleItemWeight,
+} from '@/lib/pdv';
 
 const Kbd = ({ children }) => (
   <kbd className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs font-bold leading-none">{children}</kbd>
@@ -40,7 +30,7 @@ const Kbd = ({ children }) => (
 export default function PDV() {
   const { user, config } = /** @type {any} */ (useOutletContext());
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
-  const savedDraft = readSavedPdv(draftStorageKey);
+  const savedDraft = readSavedPdvDraft(draftStorageKey);
   const [products, setProducts] = useState([]);
   const [activeSale, setActiveSale] = useState(() => savedDraft?.activeSale || createEmptySale());
   const [minimizedSales, setMinimizedSales] = useState(() => Array.isArray(savedDraft?.minimizedSales) ? savedDraft.minimizedSales : []);
@@ -193,14 +183,9 @@ export default function PDV() {
   }, [activeSale, modalsOpen, showPayment, showQuickProduct, showReceipt, showPriceCorrection, minimizedSales]);
 
   const handleCapture = code => {
-    const exact = products.find(product => product.barcode === code || product.internal_code === code);
-    if (exact) {
-      addProductToSale(exact);
-      return;
-    }
-    const nameMatch = products.find(product => String(product.name || '').toLowerCase() === code.toLowerCase());
-    if (nameMatch) {
-      addProductToSale(nameMatch);
+    const product = findProductByCapture(products, code);
+    if (product) {
+      addProductToSale(product);
       return;
     }
     if (/^\d{6,}$/.test(code)) setShowQuickProduct({ barcode: code });
@@ -216,70 +201,15 @@ export default function PDV() {
       toast.error('Produto inativo.');
       return;
     }
-    setActiveSale(previous => {
-      const existing = previous.items.find(item => item.product_id === product.id);
-      let newItems;
-      if (product.unit === 'peso') {
-        if (existing) {
-          newItems = previous.items.map(item => item.product_id === product.id
-            ? { ...item, weight: Number(item.weight || 0) + 0.1, subtotal: (Number(item.weight || 0) + 0.1) * item.unit_price }
-            : item);
-        } else {
-          newItems = [...previous.items, {
-            product_id: product.id,
-            product_name: product.name,
-            barcode: product.barcode || '',
-            internal_code: product.internal_code || '',
-            quantity: 1,
-            weight: 0.1,
-            unit_price: Number(product.sale_price),
-            subtotal: 0.1 * Number(product.sale_price),
-            unit: product.unit,
-          }];
-        }
-      } else if (existing) {
-        newItems = previous.items.map(item => item.product_id === product.id
-          ? { ...item, quantity: Number(item.quantity || 0) + 1, subtotal: (Number(item.quantity || 0) + 1) * item.unit_price }
-          : item);
-      } else {
-        newItems = [...previous.items, {
-          product_id: product.id,
-          product_name: product.name,
-          barcode: product.barcode || '',
-          internal_code: product.internal_code || '',
-          quantity: 1,
-          weight: null,
-          unit_price: Number(product.sale_price),
-          subtotal: Number(product.sale_price),
-          unit: product.unit,
-        }];
-      }
-      return { ...previous, items: newItems };
-    });
+    setActiveSale(previous => ({ ...previous, items: addProductToSaleItems(previous.items, product) }));
     if (Number(product.quantity || 0) <= 0) toast(`⚠️ Estoque baixo: ${product.name}`);
   };
 
-  const updateQuantity = (index, quantity) => {
-    const safeQuantity = Math.max(1, Number(quantity) || 1);
-    setActiveSale(previous => ({
-      ...previous,
-      items: previous.items.map((item, currentIndex) => currentIndex === index
-        ? { ...item, quantity: safeQuantity, subtotal: safeQuantity * item.unit_price }
-        : item),
-    }));
-  };
+  const updateQuantity = (index, quantity) => setActiveSale(previous => ({ ...previous, items: updateSaleItemQuantity(previous.items, index, quantity) }));
 
-  const updateWeight = (index, weight) => {
-    const safeWeight = Math.max(0, Number.parseFloat(weight) || 0);
-    setActiveSale(previous => ({
-      ...previous,
-      items: previous.items.map((item, currentIndex) => currentIndex === index
-        ? { ...item, weight: safeWeight, subtotal: safeWeight * item.unit_price }
-        : item),
-    }));
-  };
+  const updateWeight = (index, weight) => setActiveSale(previous => ({ ...previous, items: updateSaleItemWeight(previous.items, index, weight) }));
 
-  const removeItem = index => setActiveSale(previous => ({ ...previous, items: previous.items.filter((_, currentIndex) => currentIndex !== index) }));
+  const removeItem = index => setActiveSale(previous => ({ ...previous, items: removeSaleItem(previous.items, index) }));
 
   const handlePriceCorrection = async (index, newPrice) => {
     const item = activeSale.items[index];

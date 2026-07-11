@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Banknote, Check, Clock, CreditCard, Minimize2, QrCode, Trash2, Wallet, X } from 'lucide-react';
-import { calculateSaleTotals, formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
+import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 
 const METHOD_ICONS = {
@@ -168,7 +168,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                 <h3 className="text-sm font-bold">Valores informados</h3>
                 {payments.map((payment, index) => (
                   <div key={`${payment.method}-${index}`} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
-                    <span className="w-24 truncate text-sm font-semibold sm:w-32">{PAYMENT_METHODS.find(method => method.method === payment.method)?.label}</span>
+                    <span className="w-24 truncate text-sm font-semibold sm:w-32">{getPaymentLabel(payment.method)}</span>
                     {payment.method === 'fiado' ? (
                       <span className="flex-1 text-right text-xl font-black text-orange-600 tabular-nums dark:text-orange-400">{formatCurrency(payment.amount)}</span>
                     ) : (
