@@ -20,15 +20,16 @@ const ROUTE_ACCESS_ALIASES = {
   '/produto': '/estoque',
 };
 
-function hexToHsl(hex) {
+function hexToHsl(hex, { minLightness = 0 } = {}) {
   const value = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex.slice(1) : '16a06a';
   const [r,g,b] = [0,2,4].map(index => parseInt(value.slice(index,index+2),16)/255);
   const max=Math.max(r,g,b),min=Math.min(r,g,b),light=(max+min)/2,diff=max-min;
-  if (!diff) return `0 0% ${Math.round(light*100)}%`;
+  const lightness = Math.max(Math.round(light*100), minLightness);
+  if (!diff) return `0 0% ${lightness}%`;
   const saturation=diff/(1-Math.abs(2*light-1));
   let hue=max===r?((g-b)/diff)%6:max===g?(b-r)/diff+2:(r-g)/diff+4;
   hue=Math.round(hue*60);if(hue<0)hue+=360;
-  return `${hue} ${Math.round(saturation*100)}% ${Math.round(light*100)}%`;
+  return `${hue} ${Math.round(saturation*100)}% ${lightness}%`;
 }
 
 export default function Layout() {
@@ -45,7 +46,7 @@ export default function Layout() {
         const u = await nexoApi.auth.me();
         setUser(u);
         if (u.primary_color) {
-          const root=document.documentElement,accent=hexToHsl(u.primary_color);
+          const root=document.documentElement,accent=hexToHsl(u.primary_color, { minLightness: 46 });
           root.style.setProperty('--accent',accent);root.style.setProperty('--ring',accent);root.style.setProperty('--sidebar-primary',accent);root.style.setProperty('--market-primary',u.primary_color);
         }
       } catch {

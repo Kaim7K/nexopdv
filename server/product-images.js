@@ -1,10 +1,16 @@
 import { AppError } from './errors.js';
 
 const BAD_TEXT = [
-  'banner', 'promoção', 'promocao', 'oferta', 'encarte', 'folheto', 'prateleira',
-  'shelf', 'loja', 'store', 'pessoa', 'person', 'segurando', 'holding', 'mão', 'mao',
-  'anúncio', 'anuncio', 'advertisement', 'montagem', 'collage', 'mockup', 'kit promocional',
-  'receita', 'recipe', 'review', 'vídeo', 'video', 'youtube', 'instagram', 'facebook', 'pinterest',
+  'banner', 'promocao', 'oferta', 'encarte', 'folheto', 'prateleira',
+  'shelf', 'store', 'pessoa', 'person', 'segurando', 'holding', 'mao',
+  'anuncio', 'advertisement', 'montagem', 'collage', 'mockup', 'kit promocional',
+  'receita', 'recipe', 'review', 'video', 'youtube', 'instagram', 'facebook',
+  'pinterest', 'unboxing', 'olx', 'reclame aqui',
+];
+
+const PACKSHOT_TEXT = [
+  'fundo branco', 'white background', 'isolado', 'isolated', 'png', 'produto',
+  'embalagem', 'packshot', 'supermercado', 'delivery', 'loja online',
 ];
 
 const STOP_WORDS = new Set([
@@ -48,13 +54,18 @@ function imageGeometryScore(width, height) {
 }
 
 function scoreResult(result, context) {
-  let score = result.provider === 'open-food-facts-barcode' ? 1000 : 0;
-  score += result.background === 'transparent' ? 150 : result.background === 'white' ? 90 : 30;
+  let score = result.provider === 'google-cse' ? 220 : 0;
+  if (result.provider === 'open-food-facts-barcode') score += 35;
+  score += result.background === 'transparent' ? 220 : result.background === 'white' ? 170 : 0;
   score += imageGeometryScore(result.width, result.height);
   if (/png/i.test(result.mime || result.url)) score += 12;
   if (context.barcode && normalizeText(`${result.title} ${result.context}`).includes(context.barcode)) score += 140;
   score += productSimilarity(context.name, `${result.title} ${result.context}`) * 180;
   score += productSimilarity(context.category, `${result.title} ${result.context}`) * 30;
+
+  const text = normalizeText(`${result.title} ${result.context} ${result.sourceUrl}`);
+  if (PACKSHOT_TEXT.some(term => text.includes(normalizeText(term)))) score += 80;
+  if (result.provider?.startsWith('open-food-facts') && result.background === 'catalog') score -= 180;
   return score;
 }
 
@@ -65,11 +76,12 @@ function cleanResults(results, context, limit) {
       if (!result?.url || seen.has(result.url)) return false;
       seen.add(result.url);
       if (!/^https:\/\//i.test(result.url)) return false;
-      if (textLooksRejected(result.title, result.context, result.source)) return false;
+      if (textLooksRejected(result.title, result.context, result.source, result.sourceUrl)) return false;
       if (imageGeometryScore(result.width, result.height) <= -100) return false;
       if (result.provider !== 'open-food-facts-barcode' && context.name) {
-        const similarity = productSimilarity(context.name, `${result.title} ${result.context}`);
-        if (similarity < 0.34 && !normalizeText(`${result.title} ${result.context}`).includes(normalizeText(context.barcode))) return false;
+        const haystack = `${result.title} ${result.context}`;
+        const similarity = productSimilarity(context.name, haystack);
+        if (similarity < 0.34 && !normalizeText(haystack).includes(normalizeText(context.barcode))) return false;
       }
       return true;
     })
@@ -95,7 +107,8 @@ async function fetchJson(url, label) {
 }
 
 function openFoodFactsImage(product, provider, exactBarcode = false) {
-  const url = product?.image_front_url || product?.image_url || product?.selected_images?.front?.display?.pt || product?.selected_images?.front?.display?.en;
+  const selected = product?.selected_images?.front?.display;
+  const url = selected?.pt || selected?.en || product?.image_front_url || product?.image_url;
   if (!url) return null;
   return {
     url,
@@ -125,7 +138,7 @@ async function searchOpenFoodFacts({ barcode, name, category, page, includeBarco
         if (result) output.push(result);
       }
     } catch {
-      // The exact-barcode provider is optional; the other providers can continue.
+      // The exact-barcode provider is optional; other providers can continue.
     }
   }
 
@@ -139,7 +152,7 @@ async function searchOpenFoodFacts({ barcode, name, category, page, includeBarco
       url.searchParams.set('json', '1');
       url.searchParams.set('page_size', '20');
       url.searchParams.set('page', String(page));
-      url.searchParams.set('fields', 'code,product_name,generic_name,brands,categories,image_url,image_front_url,image_small_url,image_front_small_url');
+      url.searchParams.set('fields', 'code,product_name,generic_name,brands,categories,image_url,image_front_url,image_small_url,image_front_small_url,selected_images');
       const data = await fetchJson(url, 'Open Food Facts');
       for (const product of data?.products || []) {
         const result = openFoodFactsImage(product, 'open-food-facts-text');
@@ -152,8 +165,12 @@ async function searchOpenFoodFacts({ barcode, name, category, page, includeBarco
   return output;
 }
 
-function makeGoogleQuery(base) {
-  return `"${base}" produto embalagem -banner -promoção -oferta -encarte -prateleira -loja -pessoa -segurando -montagem`;
+function makeGoogleQuery(base, background) {
+  const cleanBase = String(base || '').replace(/\b\d{8,14}\b/g, '').trim() || base;
+  const qualityTerms = background === 'transparent'
+    ? 'produto png fundo transparente embalagem'
+    : 'produto fundo branco embalagem supermercado';
+  return `"${cleanBase}" ${qualityTerms} -banner -promocao -oferta -encarte -prateleira -pessoa -segurando -mao -review -receita -youtube -instagram -pinterest`;
 }
 
 async function searchGoogleQuery({ query, page, background }) {
@@ -164,7 +181,7 @@ async function searchGoogleQuery({ query, page, background }) {
   const url = new URL('https://customsearch.googleapis.com/customsearch/v1');
   url.searchParams.set('key', apiKey);
   url.searchParams.set('cx', engineId);
-  url.searchParams.set('q', makeGoogleQuery(query));
+  url.searchParams.set('q', makeGoogleQuery(query, background));
   url.searchParams.set('searchType', 'image');
   url.searchParams.set('safe', 'active');
   url.searchParams.set('gl', 'br');
@@ -191,7 +208,6 @@ async function searchGoogleQuery({ query, page, background }) {
       provider: 'google-cse',
     }));
   } catch {
-    // A busca externa é complementar. Falhas de cota ou configuração não derrubam o cadastro.
     return [];
   }
 }
@@ -207,42 +223,42 @@ export async function searchProductImages({ barcode = '', name = '', category = 
     throw new AppError(400, 'PRODUCT_IMAGE_QUERY_REQUIRED', 'Informe o nome ou o código de barras do produto.');
   }
 
+  const exactCatalog = await searchOpenFoodFacts({
+    ...context,
+    page: safePage,
+    includeBarcode: true,
+    includeText: false,
+  });
+  const inferredName = context.name || exactCatalog[0]?.title || '';
+  const inferredContext = { ...context, name: inferredName };
+
   const queryPriority = [];
-  if (context.barcode) queryPriority.push(context.barcode);
-  if (context.name) queryPriority.push(context.name);
-  if (context.name && context.category) queryPriority.push(`${context.name} ${context.category}`);
+  if (inferredName) queryPriority.push(inferredName);
+  if (inferredName && context.category) queryPriority.push(`${inferredName} ${context.category}`);
+  if (context.barcode && !inferredName) queryPriority.push(context.barcode);
   const queries = [...new Set(queryPriority)];
 
-  // Provedores independentes são consultados em paralelo para não estourar o tempo da função.
-  const [exactCatalog, textCatalog, transparentGroups] = await Promise.all([
-    searchOpenFoodFacts({
-      ...context,
-      page: safePage,
-      includeBarcode: true,
-      includeText: false,
-    }),
-    searchOpenFoodFacts({
-      ...context,
-      page: safePage,
-      includeBarcode: false,
-      includeText: true,
-    }),
+  const [transparentGroups, textCatalog] = await Promise.all([
     Promise.all(queries.map(query => searchGoogleQuery({
       query,
       page: safePage,
       background: 'transparent',
     }))),
+    searchOpenFoodFacts({
+      ...inferredContext,
+      page: safePage,
+      includeBarcode: false,
+      includeText: true,
+    }),
   ]);
 
-  // Ordem de aceitação: catálogo exato, transparência e catálogo limpo em fundo branco.
   const all = [
-    ...exactCatalog,
     ...transparentGroups.flat(),
     ...textCatalog,
+    ...exactCatalog,
   ];
 
-  // O Google em fundo branco só é chamado quando ainda faltam sugestões válidas.
-  if (cleanResults(all, context, 5).length < 5) {
+  if (cleanResults(all, inferredContext, 5).length < 5) {
     const whiteGroups = await Promise.all(queries.map(query => searchGoogleQuery({
       query,
       page: safePage,
@@ -251,9 +267,10 @@ export async function searchProductImages({ barcode = '', name = '', category = 
     all.push(...whiteGroups.flat());
   }
 
-  const results = cleanResults(all, context, 5);
+  const results = cleanResults(all, inferredContext, 5);
   return {
     results,
+    inferredName,
     page: safePage,
     hasMore: results.length === 5 && safePage < 10,
     providers: {

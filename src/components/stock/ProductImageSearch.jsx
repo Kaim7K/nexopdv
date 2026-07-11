@@ -54,6 +54,12 @@ export default function ProductImageSearch({ barcode, productName, category, onS
       onClose();
       toast.success('Imagem salva no produto.');
     } catch (error) {
+      if (error.code === 'BLOB_NOT_CONFIGURED' || error.status === 503) {
+        onSelect(selected.url);
+        onClose();
+        toast.success('Imagem vinculada por URL. Conecte o Vercel Blob depois para armazenar uma cópia própria.');
+        return;
+      }
       toast.error(error.message || 'Não foi possível salvar a imagem selecionada.');
     } finally {
       setSaving(false);
@@ -69,7 +75,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
               <ImageIcon className="h-5 w-5 text-accent" /> Buscar imagem do produto
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Prioridade: código de barras, nome e categoria. Resultados transparentes aparecem primeiro.
+              Prioridade: produto isolado, fundo transparente ou branco. Fotos de catálogo aparecem só como alternativa.
             </p>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -139,7 +145,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
                 )}
                 {providers && !providers.googleCustomSearch && (
                   <p className="text-center text-[11px] text-muted-foreground">
-                    Busca ampliada indisponível: configure GOOGLE_CSE_API_KEY e GOOGLE_CSE_ID na Vercel.
+                    Busca ampliada indisponível: configure GOOGLE_CSE_API_KEY e GOOGLE_CSE_ID na Vercel para encontrar imagens limpas como packshots.
                   </p>
                 )}
               </div>
