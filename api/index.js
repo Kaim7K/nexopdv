@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { handleUpload } from '@vercel/blob/client';
 import { assertDatabaseReady, CURRENT_SCHEMA_VERSION, getDb } from '../server/db.js';
 import {
   authenticateCredentials,
@@ -8,6 +9,9 @@ import {
   publicUser,
 } from '../server/auth.js';
 import { handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
+import { AppError } from '../server/errors.js';
+import { searchProductImages } from '../server/product-images.js';
+import { importRemoteProductImage, PRODUCT_IMAGE_UPLOAD_RULES } from '../server/media.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -63,6 +67,62 @@ async function routeHandler(req, res) {
   const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'sales' ? (path[1] === 'complete' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'entities' ? entityModules[path[1]] : null;
   if (user.role !== 'super_admin' && requiredModule && !(user.enabled_modules || []).includes(requiredModule)) return send(res, 403, { message: 'Esta funcionalidade não está habilitada para o mercado.' });
   if (user.role !== 'super_admin' && path[0] === 'entities' && path[1] === 'Product' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
+
+  if (path[0] === 'product-images' && path[1] === 'search') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
+      return send(res, 403, { message: 'Sem permissão para buscar imagens de produtos.' });
+    }
+    const result = await searchProductImages({
+      barcode: req.query.barcode,
+      name: req.query.name,
+      category: req.query.category,
+      page: req.query.page,
+    });
+    return send(res, 200, result);
+  }
+
+  if (path[0] === 'media' && path[1] === 'upload') {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
+      return send(res, 403, { message: 'Sem permissão para enviar imagens de produtos.' });
+    }
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'Conecte um Vercel Blob ao projeto para habilitar o upload de imagens.');
+    }
+    const json = await handleUpload({
+      body: req.body,
+      request: req,
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        let payload = {};
+        try { payload = clientPayload ? JSON.parse(clientPayload) : {}; } catch { payload = {}; }
+        if (payload.kind !== 'product') throw new AppError(400, 'INVALID_UPLOAD_KIND', 'Tipo de upload inválido.');
+        const prefix = `products/${user.market_id}/`;
+        if (!String(pathname || '').startsWith(prefix)) throw new AppError(400, 'INVALID_UPLOAD_PATH', 'Destino de upload inválido.');
+        return {
+          ...PRODUCT_IMAGE_UPLOAD_RULES,
+          addRandomSuffix: true,
+          cacheControlMaxAge: 60 * 60 * 24 * 365,
+          tokenPayload: JSON.stringify({ userId: user.id, marketId: user.market_id, kind: 'product' }),
+        };
+      },
+      onUploadCompleted: async () => {},
+    });
+    return send(res, 200, json);
+  }
+
+  if (path[0] === 'media' && path[1] === 'import') {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
+      return send(res, 403, { message: 'Sem permissão para importar imagens de produtos.' });
+    }
+    const imported = await importRemoteProductImage({
+      url: req.body.url,
+      productName: req.body.productName,
+      marketId: user.market_id,
+    });
+    return send(res, 201, imported);
+  }
 
   if (path[0] === 'markets') {
     if (user.role !== 'super_admin') return send(res, 403, { message: 'Acesso restrito.' });

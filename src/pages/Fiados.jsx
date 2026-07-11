@@ -113,7 +113,7 @@ export default function Fiados() {
 
       {settleFiado && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSettleFiado(null)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-card text-card-foreground border border-border rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Quitar Fiado</h2>
               <button onClick={() => setSettleFiado(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>

@@ -57,40 +57,40 @@ export default function Configuracoes() {
 
       <div className="space-y-4">
         {/* Market info */}
-        <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="bg-card text-card-foreground border border-border rounded-lg p-5 space-y-3">
           <h3 className="text-sm font-bold flex items-center gap-2"><Store className="w-4 h-4 text-accent" /> Dados do Mercado</h3>
           <div>
             <label className="text-xs text-muted-foreground">Nome do Mercado</label>
             <input type="text" value={getValue('nome_mercado', 'Mercadinho Alameda das Árvores')}
               onChange={(e) => handleChange('nome_mercado', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground flex items-center gap-1"><Hash className="w-3 h-3" /> CNPJ</label>
             <input type="text" value={getValue('cnpj')} onChange={(e) => handleChange('cnpj', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> Endereço</label>
             <input type="text" value={getValue('endereco')} onChange={(e) => handleChange('endereco', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" /> URL do Logo</label>
             <input type="url" value={getValue('logo_url')} onChange={(e) => handleChange('logo_url', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             {getValue('logo_url') && <img src={getValue('logo_url')} alt="Logo" className="h-16 mt-2 object-contain" />}
           </div>
         </div>
 
         {/* Operational */}
-        <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="bg-card text-card-foreground border border-border rounded-lg p-5 space-y-3">
           <h3 className="text-sm font-bold flex items-center gap-2"><Layers className="w-4 h-4 text-accent" /> Parâmetros Operacionais</h3>
           <div>
             <label className="text-xs text-muted-foreground">Limite Máximo de Vendas Minimizadas</label>
             <input type="number" min="1" max="10" value={getValue('limite_vendas_minimizadas', '3')}
               onChange={(e) => handleChange('limite_vendas_minimizadas', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             <p className="text-xs text-muted-foreground mt-1">Quantas vendas podem ficar abertas simultaneamente no caixa.</p>
           </div>
         </div>

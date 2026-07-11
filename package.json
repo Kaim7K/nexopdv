@@ -16,9 +16,10 @@
     "db:setup": "node scripts/deploy-database.mjs",
     "db:check": "node scripts/check-database.mjs",
     "check": "npm run test && npm run typecheck && npm run lint && npm run build",
-    "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs"
+    "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs && node tests/features.test.mjs"
   },
   "dependencies": {
+    "@e965/xlsx": "^0.20.3",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
     "@neondatabase/serverless": "^1.0.1",
@@ -52,6 +53,7 @@
     "@stripe/react-stripe-js": "^3.0.0",
     "@stripe/stripe-js": "^5.2.0",
     "@tanstack/react-query": "^5.84.1",
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -75,7 +77,6 @@
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^4.2.1",
     "react-markdown": "^9.0.1",
-    "react-quill": "^2.0.0",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^6.26.0",
     "recharts": "^2.15.4",
@@ -84,7 +85,6 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.171.0",
     "vaul": "^1.1.2",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -18,7 +18,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-card text-card-foreground border border-border rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-bold">Produto com Valor Errado</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
@@ -47,7 +47,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
               <div>
                 <label className="text-xs text-muted-foreground">Novo valor</label>
                 <input type="number" step="0.01" min="0" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} autoFocus
-                  className="w-full mt-1 px-3 py-2 border border-border rounded text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full mt-1 px-3 py-2 border border-border bg-background rounded text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
               </div>
             </div>

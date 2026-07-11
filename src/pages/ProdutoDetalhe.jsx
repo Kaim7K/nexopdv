@@ -35,7 +35,7 @@ export default function ProdutoDetalhe() {
         <ArrowLeft className="w-4 h-4" /> Voltar ao estoque
       </Link>
 
-      <div className="bg-white border rounded-lg p-6 mb-4">
+      <div className="bg-card text-card-foreground border border-border rounded-lg p-6 mb-4">
         <div className="flex items-start gap-4">
           <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0 border border-border">
             {product.image_url ? <img src={product.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-10 h-10 text-muted-foreground" />}
@@ -61,7 +61,7 @@ export default function ProdutoDetalhe() {
       </div>
 
       {/* Audit history */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card text-card-foreground border border-border rounded-lg p-6">
         <h2 className="text-sm font-bold flex items-center gap-2 mb-4"><History className="w-4 h-4 text-accent" /> Auditoria do Produto</h2>
         {audits.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Nenhuma alteração registrada.</p>

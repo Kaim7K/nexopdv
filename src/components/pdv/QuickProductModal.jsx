@@ -1,49 +1,20 @@
 import React, { useState } from 'react';
-import { X, Check, Loader2, ImageIcon } from 'lucide-react';
+import { Check, Loader2, Search, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
+import ProductImageSearch from '@/components/stock/ProductImageSearch';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [images, setImages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [showImages, setShowImages] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const searchImages = async () => {
-    if (!name.trim() && !barcode) {
-      toast.error('Digite o nome do produto primeiro');
-      return;
-    }
-    setSearching(true);
-    setShowImages(true);
-    try {
-      const query = barcode || name;
-      const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5`);
-      const data = await res.json();
-      const found = [];
-      if (data.products) {
-        data.products.forEach(p => {
-          if (p.image_url) found.push({ url: p.image_url, source: 'Open Food Facts' });
-          if (p.image_front_url && p.image_front_url !== p.image_url) found.push({ url: p.image_front_url, source: 'Open Food Facts' });
-        });
-      }
-      setImages(found.slice(0, 5));
-      if (found.length === 0) {
-        toast('Nenhuma imagem adequada encontrada.', { icon: 'ℹ️' });
-      }
-    } catch {
-      toast.error('Erro ao buscar imagens');
-    }
-    setSearching(false);
-  };
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Nome do produto é obrigatório');
+      toast.error('Nome do produto é obrigatório.');
       return;
     }
     setSaving(true);
@@ -52,8 +23,8 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         name: name.trim(),
         barcode: barcode || '',
         internal_code: generateInternalCode(),
-        image_url: selectedImage || '',
-        sale_price: parseFloat(price) || 0,
+        image_url: imageUrl || '',
+        sale_price: Number.parseFloat(price) || 0,
         cost_price: null,
         quantity: 0,
         unit: 'unidade',
@@ -61,81 +32,83 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         category: '',
       });
       onSave(product);
-    } catch {
-      toast.error('Erro ao cadastrar produto');
+    } catch (error) {
+      toast.error(error.message || 'Erro ao cadastrar produto.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-bold">Cadastro Rápido</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold">Cadastro rápido</h2>
+            <p className="text-xs text-muted-foreground">A imagem é opcional e não impede a venda.</p>
+          </div>
+          <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
-        <div className="p-6 space-y-4">
+
+        <div className="space-y-4 p-5">
           {barcode && (
             <div>
-              <label className="text-xs text-muted-foreground">Código de Barras</label>
-              <input type="text" value={barcode} readOnly
-                className="w-full mt-1 px-3 py-2 bg-secondary rounded text-sm font-mono" />
+              <label className="text-xs font-medium text-muted-foreground">Código de barras</label>
+              <input type="text" value={barcode} readOnly className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm" />
             </div>
           )}
           <div>
-            <label className="text-xs text-muted-foreground">Nome do Produto *</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus
+            <label className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={event => setName(event.target.value)}
+              autoFocus
               placeholder="Digite o nome do produto"
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              onKeyDown={event => event.key === 'Enter' && handleSave()}
+            />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Preço de Venda (opcional)</label>
-            <input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
-              placeholder="0,00"
-              className="w-full mt-1 px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            <label className="text-xs font-medium text-muted-foreground">Preço de venda</label>
+            <input type="number" min="0" step="0.01" value={price} onChange={event => setPrice(event.target.value)} placeholder="0,00" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
 
-          {/* Image search */}
-          {!showImages ? (
-            <button onClick={searchImages}
-              className="flex items-center gap-2 text-sm text-accent hover:underline">
-              <ImageIcon className="w-4 h-4" /> Buscar imagem do produto
-            </button>
-          ) : (
-            <div>
-              {searching ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Buscando imagens...
-                </div>
-              ) : images.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {images.map((img, i) => (
-                    <button key={i} onClick={() => setSelectedImage(img.url)}
-                      className={`relative aspect-square rounded-lg overflow-hidden border-2 ${selectedImage === img.url ? 'border-accent' : 'border-transparent'}`}>
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
-                      {selectedImage === img.url && (
-                        <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
-                          <Check className="w-6 h-6 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Nenhuma imagem encontrada.</p>
-              )}
+          {imageUrl ? (
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
+              <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-white">
+                <img src={imageUrl} alt={name || 'Produto'} className="h-full w-full object-contain p-1" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Imagem selecionada</p>
+                <button type="button" onClick={() => setShowImageSearch(true)} className="mt-1 text-xs font-semibold text-accent hover:underline">Trocar imagem</button>
+              </div>
+              <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
             </div>
+          ) : (
+            <button type="button" onClick={() => setShowImageSearch(true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">
+              <Search className="h-5 w-5" /> Buscar imagem do produto
+            </button>
           )}
         </div>
-        <div className="flex gap-2 px-6 py-4 border-t">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-secondary">Cancelar</button>
-          <button onClick={handleSave} disabled={saving || !name.trim()}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-40 text-sm font-bold">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Salvar e Adicionar
+
+        <div className="flex gap-2 border-t border-border px-5 py-4">
+          <button onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
+          <button onClick={handleSave} disabled={saving || !name.trim()} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground">
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />} Salvar e adicionar
           </button>
         </div>
       </div>
+
+      {showImageSearch && (
+        <ProductImageSearch
+          barcode={barcode}
+          productName={name}
+          category=""
+          onSelect={setImageUrl}
+          onClose={() => setShowImageSearch(false)}
+        />
+      )}
     </div>
   );
 }

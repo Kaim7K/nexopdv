@@ -55,11 +55,11 @@ export default function AuditoriaGeral() {
   });
 
   const typeColor = (type) => {
-    if (type?.includes('preco')) return 'bg-amber-100 text-amber-700';
-    if (type?.includes('concluida') || type?.includes('quitado')) return 'bg-green-100 text-green-700';
-    if (type?.includes('cancel') || type?.includes('exclui')) return 'bg-red-100 text-red-700';
-    if (type?.includes('cadastr')) return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-700';
+    if (type?.includes('preco')) return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
+    if (type?.includes('concluida') || type?.includes('quitado')) return 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300';
+    if (type?.includes('cancel') || type?.includes('exclui')) return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300';
+    if (type?.includes('cadastr')) return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300';
+    return 'bg-muted text-muted-foreground';
   };
 
   return (
@@ -73,22 +73,22 @@ export default function AuditoriaGeral() {
         <div className="flex-1 relative min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar na auditoria..."
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            className="w-full pl-10 pr-4 py-2 border border-border bg-card text-card-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+          className="px-3 py-2 border border-border bg-card text-card-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent">
           <option value="">Todos tipos</option>
           {actionTypes.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         <select value={filterUser} onChange={(e) => setFilterUser(e.target.value)}
-          className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+          className="px-3 py-2 border border-border bg-card text-card-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent">
           <option value="">Todos usuários</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
       </div>
 
       {loading ? <div className="text-center py-12 text-muted-foreground">Carregando...</div> : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-card text-card-foreground border border-border rounded-lg overflow-hidden">
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
             {filtered.map(e => (
               <div key={e.id} className="px-4 py-3 border-b hover:bg-secondary/30 flex items-start gap-3">

@@ -1,34 +1,74 @@
 import React from 'react';
-import { Minus } from 'lucide-react';
+import { Draggable, DragDropContext, Droppable } from '@hello-pangea/dnd';
+import { GripVertical, Minus } from 'lucide-react';
+import { formatCurrency } from '@/lib/helpers';
 
 const COLORS = [
-  'bg-blue-500', 'bg-purple-500', 'bg-teal-500', 'bg-amber-500', 'bg-rose-500', 'bg-indigo-500',
+  'bg-blue-600',
+  'bg-purple-600',
+  'bg-teal-600',
+  'bg-amber-600',
+  'bg-rose-600',
+  'bg-indigo-600',
 ];
 
-export default function MinimizedSalesBar({ sales, onRestore, onDiscard }) {
-  if (sales.length === 0) return null;
+export default function MinimizedSalesBar({ sales, onRestore, onDiscard, onReorder }) {
+  if (!sales.length) return null;
+
+  const handleDragEnd = result => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+    onReorder(result.source.index, result.destination.index);
+  };
 
   return (
-    <div className="fixed top-24 right-3 flex flex-col gap-2 z-40">
-      {sales.map((sale, idx) => {
-        const color = COLORS[idx % COLORS.length];
-        const total = (sale.items || []).reduce((sum, item) => sum + (item.subtotal || 0), 0);
-        return (
-          <div key={sale._localId || idx} className="relative group">
-            <button onClick={() => onRestore(idx)}
-              className={`${color} text-white rounded-lg shadow-lg px-4 py-3 flex flex-col items-center min-w-[80px] hover:scale-105 transition-transform`}>
-              <span className="text-xs font-medium opacity-90">Venda</span>
-              <span className="text-lg font-bold">#{sale.temporary_number}</span>
-              <span className="text-xs opacity-90">{sale.items?.length || 0} itens</span>
-              <span className="text-sm font-semibold">R$ {total.toFixed(2)}</span>
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); onDiscard(idx); }}
-              className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Minus className="w-3 h-3" />
-            </button>
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId="minimized-sales" direction="vertical">
+        {provided => (
+          <div ref={provided.innerRef} {...provided.droppableProps} className="fixed right-3 top-24 z-40 flex max-h-[calc(100vh-120px)] w-[108px] flex-col gap-2 overflow-y-auto overflow-x-hidden pb-3 pr-1">
+            {sales.map((sale, index) => {
+              const color = COLORS[(Number(sale.temporary_number || index + 1) - 1) % COLORS.length];
+              const total = (sale.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+              return (
+                <Draggable key={String(sale._localId)} draggableId={String(sale._localId)} index={index}>
+                  {(dragProvided, snapshot) => (
+                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} style={dragProvided.draggableProps.style} className={`relative rounded-xl shadow-lg ${snapshot.isDragging ? 'ring-2 ring-white/70' : ''}`}>
+                      <button
+                        type="button"
+                        onClick={() => onRestore(index)}
+                        className={`${color} flex min-h-[104px] w-full flex-col items-center justify-center rounded-xl px-2 py-3 text-white transition hover:brightness-110`}
+                        title="Abrir esta venda sem precisar minimizar a atual"
+                      >
+                        <span className="text-[11px] font-semibold uppercase tracking-wide opacity-85">Venda aberta</span>
+                        <span className="text-2xl font-black">#{sale.temporary_number}</span>
+                        <span className="text-[11px] opacity-90">{sale.items?.length || 0} itens</span>
+                        <span className="mt-1 text-sm font-black tabular-nums">{formatCurrency(total)}</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Mover venda"
+                        {...dragProvided.dragHandleProps}
+                        className="absolute left-1 top-1 grid h-7 w-7 place-items-center rounded-lg bg-black/25 text-white hover:bg-black/40"
+                        title="Arraste para reorganizar"
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Descartar venda minimizada"
+                        onClick={event => { event.stopPropagation(); onDiscard(index); }}
+                        className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-lg bg-black/25 text-white hover:bg-destructive"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </Draggable>
+              );
+            })}
+            {provided.placeholder}
           </div>
-        );
-      })}
-    </div>
+        )}
+      </Droppable>
+    </DragDropContext>
   );
 }

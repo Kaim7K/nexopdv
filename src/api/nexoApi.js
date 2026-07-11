@@ -50,6 +50,15 @@ export const nexoApi = {
     update: (id, data) => request(`/markets/${id}`, { method: 'PATCH', body: data }),
   },
   stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products } }) },
+  media: {
+    importProductImage: (url, productName) => request('/media/import', { method: 'POST', body: { url, productName } }),
+  },
+  productImages: {
+    search: ({ barcode = '', name = '', category = '', page = 1 }) => {
+      const params = new URLSearchParams({ barcode, name, category, page: String(page) });
+      return request(`/product-images/search?${params.toString()}`);
+    },
+  },
   sales: {
     complete: data => request('/sales/complete', { method: 'POST', body: data }),
     nextNumber: () => request('/sales/next'),

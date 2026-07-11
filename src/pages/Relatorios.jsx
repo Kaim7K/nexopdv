@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { BarChart3, TrendingUp, TrendingDown, AlertTriangle, Lightbulb, DollarSign, ShoppingCart, Receipt } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
+import { AlertTriangle, BarChart3, DollarSign, Lightbulb, Receipt, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
 
 const PERIODS = [
@@ -13,10 +12,24 @@ const PERIODS = [
   { key: 'custom', label: 'Personalizado' },
 ];
 
-const CHART_COLORS = ['hsl(87 51% 48%)', 'hsl(125 30% 35%)', 'hsl(45 90% 55%)', 'hsl(0 70% 55%)', 'hsl(200 60% 50%)', 'hsl(280 65% 60%)'];
+const CHART_COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(280 65% 60%)',
+];
+
+const TOOLTIP_STYLE = {
+  backgroundColor: 'hsl(var(--popover))',
+  border: '1px solid hsl(var(--border))',
+  borderRadius: 10,
+  color: 'hsl(var(--popover-foreground))',
+  boxShadow: '0 12px 30px rgb(0 0 0 / 0.16)',
+};
 
 export default function Relatorios() {
-  const { user } = /** @type {any} */ (useOutletContext());
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
@@ -28,22 +41,35 @@ export default function Relatorios() {
 
   const loadData = async () => {
     try {
-      const s = await nexoApi.entities.Sale.list('-created_date', 500);
-      setSales(s.filter(x => x.status === 'concluida'));
-      const f = await nexoApi.entities.FiadoRecord.list('-created_date', 200);
-      setFiados(f);
-    } catch { toast.error('Erro ao carregar dados'); }
-    setLoading(false);
+      const [saleData, fiadoData] = await Promise.all([
+        nexoApi.entities.Sale.list('-created_date', 1000),
+        nexoApi.entities.FiadoRecord.list('-created_date', 500),
+      ]);
+      setSales(saleData);
+      setFiados(fiadoData);
+    } catch {
+      toast.error('Erro ao carregar dados.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const { startDate, endDate, prevStartDate, prevEndDate } = useMemo(() => {
     const now = new Date();
-    let start, end, prevStart, prevEnd;
+    let start;
+    let end;
+    let prevStart;
+    let prevEnd;
     if (period === 'week') {
-      start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0, 0, 0, 0);
-      end = new Date(now); end.setHours(23, 59, 59, 999);
-      prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
-      prevEnd = new Date(start); prevEnd.setMilliseconds(-1);
+      start = new Date(now);
+      start.setDate(now.getDate() - now.getDay());
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      prevStart = new Date(start);
+      prevStart.setDate(prevStart.getDate() - 7);
+      prevEnd = new Date(start);
+      prevEnd.setMilliseconds(-1);
     } else if (period === 'month') {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -55,222 +81,209 @@ export default function Relatorios() {
       prevStart = new Date(now.getFullYear() - 1, 0, 1);
       prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
     } else {
-      start = customStart ? new Date(customStart + 'T00:00:00') : new Date(0);
-      end = customEnd ? new Date(customEnd + 'T23:59:59') : new Date();
-      const diffMs = end.getTime() - start.getTime();
-      prevStart = new Date(start.getTime() - diffMs);
+      start = customStart ? new Date(`${customStart}T00:00:00`) : new Date(0);
+      end = customEnd ? new Date(`${customEnd}T23:59:59`) : new Date();
+      const difference = Math.max(1, end.getTime() - start.getTime());
+      prevStart = new Date(start.getTime() - difference);
       prevEnd = new Date(start.getTime() - 1);
     }
     return { startDate: start, endDate: end, prevStartDate: prevStart, prevEndDate: prevEnd };
   }, [period, customStart, customEnd]);
 
-  const periodSales = sales.filter(s => {
-    const d = new Date(s.created_date);
-    return d >= startDate && d <= endDate;
-  });
-
-  const prevPeriodSales = sales.filter(s => {
-    const d = new Date(s.created_date);
-    return d >= prevStartDate && d <= prevEndDate;
-  });
+  const periodSales = sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate);
+  const prevPeriodSales = sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= prevStartDate && new Date(sale.created_date) <= prevEndDate);
 
   const stats = useMemo(() => {
-    const totalRevenue = periodSales.reduce((s, x) => s + (x.total || 0), 0);
-    const prevRevenue = prevPeriodSales.reduce((s, x) => s + (x.total || 0), 0);
-    const revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 0;
+    const totalRevenue = periodSales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const prevRevenue = prevPeriodSales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
     const totalSales = periodSales.length;
-    const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
-    const cancelled = sales.filter(s => s.status === 'cancelada' && new Date(s.created_date) >= startDate && new Date(s.created_date) <= endDate).length;
-    const discounts = periodSales.reduce((s, x) => s + (x.discount_value || 0), 0);
+    const avgTicket = totalSales ? totalRevenue / totalSales : 0;
+    const cancelled = sales.filter(sale => sale.status === 'cancelada' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate).length;
 
-    // Top products
     const productMap = {};
-    periodSales.forEach(s => {
-      (s.items || []).forEach(item => {
+    for (const sale of periodSales) {
+      for (const item of sale.items || []) {
         if (!productMap[item.product_name]) productMap[item.product_name] = { qty: 0, revenue: 0 };
-        const qty = item.unit === 'peso' ? item.weight : item.quantity;
-        productMap[item.product_name].qty += qty || 0;
-        productMap[item.product_name].revenue += item.subtotal || 0;
-      });
-    });
+        productMap[item.product_name].qty += Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
+        productMap[item.product_name].revenue += Number(item.subtotal || 0);
+      }
+    }
     const topProducts = Object.entries(productMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
 
-    // Payment methods
-    const payMap = {};
-    periodSales.forEach(s => {
-      (s.payments || []).forEach(p => {
-        if (!payMap[p.method]) payMap[p.method] = 0;
-        payMap[p.method] += p.amount || 0;
-      });
-    });
-    const paymentData = Object.entries(payMap).map(([k, v]) => ({ name: PAYMENT_METHODS.find(m => m.method === k)?.label || k, value: v }));
+    const paymentMap = {};
+    for (const sale of periodSales) {
+      for (const payment of sale.payments || []) paymentMap[payment.method] = Number(paymentMap[payment.method] || 0) + Number(payment.amount || 0);
+    }
+    const paymentData = Object.entries(paymentMap).map(([method, value]) => ({
+      name: PAYMENT_METHODS.find(item => item.method === method)?.label || method,
+      value,
+    }));
 
-    // Seller performance
     const sellerMap = {};
-    periodSales.forEach(s => {
-      if (!sellerMap[s.seller_name]) sellerMap[s.seller_name] = { count: 0, revenue: 0 };
-      sellerMap[s.seller_name].count++;
-      sellerMap[s.seller_name].revenue += s.total || 0;
-    });
+    for (const sale of periodSales) {
+      const seller = sale.seller_name || 'Sem identificação';
+      if (!sellerMap[seller]) sellerMap[seller] = { count: 0, revenue: 0 };
+      sellerMap[seller].count += 1;
+      sellerMap[seller].revenue += Number(sale.total || 0);
+    }
     const sellerData = Object.entries(sellerMap).sort((a, b) => b[1].revenue - a[1].revenue);
 
-    // Fiado stats
-    const periodFiados = fiados.filter(f => new Date(f.created_date) >= startDate && new Date(f.created_date) <= endDate);
-    const pendingFiado = periodFiados.filter(f => f.status === 'pendente').reduce((s, f) => s + (f.total_amount || 0), 0);
+    const periodFiados = fiados.filter(fiado => new Date(fiado.created_date) >= startDate && new Date(fiado.created_date) <= endDate);
+    const pendingFiado = periodFiados.filter(fiado => fiado.status === 'pendente').reduce((sum, fiado) => sum + Number(fiado.total_amount || 0), 0);
 
-    // Daily revenue
     const dailyMap = {};
-    periodSales.forEach(s => {
-      const d = new Date(s.created_date).toLocaleDateString('pt-BR', { day: '2-digit', month: period === 'year' ? 'short' : '2-digit' });
-      if (!dailyMap[d]) dailyMap[d] = 0;
-      dailyMap[d] += s.total || 0;
-    });
-    const dailyData = Object.entries(dailyMap).map(([date, value]) => ({ date, value }));
+    for (const sale of periodSales) {
+      const date = new Date(sale.created_date);
+      const key = period === 'year'
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const label = period === 'year'
+        ? date.toLocaleDateString('pt-BR', { month: 'short' })
+        : date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      if (!dailyMap[key]) dailyMap[key] = { date: label, value: 0 };
+      dailyMap[key].value += Number(sale.total || 0);
+    }
+    const dailyData = Object.entries(dailyMap).sort(([first], [second]) => first.localeCompare(second)).map(([, value]) => value);
 
-    return { totalRevenue, prevRevenue, revenueChange, totalSales, avgTicket, cancelled, discounts, topProducts, paymentData, sellerData, pendingFiado, dailyData, periodFiados };
-  }, [periodSales, prevPeriodSales, sales, fiados, startDate, endDate]);
+    return { totalRevenue, revenueChange, totalSales, avgTicket, cancelled, topProducts, paymentData, sellerData, pendingFiado, dailyData };
+  }, [periodSales, prevPeriodSales, sales, fiados, startDate, endDate, period]);
 
   const insights = useMemo(() => {
     const list = [];
-    if (stats.revenueChange > 0) list.push({ type: 'up', text: `As vendas ${period === 'week' ? 'desta semana' : period === 'month' ? 'deste mês' : 'deste período'} subiram ${stats.revenueChange.toFixed(1)}% em relação ao período anterior.` });
+    if (stats.revenueChange > 0) list.push({ type: 'up', text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relação ao período anterior.` });
     else if (stats.revenueChange < 0) list.push({ type: 'down', text: `As vendas caíram ${Math.abs(stats.revenueChange).toFixed(1)}% em relação ao período anterior.` });
-    if (stats.topProducts.length > 0) list.push({ type: 'info', text: `O produto mais vendido foi ${stats.topProducts[0][0]}, com ${stats.topProducts[0][1].qty} unidades.` });
-    if (stats.paymentData.length > 0) {
-      const topPayment = stats.paymentData.sort((a, b) => b.value - a.value)[0];
-      const pct = stats.totalRevenue > 0 ? (topPayment.value / stats.totalRevenue * 100).toFixed(0) : 0;
-      list.push({ type: 'info', text: `O ${topPayment.name} foi responsável por ${pct}% das vendas do período.` });
+    if (stats.topProducts.length) list.push({ type: 'info', text: `O produto com maior faturamento foi ${stats.topProducts[0][0]}, com ${Number(stats.topProducts[0][1].qty).toFixed(3).replace(/\.000$/, '')} vendidos.` });
+    if (stats.paymentData.length) {
+      const topPayment = [...stats.paymentData].sort((a, b) => b.value - a.value)[0];
+      const percentage = stats.totalRevenue > 0 ? (topPayment.value / stats.totalRevenue) * 100 : 0;
+      list.push({ type: 'info', text: `${topPayment.name} representou ${percentage.toFixed(0)}% do faturamento do período.` });
     }
     if (stats.pendingFiado > 0) list.push({ type: 'alert', text: `Há ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste período.` });
     if (stats.cancelled > 0) list.push({ type: 'alert', text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no período.` });
-    if (stats.sellerData.length > 1) {
-      const topSeller = stats.sellerData[0];
-      const pct = stats.totalSales > 0 ? (topSeller[1].count / stats.totalSales * 100).toFixed(0) : 0;
-      list.push({ type: 'info', text: `${topSeller[0]} realizou ${pct}% das vendas do período.` });
-    }
     return list;
-  }, [stats, period]);
+  }, [stats]);
 
-  if (loading) return <div className="flex items-center justify-center h-full text-muted-foreground">Carregando relatórios...</div>;
+  if (loading) return <div className="flex h-full items-center justify-center text-muted-foreground">Carregando relatórios...</div>;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Relatórios Gerenciais</h1>
+        <h1 className="text-2xl font-bold">Relatórios gerenciais</h1>
         <p className="text-sm text-muted-foreground">Análise de desempenho do período</p>
       </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap items-center">
-        {PERIODS.map(p => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${period === p.key ? 'bg-accent text-accent-foreground' : 'bg-white border border-border hover:bg-secondary'}`}>
-            {p.label}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {PERIODS.map(item => (
+          <button key={item.key} onClick={() => setPeriod(item.key)} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}>
+            {item.label}
           </button>
         ))}
         {period === 'custom' && (
           <>
-            <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="px-3 py-2 border border-border rounded-lg text-sm" />
-            <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="px-3 py-2 border border-border rounded-lg text-sm" />
+            <input type="date" value={customStart} onChange={event => setCustomStart(event.target.value)} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm" />
+            <input type="date" value={customEnd} onChange={event => setCustomEnd(event.target.value)} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm" />
           </>
         )}
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard icon={DollarSign} label="Faturamento" value={formatCurrency(stats.totalRevenue)} change={stats.revenueChange} />
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
-        <StatCard icon={Receipt} label="Ticket Médio" value={formatCurrency(stats.avgTicket)} />
+        <StatCard icon={Receipt} label="Ticket médio" value={formatCurrency(stats.avgTicket)} />
         <StatCard icon={AlertTriangle} label="Cancelamentos" value={stats.cancelled} alert={stats.cancelled > 0} />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Faturamento por {period === 'year' ? 'Mês' : 'Dia'}</h3>
-          <ResponsiveContainer width="100%" height={250}>
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+          <h3 className="mb-3 text-sm font-bold">Faturamento por {period === 'year' ? 'mês' : 'dia'}</h3>
+          <ResponsiveContainer width="100%" height={270}>
             <BarChart data={stats.dailyData}>
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${(v / 100).toFixed(0)}`} />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-              <Bar dataKey="value" fill="hsl(87 51% 48%)" radius={[4, 4, 0, 0]} />
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={{ stroke: 'hsl(var(--border))' }} tickLine={{ stroke: 'hsl(var(--border))' }} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={{ stroke: 'hsl(var(--border))' }} tickLine={{ stroke: 'hsl(var(--border))' }} tickFormatter={value => Number(value) >= 1000 ? `R$${(Number(value) / 1000).toFixed(1)}k` : `R$${Number(value).toFixed(0)}`} />
+              <Tooltip formatter={value => formatCurrency(value)} contentStyle={TOOLTIP_STYLE} labelStyle={{ color: 'hsl(var(--popover-foreground))' }} />
+              <Bar dataKey="value" fill="hsl(var(--chart-1))" radius={[5, 5, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Formas de Pagamento</h3>
-          <ResponsiveContainer width="100%" height={250}>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+          <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
+          <ResponsiveContainer width="100%" height={270}>
             <PieChart>
-              <Pie data={stats.paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(e) => e.name}>
-                {stats.paymentData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+              <Pie data={stats.paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={86} label={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}>
+                {stats.paymentData.map((_, index) => <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip formatter={value => formatCurrency(value)} contentStyle={TOOLTIP_STYLE} />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </section>
       </div>
 
-      {/* Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Top 5 Produtos</h3>
-          <div className="space-y-2">
-            {stats.topProducts.map(([name, data], i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-accent/20 text-accent text-xs flex items-center justify-center font-bold">{i + 1}</span> {name}</span>
-                <span className="font-medium">{formatCurrency(data.revenue)} <span className="text-muted-foreground text-xs">({data.qty} un)</span></span>
-              </div>
-            ))}
-            {stats.topProducts.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados no período</p>}
-          </div>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Vendedores</h3>
-          <div className="space-y-2">
-            {stats.sellerData.map(([name, data], i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-accent/20 text-accent text-xs flex items-center justify-center font-bold">{i + 1}</span> {name}</span>
-                <span className="font-medium">{formatCurrency(data.revenue)} <span className="text-muted-foreground text-xs">({data.count} vendas)</span></span>
-              </div>
-            ))}
-            {stats.sellerData.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados no período</p>}
-          </div>
-        </div>
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Ranking title="Top 5 produtos" rows={stats.topProducts.map(([name, data]) => ({ name, value: formatCurrency(data.revenue), detail: `${Number(data.qty).toFixed(3).replace(/\.000$/, '')} vendidos` }))} />
+        <Ranking title="Vendedores" rows={stats.sellerData.map(([name, data]) => ({ name, value: formatCurrency(data.revenue), detail: `${data.count} vendas` }))} />
       </div>
 
-      {/* Insights */}
-      <div className="bg-gradient-to-br from-accent/5 to-transparent border border-accent/20 rounded-lg p-4">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><Lightbulb className="w-4 h-4 text-accent" /> Insights do Período</h3>
+      <section className="rounded-xl border border-accent/25 bg-accent/5 p-4">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><Lightbulb className="h-5 w-5 text-accent" /> Insights do período</h3>
         <div className="space-y-2">
-          {insights.map((ins, i) => (
-            <div key={i} className={`flex items-start gap-2 text-sm p-2 rounded ${ins.type === 'up' ? 'bg-green-50 text-green-700' : ins.type === 'down' ? 'bg-red-50 text-red-700' : ins.type === 'alert' ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
-              {ins.type === 'up' && <TrendingUp className="w-4 h-4 flex-shrink-0 mt-0.5" />}
-              {ins.type === 'down' && <TrendingDown className="w-4 h-4 flex-shrink-0 mt-0.5" />}
-              {ins.type === 'alert' && <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
-              {ins.type === 'info' && <BarChart3 className="w-4 h-4 flex-shrink-0 mt-0.5" />}
-              {ins.text}
+          {insights.map((insight, index) => (
+            <div key={index} className={`flex items-start gap-2 rounded-lg p-3 text-sm ${
+              insight.type === 'up' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : insight.type === 'down' ? 'bg-red-500/10 text-red-700 dark:text-red-300'
+                  : insight.type === 'alert' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300'
+                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
+            }`}>
+              {insight.type === 'up' && <TrendingUp className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              {insight.type === 'down' && <TrendingDown className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              {insight.type === 'alert' && <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              {insight.type === 'info' && <BarChart3 className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+              {insight.text}
             </div>
           ))}
-          {insights.length === 0 && <p className="text-sm text-muted-foreground">Sem insights para este período.</p>}
+          {!insights.length && <p className="text-sm text-muted-foreground">Sem insights para este período.</p>}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
 
 function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
   return (
-    <div className={`bg-white border rounded-lg p-4 ${alert ? 'border-orange-300' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <Icon className={`w-4 h-4 ${alert ? 'text-orange-500' : 'text-accent'}`} />
+    <div className={`rounded-xl border bg-card p-4 text-card-foreground ${alert ? 'border-orange-400/60' : 'border-border'}`}>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <Icon className={`h-5 w-5 ${alert ? 'text-orange-500' : 'text-accent'}`} />
       </div>
-      <div className="text-xl font-bold">{typeof value === 'number' && value < 100 ? value : value}</div>
-      {change !== undefined && change !== 0 && (
-        <div className={`text-xs flex items-center gap-0.5 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      <div className="text-xl font-black">{value}</div>
+      {change !== 0 && (
+        <div className={`mt-1 flex items-center gap-1 text-xs font-semibold ${change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+          {change > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
           {Math.abs(change).toFixed(1)}%
         </div>
       )}
     </div>
+  );
+}
+
+function Ranking({ title, rows }) {
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+      <h3 className="mb-3 text-sm font-bold">{title}</h3>
+      <div className="space-y-2">
+        {rows.map((row, index) => (
+          <div key={`${row.name}-${index}`} className="flex items-center justify-between gap-4 rounded-lg px-1 py-1.5 text-sm">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-black text-accent">{index + 1}</span>
+              <span className="truncate">{row.name}</span>
+            </span>
+            <span className="flex-shrink-0 text-right font-bold">{row.value}<span className="ml-1 text-xs font-normal text-muted-foreground">({row.detail})</span></span>
+          </div>
+        ))}
+        {!rows.length && <p className="py-6 text-center text-sm text-muted-foreground">Sem dados no período.</p>}
+      </div>
+    </section>
   );
 }

@@ -1,21 +1,39 @@
 # Nexo PDV
 
-Sistema de ponto de venda multiempresa preparado para Vercel. Cada mercado possui dados, funcionários, identidade visual e módulos isolados no PostgreSQL.
+Sistema PDV multiempresa preparado para Vercel e PostgreSQL. Cada mercado mantém produtos, vendas, funcionários, identidade visual e módulos isolados.
 
-## Configuração
+## Desenvolvimento local
 
-1. Crie um PostgreSQL (Neon, Vercel Postgres ou equivalente).
-2. Copie `.env.example` para `.env.local` e preencha as variáveis.
-3. Execute `npm install` e `npm run dev`.
-4. Publique na Vercel e cadastre as mesmas variáveis no projeto.
+1. Copie `.env.example` para `.env.local`.
+2. Preencha as variáveis obrigatórias.
+3. Execute `npm install`.
+4. Execute `npm run db:setup` para preparar o banco.
+5. Execute `npm run dev`.
 
-As tabelas e o primeiro superadministrador são criados automaticamente no primeiro acesso à API. Depois disso, use **Mercados** para criar cada cliente e sua conta administrativa. Troque a senha inicial por uma senha forte.
+## Publicação na Vercel
 
-## Variáveis
+O comando `npm run vercel-build` aplica as migrações, sincroniza o superadministrador e gera o frontend. O login não executa migrações em tempo real.
 
-- `DATABASE_URL`: conexão PostgreSQL com SSL.
-- `JWT_SECRET`: segredo longo e aleatório usado nas sessões.
-- `SUPER_ADMIN_EMAIL` e `SUPER_ADMIN_PASSWORD`: credenciais iniciais do painel geral.
-- `VITE_WHATSAPP_NUMBER`: WhatsApp da landing page, somente números com DDI e DDD.
+Variáveis obrigatórias:
 
-Os tokens ficam em cookies HTTP-only. Nenhum dado de negócio ou sessão é armazenado em `localStorage`.
+- `DATABASE_URL`
+- `DATABASE_URL_UNPOOLED` (recomendada para migrações)
+- `JWT_SECRET`
+- `SUPER_ADMIN_EMAIL`
+- `SUPER_ADMIN_PASSWORD`
+
+Imagens de produtos:
+
+- Conecte um Vercel Blob ao projeto. A integração cria `BLOB_READ_WRITE_TOKEN`.
+- `GOOGLE_CSE_API_KEY` e `GOOGLE_CSE_ID` são opcionais e ampliam a busca automática.
+- Sem Google CSE, a busca por código de barras e catálogo continua funcionando pelo Open Food Facts.
+
+Depois de alterar variáveis, faça um novo deploy sem reutilizar o cache antigo.
+
+## Validação
+
+```bash
+npm run check
+```
+
+Esse comando executa testes arquiteturais, testes de autenticação, TypeScript, ESLint e build de produção.

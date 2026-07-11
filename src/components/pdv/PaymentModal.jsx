@@ -1,43 +1,66 @@
-import React, { useState } from 'react';
-import { X, Banknote, CreditCard, QrCode, Wallet, Clock, Trash2, Minimize2, Check } from 'lucide-react';
-import { formatCurrency, calculateSaleTotals, PAYMENT_METHODS } from '@/lib/helpers';
+import React, { useEffect, useRef, useState } from 'react';
+import { Banknote, Check, Clock, CreditCard, Minimize2, QrCode, Trash2, Wallet, X } from 'lucide-react';
+import { calculateSaleTotals, formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 
 const METHOD_ICONS = {
-  dinheiro: Banknote, debito: CreditCard, credito: CreditCard, pix: QrCode, outros: Wallet, fiado: Clock,
+  dinheiro: Banknote,
+  debito: CreditCard,
+  credito: CreditCard,
+  pix: QrCode,
+  outros: Wallet,
+  fiado: Clock,
 };
 
 export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard }) {
   const [payments, setPayments] = useState(sale.payments || []);
   const [observation, setObservation] = useState(sale.observation || '');
-  const [showFiadoForm, setShowFiadoForm] = useState(false);
-  const [fiadoData, setFiadoData] = useState({ responsible_name: '', phone: '', observation: '' });
+  const [showFiadoForm, setShowFiadoForm] = useState((sale.payments || []).some(payment => payment.method === 'fiado'));
+  const [fiadoData, setFiadoData] = useState(sale.fiado || { responsible_name: '', phone: '', observation: '' });
+  const [focusIndex, setFocusIndex] = useState(null);
+  const amountRefs = useRef([]);
 
   const { subtotal, discount, total } = calculateSaleTotals(sale);
-  const nonFiadoPayments = payments.filter(p => p.method !== 'fiado');
-  const paidAmount = nonFiadoPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const nonFiadoPayments = payments.filter(payment => payment.method !== 'fiado');
+  const paidAmount = nonFiadoPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const remaining = total - paidAmount;
   const change = remaining < 0 ? Math.abs(remaining) : 0;
-  const hasFiado = payments.some(p => p.method === 'fiado');
+  const hasFiado = payments.some(payment => payment.method === 'fiado');
 
-  const addPayment = (method) => {
+  useEffect(() => {
+    if (focusIndex === null) return;
+    const input = amountRefs.current[focusIndex];
+    if (input) {
+      input.focus();
+      input.select();
+      setFocusIndex(null);
+    }
+  }, [payments, focusIndex]);
+
+  const addPayment = method => {
     if (method === 'fiado') {
       setShowFiadoForm(true);
-      setPayments(prev => prev.some(p => p.method === 'fiado') ? prev : [...prev, { method, amount: Math.max(0, remaining) }]);
+      setPayments(previous => previous.some(payment => payment.method === 'fiado')
+        ? previous
+        : [...previous, { method, amount: Math.max(0, remaining) }]);
       return;
     }
     if (remaining <= 0 && !hasFiado) return;
-    setPayments(prev => [...prev, { method, amount: remaining > 0 ? remaining : 0 }]);
+    const index = payments.length;
+    setPayments(previous => [...previous, { method, amount: remaining > 0 ? remaining : 0 }]);
+    setFocusIndex(index);
   };
 
-  const updateAmount = (idx, val) => {
-    setPayments(prev => prev.map((p, i) => i === idx ? { ...p, amount: parseFloat(val) || 0 } : p));
+  const updateAmount = (index, value) => {
+    setPayments(previous => previous.map((payment, currentIndex) => currentIndex === index
+      ? { ...payment, amount: Number.parseFloat(value) || 0 }
+      : payment));
   };
 
-  const removePayment = (idx) => {
-    const pm = payments[idx];
-    setPayments(prev => prev.filter((_, i) => i !== idx));
-    if (pm.method === 'fiado') setShowFiadoForm(false);
+  const removePayment = index => {
+    const payment = payments[index];
+    setPayments(previous => previous.filter((_, currentIndex) => currentIndex !== index));
+    if (payment.method === 'fiado') setShowFiadoForm(false);
   };
 
   const handleComplete = () => {
@@ -47,120 +70,133 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
         return;
       }
       onComplete({ payments, observation, sale_type: 'fiado', fiado: fiadoData });
-    } else {
-      if (remaining > 0.01) {
-        toast.error('Pagamento incompleto. Falta ' + formatCurrency(remaining));
-        return;
-      }
-      onComplete({ payments, observation, sale_type: 'normal' });
+      return;
     }
+    if (remaining > 0.01) {
+      toast.error(`Pagamento incompleto. Falta ${formatCurrency(remaining)}.`);
+      return;
+    }
+    onComplete({ payments, observation, sale_type: 'normal' });
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-bold">Pagamento</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-5">
+      <div className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
+          <div>
+            <h2 className="text-xl font-black">Forma de pagamento</h2>
+            <p className="text-xs text-muted-foreground">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
+          </div>
+          <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-6 w-6" /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {/* Compact items list */}
-          <div className="bg-secondary/50 rounded-lg p-3 max-h-32 overflow-y-auto">
-            {sale.items.map((item, i) => (
-              <div key={i} className="flex justify-between text-sm py-0.5">
-                <span className="truncate flex-1 pr-2">{item.quantity || item.weight}x {item.product_name}</span>
-                <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+        <div className="grid flex-1 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="space-y-5 border-b border-border p-5 lg:border-b-0 lg:border-r lg:p-7">
+            <div className="max-h-56 overflow-y-auto rounded-xl border border-border bg-muted/20 p-4">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
+              <div className="space-y-2">
+                {sale.items.map((item, index) => (
+                  <div key={`${item.product_id}-${index}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
+                    <span className="font-bold tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(3)}kg` : `${item.quantity}x`}</span>
+                    <span className="truncate">{item.product_name}</span>
+                    <span className="font-semibold tabular-nums">{formatCurrency(item.subtotal)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Desconto</span><span>{formatCurrency(discount)}</span></div>
-            <div className="flex justify-between font-bold text-base col-span-2 border-t pt-2"><span>Total</span><span className="text-accent">{formatCurrency(total)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Pago</span><span>{formatCurrency(paidAmount)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Restante</span><span className={remaining > 0.01 ? 'text-destructive font-medium' : ''}>{formatCurrency(Math.max(0, remaining))}</span></div>
-            {change > 0 && <div className="flex justify-between font-bold text-green-600 col-span-2"><span>Troco</span><span>{formatCurrency(change)}</span></div>}
-          </div>
-
-          {/* Payment methods */}
-          {!hasFiado && (
-            <div className="grid grid-cols-3 gap-2">
-              {PAYMENT_METHODS.map(pm => {
-                const Icon = METHOD_ICONS[pm.method];
-                const disabled = pm.method !== 'fiado' && remaining <= 0;
-                return (
-                  <button key={pm.method} onClick={() => addPayment(pm.method)} disabled={disabled}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-colors ${disabled ? 'border-border opacity-40' : 'border-border hover:border-accent hover:bg-accent/5'}`}>
-                    <Icon className="w-6 h-6 text-accent" />
-                    <span className="text-xs font-medium">{pm.label}</span>
-                  </button>
-                );
-              })}
             </div>
-          )}
 
-          {/* Active payments */}
-          {payments.length > 0 && (
-            <div className="space-y-2">
-              {payments.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="text-sm w-32 truncate">{PAYMENT_METHODS.find(m => m.method === p.method)?.label}</span>
-                  {p.method === 'fiado' ? (
-                    <span className="flex-1 text-sm text-orange-600 font-medium">Valor: {formatCurrency(p.amount)}</span>
-                  ) : (
-                    <>
-                      <span className="text-muted-foreground">R$</span>
-                      <input type="number" step="0.01" min="0" value={p.amount}
-                        onChange={(e) => updateAmount(idx, e.target.value)}
-                        className="flex-1 px-2 py-1 border border-border rounded text-right focus:outline-none focus:ring-1 focus:ring-accent" />
-                    </>
-                  )}
-                  <button onClick={() => removePayment(idx)} className="text-destructive hover:bg-destructive/10 p-1 rounded"><Trash2 className="w-4 h-4" /></button>
+            <div className="space-y-3 rounded-2xl border border-border bg-background p-5">
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold tabular-nums">{formatCurrency(subtotal)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Desconto</span><span className="font-semibold tabular-nums">{formatCurrency(discount)}</span></div>
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">Total</span>
+                  <span className="text-4xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400">{formatCurrency(total)}</span>
                 </div>
-              ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <span className="text-xs text-muted-foreground">Pago</span>
+                  <p className="mt-1 text-xl font-black tabular-nums">{formatCurrency(paidAmount)}</p>
+                </div>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <span className="text-xs text-muted-foreground">Restante</span>
+                  <p className={`mt-1 text-xl font-black tabular-nums ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
+                </div>
+              </div>
+              {change > 0 && (
+                <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 px-4 py-3 text-emerald-700 dark:text-emerald-300">
+                  <span className="font-bold">Troco</span>
+                  <span className="text-2xl font-black tabular-nums">{formatCurrency(change)}</span>
+                </div>
+              )}
             </div>
-          )}
+          </section>
 
-          {/* Fiado form */}
-          {showFiadoForm && (
-            <div className="border border-orange-300 bg-orange-50 rounded-lg p-4 space-y-2">
-              <div className="text-sm font-medium text-orange-800">Dados da Venda Fiado</div>
-              <input type="text" placeholder="Nome do responsável *"
-                value={fiadoData.responsible_name}
-                onChange={(e) => setFiadoData({ ...fiadoData, responsible_name: e.target.value })}
-                className="w-full px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
-              <input type="text" placeholder="Telefone (opcional)"
-                value={fiadoData.phone}
-                onChange={(e) => setFiadoData({ ...fiadoData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
-              <input type="text" placeholder="Observação (opcional)"
-                value={fiadoData.observation}
-                onChange={(e) => setFiadoData({ ...fiadoData, observation: e.target.value })}
-                className="w-full px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
-            </div>
-          )}
+          <section className="space-y-5 p-5 lg:p-7">
+            {!hasFiado && (
+              <div>
+                <h3 className="mb-3 text-sm font-bold">Escolha a forma de pagamento</h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {PAYMENT_METHODS.map(method => {
+                    const Icon = METHOD_ICONS[method.method];
+                    const disabled = method.method !== 'fiado' && remaining <= 0;
+                    return (
+                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border-2 border-border p-3 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35">
+                        <Icon className="h-8 w-8 text-accent" />
+                        <span className="text-sm font-bold">{method.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          {/* Observation */}
-          <input type="text" placeholder="Observação da venda (opcional)"
-            value={observation}
-            onChange={(e) => setObservation(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+            {payments.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold">Valores informados</h3>
+                {payments.map((payment, index) => (
+                  <div key={`${payment.method}-${index}`} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                    <span className="w-24 truncate text-sm font-semibold sm:w-32">{PAYMENT_METHODS.find(method => method.method === payment.method)?.label}</span>
+                    {payment.method === 'fiado' ? (
+                      <span className="flex-1 text-right text-xl font-black text-orange-600 tabular-nums dark:text-orange-400">{formatCurrency(payment.amount)}</span>
+                    ) : (
+                      <label className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">R$</span>
+                        <input
+                          ref={element => { amountRefs.current[index] = element; }}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={payment.amount}
+                          onChange={event => updateAmount(index, event.target.value)}
+                          className="h-14 w-full rounded-xl border-2 border-border bg-card pl-10 pr-3 text-right text-2xl font-black tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+                      </label>
+                    )}
+                    <button type="button" aria-label="Remover pagamento" onClick={() => removePayment(index)} className="grid h-11 w-11 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showFiadoForm && (
+              <div className="space-y-3 rounded-xl border border-orange-400/50 bg-orange-500/10 p-4">
+                <div className="text-sm font-bold text-orange-700 dark:text-orange-300">Dados da venda fiado</div>
+                <input type="text" placeholder="Nome do responsável *" value={fiadoData.responsible_name} onChange={event => setFiadoData({ ...fiadoData, responsible_name: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input type="text" placeholder="Telefone (opcional)" value={fiadoData.phone} onChange={event => setFiadoData({ ...fiadoData, phone: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input type="text" placeholder="Observação (opcional)" value={fiadoData.observation} onChange={event => setFiadoData({ ...fiadoData, observation: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+            )}
+
+            <input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+          </section>
         </div>
 
-        {/* Footer actions */}
-        <div className="flex gap-2 px-6 py-4 border-t">
-          <button onClick={onDiscard} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-destructive text-destructive hover:bg-destructive/10 text-sm font-medium">
-            <Trash2 className="w-4 h-4" /> Descartar
-          </button>
-          <button onClick={onMinimize} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-border bg-secondary hover:bg-muted text-sm font-medium">
-            <Minimize2 className="w-4 h-4" /> Minimizar
-          </button>
-          <button onClick={handleComplete} disabled={payments.length === 0} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-40 text-sm font-bold">
-            <Check className="w-4 h-4" /> Concluir Venda
-          </button>
+        <div className="flex flex-col gap-2 border-t border-border px-5 py-4 sm:flex-row sm:px-7">
+          <button onClick={onDiscard} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /> Descartar</button>
+          <button onClick={() => onMinimize({ payments, observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted"><Minimize2 className="h-5 w-5" /> Minimizar</button>
+          <button onClick={handleComplete} disabled={!payments.length} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> Concluir venda</button>
         </div>
       </div>
     </div>
