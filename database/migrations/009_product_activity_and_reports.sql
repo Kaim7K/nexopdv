@@ -23,6 +23,8 @@ WHERE product.id = activity.product_id
   AND product.market_id = activity.market_id
   AND product.entity = 'products';
 
+-- statement-breakpoint
+
 CREATE INDEX IF NOT EXISTS idx_records_products_last_sale
   ON nexo.records (market_id, (data->>'last_sale_at'))
   WHERE entity = 'products' AND COALESCE(data->>'last_sale_at','') <> '';
