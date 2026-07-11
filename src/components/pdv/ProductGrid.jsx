@@ -81,7 +81,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
               >
                 <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden mb-2">
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <Package className="w-8 h-8 text-muted-foreground/40" />
                   )}

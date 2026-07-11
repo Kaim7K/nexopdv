@@ -37,6 +37,7 @@ export function publicUser(user) {
     primary_color: user.primary_color,
     secondary_color: user.secondary_color,
     enabled_modules: user.enabled_modules || [],
+    require_cash_register: Boolean(user.require_cash_register),
   };
 }
 
@@ -49,7 +50,7 @@ export async function authenticateCredentials(sql, input) {
   const rows = await sql`
     SELECT
       u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id,
-      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules
+      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register
     FROM nexo.users u
     LEFT JOIN nexo.markets m ON m.id = u.market_id
     WHERE lower(u.email) = ${parsed.data.email}
@@ -102,7 +103,7 @@ export async function currentUser(req, sql) {
     const rows = await sql`
       SELECT
         u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id,
-        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules
+        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register
       FROM nexo.users u
       LEFT JOIN nexo.markets m ON m.id = u.market_id
       WHERE u.id = ${payload.sub}

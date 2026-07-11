@@ -2,19 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { AlertTriangle, Hash, Layers, MapPin, RotateCcw, Save, Store } from 'lucide-react';
+import { AlertTriangle, Hash, Layers, LockKeyhole, MapPin, PackageSearch, RotateCcw, Save, Store } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
+import { useAuth } from '@/lib/AuthContext';
 
 const RESET_OPTIONS = [
   { value: 'products', label: 'Estoque e produtos', description: 'Exclui todos os produtos e o histórico de alterações de produtos.' },
   { value: 'fiados', label: 'Vendas fiadas', description: 'Exclui todos os registros da tela de fiados.' },
   { value: 'sales', label: 'Histórico de vendas', description: 'Exclui os registros da tela de vendas. Os fiados e a sequência de numeração são mantidos.' },
   { value: 'audits', label: 'Auditoria', description: 'Exclui o histórico geral e o histórico de alterações dos produtos.' },
-  { value: 'operational', label: 'Todos os dados operacionais', description: 'Exclui estoque, vendas, fiados e auditorias. Usuários e configurações são mantidos.' },
+  { value: 'cash', label: 'Histórico de caixas', description: 'Exclui as aberturas e fechamentos de caixa já registrados. Feche os caixas ativos antes de continuar.' },
+  { value: 'operational', label: 'Todos os dados operacionais', description: 'Exclui estoque, vendas, fiados, caixas e auditorias. Usuários e configurações são mantidos.' },
 ];
 
 export default function Configuracoes() {
   const { user } = /** @type {any} */ (useOutletContext());
+  const { checkUserAuth } = useAuth();
   const [configs, setConfigs] = useState({});
   const [initialValues, setInitialValues] = useState({});
   const [loading, setLoading] = useState(true);
@@ -22,6 +25,8 @@ export default function Configuracoes() {
   const [resetTarget, setResetTarget] = useState('');
   const [resetConfirmation, setResetConfirmation] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [requireCashRegister, setRequireCashRegister] = useState(Boolean(user?.require_cash_register));
+  const [initialRequireCashRegister, setInitialRequireCashRegister] = useState(Boolean(user?.require_cash_register));
 
   const loadConfigs = async () => {
     setLoading(true);
@@ -50,23 +55,31 @@ export default function Configuracoes() {
   };
 
   const changedKeys = useMemo(() => Object.keys(configs).filter(key => String(configs[key]?.value ?? '') !== String(initialValues[key] ?? '')), [configs, initialValues]);
-  const hasChanges = changedKeys.length > 0;
+  const cashSettingChanged = user?.role === 'admin' && requireCashRegister !== initialRequireCashRegister;
+  const hasChanges = changedKeys.length > 0 || cashSettingChanged;
 
   const handleSave = async event => {
     event.preventDefault();
     const marketName = String(getValue('nome_mercado', '')).trim();
     const limit = Number(getValue('limite_vendas_minimizadas', '3'));
+    const lowStockLimit = Number(getValue('limite_estoque_baixo', '5'));
     if (!marketName) return toast.error('Informe o nome do mercado.');
     if (!Number.isInteger(limit) || limit < 1 || limit > 10) return toast.error('O limite de vendas abertas deve estar entre 1 e 10.');
+    if (!Number.isInteger(lowStockLimit) || lowStockLimit < 1 || lowStockLimit > 9999) return toast.error('O limite de estoque baixo deve ser um número entre 1 e 9.999.');
     if (!hasChanges) return;
 
     setSaving(true);
     try {
-      await Promise.all(changedKeys.map(async key => {
-        const config = configs[key];
-        if (config.id) return nexoApi.entities.SystemConfig.update(config.id, { value: config.value });
-        return nexoApi.entities.SystemConfig.create({ key: config.key, value: config.value, label: config.label || config.key });
-      }));
+      await Promise.all([
+        ...changedKeys.map(async key => {
+          const config = configs[key];
+          if (config.id) return nexoApi.entities.SystemConfig.update(config.id, { value: config.value });
+          return nexoApi.entities.SystemConfig.create({ key: config.key, value: config.value, label: config.label || config.key });
+        }),
+        ...(cashSettingChanged ? [nexoApi.cash.updateSettings(requireCashRegister)] : []),
+      ]);
+      setInitialRequireCashRegister(requireCashRegister);
+      await checkUserAuth();
       toast.success('Configurações salvas.');
       await loadConfigs();
     } catch (error) {
@@ -109,7 +122,7 @@ export default function Configuracoes() {
           <p className="mt-1 text-sm text-muted-foreground">Atualize os dados exibidos no sistema e nos recibos.</p>
         </div>
         <button type="submit" disabled={!hasChanges || saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground shadow-sm transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">
-          <Save className="h-4 w-4" /> {saving ? 'Salvando...' : hasChanges ? `Salvar ${changedKeys.length} alteração${changedKeys.length > 1 ? 'ões' : ''}` : 'Tudo salvo'}
+          <Save className="h-4 w-4" /> {saving ? 'Salvando...' : hasChanges ? `Salvar ${changedKeys.length + (cashSettingChanged ? 1 : 0)} alteração${changedKeys.length + (cashSettingChanged ? 1 : 0) > 1 ? 'ões' : ''}` : 'Tudo salvo'}
         </button>
       </div>
 
@@ -153,6 +166,26 @@ export default function Configuracoes() {
               <span className="mt-1 block text-xs font-normal text-muted-foreground">Permitido: de 1 a 10 vendas.</span>
             </label>
           </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            <h2 className="flex items-center gap-2 font-black"><PackageSearch className="h-5 w-5 text-accent" /> Aviso de estoque baixo</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Produtos com essa quantidade ou menos aparecem nos alertas do estoque.</p>
+            <label className="mt-4 block text-sm font-semibold">
+              Quantidade de alerta
+              <input type="number" min="1" max="9999" step="1" value={getValue('limite_estoque_baixo', '5')} onChange={event => handleChange('limite_estoque_baixo', event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+            </label>
+          </section>
+
+          {user?.role === 'admin' && (
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+              <h2 className="flex items-center gap-2 font-black"><LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Defina se vendedores precisam informar o valor inicial antes de usar o PDV.</p>
+              <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3">
+                <span><strong className="block text-sm">Exigir abertura para vendedores</strong><span className="mt-0.5 block text-xs text-muted-foreground">Administradores continuam podendo vender sem abrir caixa.</span></span>
+                <input type="checkbox" checked={requireCashRegister} onChange={event => setRequireCashRegister(event.target.checked)} className="h-5 w-5 accent-[var(--market-primary)]" />
+              </label>
+            </section>
+          )}
         </div>
       </div>
 

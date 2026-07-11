@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-const [api, form, imageUpload, stock, users, settings, receipt, payment, minimized, pdv, reports, layout, search, imageSearchUi, css] = await Promise.all([
+const [api, form, imageUpload, stock, users, settings, receipt, receiptPdf, payment, minimized, pdv, reports, layout, search, imageSearchUi, css] = await Promise.all([
   read('api/index.js'),
   read('src/components/stock/ProductForm.jsx'),
   read('src/components/ImageUploadField.jsx'),
@@ -11,6 +11,7 @@ const [api, form, imageUpload, stock, users, settings, receipt, payment, minimiz
   read('src/pages/Usuarios.jsx'),
   read('src/pages/Configuracoes.jsx'),
   read('src/components/pdv/ReceiptModal.jsx'),
+  read('src/lib/sales-pdf.js'),
   read('src/components/pdv/PaymentModal.jsx'),
   read('src/components/pdv/MinimizedSalesBar.jsx'),
   read('src/pages/PDV.jsx'),
@@ -27,8 +28,10 @@ assert.match(imageUpload, /optimizeImageFile/, 'O campo de imagem deve otimizar 
 assert.doesNotMatch(imageUpload, /@vercel\/blob\/client/, 'O upload local não deve depender do Vercel Blob.');
 assert.match(form, /Criar e duplicar/, 'O cadastro completo deve permitir criar e duplicar.');
 assert.match(stock, /toggleSort/, 'O estoque deve permitir ordenação de colunas.');
-assert.match(stock, /mode: 'duplicate'/, 'O estoque deve permitir duplicar produtos.');
+assert.match(stock, /openProductModal\('duplicate'/, 'O estoque deve permitir duplicar produtos.');
 assert.match(stock, /handleDeleteProduct/, 'O estoque deve permitir excluir produtos.');
+assert.match(stock, /Atualize o estoque/, 'Produtos zerados devem exibir um alerta destacado para atualização.');
+assert.match(stock, /bg-red-500\/10/, 'Produtos sem estoque devem receber destaque vermelho.');
 assert.match(stock, /entities\.Product\.delete/, 'A exclusão do produto deve usar a API protegida.');
 assert.match(users, /removeUser/, 'A tela de usuários deve permitir exclusão controlada.');
 assert.match(users, /entities\.User\.delete/, 'A exclusão de usuário deve usar a API protegida.');
@@ -37,12 +40,16 @@ assert.match(api, /Mantenha pelo menos um administrador ativo/, 'O backend deve 
 assert.match(settings, /Zerar dados de uma tela/, 'Configurações deve oferecer limpeza seletiva de dados.');
 assert.match(settings, /Digite ZERAR/, 'A limpeza seletiva deve exigir confirmação explícita.');
 assert.match(api, /path\[0\] === 'maintenance' && path\[1\] === 'reset'/, 'A API deve expor a operação protegida de limpeza seletiva.');
-assert.match(receipt, /loadLogoForPdf/, 'A geração do PDF deve carregar a logo do mercado.');
-assert.match(receipt, /doc\.addImage/, 'A logo deve ser inserida no PDF.');
+assert.match(receipt, /downloadSaleReceiptPdf/, 'O modal deve usar o gerador compartilhado de recibos.');
+assert.match(receiptPdf, /loadLogoForPdf/, 'A geração do PDF deve carregar a logo do mercado.');
+assert.match(receiptPdf, /doc\.addImage/, 'A logo deve ser inserida no PDF.');
 assert.match(payment, /input\.focus\(\)/, 'O campo de valor deve receber foco ao escolher o pagamento.');
 assert.match(payment, /text-4xl/, 'O total do pagamento deve ter destaque visual.');
 assert.match(minimized, /DragDropContext/, 'Vendas minimizadas devem permitir reordenação vertical.');
 assert.match(pdv, /nextMinimized = minimizedSales\.map/, 'A venda atual deve ser trocada sem exigir nova minimização manual.');
+assert.match(pdv, /CashRegisterModal/, 'O PDV deve controlar abertura e fechamento do caixa.');
+assert.match(pdv, /Finalize ou descarte as vendas abertas antes de fechar o caixa/, 'O caixa não deve fechar enquanto houver vendas locais abertas.');
+assert.match(layout, /nexo-logo-white\.svg/, 'A barra lateral deve usar a logo Nexo PDV com símbolo verde e N branco.');
 assert.doesNotMatch(reports, /bg-white/, 'Relatórios não devem forçar cartões brancos no tema escuro.');
 assert.doesNotMatch(layout, /active \? 'text-sidebar-primary'/, 'O ícone ativo não pode perder contraste no menu.');
 assert.match(search, /searchWikimediaImages\(context\.barcode/, 'A busca deve consultar primeiro o código de barras sem depender do Google.');

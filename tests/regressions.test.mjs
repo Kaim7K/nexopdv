@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-const [api, http, media, app, sales, fiados, audits, stock, users, settings, receipt, metadata, robots, vercel] = await Promise.all([
+const [api, http, media, app, sales, fiados, audits, stock, users, settings, adminMarkets, layout, receipt, receiptPdf, metadata, robots, vercel] = await Promise.all([
   read('api/index.js'),
   read('server/http.js'),
   read('server/media.js'),
@@ -14,7 +14,10 @@ const [api, http, media, app, sales, fiados, audits, stock, users, settings, rec
   read('src/pages/Estoque.jsx'),
   read('src/pages/Usuarios.jsx'),
   read('src/pages/Configuracoes.jsx'),
+  read('src/pages/AdminMercados.jsx'),
+  read('src/components/Layout.jsx'),
   read('src/components/pdv/ReceiptModal.jsx'),
+  read('src/lib/sales-pdf.js'),
   read('src/hooks/use-page-metadata.js'),
   read('public/robots.txt'),
   read('vercel.json'),
@@ -32,15 +35,24 @@ assert.match(media, /lookup\(parsed\.hostname/, 'O host remoto deve ter seus end
 assert.match(media, /redirect: 'manual'/, 'Redirecionamentos de imagens remotas devem ser validados manualmente.');
 
 assert.match(app, /isLoadingAuth && !isPublicRoute/, 'Landing e login não devem aguardar a consulta de sessão para aparecer.');
-assert.match(sales, /usePagination\(filtered, 20\)/, 'O histórico de vendas deve paginar resultados renderizados.');
+assert.match(sales, /nexoApi\.sales\.list/, 'O histórico de vendas deve usar paginação e filtros no servidor.');
+assert.match(sales, /downloadSaleReceiptPdf/, 'O histórico deve permitir baixar o recibo de uma venda.');
+assert.match(sales, /downloadDailySalesReportPdf/, 'A tela de vendas deve gerar relatório diário em PDF.');
 assert.match(fiados, /usePagination\(filtered, 20\)/, 'Fiados devem paginar resultados renderizados.');
 assert.match(audits, /usePagination\(filtered, 25\)/, 'Auditoria deve paginar resultados renderizados.');
 assert.match(stock, /usePagination\(filtered, 50\)/, 'Estoque deve paginar resultados renderizados.');
 assert.match(stock, /entities\.Product\.delete/, 'Produtos devem poder ser excluídos pela tela de estoque.');
 assert.match(users, /entities\.User\.delete/, 'Usuários devem poder ser excluídos pela tela administrativa.');
 assert.match(settings, /maintenance\.reset/, 'A limpeza seletiva deve usar uma rota de manutenção protegida.');
-assert.match(receipt, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
+assert.match(settings, /Exigir abertura para vendedores/, 'O administrador do mercado deve controlar a exigência de caixa.');
+assert.match(adminMarkets, /require_cash_register/, 'O superadministrador deve configurar a exigência de caixa por mercado.');
+assert.match(layout, /nexo-logo-white\.svg/, 'A sidebar deve usar a logo oficial com quadrado verde e N branco.');
+assert.match(receipt, /downloadSaleReceiptPdf/, 'O modal de recibo deve usar o gerador compartilhado.');
+assert.match(receiptPdf, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
 assert.match(api, /user\.role !== 'admin'.*zerar dados do mercado/s, 'Somente administradores podem zerar dados.');
+assert.match(api, /CASH_REGISTER_REQUIRED/, 'O backend deve impedir venda obrigatória sem caixa aberto.');
+assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve oferecer relatório diário de vendas.');
+assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');
 
 assert.match(metadata, /og:title/, 'Metadados Open Graph devem acompanhar a página atual.');
 assert.match(metadata, /twitter:description/, 'Metadados do Twitter devem acompanhar a página atual.');

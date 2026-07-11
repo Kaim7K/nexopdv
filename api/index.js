@@ -14,7 +14,7 @@ import { importRemoteProductImage } from '../server/media.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
-  ProductAudit: 'product_audits', SystemConfig: 'system_configs', User: 'users', Market: 'markets',
+  ProductAudit: 'product_audits', SystemConfig: 'system_configs', User: 'users', Market: 'markets', CashSession: 'cash_sessions',
 };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MARKET_MODULES = ['pdv','estoque','vendas','fiados','relatorios','auditoria','usuarios','configuracoes'];
@@ -41,6 +41,80 @@ function normalizeImageValue(value) {
   throw new AppError(400, 'INVALID_IMAGE', 'A imagem informada não é válida.');
 }
 const roundMoney = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+function parseDateQuery(value, fallback = null) {
+  if (!value) return fallback;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? fallback : date;
+}
+
+function recordFromRow(row) {
+  return row ? { id: row.id, ...(row.data || {}), created_date: row.created_date, updated_date: row.updated_date } : null;
+}
+
+function summarizeSales(sales) {
+  const completed = sales.filter(sale => sale.status === 'concluida');
+  const cancelled = sales.filter(sale => sale.status === 'cancelada');
+  const payments = {};
+  let total = 0;
+  let discounts = 0;
+  let items = 0;
+  for (const sale of completed) {
+    total += Number(sale.total || 0);
+    const subtotal = Number(sale.subtotal || sale.total || 0);
+    discounts += Math.max(0, subtotal - Number(sale.total || 0));
+    items += Array.isArray(sale.items) ? sale.items.reduce((sum, item) => sum + Number(item.unit === 'peso' ? item.weight || 0 : item.quantity || 0), 0) : 0;
+    for (const payment of sale.payments || []) {
+      payments[payment.method] = roundMoney(Number(payments[payment.method] || 0) + Number(payment.amount || 0));
+    }
+  }
+  return {
+    total: roundMoney(total),
+    discounts: roundMoney(discounts),
+    sales_count: completed.length,
+    cancelled_count: cancelled.length,
+    average_ticket: completed.length ? roundMoney(total / completed.length) : 0,
+    items_count: roundMoney(items),
+    payments,
+  };
+}
+
+async function findOpenCashSession(sql, marketId, sellerId) {
+  const rows = await sql`
+    SELECT id, data, created_date, updated_date
+    FROM nexo.records
+    WHERE market_id=${marketId}
+      AND entity='cash_sessions'
+      AND data->>'seller_id'=${sellerId}
+      AND data->>'status'='aberto'
+    ORDER BY created_date DESC
+    LIMIT 1
+  `;
+  return recordFromRow(rows[0]);
+}
+
+async function getCashSessionSummary(sql, marketId, session) {
+  if (!session) return null;
+  const rows = await sql`
+    SELECT id, data - 'items' AS data, created_date, updated_date
+    FROM nexo.records
+    WHERE market_id=${marketId}
+      AND entity='sales'
+      AND data->>'cash_session_id'=${session.id}
+    ORDER BY created_date ASC
+  `;
+  const sales = rows.map(recordFromRow);
+  const summary = summarizeSales(sales);
+  const openingAmount = roundMoney(Number(session.opening_amount || 0));
+  const cashSales = roundMoney(Number(summary.payments.dinheiro || 0));
+  return {
+    ...summary,
+    opening_amount: openingAmount,
+    cash_sales: cashSales,
+    expected_cash: roundMoney(openingAmount + cashSales),
+    opened_at: session.opened_at || session.created_date,
+  };
+}
 
 function normalizeProductPayload(data, partial = false) {
   const source = data && typeof data === 'object' ? data : {};
@@ -188,9 +262,58 @@ async function routeHandler(req, res) {
     return send(res, 200, publicUser(user));
   }
   const entityModules = { Sale:'vendas', FiadoRecord:'fiados', User:'usuarios' };
-  const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'sales' ? (path[1] === 'complete' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
+  const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'products' || path[0] === 'product-media' ? null : path[0] === 'cash' ? 'pdv' : path[0] === 'sales' ? (path[1] === 'complete' || path[1] === 'next' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
   if (user.role !== 'super_admin' && requiredModule && !(user.enabled_modules || []).includes(requiredModule)) return send(res, 403, { message: 'Esta funcionalidade não está habilitada para o mercado.' });
   if (user.role !== 'super_admin' && path[0] === 'entities' && path[1] === 'Product' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
+
+
+  if (path[0] === 'products' && path[1] === 'catalog') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (!user.market_id || !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 1000, 3000));
+    const rows = await sql`
+      SELECT id, data - 'image_url' AS data,
+        COALESCE(data->>'image_url','') <> '' AS has_image,
+        created_date, updated_date
+      FROM nexo.records
+      WHERE market_id=${user.market_id} AND entity='products'
+      ORDER BY updated_date DESC
+      LIMIT ${limit}
+    `;
+    const products = rows.map(row => ({
+      id: row.id,
+      ...(row.data || {}),
+      image_url: row.has_image ? `/api/product-media/${row.id}?v=${new Date(row.updated_date).getTime()}` : '',
+      created_date: row.created_date,
+      updated_date: row.updated_date,
+    }));
+    res.setHeader('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+    return send(res, 200, products);
+  }
+
+  if (path[0] === 'product-media' && path[1]) {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
+    if (!isUuid(path[1]) || !user.market_id) return send(res, 404, { message: 'Imagem não encontrada.' });
+    const [row] = await sql`SELECT data->>'image_url' AS image_url, updated_date FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='products'`;
+    const image = String(row?.image_url || '');
+    if (!image) return send(res, 404, { message: 'Imagem não encontrada.' });
+    if (/^https:\/\//i.test(image)) {
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      res.setHeader('Location', image);
+      return res.status(302).end();
+    }
+    const match = image.match(/^data:image\/(jpeg|png|webp|avif);base64,(.+)$/i);
+    if (!match) return send(res, 404, { message: 'Imagem inválida.' });
+    const mime = match[1].toLowerCase() === 'jpg' ? 'jpeg' : match[1].toLowerCase();
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length) return send(res, 404, { message: 'Imagem vazia.' });
+    res.setHeader('Content-Type', `image/${mime}`);
+    res.setHeader('Content-Length', String(buffer.length));
+    res.setHeader('Cache-Control', 'private, max-age=86400, stale-while-revalidate=604800');
+    res.setHeader('ETag', `"${path[1]}-${new Date(row.updated_date).getTime()}"`);
+    return res.status(200).send(buffer);
+  }
 
   if (path[0] === 'product-images' && path[1] === 'search') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -219,6 +342,105 @@ async function routeHandler(req, res) {
     return send(res, 201, imported);
   }
 
+  if (path[0] === 'cash') {
+    if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
+
+    if (path[1] === 'settings') {
+      if (req.method !== 'PATCH') return methodNotAllowed(res, ['PATCH']);
+      if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem alterar a exigência de abertura de caixa.' });
+      if (typeof req.body.require_cash_register !== 'boolean') return send(res, 400, { message: 'Informe se a abertura de caixa deve ser obrigatória.' });
+      const [market] = await sql`
+        UPDATE nexo.markets
+        SET require_cash_register=${req.body.require_cash_register}, updated_date=now()
+        WHERE id=${user.market_id}
+        RETURNING require_cash_register
+      `;
+      return send(res, 200, { require_cash_register: Boolean(market?.require_cash_register) });
+    }
+
+    if (path[1] === 'current') {
+      if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+      const session = await findOpenCashSession(sql, user.market_id, user.id);
+      const summary = session ? await getCashSessionSummary(sql, user.market_id, session) : null;
+      return send(res, 200, {
+        required: user.role === 'vendedor' && Boolean(user.require_cash_register),
+        market_requires_cash: Boolean(user.require_cash_register),
+        session,
+        summary,
+      });
+    }
+
+    if (path[1] === 'open') {
+      if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+      if (!['vendedor','gerente','admin'].includes(user.role)) return send(res, 403, { message: 'Este perfil não pode abrir um caixa.' });
+      const openingAmount = roundMoney(Number(req.body.opening_amount));
+      if (!Number.isFinite(openingAmount) || openingAmount < 0 || openingAmount > 10_000_000) return send(res, 400, { message: 'Informe um valor inicial válido.' });
+      const current = await findOpenCashSession(sql, user.market_id, user.id);
+      if (current) return send(res, 409, { message: 'Já existe um caixa aberto para este usuário.', session: current });
+      const payload = {
+        seller_id: user.id,
+        seller_name: user.full_name || user.email,
+        status: 'aberto',
+        opening_amount: openingAmount,
+        opened_at: new Date().toISOString(),
+      };
+      const [row] = await sql`
+        INSERT INTO nexo.records(market_id,entity,data)
+        VALUES(${user.market_id},'cash_sessions',${JSON.stringify(payload)}::jsonb)
+        ON CONFLICT DO NOTHING
+        RETURNING id,data,created_date,updated_date
+      `;
+      if (!row) return send(res, 409, { message: 'Já existe um caixa aberto para este usuário. Atualize a página.' });
+      const session = recordFromRow(row);
+      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+        ${user.market_id},'general_audits',${JSON.stringify({
+          action_type: 'caixa_aberto', entity_type: 'cash_session', entity_id: session.id,
+          user_id: user.id, user_name: user.full_name || user.email,
+          description: `Caixa aberto com ${openingAmount.toFixed(2)}`,
+          details: { opening_amount: openingAmount },
+        })}::jsonb
+      )`;
+      return send(res, 201, { session, summary: await getCashSessionSummary(sql, user.market_id, session) });
+    }
+
+    if (path[1] === 'close') {
+      if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+      const session = await findOpenCashSession(sql, user.market_id, user.id);
+      if (!session) return send(res, 409, { message: 'Não existe caixa aberto para este usuário.' });
+      const summary = await getCashSessionSummary(sql, user.market_id, session);
+      const closingAmount = req.body.closing_amount === '' || req.body.closing_amount === undefined || req.body.closing_amount === null
+        ? null
+        : roundMoney(Number(req.body.closing_amount));
+      if (closingAmount !== null && (!Number.isFinite(closingAmount) || closingAmount < 0 || closingAmount > 10_000_000)) return send(res, 400, { message: 'Informe um valor de fechamento válido.' });
+      const closedAt = new Date().toISOString();
+      const update = {
+        status: 'fechado',
+        closed_at: closedAt,
+        closing_amount: closingAmount,
+        difference: closingAmount === null ? null : roundMoney(closingAmount - Number(summary.expected_cash || 0)),
+        summary,
+      };
+      const [row] = await sql`
+        UPDATE nexo.records
+        SET data=data || ${JSON.stringify(update)}::jsonb, updated_date=now()
+        WHERE id=${session.id} AND market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'='aberto'
+        RETURNING id,data,created_date,updated_date
+      `;
+      if (!row) return send(res, 409, { message: 'O caixa já foi fechado em outra tela.' });
+      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+        ${user.market_id},'general_audits',${JSON.stringify({
+          action_type: 'caixa_fechado', entity_type: 'cash_session', entity_id: session.id,
+          user_id: user.id, user_name: user.full_name || user.email,
+          description: `Caixa fechado com ${summary.sales_count} venda(s)`,
+          details: { ...summary, closing_amount: closingAmount, difference: update.difference },
+        })}::jsonb
+      )`;
+      return send(res, 200, { session: recordFromRow(row), summary: { ...summary, closing_amount: closingAmount, difference: update.difference } });
+    }
+
+    return send(res, 404, { message: 'Operação de caixa não encontrada.' });
+  }
+
   if (path[0] === 'maintenance' && path[1] === 'reset') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem zerar dados do mercado.' });
@@ -233,6 +455,7 @@ async function routeHandler(req, res) {
       fiados: 'vendas fiadas',
       sales: 'histórico de vendas',
       audits: 'auditoria',
+      cash: 'histórico de caixas',
       operational: 'dados operacionais',
     };
     if (!labels[target]) return send(res, 400, { message: 'Selecione uma área válida para zerar.' });
@@ -258,11 +481,19 @@ async function routeHandler(req, res) {
       ), product_audits AS (
         DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='product_audits' RETURNING 1
       ) SELECT (SELECT count(*)::int FROM general_audits) AS general_audits, (SELECT count(*)::int FROM product_audits) AS product_audits`;
+    } else if (target === 'cash') {
+      const [openState] = await sql`SELECT count(*)::int AS count FROM nexo.records WHERE market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'='aberto'`;
+      if (Number(openState?.count || 0) > 0) return send(res, 409, { message: 'Feche todos os caixas abertos antes de limpar o histórico de caixas.' });
+      [result] = await sql`WITH removed AS (
+        DELETE FROM nexo.records WHERE market_id=${user.market_id} AND entity='cash_sessions' RETURNING 1
+      ) SELECT count(*)::int AS cash_sessions FROM removed`;
     } else {
+      const [openState] = await sql`SELECT count(*)::int AS count FROM nexo.records WHERE market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'='aberto'`;
+      if (Number(openState?.count || 0) > 0) return send(res, 409, { message: 'Feche todos os caixas abertos antes de zerar os dados operacionais.' });
       [result] = await sql`WITH removed AS (
         DELETE FROM nexo.records
         WHERE market_id=${user.market_id}
-          AND entity=ANY(ARRAY['products','sales','fiado_records','general_audits','product_audits'])
+          AND entity=ANY(ARRAY['products','sales','fiado_records','cash_sessions','general_audits','product_audits'])
         RETURNING entity
       ), counter AS (
         UPDATE nexo.markets SET next_sale_number=1,updated_date=now() WHERE id=${user.market_id}
@@ -271,6 +502,7 @@ async function routeHandler(req, res) {
         count(*) FILTER (WHERE entity='products')::int AS products,
         count(*) FILTER (WHERE entity='sales')::int AS sales,
         count(*) FILTER (WHERE entity='fiado_records')::int AS fiados,
+        count(*) FILTER (WHERE entity='cash_sessions')::int AS cash_sessions,
         count(*) FILTER (WHERE entity IN ('general_audits','product_audits'))::int AS audits
       FROM removed`;
     }
@@ -296,7 +528,7 @@ async function routeHandler(req, res) {
 
   if (path[0] === 'markets') {
     if (user.role !== 'super_admin') return send(res, 403, { message: 'Acesso restrito.' });
-    if (req.method === 'GET') return send(res, 200, await sql`SELECT id,name,slug,logo_url,primary_color,secondary_color,enabled_modules,active,created_date FROM nexo.markets ORDER BY name`);
+    if (req.method === 'GET') return send(res, 200, await sql`SELECT id,name,slug,logo_url,primary_color,secondary_color,enabled_modules,require_cash_register,active,created_date FROM nexo.markets ORDER BY name`);
     if (req.method === 'POST') {
       const marketName = text(req.body.name, 120);
       const marketSlug = text(req.body.slug, 80);
@@ -308,7 +540,7 @@ async function routeHandler(req, res) {
       if (!Array.isArray(modules) || modules.some(module => !MARKET_MODULES.includes(module))) return send(res, 400, { message: 'Módulos inválidos.' });
       const hash = await bcrypt.hash(req.body.admin_password, 12);
       const logoUrl = normalizeImageValue(req.body.logo_url || '');
-      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
+      const [market] = await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules,require_cash_register) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb,${Boolean(req.body.require_cash_register)}) RETURNING *), admin AS (INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) SELECT id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market) SELECT * FROM market`;
       return send(res, 201, market);
     }
     if (req.method === 'PATCH') {
@@ -320,7 +552,7 @@ async function routeHandler(req, res) {
       if (b.primary_color && !/^#[0-9a-f]{6}$/i.test(b.primary_color)) return send(res, 400, { message: 'Cor principal inválida.' });
       if (b.secondary_color && !/^#[0-9a-f]{6}$/i.test(b.secondary_color)) return send(res, 400, { message: 'Cor secundária inválida.' });
       const logoUrl = b.logo_url === undefined ? null : normalizeImageValue(b.logo_url);
-      const [market] = await sql`UPDATE nexo.markets SET name=COALESCE(${updatedName},name), logo_url=COALESCE(${logoUrl},logo_url), primary_color=COALESCE(${b.primary_color || null},primary_color), secondary_color=COALESCE(${b.secondary_color || null},secondary_color), enabled_modules=COALESCE(${b.enabled_modules ? JSON.stringify(b.enabled_modules) : null}::jsonb,enabled_modules), active=COALESCE(${typeof b.active === 'boolean' ? b.active : null},active), updated_date=now() WHERE id=${id} RETURNING *`;
+      const [market] = await sql`UPDATE nexo.markets SET name=COALESCE(${updatedName},name), logo_url=COALESCE(${logoUrl},logo_url), primary_color=COALESCE(${b.primary_color || null},primary_color), secondary_color=COALESCE(${b.secondary_color || null},secondary_color), enabled_modules=COALESCE(${b.enabled_modules ? JSON.stringify(b.enabled_modules) : null}::jsonb,enabled_modules), require_cash_register=COALESCE(${typeof b.require_cash_register === 'boolean' ? b.require_cash_register : null},require_cash_register), active=COALESCE(${typeof b.active === 'boolean' ? b.active : null},active), updated_date=now() WHERE id=${id} RETURNING *`;
       return send(res, market ? 200 : 404, market || { message: 'Mercado não encontrado.' });
     }
   }
@@ -337,12 +569,105 @@ async function routeHandler(req, res) {
     const [created] = await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl}) RETURNING id,email,full_name,role,photo_url`;
     return send(res, 201, created);
   }
+  if (path[0] === 'sales' && path[1] === 'list' && req.method === 'GET') {
+    if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado.' });
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.max(10, Math.min(Number.parseInt(req.query.page_size, 10) || 20, 100));
+    const offset = (page - 1) * pageSize;
+    const from = parseDateQuery(req.query.from);
+    const to = parseDateQuery(req.query.to);
+    const requestedSeller = user.role === 'vendedor' ? user.id : text(req.query.seller_id, 180);
+    const query = text(req.query.search, 180).toLowerCase();
+    const queryPattern = `%${query}%`;
+    const payment = text(req.query.payment, 40);
+    const status = text(req.query.status, 40);
+    const rows = await sql`
+      SELECT id, data - 'items' AS data, created_date, updated_date, count(*) OVER()::int AS total_count
+      FROM nexo.records
+      WHERE market_id=${user.market_id}
+        AND entity='sales'
+        AND data->>'status'=ANY(ARRAY['concluida','cancelada'])
+        AND (${from === null} OR created_date >= ${from})
+        AND (${to === null} OR created_date < ${to})
+        AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
+        AND (${status === ''} OR data->>'status'=${status})
+        AND (${payment === ''} OR EXISTS (
+          SELECT 1 FROM jsonb_array_elements(COALESCE(data->'payments','[]'::jsonb)) AS payment_item
+          WHERE payment_item->>'method'=${payment}
+        ))
+        AND (${query === ''} OR lower(COALESCE(data->>'sale_number','')) LIKE ${queryPattern}
+          OR lower(COALESCE(data->>'seller_name','')) LIKE ${queryPattern}
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(COALESCE(data->'payments','[]'::jsonb)) AS search_payment
+            WHERE lower(COALESCE(search_payment->>'method','')) LIKE ${queryPattern}
+          )
+        )
+      ORDER BY created_date DESC
+      LIMIT ${pageSize} OFFSET ${offset}
+    `;
+    const sales = rows.map(recordFromRow);
+    const total = Number(rows[0]?.total_count || 0);
+    const includeSellers = req.query.include_sellers === '1' || user.role === 'vendedor';
+    const sellerRows = !includeSellers
+      ? []
+      : user.role === 'vendedor'
+        ? [{ id: user.id, full_name: user.full_name || user.email }]
+        : await sql`SELECT id,COALESCE(full_name,email) AS full_name FROM nexo.users WHERE market_id=${user.market_id} AND active=true AND role=ANY(ARRAY['vendedor','gerente','admin']) ORDER BY COALESCE(full_name,email)`;
+    const sellers = sellerRows.map(seller => ({ id: seller.id, name: seller.full_name }));
+    return send(res, 200, {
+      items: sales,
+      page,
+      page_size: pageSize,
+      total,
+      page_count: Math.max(1, Math.ceil(total / pageSize)),
+      sellers,
+    });
+  }
+
+  if (path[0] === 'sales' && path[1] === 'report' && req.method === 'GET') {
+    if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado.' });
+    const from = parseDateQuery(req.query.from);
+    const to = parseDateQuery(req.query.to);
+    if (!from || !to || to <= from || to.getTime() - from.getTime() > 27 * 60 * 60 * 1000) {
+      return send(res, 400, { message: 'Informe um único dia e um intervalo de horário válido.' });
+    }
+    const requestedSeller = user.role === 'vendedor' ? user.id : text(req.query.seller_id, 180);
+    const rows = await sql`
+      SELECT id, data - 'items' AS data, created_date, updated_date
+      FROM nexo.records
+      WHERE market_id=${user.market_id}
+        AND entity='sales'
+        AND created_date >= ${from}
+        AND created_date < ${to}
+        AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
+      ORDER BY created_date ASC
+      LIMIT 5000
+    `;
+    let sales = rows.map(recordFromRow).filter(sale => ['concluida','cancelada'].includes(sale.status));
+    const payment = text(req.query.payment, 40);
+    if (payment) sales = sales.filter(sale => (sale.payments || []).some(item => item.method === payment));
+    return send(res, 200, {
+      sales,
+      summary: summarizeSales(sales),
+      filters: {
+        from: from.toISOString(),
+        to: to.toISOString(),
+        seller_id: requestedSeller || null,
+        payment: payment || null,
+      },
+    });
+  }
+
   if (path[0] === 'sales' && path[1] === 'next' && req.method === 'GET') {
     const rows=await sql`SELECT next_sale_number FROM nexo.markets WHERE id=${user.market_id}`;
     return send(res,rows[0]?200:404,rows[0]?{sale_number:Number(rows[0].next_sale_number)}:{message:'Mercado não encontrado.'});
   }
   if (path[0] === 'sales' && path[1] === 'complete' && req.method === 'POST') {
     if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado.' });
+    const openCashSession = await findOpenCashSession(sql, user.market_id, user.id);
+    if (user.role === 'vendedor' && user.require_cash_register && !openCashSession) {
+      return send(res, 409, { code: 'CASH_REGISTER_REQUIRED', message: 'Abra o caixa e informe o valor inicial antes de começar a vender.' });
+    }
     const rawItems = Array.isArray(req.body.items) ? req.body.items : [];
     const rawPayments = Array.isArray(req.body.payments) ? req.body.payments : [];
     if (!rawItems.length) return send(res, 400, { message: 'A venda não possui itens.' });
@@ -389,7 +714,7 @@ async function routeHandler(req, res) {
     if (isFiado && paid > total + 0.009) return send(res, 400, { message: 'O valor recebido não pode ser maior que o total em uma venda fiada.' });
     if (isFiado && outstanding < 0.01) return send(res, 400, { message: 'Não há saldo pendente para registrar como fiado.' });
     const normalizedPayments = cleanPayments.map(payment => payment.method === 'fiado' ? { method: 'fiado', amount: outstanding } : payment);
-    const saleData = { seller_id:user.id, seller_name:user.full_name||user.email, status:'concluida', items, payments:normalizedPayments, subtotal, discount_value:discountValue, discount_type:discountType, total, paid_amount:paid, outstanding_amount:isFiado?outstanding:0, change_amount:isFiado?0:roundMoney(Math.max(0,paid-total)), observation:text(req.body.observation,1000), sale_type:isFiado?'fiado':'normal' };
+    const saleData = { seller_id:user.id, seller_name:user.full_name||user.email, cash_session_id:openCashSession?.id || null, status:'concluida', items, payments:normalizedPayments, subtotal, discount_value:discountValue, discount_type:discountType, total, paid_amount:paid, outstanding_amount:isFiado?outstanding:0, change_amount:isFiado?0:roundMoney(Math.max(0,paid-total)), observation:text(req.body.observation,1000), sale_type:isFiado?'fiado':'normal' };
     const fiadoPayload = {
       responsible_name: responsibleName,
       phone: text(req.body.fiado?.phone, 40),
@@ -466,35 +791,71 @@ async function routeHandler(req, res) {
     const saleId = path[1];
     if (!isUuid(saleId)) return send(res, 400, { message: 'Venda inválida.' });
     const cancellationReason = text(req.body.reason, 500);
+    const canCancelAny = ['admin','gerente'].includes(user.role);
+    const rows = await sql`
+      SELECT id,data,created_date,updated_date
+      FROM nexo.records
+      WHERE id=${saleId}
+        AND market_id=${user.market_id}
+        AND entity='sales'
+        AND (${canCancelAny} OR data->>'seller_id'=${user.id})
+      LIMIT 1
+    `;
+    const current = recordFromRow(rows[0]);
+    if (!current) return send(res, 404, { message: 'Venda não encontrada ou sem permissão para cancelar.' });
+    if (current.status !== 'concluida') return send(res, 409, { message: 'A venda já foi cancelada ou não pode mais ser alterada.' });
+
+    const restoreByProduct = new Map();
+    for (const item of current.items || []) {
+      if (!isUuid(item.product_id)) continue;
+      const quantity = Number(item.unit === 'peso' ? item.weight : item.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) continue;
+      restoreByProduct.set(item.product_id, roundMoney(Number(restoreByProduct.get(item.product_id) || 0) + quantity));
+    }
+    const restores = [...restoreByProduct.entries()].map(([id, quantity]) => ({ id, quantity }));
+
     const [sale] = await sql`
       WITH cancelled AS (
-        UPDATE nexo.records SET data=data || jsonb_build_object('status','cancelada','cancellation_reason',${cancellationReason},'cancelled_by_id',${user.id},'cancelled_by_name',${user.full_name || user.email}),updated_date=now()
-        WHERE id=${saleId} AND market_id=${user.market_id} AND entity='sales' AND data->>'status'='concluida' AND (${['admin','gerente'].includes(user.role)} OR data->>'seller_id'=${user.id}) RETURNING id,data
+        UPDATE nexo.records
+        SET data=data || jsonb_build_object(
+          'status','cancelada',
+          'cancellation_reason',${cancellationReason},
+          'cancelled_by_id',${user.id},
+          'cancelled_by_name',${user.full_name || user.email},
+          'cancelled_at',now()
+        ), updated_date=now()
+        WHERE id=${saleId}
+          AND market_id=${user.market_id}
+          AND entity='sales'
+          AND data->>'status'='concluida'
+        RETURNING id,data,created_date,updated_date
+      ), stock_input AS (
+        SELECT (entry->>'id')::uuid AS id, (entry->>'quantity')::numeric AS quantity
+        FROM jsonb_array_elements(${JSON.stringify(restores)}::jsonb) entry
       ), stock AS (
-        UPDATE nexo.records product SET data=jsonb_set(product.data,'{quantity}',to_jsonb((CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END)+source.qty)),updated_date=now()
-        FROM (
-          SELECT
-            (item->>'product_id')::uuid id,
-            SUM(
-              CASE
-                WHEN item->>'unit'='peso' AND item->>'weight' ~ '^-?[0-9]+(\.[0-9]+)?$' THEN (item->>'weight')::numeric
-                WHEN item->>'unit'<>'peso' AND item->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$' THEN (item->>'quantity')::numeric
-                ELSE 0
-              END
-            ) qty
-          FROM cancelled,jsonb_array_elements(cancelled.data->'items') item
-          WHERE item->>'product_id' ~ '^[0-9a-fA-F-]{36}$'
-          GROUP BY 1
-        ) source
-        WHERE product.id=source.id AND product.market_id=${user.market_id} AND product.entity='products'
+        UPDATE nexo.records product
+        SET data=jsonb_set(
+          product.data,
+          '{quantity}',
+          to_jsonb(
+            (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END)
+            + stock_input.quantity
+          )
+        ), updated_date=now()
+        FROM stock_input, cancelled
+        WHERE product.id=stock_input.id
+          AND product.market_id=${user.market_id}
+          AND product.entity='products'
+        RETURNING product.id
       ), fiado AS (
         UPDATE nexo.records record
         SET data=record.data || jsonb_build_object(
           'status','cancelado',
           'cancellation_reason',${cancellationReason},
           'settled_by_id',${user.id},
-          'settled_by_name',${user.full_name || user.email}
-        ),updated_date=now()
+          'settled_by_name',${user.full_name || user.email},
+          'cancelled_at',now()
+        ), updated_date=now()
         FROM cancelled
         WHERE record.market_id=${user.market_id}
           AND record.entity='fiado_records'
@@ -502,9 +863,26 @@ async function routeHandler(req, res) {
           AND record.data->>'status'='pendente'
         RETURNING record.id
       ), audit AS (
-        INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','venda_cancelada','entity_type','sale','entity_id',cancelled.id,'user_id',${user.id},'user_name',${user.full_name || user.email},'description','Venda #' || (cancelled.data->>'sale_number') || ' cancelada','details',jsonb_build_object('reason',${cancellationReason},'total',cancelled.data->'total','fiado_cancelado',EXISTS(SELECT 1 FROM fiado))) FROM cancelled
-      ) SELECT id,data FROM cancelled`;
-    return send(res, sale ? 200 : 409, sale ? { id:sale.id,...sale.data } : { message:'A venda não existe ou já foi cancelada.' });
+        INSERT INTO nexo.records(market_id,entity,data)
+        SELECT ${user.market_id},'general_audits',jsonb_build_object(
+          'action_type','venda_cancelada',
+          'entity_type','sale',
+          'entity_id',cancelled.id,
+          'user_id',${user.id},
+          'user_name',${user.full_name || user.email},
+          'description','Venda #' || (cancelled.data->>'sale_number') || ' cancelada',
+          'details',jsonb_build_object(
+            'reason',${cancellationReason},
+            'total',cancelled.data->'total',
+            'products_restored',(SELECT count(*) FROM stock),
+            'fiado_cancelado',EXISTS(SELECT 1 FROM fiado)
+          )
+        )
+        FROM cancelled
+      )
+      SELECT id,data,created_date,updated_date FROM cancelled
+    `;
+    return send(res, sale ? 200 : 409, sale ? recordFromRow(sale) : { message: 'A venda foi alterada em outra tela. Atualize o histórico.' });
   }
   if (path[0] === 'sales' && path[1] && !path[2] && req.method === 'DELETE') {
     if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem excluir vendas.' });
@@ -592,6 +970,7 @@ async function routeHandler(req, res) {
       }
     }
     if (table === 'markets') return send(res, 403, { message: 'Use o painel geral.' });
+    if (table === 'cash_sessions') return send(res, 403, { message: 'Use as operações próprias de caixa.' });
     if (['general_audits','product_audits'].includes(table) && !['admin','gerente'].includes(user.role) && req.method === 'GET') return send(res, 403, { message: 'Sem permissão para consultar auditorias.' });
     if (['general_audits','product_audits'].includes(table) && !['GET','POST'].includes(req.method)) return send(res, 405, { message: 'Registros de auditoria não podem ser alterados ou excluídos.' });
     if (table === 'system_configs' && !['admin','gerente'].includes(user.role) && req.method !== 'GET') return send(res, 403, { message: 'Sem permissão para alterar configurações.' });

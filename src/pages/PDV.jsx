@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Edit3, LayoutGrid } from 'lucide-react';
+import { Banknote, Edit3, LayoutGrid, LockKeyhole } from 'lucide-react';
 import ProductSearch from '@/components/pdv/ProductSearch';
 import SearchResults from '@/components/pdv/SearchResults';
 import SaleSummary from '@/components/pdv/SaleSummary';
@@ -12,6 +12,7 @@ import QuickProductModal from '@/components/pdv/QuickProductModal';
 import ReceiptModal from '@/components/pdv/ReceiptModal';
 import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
 import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
+import CashRegisterModal from '@/components/pdv/CashRegisterModal';
 import { formatCurrency } from '@/lib/helpers';
 import {
   addProductToSaleItems,
@@ -45,15 +46,35 @@ export default function PDV() {
   const [saleNumber, setSaleNumber] = useState(1);
   const nextMinimizedId = useRef(1);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [cashState, setCashState] = useState(() => ({
+    required: user.role === 'vendedor' && Boolean(user.require_cash_register),
+    market_requires_cash: Boolean(user.require_cash_register),
+    session: null,
+    summary: null,
+  }));
+  const [cashLoading, setCashLoading] = useState(true);
+  const [cashModal, setCashModal] = useState(null);
+  const [cashProcessing, setCashProcessing] = useState(false);
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
-  const modalsOpen = showPayment || showQuickProduct || showReceipt || showPriceCorrection;
+  const modalsOpen = showPayment || showQuickProduct || showReceipt || showPriceCorrection || cashModal;
 
   useEffect(() => {
-    loadProducts();
+    loadCash();
     loadMaxMinimized();
     getNextSaleNumber();
   }, []);
+
+  const canUsePdv = user.role !== 'vendedor' || !cashState.required || Boolean(cashState.session);
+
+  useEffect(() => {
+    if (cashLoading || !canUsePdv || products.length) return;
+    loadProducts();
+  }, [cashLoading, canUsePdv]);
+
+  useEffect(() => {
+    if (!cashLoading && cashState.required && !cashState.session) setCashModal('open');
+  }, [cashLoading, cashState.required, cashState.session]);
 
   useEffect(() => {
     const highestTemporary = Math.max(0, ...minimizedSales.map(sale => Number(sale.temporary_number || 0)), Number(activeSale.temporary_number || 0));
@@ -96,10 +117,60 @@ export default function PDV() {
     setShowResults(true);
   }, [searchQuery, products]);
 
+  const loadCash = async () => {
+    setCashLoading(true);
+    try {
+      const data = await nexoApi.cash.current();
+      setCashState(data);
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível verificar o caixa.');
+    } finally {
+      setCashLoading(false);
+    }
+  };
+
+  const handleOpenCash = async openingAmount => {
+    setCashProcessing(true);
+    try {
+      const result = await nexoApi.cash.open(openingAmount);
+      setCashState(previous => ({ ...previous, session: result.session, summary: result.summary }));
+      setCashModal(null);
+      toast.success('Caixa aberto. Você já pode começar a vender.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível abrir o caixa.');
+    } finally {
+      setCashProcessing(false);
+    }
+  };
+
+  const openCashDialog = () => {
+    if (cashState.session && (activeSale.items.length > 0 || minimizedSales.length > 0)) {
+      toast.error('Finalize ou descarte as vendas abertas antes de fechar o caixa.');
+      return;
+    }
+    setCashModal(cashState.session ? 'close' : 'open');
+  };
+
+  const handleCloseCash = async closingAmount => {
+    setCashProcessing(true);
+    try {
+      const result = await nexoApi.cash.close(closingAmount);
+      setCashState(previous => ({ ...previous, session: null, summary: result.summary }));
+      setCashModal(null);
+      setActiveSale(createEmptySale());
+      setMinimizedSales([]);
+      toast.success('Caixa fechado com sucesso.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível fechar o caixa.');
+    } finally {
+      setCashProcessing(false);
+    }
+  };
+
   const loadProducts = async () => {
     setProductsLoading(true);
     try {
-      const data = await nexoApi.entities.Product.list('-updated_date', 500);
+      const data = await nexoApi.products.catalog(1200);
       setProducts(data.filter(product => product.status === 'ativo'));
     } catch {
       toast.error('Erro ao carregar produtos.');
@@ -318,6 +389,7 @@ export default function PDV() {
       setSearchQuery('');
       loadProducts();
       getNextSaleNumber();
+      loadCash();
     } catch (error) {
       toast.error(error.message || 'Erro ao concluir venda.');
     }
@@ -341,12 +413,25 @@ export default function PDV() {
             <span className="flex items-center gap-1.5"><Kbd>F6</Kbd> Descartar</span>
             <span className="flex items-center gap-1.5"><Kbd>F7</Kbd> Minimizar</span>
           </div>
-          <button onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length} aria-label="Corrigir valor de um produto da venda" className="flex min-h-10 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
+          <button type="button" onClick={openCashDialog} disabled={cashLoading} className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition disabled:opacity-50 ${cashState.session ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300' : 'border-border bg-card text-foreground hover:bg-muted'}`}>
+            {cashState.session ? <Banknote className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />} <span className="hidden sm:inline">{cashState.session ? 'Caixa aberto' : 'Abrir caixa'}</span>
+          </button>
+          <button onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length || !canUsePdv} aria-label="Corrigir valor de um produto da venda" className="flex min-h-10 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
             <Edit3 className="h-5 w-5" /> <span className="hidden sm:inline">Valor errado</span>
           </button>
         </div>
       </div>
 
+      {!canUsePdv && !cashLoading ? (
+        <div className="grid flex-1 place-items-center p-6">
+          <div className="max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-lg">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent"><LockKeyhole className="h-7 w-7" /></div>
+            <h2 className="mt-5 text-2xl font-black">Abra o caixa para começar</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Informe o valor inicial disponível para troco. Depois disso, o PDV será liberado para suas vendas.</p>
+            <button type="button" onClick={() => setCashModal('open')} className="mt-5 min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90">Abrir caixa</button>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         <div className="flex h-[42%] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
           <div className="flex-shrink-0 p-4 pb-2">
@@ -386,8 +471,9 @@ export default function PDV() {
           />
         </div>
       </div>
+      )}
 
-      {showPayment && (
+      {showPayment && canUsePdv && (
         <PaymentModal
           sale={activeSale}
           onClose={() => setShowPayment(false)}
@@ -415,7 +501,8 @@ export default function PDV() {
       )}
       {showReceipt && <ReceiptModal sale={showReceipt} config={{ ...config, logo_url: config.logo_url || user.logo_url, nome_mercado: config.nome_mercado || user.market_name }} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
       {showPriceCorrection && <PriceCorrectionModal items={activeSale.items} onSave={handlePriceCorrection} onClose={() => setShowPriceCorrection(false)} />}
-      <MinimizedSalesBar sales={minimizedSales} onRestore={handleRestore} onDiscard={handleDiscardMinimized} onReorder={handleReorderMinimized} />
+      {cashModal && <CashRegisterModal mode={cashModal} cashState={cashState} processing={cashProcessing} onClose={cashState.required && !cashState.session ? undefined : () => setCashModal(null)} onOpen={handleOpenCash} onCloseCash={handleCloseCash} />}
+      {canUsePdv && <MinimizedSalesBar sales={minimizedSales} onRestore={handleRestore} onDiscard={handleDiscardMinimized} onReorder={handleReorderMinimized} />}
     </div>
   );
 }

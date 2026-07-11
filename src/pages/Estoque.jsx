@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import {
   ArrowDownAZ,
   ArrowDownZA,
+  AlertTriangle,
+  ArrowRight,
   ArrowUpDown,
   Copy,
   Download,
@@ -40,8 +42,10 @@ const normalize = (value, type) => type === 'number'
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 
 export default function Estoque() {
-  const { user } = /** @type {any} */ (useOutletContext());
+  const { user, config } = /** @type {any} */ (useOutletContext());
   const fileRef = useRef(null);
+  const tableRef = useRef(null);
+  const lowStockThreshold = Math.max(1, Number.parseInt(config?.limite_estoque_baixo, 10) || 5);
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -60,7 +64,7 @@ export default function Estoque() {
   const load = async () => {
     setLoading(true);
     try {
-      setProducts(await nexoApi.entities.Product.list('-updated_date', 1000));
+      setProducts(await nexoApi.products.catalog(2000));
       setDirty(new Set());
     } catch (error) {
       toast.error(error.message);
@@ -94,7 +98,10 @@ export default function Estoque() {
       && (!category || product.category === category)
       && (min === null || Number(product.sale_price || 0) >= min)
       && (max === null || Number(product.sale_price || 0) <= max)
-      && (stock === 'todos' || (stock === 'disponivel' ? Number(product.quantity || 0) > 0 : Number(product.quantity || 0) <= 0))
+      && (stock === 'todos'
+        || (stock === 'disponivel' && Number(product.quantity || 0) > lowStockThreshold)
+        || (stock === 'baixo' && Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold)
+        || (stock === 'zerado' && Number(product.quantity || 0) <= 0))
     ));
 
     const column = COLUMNS.find(([key]) => key === sort.key);
@@ -107,7 +114,7 @@ export default function Estoque() {
       else result = collator.compare(String(first || ''), String(second || ''));
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [products, search, category, minPrice, maxPrice, stock, sort]);
+  }, [products, search, category, minPrice, maxPrice, stock, sort, lowStockThreshold]);
 
   const { page, setPage, pageCount, visibleItems: visibleProducts, pageSize } = usePagination(filtered, 50);
 
@@ -138,7 +145,7 @@ export default function Estoque() {
     }
     setSaving(true);
     try {
-      await nexoApi.stock.bulkUpdate(changed);
+      await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(COLUMNS.map(([key]) => [key, product[key]])) }))); 
       toast.success('Estoque atualizado.');
       await load();
     } catch (error) {
@@ -198,6 +205,21 @@ export default function Estoque() {
     }
   };
 
+  const openProductModal = async (mode, product = null) => {
+    if (!product || mode === 'create') {
+      setProductModal({ mode: 'create' });
+      return;
+    }
+    setProductModal({ mode: 'loading', product });
+    try {
+      const fullProduct = await nexoApi.entities.Product.get(product.id);
+      setProductModal({ mode, product: fullProduct });
+    } catch (error) {
+      setProductModal(null);
+      toast.error(error.message || 'Não foi possível abrir o produto.');
+    }
+  };
+
   const closeModal = () => setProductModal(null);
   const handleModalSave = async (_saved, options = {}) => {
     await load();
@@ -235,6 +257,12 @@ export default function Estoque() {
     setStock('todos');
   };
   const zeroStockCount = products.filter(product => Number(product.quantity || 0) <= 0).length;
+  const lowStockCount = products.filter(product => Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold).length;
+  const focusStock = filter => {
+    setStock(filter);
+    setPage(1);
+    window.setTimeout(() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
   return (
     <div className="mx-auto max-w-[1700px] p-4 sm:p-6 lg:p-8">
@@ -257,17 +285,35 @@ export default function Estoque() {
           <button type="button" disabled={!dirty.size || saving} onClick={saveInline} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">
             <Save className="h-4 w-4" /> {saving ? 'Salvando...' : dirty.size ? `Salvar ${dirty.size}` : 'Tudo salvo'}
           </button>
-          <button type="button" onClick={() => setProductModal({ mode: 'create' })} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary/90">
+          <button type="button" onClick={() => openProductModal('create')} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Novo produto
           </button>
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid gap-3 sm:grid-cols-4">
         <StockMetric label="Produtos cadastrados" value={products.length} />
+        <StockMetric label="Estoque baixo" value={lowStockCount} low={lowStockCount > 0} />
         <StockMetric label="Sem estoque" value={zeroStockCount} alert={zeroStockCount > 0} />
         <StockMetric label="Alterações pendentes" value={dirty.size} pending={dirty.size > 0} />
       </div>
+
+      {(zeroStockCount > 0 || lowStockCount > 0) && (
+        <section className="mb-4 grid gap-3 lg:grid-cols-2" aria-label="Alertas de estoque">
+          {zeroStockCount > 0 && (
+            <div className="flex flex-col gap-4 rounded-2xl border border-red-500/40 bg-red-600 p-4 text-white shadow-lg sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-white/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{zeroStockCount} produto{zeroStockCount === 1 ? '' : 's'} sem estoque</h2><p className="mt-1 text-sm text-white/85">Esses produtos não possuem unidades disponíveis para venda.</p></div></div>
+              <button type="button" onClick={() => focusStock('zerado')} className="inline-flex min-h-10 flex-none items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-red-700 transition hover:bg-red-50">Atualize o estoque <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          )}
+          {lowStockCount > 0 && (
+            <div className="flex flex-col gap-4 rounded-2xl border border-amber-400/60 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-amber-500/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{lowStockCount} produto{lowStockCount === 1 ? '' : 's'} com estoque baixo</h2><p className="mt-1 text-sm opacity-80">Alerta configurado para {lowStockThreshold} unidade{lowStockThreshold === 1 ? '' : 's'} ou menos.</p></div></div>
+              <button type="button" onClick={() => focusStock('baixo')} className="inline-flex min-h-10 flex-none items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-card px-4 text-sm font-black text-amber-800 transition hover:bg-amber-500/10 dark:text-amber-200">Ver produtos <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_220px_180px_180px_190px_auto]">
@@ -286,7 +332,8 @@ export default function Estoque() {
           <input id="max-price" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" type="number" min="0" step="0.01" placeholder="Preço máximo" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} />
           <select aria-label="Filtrar por disponibilidade" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={stock} onChange={event => setStock(event.target.value)}>
             <option value="todos">Qualquer estoque</option>
-            <option value="disponivel">Disponível</option>
+            <option value="disponivel">Estoque normal</option>
+            <option value="baixo">Estoque baixo</option>
             <option value="zerado">Sem estoque</option>
           </select>
           {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted"><FilterX className="h-4 w-4" /> Limpar</button>}
@@ -298,7 +345,7 @@ export default function Estoque() {
         <span className="md:hidden">Deslize a tabela para editar todas as colunas.</span>
       </div>
 
-      <div className="max-h-[calc(100vh-300px)] min-h-[360px] overflow-auto rounded-2xl border border-border bg-card shadow-sm">
+      <div ref={tableRef} className="max-h-[calc(100vh-300px)] min-h-[360px] scroll-mt-4 overflow-auto rounded-2xl border border-border bg-card shadow-sm">
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : (
@@ -317,15 +364,21 @@ export default function Estoque() {
               </tr>
             </thead>
             <tbody>
-              {visibleProducts.map(product => (
-                <tr key={product.id} className={`border-t border-border transition hover:bg-muted/25 ${dirty.has(product.id) ? 'bg-amber-500/10' : ''}`}>
-                  <td className={`sticky left-0 z-10 p-2 ${dirty.has(product.id) ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-card'}`}>
-                    <button type="button" onClick={() => setProductModal({ mode: 'edit', product })} className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-white" aria-label={`Editar ${product.name}`}>
+              {visibleProducts.map(product => {
+                const quantity = Number(product.quantity || 0);
+                const isZero = quantity <= 0;
+                const isLow = !isZero && quantity <= lowStockThreshold;
+                const rowBackground = dirty.has(product.id) ? 'bg-amber-500/10' : isZero ? 'bg-red-500/10' : isLow ? 'bg-amber-500/5' : '';
+                const stickyBackground = dirty.has(product.id) ? 'bg-amber-50 dark:bg-amber-950/30' : isZero ? 'bg-red-50 dark:bg-red-950/30' : isLow ? 'bg-amber-50 dark:bg-amber-950/20' : 'bg-card';
+                return (
+                <tr key={product.id} className={`border-t border-border transition hover:bg-muted/25 ${rowBackground}`}>
+                  <td className={`sticky left-0 z-10 p-2 ${stickyBackground}`}>
+                    <button type="button" onClick={() => openProductModal('edit', product)} className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-white" aria-label={`Editar ${product.name}`}>
                       {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" loading="lazy" /> : <Package className="h-5 w-5 text-muted-foreground" />}
                     </button>
                   </td>
                   {COLUMNS.map(([key, label, type]) => (
-                    <td key={key} className={`p-1 ${key === 'name' ? `sticky left-14 z-10 ${dirty.has(product.id) ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-card'}` : ''}`}>
+                    <td key={key} className={`p-1 ${key === 'name' ? `sticky left-14 z-10 ${stickyBackground}` : ''}`}>
                       {key === 'status' ? (
                         <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[120px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.status || 'ativo'} onChange={event => editInline(product.id, key, event.target.value, type)}>
                           <option value="ativo">Ativo</option>
@@ -349,17 +402,18 @@ export default function Estoque() {
                       )}
                     </td>
                   ))}
-                  <td className={`sticky right-0 z-10 p-2 ${dirty.has(product.id) ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-card'}`}>
+                  <td className={`sticky right-0 z-10 p-2 ${stickyBackground}`}>
                     <div className="flex justify-end gap-1">
-                      <button type="button" onClick={() => setProductModal({ mode: 'edit', product })} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${product.name} no formulário`} title="Editar no formulário"><Pencil className="h-[18px] w-[18px]" /></button>
-                      <button type="button" onClick={() => setProductModal({ mode: 'duplicate', product })} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Duplicar ${product.name}`} title="Duplicar produto"><Copy className="h-[18px] w-[18px]" /></button>
+                      <button type="button" onClick={() => openProductModal('edit', product)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${product.name} no formulário`} title="Editar no formulário"><Pencil className="h-[18px] w-[18px]" /></button>
+                      <button type="button" onClick={() => openProductModal('duplicate', product)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Duplicar ${product.name}`} title="Duplicar produto"><Copy className="h-[18px] w-[18px]" /></button>
                       {['admin', 'gerente'].includes(user.role) && (
                         <button type="button" disabled={deletingId === product.id} onClick={() => handleDeleteProduct(product)} className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/25 text-destructive transition hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50" aria-label={`Excluir ${product.name}`} title="Excluir produto"><Trash2 className="h-[18px] w-[18px]" /></button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {!filtered.length && <tr><td colSpan={COLUMNS.length + 2} className="p-16 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</td></tr>}
             </tbody>
           </table>
@@ -370,12 +424,14 @@ export default function Estoque() {
         <PaginationControls page={page} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPageChange={setPage} />
       )}
 
-      {productModal && <ProductForm product={productModal.mode === 'edit' ? productModal.product : null} duplicateSource={productModal.mode === 'duplicate' ? productModal.product : null} categories={categories} user={user} onClose={closeModal} onSave={handleModalSave} />}
+      {productModal?.mode === 'loading' && <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"><div className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl"><div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="mt-3 text-sm font-bold">Carregando produto...</p></div></div>}
+      {productModal && productModal.mode !== 'loading' && <ProductForm product={productModal.mode === 'edit' ? productModal.product : null} duplicateSource={productModal.mode === 'duplicate' ? productModal.product : null} categories={categories} user={user} onClose={closeModal} onSave={handleModalSave} />}
     </div>
   );
 }
 
-function StockMetric({ label, value, alert = false, pending = false }) {
-  const valueClass = alert ? 'text-orange-600 dark:text-orange-300' : pending ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
-  return <div className="rounded-2xl border border-border bg-card p-4 shadow-sm"><span className="text-xs font-semibold text-muted-foreground">{label}</span><strong className={`mt-1 block text-2xl font-black tabular-nums ${valueClass}`}>{value}</strong></div>;
+function StockMetric({ label, value, alert = false, low = false, pending = false }) {
+  const valueClass = alert ? 'text-red-600 dark:text-red-300' : low || pending ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
+  const borderClass = alert ? 'border-red-500/30' : low ? 'border-amber-400/40' : 'border-border';
+  return <div className={`rounded-2xl border bg-card p-4 shadow-sm ${borderClass}`}><span className="text-xs font-semibold text-muted-foreground">{label}</span><strong className={`mt-1 block text-2xl font-black tabular-nums ${valueClass}`}>{value}</strong></div>;
 }

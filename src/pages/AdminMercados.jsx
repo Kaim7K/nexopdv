@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
-import { Plus, Save, Search, Store, X } from 'lucide-react';
+import { LockKeyhole, Plus, Save, Search, Store, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 
@@ -25,6 +25,7 @@ const EMPTY = {
   admin_password: '',
   primary_color: '#16a06a',
   secondary_color: '#0f5132',
+  require_cash_register: false,
 };
 
 export default function AdminMercados() {
@@ -179,6 +180,13 @@ export default function AdminMercados() {
                 </div>
 
                 <div className="mt-5 border-t border-border pt-4">
+                  <label className={`mb-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3 ${updating ? 'pointer-events-none opacity-60' : ''}`}>
+                    <span className="flex min-w-0 items-start gap-3">
+                      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-accent/10 text-accent"><LockKeyhole className="h-4 w-4" /></span>
+                      <span><strong className="block text-sm">Abertura de caixa para vendedores</strong><span className="mt-0.5 block text-xs leading-5 text-muted-foreground">Exige valor inicial antes da primeira venda deste mercado.</span></span>
+                    </span>
+                    <input type="checkbox" checked={Boolean(market.require_cash_register)} onChange={event => update(market, { require_cash_register: event.target.checked })} className="h-5 w-5 flex-none accent-[var(--market-primary)]" />
+                  </label>
                   <ImageUploadField value={market.logo_url || ''} onChange={value => update(market, { logo_url: value })} kind="market" scopeId={market.id} label="Logo do mercado" name={market.name} previewClassName="h-14 w-24 rounded-xl" />
                 </div>
               </article>
@@ -205,6 +213,11 @@ export default function AdminMercados() {
 
             <ColorField label="Cor principal" value={form.primary_color} onChange={value => updateForm('primary_color', value)} />
             <ColorField label="Cor secundária" value={form.secondary_color} onChange={value => updateForm('secondary_color', value)} />
+
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3 sm:col-span-2">
+              <span className="flex items-start gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-accent/10 text-accent"><LockKeyhole className="h-4 w-4" /></span><span><strong className="block text-sm">Exigir abertura de caixa dos vendedores</strong><span className="mt-0.5 block text-xs leading-5 text-muted-foreground">O administrador do mercado ainda poderá vender sem abrir caixa.</span></span></span>
+              <input type="checkbox" checked={Boolean(form.require_cash_register)} onChange={event => updateForm('require_cash_register', event.target.checked)} className="h-5 w-5 flex-none accent-[var(--market-primary)]" />
+            </label>
 
             <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
               <button type="button" disabled={saving} onClick={() => setOpen(false)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Cancelar</button>

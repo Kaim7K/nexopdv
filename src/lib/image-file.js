@@ -12,10 +12,10 @@ function withTimeout(promise, milliseconds = 15000) {
 }
 
 const PROFILES = {
-  user: { maxWidth: 640, maxHeight: 640, quality: 0.84 },
-  market: { maxWidth: 1400, maxHeight: 900, quality: 0.88 },
-  product: { maxWidth: 1200, maxHeight: 1200, quality: 0.86 },
-  default: { maxWidth: 1200, maxHeight: 1200, quality: 0.86 },
+  user: { maxWidth: 360, maxHeight: 360, quality: 0.8 },
+  market: { maxWidth: 1000, maxHeight: 520, quality: 0.84 },
+  product: { maxWidth: 560, maxHeight: 560, quality: 0.8 },
+  default: { maxWidth: 720, maxHeight: 720, quality: 0.82 },
 };
 
 function loadImage(file) {
