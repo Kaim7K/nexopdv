@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { CopyPlus, ImageIcon, Loader2, Save, Search, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
@@ -19,18 +19,10 @@ const EMPTY_FORM = {
   status: 'ativo',
 };
 
-const titleToProductName = title => String(title || '')
-  .replace(/\s*[-|–].*$/u, '')
-  .replace(/\b(produto|imagem|foto)\b/gi, '')
-  .replace(/\s{2,}/g, ' ')
-  .trim();
-
 export default function ProductForm({ product = null, duplicateSource = null, categories = [], user, onSave, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [identifying, setIdentifying] = useState(false);
-  const lastBarcodeLookup = useRef('');
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -84,29 +76,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   const handleChange = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
 
-  useEffect(() => {
-    const barcode = form.barcode.trim();
-    if (!/^\d{6,}$/.test(barcode) || barcode === lastBarcodeLookup.current) return;
-    const timer = setTimeout(async () => {
-      lastBarcodeLookup.current = barcode;
-      setIdentifying(true);
-      try {
-        const data = await nexoApi.productImages.search({ barcode, name: form.name, category: form.category, page: 1 });
-        const first = data.results?.[0];
-        const detectedName = titleToProductName(first?.title);
-        if (!form.name.trim() && detectedName) handleChange('name', detectedName);
-        if (!form.image_url && first?.url) {
-          setShowImageSearch(true);
-          toast.success('Código identificado. Escolha uma imagem coerente para o produto.');
-        }
-      } catch {
-        // Cadastro manual continua disponível se o catálogo externo não responder.
-      } finally {
-        setIdentifying(false);
-      }
-    }, 450);
-    return () => clearTimeout(timer);
-  }, [form.barcode, form.name, form.category, form.image_url]);
+
 
   const validate = () => {
     if (!form.name.trim()) return 'Nome é obrigatório.';
@@ -209,8 +179,8 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
             <div className="flex flex-1 flex-col justify-center gap-2">
               <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
               <button type="button" onClick={() => setShowImageSearch(true)} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
-                {identifying ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-                Buscar imagem automaticamente
+                <Search className="h-5 w-5" />
+                Buscar imagem
               </button>
               {form.image_url && (
                 <button type="button" onClick={() => handleChange('image_url', '')} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10">
@@ -292,9 +262,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
       {showImageSearch && (
         <ProductImageSearch
-          barcode={form.barcode}
           productName={form.name}
-          category={form.category}
           onSelect={url => handleChange('image_url', url)}
           onClose={() => setShowImageSearch(false)}
         />

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
+import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import {
   ArrowDownAZ,
   ArrowDownZA,
@@ -23,7 +24,7 @@ import ProductForm from '@/components/stock/ProductForm';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 
-const COLUMNS = [
+const EDITABLE_COLUMNS = [
   ['name', 'Produto', 'text'],
   ['category', 'Categoria', 'text'],
   ['barcode', 'Código de barras', 'text'],
@@ -33,6 +34,12 @@ const COLUMNS = [
   ['quantity', 'Estoque', 'number'],
   ['unit', 'Unidade', 'text'],
   ['status', 'Status', 'text'],
+];
+
+const TABLE_COLUMNS = [
+  ...EDITABLE_COLUMNS.slice(0, 8),
+  ['last_sale_at', 'Última venda', 'date'],
+  EDITABLE_COLUMNS[8],
 ];
 
 const normalize = (value, type) => type === 'number'
@@ -60,6 +67,7 @@ export default function Estoque() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deletingInactive, setDeletingInactive] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -104,13 +112,14 @@ export default function Estoque() {
         || (stock === 'zerado' && Number(product.quantity || 0) <= 0))
     ));
 
-    const column = COLUMNS.find(([key]) => key === sort.key);
+    const column = TABLE_COLUMNS.find(([key]) => key === sort.key);
     const type = column?.[2] || 'text';
     return [...visible].sort((a, b) => {
       const first = a[sort.key];
       const second = b[sort.key];
       let result;
       if (type === 'number') result = Number(first || 0) - Number(second || 0);
+      else if (type === 'date') result = (first ? new Date(first).getTime() : 0) - (second ? new Date(second).getTime() : 0);
       else result = collator.compare(String(first || ''), String(second || ''));
       return sort.direction === 'asc' ? result : -result;
     });
@@ -145,7 +154,7 @@ export default function Estoque() {
     }
     setSaving(true);
     try {
-      await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(COLUMNS.map(([key]) => [key, product[key]])) }))); 
+      await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(EDITABLE_COLUMNS.map(([key]) => [key, product[key]])) }))); 
       toast.success('Estoque atualizado.');
       await load();
     } catch (error) {
@@ -161,7 +170,8 @@ export default function Estoque() {
       const XLSX = await import('@e965/xlsx');
       const rows = products.map(product => Object.fromEntries([
         ['ID', product.id],
-        ...COLUMNS.map(([key, label]) => [label, product[key] ?? '']),
+        ...EDITABLE_COLUMNS.map(([key, label]) => [label, product[key] ?? '']),
+        ['Última venda', product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'],
       ]));
       const sheet = XLSX.utils.json_to_sheet(rows);
       const book = XLSX.utils.book_new();
@@ -190,7 +200,7 @@ export default function Estoque() {
       if (rows.length > 5000) throw new Error('A planilha pode ter no máximo 5.000 produtos por importação.');
       const mapped = rows.map(row => ({
         id: row.ID || undefined,
-        ...Object.fromEntries(COLUMNS.map(([key, label, type]) => [key, normalize(row[label], type)])),
+        ...Object.fromEntries(EDITABLE_COLUMNS.map(([key, label, type]) => [key, normalize(row[label], type)])),
       }));
       if (mapped.some(product => !product.name.trim() || Number(product.sale_price) < 0 || Number(product.quantity) < 0)) {
         throw new Error('Há produtos com nome, preço ou quantidade inválidos.');
@@ -248,6 +258,33 @@ export default function Estoque() {
     }
   };
 
+  const inactivityCutoff = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 2);
+    return date;
+  }, [products.length]);
+  const inactiveCandidates = useMemo(() => products.filter(product => {
+    const reference = product.last_sale_at || product.created_date;
+    const timestamp = reference ? new Date(reference).getTime() : 0;
+    return Number.isFinite(timestamp) && timestamp < inactivityCutoff.getTime();
+  }), [products, inactivityCutoff]);
+
+  const handleDeleteInactive = async () => {
+    if (!['admin', 'gerente'].includes(user.role) || deletingInactive || !inactiveCandidates.length) return;
+    const confirmed = window.confirm(`Apagar ${inactiveCandidates.length} produto(s) sem venda há pelo menos 2 meses? Vendas antigas continuarão no histórico.`);
+    if (!confirmed) return;
+    setDeletingInactive(true);
+    try {
+      const result = await nexoApi.products.deleteInactive();
+      toast.success(`${Number(result.deleted || 0)} produto(s) inativo(s) apagado(s).`);
+      await load();
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível apagar os produtos inativos.');
+    } finally {
+      setDeletingInactive(false);
+    }
+  };
+
   const hasFilters = Boolean(search || category || minPrice || maxPrice || stock !== 'todos');
   const clearFilters = () => {
     setSearch('');
@@ -285,6 +322,11 @@ export default function Estoque() {
           <button type="button" disabled={!dirty.size || saving} onClick={saveInline} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">
             <Save className="h-4 w-4" /> {saving ? 'Salvando...' : dirty.size ? `Salvar ${dirty.size}` : 'Tudo salvo'}
           </button>
+          {['admin', 'gerente'].includes(user.role) && (
+            <button type="button" onClick={handleDeleteInactive} disabled={deletingInactive || !inactiveCandidates.length || loading} title="Apaga produtos que não possuem venda há pelo menos 2 meses" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-card px-4 text-sm font-bold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40">
+              <Trash2 className="h-4 w-4" /> {deletingInactive ? 'Apagando...' : `Apagar inativos${inactiveCandidates.length ? ` (${inactiveCandidates.length})` : ''}`}
+            </button>
+          )}
           <button type="button" onClick={() => openProductModal('create')} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Novo produto
           </button>
@@ -301,15 +343,25 @@ export default function Estoque() {
       {(zeroStockCount > 0 || lowStockCount > 0) && (
         <section className="mb-4 grid gap-3 lg:grid-cols-2" aria-label="Alertas de estoque">
           {zeroStockCount > 0 && (
-            <div className="flex flex-col gap-4 rounded-2xl border border-red-500/40 bg-red-600 p-4 text-white shadow-lg sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-white/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{zeroStockCount} produto{zeroStockCount === 1 ? '' : 's'} sem estoque</h2><p className="mt-1 text-sm text-white/85">Esses produtos não possuem unidades disponíveis para venda.</p></div></div>
-              <button type="button" onClick={() => focusStock('zerado')} className="inline-flex min-h-10 flex-none items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-red-700 transition hover:bg-red-50">Atualize o estoque <ArrowRight className="h-4 w-4" /></button>
+            <div className="overflow-hidden rounded-2xl border border-red-500/45 bg-red-600 text-white shadow-lg">
+              <div className="flex items-start gap-3 p-4"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-white/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{zeroStockCount} produto{zeroStockCount === 1 ? '' : 's'} sem estoque</h2><p className="mt-1 text-sm text-white/85">Atualize os produtos abaixo para liberá-los novamente para venda.</p></div></div>
+              <div className="space-y-1 border-t border-white/15 bg-black/10 p-2">
+                {products.filter(product => Number(product.quantity || 0) <= 0).slice(0, 6).map(product => (
+                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl bg-white/10 px-3 py-2"><span className="min-w-0 truncate text-sm font-bold">{product.name}</span><button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex min-h-9 flex-none items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-black text-red-700 hover:bg-red-50">Atualizar estoque <ArrowRight className="h-3.5 w-3.5" /></button></div>
+                ))}
+                {zeroStockCount > 6 && <button type="button" onClick={() => focusStock('zerado')} className="w-full rounded-lg px-3 py-2 text-xs font-bold text-white/90 hover:bg-white/10">Ver mais {zeroStockCount - 6} produto(s)</button>}
+              </div>
             </div>
           )}
           {lowStockCount > 0 && (
-            <div className="flex flex-col gap-4 rounded-2xl border border-amber-400/60 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-amber-500/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{lowStockCount} produto{lowStockCount === 1 ? '' : 's'} com estoque baixo</h2><p className="mt-1 text-sm opacity-80">Alerta configurado para {lowStockThreshold} unidade{lowStockThreshold === 1 ? '' : 's'} ou menos.</p></div></div>
-              <button type="button" onClick={() => focusStock('baixo')} className="inline-flex min-h-10 flex-none items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-card px-4 text-sm font-black text-amber-800 transition hover:bg-amber-500/10 dark:text-amber-200">Ver produtos <ArrowRight className="h-4 w-4" /></button>
+            <div className="overflow-hidden rounded-2xl border border-amber-400/60 bg-amber-500/10 text-amber-900 dark:text-amber-100">
+              <div className="flex items-start gap-3 p-4"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-amber-500/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{lowStockCount} produto{lowStockCount === 1 ? '' : 's'} com estoque baixo</h2><p className="mt-1 text-sm opacity-80">Alerta configurado para {lowStockThreshold} unidade{lowStockThreshold === 1 ? '' : 's'} ou menos.</p></div></div>
+              <div className="space-y-1 border-t border-amber-400/25 p-2">
+                {products.filter(product => Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold).slice(0, 6).map(product => (
+                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl bg-card/70 px-3 py-2"><span className="min-w-0 truncate text-sm font-bold">{product.name} <small className="font-semibold opacity-70">({product.quantity})</small></span><button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex min-h-9 flex-none items-center gap-1.5 rounded-lg border border-amber-500/40 bg-card px-3 text-xs font-black text-amber-800 hover:bg-amber-500/10 dark:text-amber-200">Atualizar estoque <ArrowRight className="h-3.5 w-3.5" /></button></div>
+                ))}
+                {lowStockCount > 6 && <button type="button" onClick={() => focusStock('baixo')} className="w-full rounded-lg px-3 py-2 text-xs font-bold hover:bg-amber-500/10">Ver mais {lowStockCount - 6} produto(s)</button>}
+              </div>
             </div>
           )}
         </section>
@@ -349,11 +401,11 @@ export default function Estoque() {
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : (
-          <table className="w-full min-w-[1280px] whitespace-nowrap text-sm">
+          <table className="w-full min-w-[1480px] whitespace-nowrap text-sm">
             <thead className="sticky top-0 z-20 bg-secondary text-secondary-foreground shadow-sm">
               <tr>
                 <th className="sticky left-0 z-30 bg-secondary p-3 text-left"><span className="sr-only">Imagem</span><Package className="h-5 w-5" /></th>
-                {COLUMNS.map(([key, label]) => (
+                {TABLE_COLUMNS.map(([key, label]) => (
                   <th key={key} className={`p-0 text-left ${key === 'name' ? 'sticky left-14 z-30 bg-secondary' : ''}`}>
                     <button type="button" onClick={() => toggleSort(key)} className="flex w-full min-w-[135px] items-center gap-2 px-3 py-3 font-semibold hover:bg-muted" aria-label={`Ordenar por ${label}`}>
                       {label} <SortIcon column={key} />
@@ -370,6 +422,8 @@ export default function Estoque() {
                 const isLow = !isZero && quantity <= lowStockThreshold;
                 const rowBackground = dirty.has(product.id) ? 'bg-amber-500/10' : isZero ? 'bg-red-500/10' : isLow ? 'bg-amber-500/5' : '';
                 const stickyBackground = dirty.has(product.id) ? 'bg-amber-50 dark:bg-amber-950/30' : isZero ? 'bg-red-50 dark:bg-red-950/30' : isLow ? 'bg-amber-50 dark:bg-amber-950/20' : 'bg-card';
+                const hasCostPrice = product.cost_price !== null && product.cost_price !== '' && Number.isFinite(Number(product.cost_price));
+                const unitProfit = Number(product.sale_price || 0) - Number(product.cost_price || 0);
                 return (
                 <tr key={product.id} className={`border-t border-border transition hover:bg-muted/25 ${rowBackground}`}>
                   <td className={`sticky left-0 z-10 p-2 ${stickyBackground}`}>
@@ -377,9 +431,16 @@ export default function Estoque() {
                       {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" loading="lazy" /> : <Package className="h-5 w-5 text-muted-foreground" />}
                     </button>
                   </td>
-                  {COLUMNS.map(([key, label, type]) => (
+                  {TABLE_COLUMNS.map(([key, label, type]) => (
                     <td key={key} className={`p-1 ${key === 'name' ? `sticky left-14 z-10 ${stickyBackground}` : ''}`}>
-                      {key === 'status' ? (
+                      {key === 'last_sale_at' ? (
+                        <div className="min-w-[150px] px-2"><span className="block text-sm font-bold">{product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{product.last_sale_at ? 'Última saída registrada' : 'Sem vendas registradas'}</span></div>
+                      ) : key === 'sale_price' || key === 'cost_price' ? (
+                        <div className="min-w-[145px] px-1">
+                          <label className="relative block"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span><input aria-label={`${label} de ${product.name}`} className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold hover:border-border focus:border-accent focus:bg-background focus:outline-none" type="number" min="0" step="0.01" value={product[key] ?? ''} onChange={event => editInline(product.id, key, event.target.value, type)} /></label>
+                          {key === 'sale_price' && hasCostPrice && <span className={`mt-0.5 block px-2 text-[10px] font-bold ${unitProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>{unitProfit >= 0 ? '+ ' : '− '}{formatCurrency(Math.abs(unitProfit))}</span>}
+                        </div>
+                      ) : key === 'status' ? (
                         <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[120px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.status || 'ativo'} onChange={event => editInline(product.id, key, event.target.value, type)}>
                           <option value="ativo">Ativo</option>
                           <option value="inativo">Inativo</option>
@@ -414,7 +475,7 @@ export default function Estoque() {
                 </tr>
                 );
               })}
-              {!filtered.length && <tr><td colSpan={COLUMNS.length + 2} className="p-16 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</td></tr>}
+              {!filtered.length && <tr><td colSpan={TABLE_COLUMNS.length + 2} className="p-16 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</td></tr>}
             </tbody>
           </table>
         )}

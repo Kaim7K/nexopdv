@@ -30,7 +30,7 @@ assert.match(form, /Criar e duplicar/, 'O cadastro completo deve permitir criar 
 assert.match(stock, /toggleSort/, 'O estoque deve permitir ordenação de colunas.');
 assert.match(stock, /openProductModal\('duplicate'/, 'O estoque deve permitir duplicar produtos.');
 assert.match(stock, /handleDeleteProduct/, 'O estoque deve permitir excluir produtos.');
-assert.match(stock, /Atualize o estoque/, 'Produtos zerados devem exibir um alerta destacado para atualização.');
+assert.match(stock, /Atualizar estoque/, 'Produtos zerados devem exibir um alerta destacado para atualização.');
 assert.match(stock, /bg-red-500\/10/, 'Produtos sem estoque devem receber destaque vermelho.');
 assert.match(stock, /entities\.Product\.delete/, 'A exclusão do produto deve usar a API protegida.');
 assert.match(users, /removeUser/, 'A tela de usuários deve permitir exclusão controlada.');
@@ -49,11 +49,12 @@ assert.match(minimized, /DragDropContext/, 'Vendas minimizadas devem permitir re
 assert.match(pdv, /nextMinimized = minimizedSales\.map/, 'A venda atual deve ser trocada sem exigir nova minimização manual.');
 assert.match(pdv, /CashRegisterModal/, 'O PDV deve controlar abertura e fechamento do caixa.');
 assert.match(pdv, /Finalize ou descarte as vendas abertas antes de fechar o caixa/, 'O caixa não deve fechar enquanto houver vendas locais abertas.');
-assert.match(layout, /nexo-logo-white\.svg/, 'A barra lateral deve usar a logo Nexo PDV com símbolo verde e N branco.');
+assert.match(layout, /config\.logo_url \|\| user\.logo_url/, 'A barra lateral deve usar a logo enviada pelo mercado.');
 assert.doesNotMatch(reports, /bg-white/, 'Relatórios não devem forçar cartões brancos no tema escuro.');
 assert.doesNotMatch(layout, /active \? 'text-sidebar-primary'/, 'O ícone ativo não pode perder contraste no menu.');
-assert.match(search, /searchWikimediaImages\(context\.barcode/, 'A busca deve consultar primeiro o código de barras sem depender do Google.');
-assert.match(search, /searchWikimediaImages\(context\.name/, 'Sem resultado pelo código, a busca deve consultar o nome do produto.');
+assert.match(search, /searchGoogleImages\(searchQuery/, 'A busca deve consultar o termo informado no modal.');
+assert.match(imageSearchUi, /fundo branco/, 'A pesquisa automática deve priorizar fundo branco pelo nome do produto.');
+assert.match(imageSearchUi, /Pesquisar novamente/, 'O usuário deve poder refazer a pesquisa sem fechar o modal.');
 assert.doesNotMatch(search, /imageGeometryScore|productSimilarity/, 'A busca não deve filtrar imagens por adequação, formato ou similaridade.');
 assert.doesNotMatch(imageSearchUi, /Google Imagens indisponível|GOOGLE_CSE_API_KEY|GOOGLE_CSE_ID/, 'A interface não deve exibir erro exigindo configuração do Google.');
 assert.match(css, /--market-primary:\s*#16a06a/, 'A identidade deve voltar à cor principal antiga.');

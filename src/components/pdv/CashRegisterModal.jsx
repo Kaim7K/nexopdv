@@ -1,16 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Banknote, CheckCircle2, Clock3, LockKeyhole, X } from 'lucide-react';
+import { Banknote, CheckCircle2, Clock3, Download, LockKeyhole, X } from 'lucide-react';
 import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 
-export default function CashRegisterModal({ mode, cashState, processing, onClose, onOpen, onCloseCash }) {
+export default function CashRegisterModal({ mode, cashState, processing, reporting = false, onClose, onOpen, onCloseCash, onDownloadReport }) {
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
   const summary = cashState?.summary || {};
   const paymentEntries = useMemo(() => Object.entries(summary.payments || {}), [summary.payments]);
   const isOpenMode = mode === 'open';
+  const isClosedMode = mode === 'closed';
 
   const submit = event => {
     event.preventDefault();
+    if (isClosedMode) {
+      onClose?.();
+      return;
+    }
     if (isOpenMode) onOpen(openingAmount);
     else onCloseCash(closingAmount);
   };
@@ -24,8 +29,8 @@ export default function CashRegisterModal({ mode, cashState, processing, onClose
               {isOpenMode ? <LockKeyhole className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
             </div>
             <div>
-              <h2 id="cash-modal-title" className="text-xl font-black">{isOpenMode ? 'Abrir caixa' : 'Fechar caixa'}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{isOpenMode ? 'Informe o valor disponível antes da primeira venda.' : 'Confira o resumo antes de encerrar o turno.'}</p>
+              <h2 id="cash-modal-title" className="text-xl font-black">{isOpenMode ? 'Abrir caixa' : isClosedMode ? 'Caixa fechado' : 'Fechar caixa'}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{isOpenMode ? 'Informe o valor disponível antes da primeira venda.' : isClosedMode ? 'O período foi encerrado. O relatório completo está pronto para download.' : 'Confira o resumo antes de encerrar o turno.'}</p>
             </div>
           </div>
           {onClose && <button type="button" disabled={processing} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label="Fechar"><X className="h-5 w-5" /></button>}
@@ -66,21 +71,33 @@ export default function CashRegisterModal({ mode, cashState, processing, onClose
                 </div>
               </div>
 
-              <label className="block text-sm font-bold">
-                Dinheiro contado no fechamento <span className="font-normal text-muted-foreground">(opcional)</span>
-                <div className="relative mt-2">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                  <input type="number" min="0" step="0.01" value={closingAmount} onChange={event => setClosingAmount(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder={Number(summary.expected_cash || 0).toFixed(2)} />
+              {!isClosedMode && (
+                <label className="block text-sm font-bold">
+                  Dinheiro contado no fechamento <span className="font-normal text-muted-foreground">(opcional)</span>
+                  <div className="relative mt-2">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+                    <input type="number" min="0" step="0.01" value={closingAmount} onChange={event => setClosingAmount(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder={Number(summary.expected_cash || 0).toFixed(2)} />
+                  </div>
+                </label>
+              )}
+              {isClosedMode && (
+                <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
+                  Fechamento concluído. O relatório inclui cada venda, produtos, formas de pagamento e totais deste caixa.
                 </div>
-              </label>
+              )}
             </div>
           )}
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border p-5 sm:flex-row sm:justify-end sm:p-6">
-          {onClose && <button type="button" disabled={processing} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button>}
-          <button type="submit" disabled={processing || (isOpenMode && openingAmount === '')} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
-            {processing ? 'Processando...' : isOpenMode ? 'Abrir caixa e começar' : 'Confirmar fechamento'}
+          {onClose && <button type="button" disabled={processing || reporting} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button>}
+          {!isOpenMode && onDownloadReport && (
+            <button type="button" disabled={processing || reporting} onClick={onDownloadReport} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50">
+              <Download className="h-4 w-4" /> {reporting ? 'Gerando relatório...' : 'Baixar relatório do caixa'}
+            </button>
+          )}
+          <button type="submit" disabled={processing || reporting || (isOpenMode && openingAmount === '')} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+            {processing ? 'Processando...' : isOpenMode ? 'Abrir caixa e começar' : isClosedMode ? 'Concluir' : 'Confirmar fechamento'}
           </button>
         </div>
       </form>

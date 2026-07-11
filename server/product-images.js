@@ -2,14 +2,7 @@ import { AppError } from './errors.js';
 
 const ALLOWED_REMOTE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 
-const normalizeText = (value = '') => String(value)
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, ' ')
-  .trim();
-
-function cleanResults(results, limit = 5) {
+function cleanResults(results, limit = 20) {
   const seen = new Set();
   return results
     .filter(result => {
@@ -38,7 +31,7 @@ async function fetchJson(url, label) {
   }
 }
 
-function openFoodFactsImage(product, provider) {
+function openFoodFactsImage(product) {
   const selected = product?.selected_images?.front?.display;
   const url = selected?.pt || selected?.en || product?.image_front_url || product?.image_url;
   if (!url) return null;
@@ -46,46 +39,31 @@ function openFoodFactsImage(product, provider) {
     url,
     thumbnailUrl: product?.image_front_small_url || product?.image_small_url || url,
     source: 'Open Food Facts',
-    sourceUrl: product?.code ? `https://world.openfoodfacts.org/product/${product.code}` : '',
     title: product?.product_name || product?.generic_name || 'Produto',
     context: [product?.brands, product?.categories].filter(Boolean).join(' · '),
     width: 600,
     height: 600,
     mime: 'image/jpeg',
-    provider,
+    provider: 'open-food-facts',
   };
 }
 
-async function searchBarcodeCatalog(barcode) {
-  if (!barcode) return [];
+async function searchNameCatalog(query, page) {
+  if (!query) return [];
   try {
-    const data = await fetchJson(
-      `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}?fields=code,product_name,generic_name,brands,categories,image_url,image_front_url,image_small_url,image_front_small_url,selected_images`,
-      'Open Food Facts',
-    );
-    if (data?.status === 1 || data?.product) {
-      const result = openFoodFactsImage(data.product, 'open-food-facts-barcode');
-      return result ? [result] : [];
-    }
-  } catch {
-    // O catálogo é complementar; outras fontes continuam sendo consultadas.
-  }
-  return [];
-}
-
-async function searchNameCatalog(name, page) {
-  if (!name) return [];
-  try {
+    // Termos visuais como "fundo branco" ajudam os buscadores de imagem,
+    // mas prejudicam o catálogo de produtos. No catálogo usamos só o produto.
+    const catalogQuery = query.replace(/\b(fundo|background)\s+branc[oa]\b/gi, '').trim() || query;
     const url = new URL('https://world.openfoodfacts.org/cgi/search.pl');
-    url.searchParams.set('search_terms', name);
+    url.searchParams.set('search_terms', catalogQuery);
     url.searchParams.set('search_simple', '1');
     url.searchParams.set('action', 'process');
     url.searchParams.set('json', '1');
-    url.searchParams.set('page_size', '20');
+    url.searchParams.set('page_size', '24');
     url.searchParams.set('page', String(page));
     url.searchParams.set('fields', 'code,product_name,generic_name,brands,categories,image_url,image_front_url,image_small_url,image_front_small_url,selected_images');
     const data = await fetchJson(url, 'Open Food Facts');
-    return (data?.products || []).map(product => openFoodFactsImage(product, 'open-food-facts-text')).filter(Boolean);
+    return (data?.products || []).map(openFoodFactsImage).filter(Boolean);
   } catch {
     return [];
   }
@@ -99,11 +77,11 @@ async function searchWikimediaImages(query, page) {
     url.searchParams.set('generator', 'search');
     url.searchParams.set('gsrsearch', query);
     url.searchParams.set('gsrnamespace', '6');
-    url.searchParams.set('gsrlimit', '20');
-    url.searchParams.set('gsroffset', String((page - 1) * 20));
+    url.searchParams.set('gsrlimit', '24');
+    url.searchParams.set('gsroffset', String((page - 1) * 24));
     url.searchParams.set('prop', 'imageinfo');
     url.searchParams.set('iiprop', 'url|mime|size');
-    url.searchParams.set('iiurlwidth', '420');
+    url.searchParams.set('iiurlwidth', '560');
     url.searchParams.set('format', 'json');
     url.searchParams.set('formatversion', '2');
     url.searchParams.set('origin', '*');
@@ -112,13 +90,11 @@ async function searchWikimediaImages(query, page) {
     return (data?.query?.pages || []).flatMap(pageItem => {
       const info = pageItem?.imageinfo?.[0];
       if (!info?.url || !ALLOWED_REMOTE_IMAGE_TYPES.has(String(info.mime || '').toLowerCase())) return [];
-      const title = String(pageItem.title || query).replace(/^File:/i, '').replace(/_/g, ' ');
       return [{
         url: info.url,
         thumbnailUrl: info.thumburl || info.url,
         source: 'Wikimedia Commons',
-        sourceUrl: info.descriptionurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(pageItem.title || '')}`,
-        title,
+        title: String(pageItem.title || query).replace(/^File:/i, '').replace(/_/g, ' '),
         context: '',
         width: info.width,
         height: info.height,
@@ -151,7 +127,6 @@ async function searchGoogleImages(query, page) {
       url: item.link,
       thumbnailUrl: item.image?.thumbnailLink || item.link,
       source: item.displayLink || 'Google Imagens',
-      sourceUrl: item.image?.contextLink || '',
       title: item.title || query,
       context: item.snippet || '',
       width: item.image?.width,
@@ -170,60 +145,26 @@ const providerState = () => ({
   googleCustomSearch: Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID),
 });
 
-export async function searchProductImages({ barcode = '', name = '', page = 1 }) {
+export async function searchProductImages({ query = '', name = '', page = 1 }) {
   const safePage = Math.max(1, Math.min(10, Number(page) || 1));
-  const context = {
-    barcode: normalizeText(barcode).replace(/\s/g, '').slice(0, 180),
-    name: String(name || '').trim().slice(0, 180),
-  };
+  const searchQuery = String(query || name || '').trim().slice(0, 180);
 
-  if (!context.barcode && !context.name) {
-    throw new AppError(400, 'PRODUCT_IMAGE_QUERY_REQUIRED', 'Informe o nome ou o código de barras do produto.');
+  if (!searchQuery) {
+    throw new AppError(400, 'PRODUCT_IMAGE_QUERY_REQUIRED', 'Digite o nome do produto para buscar uma imagem.');
   }
 
-  if (context.barcode) {
-    const [catalogResults, commonsResults, googleResults] = await Promise.all([
-      safePage === 1 ? searchBarcodeCatalog(context.barcode) : Promise.resolve([]),
-      searchWikimediaImages(context.barcode, safePage),
-      searchGoogleImages(context.barcode, safePage),
-    ]);
-    const barcodeResults = cleanResults([...catalogResults, ...commonsResults, ...googleResults], 5);
-    if (barcodeResults.length) {
-      return {
-        results: barcodeResults,
-        queryMode: 'barcode',
-        query: context.barcode,
-        page: safePage,
-        hasMore: (commonsResults.length >= 5 || googleResults.length >= 5) && safePage < 10,
-        providers: providerState(),
-      };
-    }
-  }
-
-  if (!context.name) {
-    return {
-      results: [],
-      queryMode: 'barcode',
-      query: context.barcode,
-      page: safePage,
-      hasMore: false,
-      providers: providerState(),
-    };
-  }
-
-  const [commonsNameResults, catalogNameResults, googleNameResults] = await Promise.all([
-    searchWikimediaImages(context.name, safePage),
-    searchNameCatalog(context.name, safePage),
-    searchGoogleImages(context.name, safePage),
+  const [googleResults, catalogResults, commonsResults] = await Promise.all([
+    searchGoogleImages(searchQuery, safePage),
+    searchNameCatalog(searchQuery, safePage),
+    searchWikimediaImages(searchQuery, safePage),
   ]);
-  const nameResults = cleanResults([...commonsNameResults, ...catalogNameResults, ...googleNameResults], 5);
 
+  const results = cleanResults([...googleResults, ...catalogResults, ...commonsResults], 20);
   return {
-    results: nameResults,
-    queryMode: 'name',
-    query: context.name,
+    results,
+    query: searchQuery,
     page: safePage,
-    hasMore: (commonsNameResults.length >= 5 || catalogNameResults.length >= 5 || googleNameResults.length >= 5) && safePage < 10,
+    hasMore: safePage < 10 && (googleResults.length >= 10 || catalogResults.length >= 20 || commonsResults.length >= 20),
     providers: providerState(),
   };
 }

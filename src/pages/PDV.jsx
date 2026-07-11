@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -14,6 +14,7 @@ import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
 import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
 import CashRegisterModal from '@/components/pdv/CashRegisterModal';
 import { formatCurrency } from '@/lib/helpers';
+import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
 import {
   addProductToSaleItems,
   createEmptySale,
@@ -55,6 +56,8 @@ export default function PDV() {
   const [cashLoading, setCashLoading] = useState(true);
   const [cashModal, setCashModal] = useState(null);
   const [cashProcessing, setCashProcessing] = useState(false);
+  const [cashReporting, setCashReporting] = useState(false);
+  const [closedCashReport, setClosedCashReport] = useState(null);
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const modalsOpen = showPayment || showQuickProduct || showReceipt || showPriceCorrection || cashModal;
@@ -66,6 +69,33 @@ export default function PDV() {
   }, []);
 
   const canUsePdv = user.role !== 'vendedor' || !cashState.required || Boolean(cashState.session);
+  const receiptConfig = useMemo(() => ({
+    ...config,
+    logo_url: config.logo_url || user.logo_url,
+    nome_mercado: config.nome_mercado || user.market_name,
+    market_name: user.market_name,
+  }), [config, user.logo_url, user.market_name]);
+
+  const requestPayment = async () => {
+    if (!activeSale.items.length) return;
+    if (user.role === 'vendedor' && cashState.required) {
+      try {
+        const latestCash = await nexoApi.cash.current();
+        setCashState(latestCash);
+        if (!latestCash.session) {
+          setShowPayment(false);
+          setCashModal('open');
+          toast.error('Abra o caixa antes de ir para o pagamento.');
+          return;
+        }
+      } catch (error) {
+        toast.error(error.message || 'Não foi possível confirmar se o caixa está aberto.');
+        return;
+      }
+    }
+    setShowPayment(true);
+  };
+
 
   useEffect(() => {
     if (cashLoading || !canUsePdv || products.length) return;
@@ -73,8 +103,8 @@ export default function PDV() {
   }, [cashLoading, canUsePdv]);
 
   useEffect(() => {
-    if (!cashLoading && cashState.required && !cashState.session) setCashModal('open');
-  }, [cashLoading, cashState.required, cashState.session]);
+    if (!cashLoading && cashState.required && !cashState.session && !closedCashReport && cashModal !== 'closed') setCashModal('open');
+  }, [cashLoading, cashState.required, cashState.session, closedCashReport, cashModal]);
 
   useEffect(() => {
     const highestTemporary = Math.max(0, ...minimizedSales.map(sale => Number(sale.temporary_number || 0)), Number(activeSale.temporary_number || 0));
@@ -134,6 +164,7 @@ export default function PDV() {
     try {
       const result = await nexoApi.cash.open(openingAmount);
       setCashState(previous => ({ ...previous, session: result.session, summary: result.summary }));
+      setClosedCashReport(null);
       setCashModal(null);
       toast.success('Caixa aberto. Você já pode começar a vender.');
     } catch (error) {
@@ -155,15 +186,45 @@ export default function PDV() {
     setCashProcessing(true);
     try {
       const result = await nexoApi.cash.close(closingAmount);
-      setCashState(previous => ({ ...previous, session: null, summary: result.summary }));
-      setCashModal(null);
+      setCashState(previous => ({ ...previous, session: null, summary: null }));
+      setClosedCashReport({ session: result.session, summary: result.summary });
+      setCashModal('closed');
       setActiveSale(createEmptySale());
       setMinimizedSales([]);
-      toast.success('Caixa fechado com sucesso.');
+      toast.success('Caixa fechado. Baixe o relatório do período quando desejar.');
     } catch (error) {
       toast.error(error.message || 'Não foi possível fechar o caixa.');
     } finally {
       setCashProcessing(false);
+    }
+  };
+
+  const downloadCashReport = async () => {
+    const source = cashModal === 'closed' ? closedCashReport : cashState;
+    const summary = source?.summary || {};
+    const session = source?.session;
+    if (!session || !Array.isArray(summary.sales)) {
+      toast.error('O resumo do caixa ainda não está disponível.');
+      return;
+    }
+    setCashReporting(true);
+    try {
+      await downloadDailySalesReportPdf({
+        sales: summary.sales,
+        summary,
+        filters: summary.filters || {
+          from: session.opened_at || session.created_date,
+          to: session.closed_at || new Date().toISOString(),
+        },
+        config: receiptConfig,
+        sellerName: session.seller_name || user.full_name || user.email,
+        title: 'Relatório do período do caixa',
+      });
+      toast.success('Relatório do caixa baixado.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível gerar o relatório do caixa.');
+    } finally {
+      setCashReporting(false);
     }
   };
 
@@ -234,7 +295,7 @@ export default function PDV() {
       if (modalsOpen) return;
       if (event.key === 'F1' || event.key === 'F3') {
         event.preventDefault();
-        if (activeSale.items.length > 0) setShowPayment(true);
+        if (activeSale.items.length > 0) requestPayment();
       } else if (event.key === 'F2') {
         event.preventDefault();
         if (activeSale.items.length > 0) removeItem(activeSale.items.length - 1);
@@ -458,7 +519,7 @@ export default function PDV() {
         <div className="flex min-w-0 flex-1 flex-col bg-card">
           <SaleSummary
             sale={activeSale}
-            onPaymentClick={() => setShowPayment(true)}
+            onPaymentClick={requestPayment}
             onMinimizeClick={() => handleMinimize()}
             onDiscardClick={handleDiscard}
             onDiscountChange={setActiveSale}
@@ -499,9 +560,18 @@ export default function PDV() {
           onClose={() => setShowQuickProduct(null)}
         />
       )}
-      {showReceipt && <ReceiptModal sale={showReceipt} config={{ ...config, logo_url: config.logo_url || user.logo_url, nome_mercado: config.nome_mercado || user.market_name }} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
+      {showReceipt && <ReceiptModal sale={showReceipt} config={receiptConfig} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}
       {showPriceCorrection && <PriceCorrectionModal items={activeSale.items} onSave={handlePriceCorrection} onClose={() => setShowPriceCorrection(false)} />}
-      {cashModal && <CashRegisterModal mode={cashModal} cashState={cashState} processing={cashProcessing} onClose={cashState.required && !cashState.session ? undefined : () => setCashModal(null)} onOpen={handleOpenCash} onCloseCash={handleCloseCash} />}
+      {cashModal && <CashRegisterModal
+        mode={cashModal}
+        cashState={cashModal === 'closed' ? closedCashReport : cashState}
+        processing={cashProcessing}
+        reporting={cashReporting}
+        onClose={cashState.required && !cashState.session && cashModal === 'open' ? undefined : () => { setCashModal(null); if (cashModal === 'closed') setClosedCashReport(null); }}
+        onOpen={handleOpenCash}
+        onCloseCash={handleCloseCash}
+        onDownloadReport={cashModal === 'close' || cashModal === 'closed' ? downloadCashReport : undefined}
+      />}
       {canUsePdv && <MinimizedSalesBar sales={minimizedSales} onRestore={handleRestore} onDiscard={handleDiscardMinimized} onReorder={handleReorderMinimized} />}
     </div>
   );

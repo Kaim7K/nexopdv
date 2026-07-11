@@ -89,6 +89,7 @@ export const nexoApi = {
   },
   products: {
     catalog: (limit = 1000) => request(`/products/catalog?limit=${limit}`, { cacheTTL: 20_000 }),
+    deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
   },
   stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products }, timeout: 60_000 }) },
   maintenance: {
@@ -98,8 +99,8 @@ export const nexoApi = {
     importProductImage: (url, productName) => request('/media/import', { method: 'POST', body: { url, productName }, timeout: 45_000 }),
   },
   productImages: {
-    search: ({ barcode = '', name = '', category = '', page = 1 }) => {
-      const params = new URLSearchParams({ barcode, name, category, page: String(page) });
+    search: ({ query = '', name = '', page = 1 }) => {
+      const params = new URLSearchParams({ query: query || name, page: String(page) });
       return request(`/product-images/search?${params.toString()}`, { cacheTTL: 60_000 });
     },
   },

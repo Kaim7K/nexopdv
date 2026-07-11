@@ -116,7 +116,11 @@ export default function Layout() {
       <aside aria-label="Menu principal" className={`fixed inset-y-0 left-0 z-50 flex w-[268px] flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-300 md:static md:w-60 md:translate-x-0 md:shadow-none ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="relative flex min-h-[78px] items-center border-b border-sidebar-border px-5">
           <button type="button" aria-label="Fechar menu" onClick={() => setMobileMenu(false)} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground md:hidden"><X className="h-5 w-5" /></button>
-          <img src="/brand/nexo-logo-white.svg" alt="Nexo PDV" className="h-12 w-auto max-w-[188px] object-contain object-left" />
+          {config.logo_url || user.logo_url ? (
+            <img src={config.logo_url || user.logo_url} alt={brandName} className="max-h-12 w-auto max-w-[188px] object-contain object-left" />
+          ) : (
+            <div className="text-xl font-bold text-sidebar-foreground">Nexo <span style={{ color: 'var(--market-primary)' }}>PDV</span></div>
+          )}
         </div>
 
         <div className="px-4 pb-2 pt-4"><p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/40">{brandName}</p></div>

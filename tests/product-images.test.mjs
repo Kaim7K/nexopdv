@@ -12,48 +12,35 @@ globalThis.fetch = async input => {
   const url = new URL(String(input));
   calls.push(url);
 
-  if (url.hostname.includes('openfoodfacts.org') && url.pathname.includes('/api/v2/product/')) {
-    return { ok: true, status: 200, json: async () => ({ status: 0 }) };
-  }
   if (url.hostname.includes('openfoodfacts.org')) {
-    return { ok: true, status: 200, json: async () => ({ products: [] }) };
+    assert.equal(url.searchParams.get('search_terms'), 'Coca-Cola Original 2L PET', 'O catálogo deve remover apenas o termo visual fundo branco.');
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        products: [{
+          product_name: 'Coca-Cola Original 2L PET',
+          image_front_url: 'https://images.openfoodfacts.org/coca-cola.jpg',
+          image_front_small_url: 'https://images.openfoodfacts.org/coca-cola-small.jpg',
+        }],
+      }),
+    };
   }
   if (url.hostname === 'commons.wikimedia.org') {
-    const query = url.searchParams.get('gsrsearch');
-    if (query === 'pipoca') {
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({
-          query: {
-            pages: [{
-              title: 'File:Pipoca.jpg',
-              imageinfo: [{
-                url: 'https://upload.wikimedia.org/example/pipoca.jpg',
-                thumburl: 'https://upload.wikimedia.org/example/pipoca-thumb.jpg',
-                descriptionurl: 'https://commons.wikimedia.org/wiki/File:Pipoca.jpg',
-                mime: 'image/jpeg',
-                width: 1200,
-                height: 900,
-              }],
-            }],
-          },
-        }),
-      };
-    }
+    assert.equal(url.searchParams.get('gsrsearch'), 'Coca-Cola Original 2L PET fundo branco');
     return { ok: true, status: 200, json: async () => ({ query: { pages: [] } }) };
   }
   throw new Error(`URL inesperada no teste: ${url}`);
 };
 
 try {
-  const result = await searchProductImages({ barcode: '7891234567890', name: 'pipoca', page: 1 });
-  assert.equal(result.queryMode, 'name', 'Sem imagem pelo código, a busca deve usar o nome.');
-  assert.equal(result.results.length, 1, 'A busca pelo nome deve aceitar qualquer imagem válida encontrada.');
-  assert.equal(result.results[0].title, 'Pipoca.jpg');
-  assert(calls.some(url => url.searchParams.get('gsrsearch') === '7891234567890'), 'O código de barras deve ser consultado primeiro.');
-  assert(calls.some(url => url.searchParams.get('gsrsearch') === 'pipoca'), 'O nome deve ser consultado quando o código não retornar imagem.');
-  assert.equal(result.providers.googleCustomSearch, false, 'A busca deve funcionar sem configurar o Google CSE.');
+  const result = await searchProductImages({ query: 'Coca-Cola Original 2L PET fundo branco', page: 1 });
+  assert.equal(result.query, 'Coca-Cola Original 2L PET fundo branco');
+  assert.equal(result.results.length, 1, 'A busca pelo nome deve retornar imagens válidas sem exigir o Google.');
+  assert.equal(result.results[0].title, 'Coca-Cola Original 2L PET');
+  assert(calls.some(url => url.hostname.includes('openfoodfacts.org')), 'O catálogo de produtos deve ser consultado.');
+  assert(calls.some(url => url.hostname === 'commons.wikimedia.org'), 'A busca visual deve ser consultada com fundo branco.');
+  assert.equal(result.providers.googleCustomSearch, false, 'A busca deve continuar funcionando sem configurar o Google CSE.');
 } finally {
   globalThis.fetch = originalFetch;
   if (originalKey === undefined) delete process.env.GOOGLE_CSE_API_KEY; else process.env.GOOGLE_CSE_API_KEY = originalKey;

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
 import { assertDatabaseReady, CURRENT_SCHEMA_VERSION, getDb } from '../server/db.js';
 import {
   authenticateCredentials,
@@ -96,7 +97,7 @@ async function findOpenCashSession(sql, marketId, sellerId) {
 async function getCashSessionSummary(sql, marketId, session) {
   if (!session) return null;
   const rows = await sql`
-    SELECT id, data - 'items' AS data, created_date, updated_date
+    SELECT id, data, created_date, updated_date
     FROM nexo.records
     WHERE market_id=${marketId}
       AND entity='sales'
@@ -113,6 +114,13 @@ async function getCashSessionSummary(sql, marketId, session) {
     cash_sales: cashSales,
     expected_cash: roundMoney(openingAmount + cashSales),
     opened_at: session.opened_at || session.created_date,
+    sales,
+    filters: {
+      from: new Date(session.opened_at || session.created_date).toISOString(),
+      to: new Date().toISOString(),
+      seller_id: session.seller_id || null,
+      payment: null,
+    },
   };
 }
 
@@ -267,6 +275,47 @@ async function routeHandler(req, res) {
   if (user.role !== 'super_admin' && path[0] === 'entities' && path[1] === 'Product' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
 
 
+  if (path[0] === 'products' && path[1] === 'delete-inactive') {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (!user.market_id || !['admin','gerente'].includes(user.role) || !(user.enabled_modules || []).includes('estoque')) return send(res, 403, { message: 'Sem permissão para apagar produtos inativos.' });
+    if (req.body.confirmation !== 'APAGAR_INATIVOS') return send(res, 400, { message: 'Confirmação inválida.' });
+    const [result] = await sql`
+      WITH candidates AS (
+        SELECT id, data
+        FROM nexo.records
+        WHERE market_id=${user.market_id}
+          AND entity='products'
+          AND COALESCE(
+            CASE
+              WHEN COALESCE(data->>'last_sale_at','') ~ '^\d{4}-\d{2}-\d{2}T' THEN (data->>'last_sale_at')::timestamptz
+              ELSE NULL
+            END,
+            created_date
+          ) < now() - interval '2 months'
+      ), removed AS (
+        DELETE FROM nexo.records product
+        USING candidates
+        WHERE product.id=candidates.id
+        RETURNING product.id
+      ), audit AS (
+        INSERT INTO nexo.records(market_id,entity,data)
+        SELECT ${user.market_id},'general_audits',jsonb_build_object(
+          'action_type','produtos_inativos_excluidos',
+          'entity_type','product',
+          'entity_id',NULL,
+          'user_id',${user.id},
+          'user_name',${user.full_name || user.email},
+          'description',(SELECT count(*) FROM removed)::text || ' produto(s) sem venda há 2 meses foram excluídos',
+          'details',jsonb_build_object('deleted',(SELECT count(*) FROM removed),'cutoff',now() - interval '2 months')
+        )
+        WHERE EXISTS(SELECT 1 FROM removed)
+      )
+      SELECT count(*)::int AS deleted FROM removed
+    `;
+    return send(res, 200, { deleted: Number(result?.deleted || 0) });
+  }
+
+
   if (path[0] === 'products' && path[1] === 'catalog') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     if (!user.market_id || !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
@@ -321,9 +370,8 @@ async function routeHandler(req, res) {
       return send(res, 403, { message: 'Sem permissão para buscar imagens de produtos.' });
     }
     const result = await searchProductImages({
-      barcode: req.query.barcode,
+      query: req.query.query,
       name: req.query.name,
-      category: req.query.category,
       page: req.query.page,
     });
     return send(res, 200, result);
@@ -413,12 +461,13 @@ async function routeHandler(req, res) {
         : roundMoney(Number(req.body.closing_amount));
       if (closingAmount !== null && (!Number.isFinite(closingAmount) || closingAmount < 0 || closingAmount > 10_000_000)) return send(res, 400, { message: 'Informe um valor de fechamento válido.' });
       const closedAt = new Date().toISOString();
+      const { sales: cashSalesDetail, filters: cashFilters, ...summarySnapshot } = summary;
       const update = {
         status: 'fechado',
         closed_at: closedAt,
         closing_amount: closingAmount,
         difference: closingAmount === null ? null : roundMoney(closingAmount - Number(summary.expected_cash || 0)),
-        summary,
+        summary: summarySnapshot,
       };
       const [row] = await sql`
         UPDATE nexo.records
@@ -432,10 +481,10 @@ async function routeHandler(req, res) {
           action_type: 'caixa_fechado', entity_type: 'cash_session', entity_id: session.id,
           user_id: user.id, user_name: user.full_name || user.email,
           description: `Caixa fechado com ${summary.sales_count} venda(s)`,
-          details: { ...summary, closing_amount: closingAmount, difference: update.difference },
+          details: { ...summarySnapshot, closing_amount: closingAmount, difference: update.difference },
         })}::jsonb
       )`;
-      return send(res, 200, { session: recordFromRow(row), summary: { ...summary, closing_amount: closingAmount, difference: update.difference } });
+      return send(res, 200, { session: recordFromRow(row), summary: { ...summary, sales: cashSalesDetail, filters: { ...(cashFilters || {}), to: closedAt }, closing_amount: closingAmount, difference: update.difference } });
     }
 
     return send(res, 404, { message: 'Operação de caixa não encontrada.' });
@@ -633,7 +682,7 @@ async function routeHandler(req, res) {
     }
     const requestedSeller = user.role === 'vendedor' ? user.id : text(req.query.seller_id, 180);
     const rows = await sql`
-      SELECT id, data - 'items' AS data, created_date, updated_date
+      SELECT id, data, created_date, updated_date
       FROM nexo.records
       WHERE market_id=${user.market_id}
         AND entity='sales'
@@ -751,13 +800,10 @@ async function routeHandler(req, res) {
         GROUP BY 1
       ), stock AS (
         UPDATE nexo.records product
-        SET data = jsonb_set(
-          product.data,
-          '{quantity}',
-          to_jsonb(
-            (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END)
-            - stock_source.sold_quantity
-          )
+        SET data = product.data || jsonb_build_object(
+          'quantity',
+          (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END) - stock_source.sold_quantity,
+          'last_sale_at', now()
         ), updated_date = now()
         FROM stock_source
         WHERE product.id = stock_source.product_id
@@ -810,79 +856,131 @@ async function routeHandler(req, res) {
       if (!isUuid(item.product_id)) continue;
       const quantity = Number(item.unit === 'peso' ? item.weight : item.quantity);
       if (!Number.isFinite(quantity) || quantity <= 0) continue;
-      restoreByProduct.set(item.product_id, roundMoney(Number(restoreByProduct.get(item.product_id) || 0) + quantity));
+      restoreByProduct.set(item.product_id, Number(restoreByProduct.get(item.product_id) || 0) + quantity);
     }
     const restores = [...restoreByProduct.entries()].map(([id, quantity]) => ({ id, quantity }));
+    const cancelledAt = new Date().toISOString();
+    const operationId = randomUUID();
+    const auditPayload = {
+      action_type: 'venda_cancelada',
+      entity_type: 'sale',
+      entity_id: saleId,
+      user_id: user.id,
+      user_name: user.full_name || user.email,
+      description: `Venda #${current.sale_number} cancelada`,
+      details: {
+        reason: cancellationReason,
+        total: current.total,
+        products_to_restore: restores.length,
+      },
+    };
 
-    const [sale] = await sql`
-      WITH cancelled AS (
+    // Todas as etapas são executadas na mesma transação. O identificador da
+    // operação impede que dois cliques restaurem o estoque duas vezes.
+    const [saleRows, restoredRows, fiadoRows] = await sql.transaction(tx => [
+      tx`
         UPDATE nexo.records
-        SET data=data || jsonb_build_object(
-          'status','cancelada',
-          'cancellation_reason',${cancellationReason},
-          'cancelled_by_id',${user.id},
-          'cancelled_by_name',${user.full_name || user.email},
-          'cancelled_at',now()
-        ), updated_date=now()
+        SET data=data || ${JSON.stringify({
+          status: 'cancelada',
+          cancellation_reason: cancellationReason,
+          cancelled_by_id: user.id,
+          cancelled_by_name: user.full_name || user.email,
+          cancelled_at: cancelledAt,
+          cancellation_operation_id: operationId,
+        })}::jsonb,
+        updated_date=now()
         WHERE id=${saleId}
           AND market_id=${user.market_id}
           AND entity='sales'
           AND data->>'status'='concluida'
         RETURNING id,data,created_date,updated_date
-      ), stock_input AS (
-        SELECT (entry->>'id')::uuid AS id, (entry->>'quantity')::numeric AS quantity
-        FROM jsonb_array_elements(${JSON.stringify(restores)}::jsonb) entry
-      ), stock AS (
+      `,
+      tx`
+        WITH stock_input AS (
+          SELECT (entry->>'id')::uuid AS id, (entry->>'quantity')::numeric AS quantity
+          FROM jsonb_array_elements(${JSON.stringify(restores)}::jsonb) entry
+        )
         UPDATE nexo.records product
-        SET data=jsonb_set(
-          product.data,
-          '{quantity}',
-          to_jsonb(
-            (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END)
-            + stock_input.quantity
+        SET data=product.data || jsonb_build_object(
+          'quantity',
+          (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN (product.data->>'quantity')::numeric ELSE 0 END) + stock_input.quantity,
+          'last_sale_at', (
+            SELECT MAX(previous_sale.created_date)
+            FROM nexo.records previous_sale
+            WHERE previous_sale.market_id=${user.market_id}
+              AND previous_sale.entity='sales'
+              AND previous_sale.data->>'status'='concluida'
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(COALESCE(previous_sale.data->'items','[]'::jsonb)) previous_item
+                WHERE previous_item->>'product_id'=product.id::text
+              )
           )
         ), updated_date=now()
-        FROM stock_input, cancelled
+        FROM stock_input
         WHERE product.id=stock_input.id
           AND product.market_id=${user.market_id}
           AND product.entity='products'
-        RETURNING product.id
-      ), fiado AS (
-        UPDATE nexo.records record
-        SET data=record.data || jsonb_build_object(
-          'status','cancelado',
-          'cancellation_reason',${cancellationReason},
-          'settled_by_id',${user.id},
-          'settled_by_name',${user.full_name || user.email},
-          'cancelled_at',now()
-        ), updated_date=now()
-        FROM cancelled
-        WHERE record.market_id=${user.market_id}
-          AND record.entity='fiado_records'
-          AND record.data->>'sale_id'=cancelled.id::text
-          AND record.data->>'status'='pendente'
-        RETURNING record.id
-      ), audit AS (
-        INSERT INTO nexo.records(market_id,entity,data)
-        SELECT ${user.market_id},'general_audits',jsonb_build_object(
-          'action_type','venda_cancelada',
-          'entity_type','sale',
-          'entity_id',cancelled.id,
-          'user_id',${user.id},
-          'user_name',${user.full_name || user.email},
-          'description','Venda #' || (cancelled.data->>'sale_number') || ' cancelada',
-          'details',jsonb_build_object(
-            'reason',${cancellationReason},
-            'total',cancelled.data->'total',
-            'products_restored',(SELECT count(*) FROM stock),
-            'fiado_cancelado',EXISTS(SELECT 1 FROM fiado)
+          AND EXISTS (
+            SELECT 1 FROM nexo.records cancelled_sale
+            WHERE cancelled_sale.id=${saleId}
+              AND cancelled_sale.market_id=${user.market_id}
+              AND cancelled_sale.entity='sales'
+              AND cancelled_sale.data->>'cancellation_operation_id'=${operationId}
           )
+        RETURNING product.id
+      `,
+      tx`
+        UPDATE nexo.records fiado
+        SET data=fiado.data || ${JSON.stringify({
+          status: 'cancelado',
+          cancellation_reason: cancellationReason,
+          settled_by_id: user.id,
+          settled_by_name: user.full_name || user.email,
+          cancelled_at: cancelledAt,
+        })}::jsonb,
+        updated_date=now()
+        WHERE fiado.market_id=${user.market_id}
+          AND fiado.entity='fiado_records'
+          AND fiado.data->>'sale_id'=${saleId}
+          AND fiado.data->>'status'='pendente'
+          AND EXISTS (
+            SELECT 1 FROM nexo.records cancelled_sale
+            WHERE cancelled_sale.id=${saleId}
+              AND cancelled_sale.data->>'cancellation_operation_id'=${operationId}
+          )
+        RETURNING fiado.id
+      `,
+      tx`
+        INSERT INTO nexo.records(market_id,entity,data)
+        SELECT ${user.market_id},'general_audits',${JSON.stringify(auditPayload)}::jsonb || jsonb_build_object(
+          'details', (${JSON.stringify(auditPayload.details)}::jsonb || jsonb_build_object(
+            'products_restored', (
+              SELECT count(*) FROM nexo.records product
+              WHERE product.market_id=${user.market_id}
+                AND product.entity='products'
+                AND product.id=ANY(${restores.map(item => item.id)}::uuid[])
+            )
+          ))
         )
-        FROM cancelled
-      )
-      SELECT id,data,created_date,updated_date FROM cancelled
-    `;
-    return send(res, sale ? 200 : 409, sale ? recordFromRow(sale) : { message: 'A venda foi alterada em outra tela. Atualize o histórico.' });
+        WHERE EXISTS (
+          SELECT 1 FROM nexo.records cancelled_sale
+          WHERE cancelled_sale.id=${saleId}
+            AND cancelled_sale.market_id=${user.market_id}
+            AND cancelled_sale.entity='sales'
+            AND cancelled_sale.data->>'cancellation_operation_id'=${operationId}
+        )
+        RETURNING id
+      `,
+    ]);
+
+    if (!saleRows?.[0]) return send(res, 409, { message: 'A venda foi alterada em outra tela. Atualize o histórico.' });
+    const cancelled = recordFromRow(saleRows[0]);
+    return send(res, 200, {
+      ...cancelled,
+      restored_products: restoredRows?.length || 0,
+      fiado_cancelled: Boolean(fiadoRows?.length),
+    });
   }
   if (path[0] === 'sales' && path[1] && !path[2] && req.method === 'DELETE') {
     if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem excluir vendas.' });

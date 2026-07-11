@@ -1,21 +1,33 @@
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 
+function loadImageElement(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Logo inválida'));
+    image.src = source;
+  });
+}
+
 async function loadLogoForPdf(source) {
   if (!source) return null;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   let objectUrl;
   try {
-    const response = await fetch(source, { signal: controller.signal });
-    if (!response.ok) throw new Error('Logo indisponível');
-    const blob = await response.blob();
-    objectUrl = URL.createObjectURL(blob);
-    const image = await new Promise((resolve, reject) => {
-      const element = new Image();
-      element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error('Logo inválida'));
-      element.src = objectUrl;
-    });
+    let image;
+    if (/^(data:image\/|blob:)/i.test(source)) {
+      // Data URLs não devem passar por fetch: alguns navegadores bloqueiam
+      // esse acesso pelo connect-src da CSP, mesmo sendo uma imagem válida.
+      image = await loadImageElement(source);
+    } else {
+      const response = await fetch(source, { signal: controller.signal, credentials: 'include' });
+      if (!response.ok) throw new Error('Logo indisponível');
+      const blob = await response.blob();
+      objectUrl = URL.createObjectURL(blob);
+      image = await loadImageElement(objectUrl);
+    }
+
     const maxPixels = 900;
     const scale = Math.min(1, maxPixels / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
     const width = Math.max(1, Math.round((image.naturalWidth || 1) * scale));
@@ -100,24 +112,35 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   doc.save(`recibo-venda-${sale.sale_number}.pdf`);
 }
 
-export async function downloadDailySalesReportPdf({ sales, summary, filters, config = {}, sellerName = '', paymentLabel = '' }) {
+function safeDate(value, fallback = new Date()) {
+  const date = value ? new Date(value) : fallback;
+  return Number.isNaN(date.getTime()) ? fallback : date;
+}
+
+export async function downloadDailySalesReportPdf({ sales, summary, filters, config = {}, sellerName = '', paymentLabel = '', title = 'Relatório de vendas' }) {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = 210;
+  const pageHeight = 297;
   const margin = 14;
+  const contentWidth = pageWidth - margin * 2;
   let y = 14;
+
+  const ensureSpace = height => {
+    if (y + height <= pageHeight - 14) return;
+    doc.addPage();
+    y = 14;
+  };
 
   if (config.logo_url) {
     try {
       const logo = await loadLogoForPdf(config.logo_url);
       if (logo) {
         const ratio = Math.min(32 / logo.width, 16 / logo.height);
-        const width = logo.width * ratio;
-        const height = logo.height * ratio;
-        doc.addImage(logo.dataUrl, 'PNG', margin, y, width, height, undefined, 'FAST');
+        doc.addImage(logo.dataUrl, 'PNG', margin, y, logo.width * ratio, logo.height * ratio, undefined, 'FAST');
       }
     } catch {
-      // O relatório continua mesmo quando a logo externa não responde.
+      // O relatório continua sem a logo caso ela esteja indisponível.
     }
   }
 
@@ -125,18 +148,18 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
   doc.setFontSize(16);
   doc.text(config.nome_mercado || config.market_name || 'Nexo PDV', pageWidth - margin, y + 5, { align: 'right' });
   doc.setFontSize(12);
-  doc.text('Relatório diário de vendas', pageWidth - margin, y + 12, { align: 'right' });
+  doc.text(title, pageWidth - margin, y + 12, { align: 'right' });
   y += 25;
 
   doc.setDrawColor(220);
   doc.line(margin, y, pageWidth - margin, y);
   y += 8;
 
-  const from = new Date(filters.from);
-  const to = new Date(filters.to);
+  const from = safeDate(filters?.from);
+  const to = safeDate(filters?.to);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(`Período: ${from.toLocaleDateString('pt-BR')} ${from.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} até ${to.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, margin, y);
+  doc.text(`Período: ${formatDateTime(from)} até ${formatDateTime(to)}`, margin, y);
   y += 5;
   doc.text(`Vendedor: ${sellerName || 'Todos permitidos'}`, margin, y);
   y += 5;
@@ -145,9 +168,9 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
 
   const metrics = [
     ['Faturamento', formatCurrency(summary.total)],
-    ['Vendas', String(summary.sales_count)],
+    ['Vendas', String(summary.sales_count || 0)],
     ['Ticket médio', formatCurrency(summary.average_ticket)],
-    ['Canceladas', String(summary.cancelled_count)],
+    ['Canceladas', String(summary.cancelled_count || 0)],
   ];
   const boxWidth = 43;
   metrics.forEach(([label, value], index) => {
@@ -181,42 +204,90 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
     y += 3;
   }
 
-  const drawHeader = () => {
-    doc.setFillColor(22, 160, 106);
-    doc.rect(margin, y, pageWidth - margin * 2, 8, 'F');
-    doc.setTextColor(255, 255, 255);
+  doc.setDrawColor(220);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Vendas do período', margin, y);
+  y += 7;
+
+  if (!(sales || []).length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Nenhuma venda encontrada para os filtros informados.', margin, y);
+  }
+
+  for (const sale of sales || []) {
+    const totals = calculateSaleTotals(sale);
+    const itemCount = Array.isArray(sale.items) ? sale.items.length : 0;
+    const estimatedHeight = 27 + itemCount * 7 + Math.max(1, (sale.payments || []).length) * 5;
+    ensureSpace(Math.min(estimatedHeight, 80));
+
+    const isCancelled = sale.status === 'cancelada';
+    doc.setFillColor(isCancelled ? 254 : 247, isCancelled ? 242 : 250, isCancelled ? 242 : 248);
+    doc.setDrawColor(isCancelled ? 248 : 220, isCancelled ? 180 : 230, isCancelled ? 180 : 225);
+    doc.roundedRect(margin, y, contentWidth, 13, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(isCancelled ? 185 : 15, isCancelled ? 28 : 23, isCancelled ? 28 : 42);
+    doc.text(`Venda #${sale.sale_number}${isCancelled ? ' · CANCELADA' : ''}`, margin + 3, y + 5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(formatDateTime(sale.created_date), margin + 3, y + 10);
+    doc.text(String(sale.seller_name || 'Sem vendedor').slice(0, 42), pageWidth - margin - 3, y + 5.5, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatCurrency(sale.total), pageWidth - margin - 3, y + 10, { align: 'right' });
+    doc.setTextColor(15, 23, 42);
+    y += 17;
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('Venda', margin + 2, y + 5.5);
-    doc.text('Horário', margin + 24, y + 5.5);
-    doc.text('Vendedor', margin + 50, y + 5.5);
-    doc.text('Pagamento', margin + 105, y + 5.5);
-    doc.text('Total', pageWidth - margin - 2, y + 5.5, { align: 'right' });
-    doc.setTextColor(15, 23, 42);
-    y += 8;
-  };
+    doc.text('Produtos vendidos', margin + 2, y);
+    y += 5;
 
-  drawHeader();
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  for (const sale of sales) {
-    if (y > 280) {
-      doc.addPage();
-      y = 14;
-      drawHeader();
+    if (!(sale.items || []).length) {
+      doc.setFont('helvetica', 'normal');
+      doc.text('Itens não disponíveis neste registro.', margin + 4, y);
+      y += 6;
+    } else {
+      for (const item of sale.items || []) {
+        ensureSpace(8);
+        const quantity = item.unit === 'peso'
+          ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+          : `${Number(item.quantity || 0).toLocaleString('pt-BR')}x`;
+        const nameLines = doc.splitTextToSize(`${quantity}  ${item.product_name || 'Produto'}`, 118);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(nameLines, margin + 4, y);
+        doc.text(`${formatCurrency(item.unit_price)}  →  ${formatCurrency(item.subtotal)}`, pageWidth - margin - 3, y, { align: 'right' });
+        y += Math.max(6, nameLines.length * 4);
+      }
     }
-    const rowHeight = 8;
-    if (sale.status === 'cancelada') doc.setFillColor(254, 242, 242);
-    else doc.setFillColor(255, 255, 255);
-    doc.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
-    doc.text(`#${sale.sale_number}`, margin + 2, y + 5.5);
-    doc.text(new Date(sale.created_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), margin + 24, y + 5.5);
-    doc.text(String(sale.seller_name || '—').slice(0, 28), margin + 50, y + 5.5);
-    doc.text((sale.payments || []).map(payment => getPaymentLabel(payment.method)).join(', ').slice(0, 28) || '—', margin + 105, y + 5.5);
-    doc.text(sale.status === 'cancelada' ? 'CANCELADA' : formatCurrency(sale.total), pageWidth - margin - 2, y + 5.5, { align: 'right' });
+
+    ensureSpace(22);
     doc.setDrawColor(235);
-    doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
-    y += rowHeight;
+    doc.line(margin + 3, y, pageWidth - margin - 3, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Subtotal: ${formatCurrency(totals.subtotal)}`, margin + 4, y);
+    if (totals.discount > 0) doc.text(`Desconto: ${formatCurrency(totals.discount)}`, margin + 60, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total: ${formatCurrency(totals.total)}`, pageWidth - margin - 3, y, { align: 'right' });
+    y += 6;
+
+    doc.setFont('helvetica', 'normal');
+    const paymentText = (sale.payments || []).map(payment => `${getPaymentLabel(payment.method)} ${formatCurrency(payment.amount)}`).join(' · ') || 'Sem pagamento informado';
+    const paymentLines = doc.splitTextToSize(`Pagamento: ${paymentText}`, contentWidth - 8);
+    doc.text(paymentLines, margin + 4, y);
+    y += Math.max(6, paymentLines.length * 4);
+    if (sale.observation) {
+      const observationLines = doc.splitTextToSize(`Observação: ${sale.observation}`, contentWidth - 8);
+      doc.text(observationLines, margin + 4, y);
+      y += observationLines.length * 4 + 2;
+    }
+    y += 5;
   }
 
   const dateLabel = from.toISOString().slice(0, 10);

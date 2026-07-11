@@ -24,7 +24,9 @@ const [api, http, media, app, sales, fiados, audits, stock, users, settings, adm
 ]);
 
 assert.match(api, /WITH sale_number AS[\s\S]*INSERT INTO nexo\.records[\s\S]*UPDATE nexo\.records product[\s\S]*INSERT INTO nexo\.records\(market_id, entity, data\)/, 'A conclusão da venda deve manter numeração, venda, estoque e fiado na mesma instrução atômica.');
-assert.match(api, /record\.data->>'sale_id'=cancelled\.id::text[\s\S]*record\.data->>'status'='pendente'/, 'Cancelar uma venda deve cancelar o fiado pendente relacionado.');
+assert.match(api, /sql\.transaction\(tx => \[/, 'O cancelamento deve executar venda, estoque, fiado e auditoria em transação.');
+assert.match(api, /fiado\.data->>'sale_id'=\$\{saleId\}[\s\S]*fiado\.data->>'status'='pendente'/, 'Cancelar uma venda deve cancelar o fiado pendente relacionado.');
+assert.match(api, /cancellation_operation_id/, 'O cancelamento deve impedir devolução duplicada do estoque.');
 assert.match(api, /const cancellationReason = text\(req\.body\.reason, 500\)/, 'O motivo do cancelamento deve ser limitado e normalizado.');
 assert.match(api, /DUPLICATE_BARCODE/, 'O backend deve rejeitar códigos de barras duplicados.');
 assert.match(api, /PRODUCT_PRICE_CHANGED/, 'O backend deve rejeitar uma venda com preço desatualizado ou manipulado.');
@@ -46,13 +48,16 @@ assert.match(users, /entities\.User\.delete/, 'Usuários devem poder ser excluí
 assert.match(settings, /maintenance\.reset/, 'A limpeza seletiva deve usar uma rota de manutenção protegida.');
 assert.match(settings, /Exigir abertura para vendedores/, 'O administrador do mercado deve controlar a exigência de caixa.');
 assert.match(adminMarkets, /require_cash_register/, 'O superadministrador deve configurar a exigência de caixa por mercado.');
-assert.match(layout, /nexo-logo-white\.svg/, 'A sidebar deve usar a logo oficial com quadrado verde e N branco.');
+assert.match(layout, /config\.logo_url \|\| user\.logo_url/, 'A sidebar deve usar a logo enviada pelo mercado.');
 assert.match(receipt, /downloadSaleReceiptPdf/, 'O modal de recibo deve usar o gerador compartilhado.');
 assert.match(receiptPdf, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
 assert.match(api, /user\.role !== 'admin'.*zerar dados do mercado/s, 'Somente administradores podem zerar dados.');
 assert.match(api, /CASH_REGISTER_REQUIRED/, 'O backend deve impedir venda obrigatória sem caixa aberto.');
 assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve oferecer relatório diário de vendas.');
 assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');
+assert.match(stock, /Última venda/, 'O estoque deve mostrar a última venda de cada produto.');
+assert.match(stock, /Apagar inativos/, 'O estoque deve permitir apagar produtos sem venda há dois meses.');
+assert.match(receiptPdf, /Vendas do período/, 'O relatório deve detalhar as vendas do período.');
 
 assert.match(metadata, /og:title/, 'Metadados Open Graph devem acompanhar a página atual.');
 assert.match(metadata, /twitter:description/, 'Metadados do Twitter devem acompanhar a página atual.');
