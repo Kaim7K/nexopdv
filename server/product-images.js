@@ -142,11 +142,12 @@ function makeGoogleQuery({ barcode, name, category }) {
   return parts.join(' ').trim();
 }
 
-async function searchGoogleQuery({ barcode, name, category, page }) {
+async function searchGoogleQuery({ barcode, name, category, page, background = 'transparent' }) {
   const apiKey = process.env.GOOGLE_CSE_API_KEY;
   const engineId = process.env.GOOGLE_CSE_ID;
   if (!apiKey || !engineId) return [];
-  const query = makeGoogleQuery({ barcode, name, category });
+  const baseQuery = makeGoogleQuery({ barcode, name, category });
+  const query = background === 'white' ? `${baseQuery} produto fundo branco` : baseQuery;
   if (!query) return [];
 
   const url = new URL('https://customsearch.googleapis.com/customsearch/v1');
@@ -157,6 +158,7 @@ async function searchGoogleQuery({ barcode, name, category, page }) {
   url.searchParams.set('safe', 'active');
   url.searchParams.set('num', '10');
   url.searchParams.set('start', String(Math.min(91, (page - 1) * 10 + 1)));
+  if (background === 'transparent') url.searchParams.set('imgColorType', 'trans');
 
   try {
     const data = await fetchJson(url, 'Google Custom Search');
@@ -170,7 +172,7 @@ async function searchGoogleQuery({ barcode, name, category, page }) {
       width: item.image?.width,
       height: item.image?.height,
       mime: item.mime || '',
-      background: 'google',
+      background,
       provider: 'google-cse',
     }));
   } catch {
@@ -181,9 +183,9 @@ async function searchGoogleQuery({ barcode, name, category, page }) {
 export async function searchProductImages({ barcode = '', name = '', category = '', page = 1 }) {
   const safePage = Math.max(1, Math.min(10, Number(page) || 1));
   const context = {
-    barcode: String(barcode || '').trim(),
-    name: String(name || '').trim(),
-    category: String(category || '').trim(),
+    barcode: String(barcode || '').trim().slice(0, 180),
+    name: String(name || '').trim().slice(0, 180),
+    category: String(category || '').trim().slice(0, 180),
   };
   if (!context.barcode && !context.name) {
     throw new AppError(400, 'PRODUCT_IMAGE_QUERY_REQUIRED', 'Informe o nome ou o código de barras do produto.');
@@ -198,12 +200,20 @@ export async function searchProductImages({ barcode = '', name = '', category = 
   const inferredName = context.name || exactCatalog[0]?.title || '';
   const inferredContext = { ...context, name: inferredName };
 
-  const [googleResults, textCatalog] = await Promise.all([
+  const [transparentResults, whiteResults, textCatalog] = await Promise.all([
     searchGoogleQuery({
       barcode: context.barcode,
       name: inferredName,
       category: context.category,
       page: safePage,
+      background: 'transparent',
+    }),
+    searchGoogleQuery({
+      barcode: context.barcode,
+      name: inferredName,
+      category: context.category,
+      page: safePage,
+      background: 'white',
     }),
     searchOpenFoodFacts({
       ...inferredContext,
@@ -214,7 +224,8 @@ export async function searchProductImages({ barcode = '', name = '', category = 
   ]);
 
   const all = [
-    ...googleResults,
+    ...transparentResults,
+    ...whiteResults,
     ...exactCatalog,
     ...textCatalog,
   ];

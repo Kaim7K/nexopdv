@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -22,6 +22,7 @@ import {
   WalletCards,
   Zap,
 } from 'lucide-react';
+import { usePageMetadata } from '@/hooks/use-page-metadata';
 
 const QUICK_BENEFITS = [
   {
@@ -190,6 +191,24 @@ function FeatureStat({ value, label }) {
 }
 
 export default function Landing() {
+  const structuredData = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Nexo PDV',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description: 'Sistema de caixa, estoque, fiados e relatórios para mercadinhos e mercados de bairro.',
+    offers: { '@type': 'Offer', availability: 'https://schema.org/InStock' },
+    publisher: { '@type': 'Organization', name: 'Nexo PDV' },
+  }), []);
+  usePageMetadata({
+    title: 'Nexo PDV | Sistema de Caixa e Estoque para Mercadinhos',
+    description: 'Venda com mais agilidade, controle o estoque, acompanhe fiados e veja relatórios do seu mercado em um só sistema.',
+    robots: 'index, follow, max-image-preview:large',
+    canonicalPath: '/',
+    imagePath: '/nexo-pdv-og.png',
+    structuredData,
+  });
   const whatsapp = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
   const message = encodeURIComponent('Olá! Quero conhecer o Nexo PDV para o meu mercado.');
   const contactHref = whatsapp ? `https://wa.me/${whatsapp}?text=${message}` : '#demonstracao';

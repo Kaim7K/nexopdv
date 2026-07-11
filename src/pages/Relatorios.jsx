@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { AlertTriangle, BarChart3, DollarSign, Lightbulb, Receipt, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BarChart3, CalendarRange, DollarSign, Lightbulb, Receipt, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
 
@@ -36,6 +36,8 @@ export default function Relatorios() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [fiados, setFiados] = useState([]);
+
+  const customRangeValid = period !== 'custom' || (customStart && customEnd && new Date(customStart) <= new Date(customEnd));
 
   useEffect(() => { loadData(); }, []);
 
@@ -90,8 +92,8 @@ export default function Relatorios() {
     return { startDate: start, endDate: end, prevStartDate: prevStart, prevEndDate: prevEnd };
   }, [period, customStart, customEnd]);
 
-  const periodSales = sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate);
-  const prevPeriodSales = sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= prevStartDate && new Date(sale.created_date) <= prevEndDate);
+  const periodSales = customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate) : [];
+  const prevPeriodSales = customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= prevStartDate && new Date(sale.created_date) <= prevEndDate) : [];
 
   const stats = useMemo(() => {
     const totalRevenue = periodSales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
@@ -164,28 +166,31 @@ export default function Relatorios() {
     return list;
   }, [stats]);
 
-  if (loading) return <div className="flex h-full items-center justify-center text-muted-foreground">Carregando relatórios...</div>;
+  if (loading) return <div className="grid min-h-[60vh] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando relatórios...</div></div>;
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Relatórios gerenciais</h1>
-        <p className="text-sm text-muted-foreground">Análise de desempenho do período</p>
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent"><BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio</div>
+        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Relatórios gerenciais</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Acompanhe vendas, pagamentos, produtos, equipe e fiados.</p>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         {PERIODS.map(item => (
-          <button key={item.key} onClick={() => setPeriod(item.key)} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}>
+          <button type="button" key={item.key} aria-pressed={period === item.key} onClick={() => setPeriod(item.key)} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}>
             {item.label}
           </button>
         ))}
         {period === 'custom' && (
-          <>
-            <input type="date" value={customStart} onChange={event => setCustomStart(event.target.value)} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm" />
-            <input type="date" value={customEnd} onChange={event => setCustomEnd(event.target.value)} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm" />
-          </>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-1.5">
+            <CalendarRange className="ml-1 h-4 w-4 text-muted-foreground" />
+            <label className="text-xs font-semibold text-muted-foreground">De <input aria-label="Data inicial" type="date" value={customStart} onChange={event => setCustomStart(event.target.value)} className="ml-1 min-h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground" /></label>
+            <label className="text-xs font-semibold text-muted-foreground">Até <input aria-label="Data final" type="date" value={customEnd} onChange={event => setCustomEnd(event.target.value)} className="ml-1 min-h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground" /></label>
+          </div>
         )}
       </div>
+      {!customRangeValid && <div className="mb-5 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">Informe um período válido: a data inicial deve ser anterior ou igual à data final.</div>}
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard icon={DollarSign} label="Faturamento" value={formatCurrency(stats.totalRevenue)} change={stats.revenueChange} />
@@ -197,7 +202,7 @@ export default function Relatorios() {
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
           <h3 className="mb-3 text-sm font-bold">Faturamento por {period === 'year' ? 'mês' : 'dia'}</h3>
-          <ResponsiveContainer width="100%" height={270}>
+          {stats.dailyData.length ? <ResponsiveContainer width="100%" height={270}>
             <BarChart data={stats.dailyData}>
               <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={{ stroke: 'hsl(var(--border))' }} tickLine={{ stroke: 'hsl(var(--border))' }} />
@@ -205,19 +210,19 @@ export default function Relatorios() {
               <Tooltip formatter={value => formatCurrency(value)} contentStyle={TOOLTIP_STYLE} labelStyle={{ color: 'hsl(var(--popover-foreground))' }} />
               <Bar dataKey="value" fill="hsl(var(--chart-1))" radius={[5, 5, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer> : <ChartEmpty text="Sem vendas no período selecionado." />}
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
           <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
-          <ResponsiveContainer width="100%" height={270}>
+          {stats.paymentData.length ? <ResponsiveContainer width="100%" height={270}>
             <PieChart>
               <Pie data={stats.paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={86} label={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}>
                 {stats.paymentData.map((_, index) => <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
               </Pie>
               <Tooltip formatter={value => formatCurrency(value)} contentStyle={TOOLTIP_STYLE} />
             </PieChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer> : <ChartEmpty text="Sem pagamentos no período selecionado." />}
         </section>
       </div>
 
@@ -248,6 +253,10 @@ export default function Relatorios() {
       </section>
     </div>
   );
+}
+
+function ChartEmpty({ text }) {
+  return <div className="grid h-[270px] place-items-center rounded-xl border border-dashed border-border bg-muted/15 p-6 text-center text-sm text-muted-foreground">{text}</div>;
 }
 
 function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {

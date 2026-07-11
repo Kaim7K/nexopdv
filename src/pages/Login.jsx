@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { usePageMetadata } from "@/hooks/use-page-metadata";
 
 export default function Login() {
+  usePageMetadata({ title: 'Entrar | Nexo PDV', description: 'Acesso restrito ao Nexo PDV.', robots: 'noindex, nofollow, noarchive' });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +19,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const { user } = await nexoApi.auth.login(email, password);
+      const { user } = await nexoApi.auth.login(email.trim().toLowerCase(), password);
       window.location.href = user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");
@@ -29,7 +31,7 @@ export default function Login() {
   return (
     <AuthLayout title="Acesse sua conta" subtitle="Nexo PDV">
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" aria-live="polite" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}

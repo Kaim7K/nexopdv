@@ -1,17 +1,23 @@
 const request = async (path, options = {}) => {
   let response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 30_000);
   try {
     response = await fetch(`/api${path}`, {
       credentials: 'include',
-      headers: options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
+      headers: options.body instanceof FormData ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
       ...options,
+      signal: options.signal || controller.signal,
       body: options.body instanceof FormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
     });
   } catch (cause) {
-    throw Object.assign(new Error('Não foi possível conectar ao servidor.'), {
-      code: 'NETWORK_ERROR',
+    const timedOut = cause?.name === 'AbortError';
+    throw Object.assign(new Error(timedOut ? 'O servidor demorou para responder. Tente novamente.' : 'Não foi possível conectar ao servidor.'), {
+      code: timedOut ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
       cause,
     });
+  } finally {
+    clearTimeout(timeout);
   }
 
   const data = await response.json().catch(() => ({}));

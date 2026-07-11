@@ -30,10 +30,10 @@ const Kbd = ({ children }) => (
 export default function PDV() {
   const { user, config } = /** @type {any} */ (useOutletContext());
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
-  const savedDraft = readSavedPdvDraft(draftStorageKey);
+  const [initialDraft] = useState(() => readSavedPdvDraft(draftStorageKey));
   const [products, setProducts] = useState([]);
-  const [activeSale, setActiveSale] = useState(() => savedDraft?.activeSale || createEmptySale());
-  const [minimizedSales, setMinimizedSales] = useState(() => Array.isArray(savedDraft?.minimizedSales) ? savedDraft.minimizedSales : []);
+  const [activeSale, setActiveSale] = useState(() => initialDraft?.activeSale || createEmptySale());
+  const [minimizedSales, setMinimizedSales] = useState(() => Array.isArray(initialDraft?.minimizedSales) ? initialDraft.minimizedSales : []);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -293,7 +293,13 @@ export default function PDV() {
     });
   };
 
-  const handleDiscardMinimized = index => setMinimizedSales(previous => previous.filter((_, currentIndex) => currentIndex !== index));
+  const handleDiscardMinimized = index => {
+    const sale = minimizedSales[index];
+    if (!sale) return;
+    if (!window.confirm(`Descartar a venda aberta #${sale.temporary_number || index + 1}?`)) return;
+    setMinimizedSales(previous => previous.filter((_, currentIndex) => currentIndex !== index));
+    toast.success('Venda aberta descartada.');
+  };
 
   const handleDiscard = () => {
     if (!activeSale.items.length) return;
@@ -319,13 +325,13 @@ export default function PDV() {
 
   return (
     <div className="flex h-full flex-col bg-muted/20">
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-card px-5 py-3">
+      <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-3 py-3 sm:px-5">
         <div>
           <h1 className="text-base font-black">
             Venda #{saleNumber}
             {activeSale.temporary_number && <span className="ml-2 text-xs font-semibold text-accent">aberta #{activeSale.temporary_number}</span>}
           </h1>
-          <p className="text-xs text-muted-foreground">{user.full_name || user.email}</p>
+          <p className="max-w-[150px] truncate text-xs text-muted-foreground sm:max-w-none">{user.full_name || user.email}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-3 text-xs text-muted-foreground xl:flex">
@@ -335,8 +341,8 @@ export default function PDV() {
             <span className="flex items-center gap-1.5"><Kbd>F6</Kbd> Descartar</span>
             <span className="flex items-center gap-1.5"><Kbd>F7</Kbd> Minimizar</span>
           </div>
-          <button onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length} className="flex min-h-10 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
-            <Edit3 className="h-5 w-5" /> Valor errado
+          <button onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length} aria-label="Corrigir valor de um produto da venda" className="flex min-h-10 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
+            <Edit3 className="h-5 w-5" /> <span className="hidden sm:inline">Valor errado</span>
           </button>
         </div>
       </div>

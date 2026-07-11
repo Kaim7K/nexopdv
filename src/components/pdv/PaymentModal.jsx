@@ -25,8 +25,9 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   const nonFiadoPayments = payments.filter(payment => payment.method !== 'fiado');
   const paidAmount = nonFiadoPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const remaining = total - paidAmount;
-  const change = remaining < 0 ? Math.abs(remaining) : 0;
   const hasFiado = payments.some(payment => payment.method === 'fiado');
+  const debtAmount = Math.max(0, remaining);
+  const change = !hasFiado && remaining < 0 ? Math.abs(remaining) : 0;
 
   useEffect(() => {
     if (focusIndex === null) return;
@@ -74,13 +75,25 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
     }
   };
 
+  const normalizedPayments = () => payments.map(payment => payment.method === 'fiado'
+    ? { ...payment, amount: debtAmount }
+    : payment);
+
   const handleComplete = () => {
     if (hasFiado) {
       if (!fiadoData.responsible_name.trim()) {
         toast.error('Nome do responsável é obrigatório para venda fiado.');
         return;
       }
-      completeOnce({ payments, observation, sale_type: 'fiado', fiado: fiadoData });
+      if (remaining < -0.009) {
+        toast.error('O valor recebido não pode ser maior que o total em uma venda fiada.');
+        return;
+      }
+      if (debtAmount < 0.01) {
+        toast.error('Não há saldo restante para registrar como fiado.');
+        return;
+      }
+      completeOnce({ payments: normalizedPayments(), observation, sale_type: 'fiado', fiado: fiadoData });
       return;
     }
     if (remaining > 0.01) {
@@ -91,14 +104,14 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-5">
-      <div className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-5" role="presentation">
+      <div className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
         <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
           <div>
-            <h2 className="text-xl font-black">Forma de pagamento</h2>
+            <h2 id="payment-title" className="text-xl font-black">Forma de pagamento</h2>
             <p className="text-xs text-muted-foreground">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
           </div>
-          <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-6 w-6" /></button>
+          <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-6 w-6" /></button>
         </div>
 
         <div className="grid flex-1 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
@@ -131,7 +144,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                   <p className="mt-1 text-xl font-black tabular-nums">{formatCurrency(paidAmount)}</p>
                 </div>
                 <div className="rounded-xl bg-muted/40 p-3">
-                  <span className="text-xs text-muted-foreground">Restante</span>
+                  <span className="text-xs text-muted-foreground">{hasFiado ? 'Saldo fiado' : 'Restante'}</span>
                   <p className={`mt-1 text-xl font-black tabular-nums ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
                 </div>
               </div>
@@ -170,9 +183,10 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                   <div key={`${payment.method}-${index}`} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
                     <span className="w-24 truncate text-sm font-semibold sm:w-32">{getPaymentLabel(payment.method)}</span>
                     {payment.method === 'fiado' ? (
-                      <span className="flex-1 text-right text-xl font-black text-orange-600 tabular-nums dark:text-orange-400">{formatCurrency(payment.amount)}</span>
+                      <span className="flex-1 text-right text-xl font-black text-orange-600 tabular-nums dark:text-orange-400">{formatCurrency(debtAmount)}</span>
                     ) : (
                       <label className="relative flex-1">
+                        <span className="sr-only">Valor em {getPaymentLabel(payment.method)}</span>
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">R$</span>
                         <input
                           ref={element => { amountRefs.current[index] = element; }}
@@ -194,20 +208,20 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
             {showFiadoForm && (
               <div className="space-y-3 rounded-xl border border-orange-400/50 bg-orange-500/10 p-4">
                 <div className="text-sm font-bold text-orange-700 dark:text-orange-300">Dados da venda fiado</div>
-                <input type="text" placeholder="Nome do responsável *" value={fiadoData.responsible_name} onChange={event => setFiadoData({ ...fiadoData, responsible_name: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                <input type="text" placeholder="Telefone (opcional)" value={fiadoData.phone} onChange={event => setFiadoData({ ...fiadoData, phone: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                <input type="text" placeholder="Observação (opcional)" value={fiadoData.observation} onChange={event => setFiadoData({ ...fiadoData, observation: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <label className="block"><span className="sr-only">Nome do responsável</span><input type="text" autoComplete="name" placeholder="Nome do responsável *" value={fiadoData.responsible_name} onChange={event => setFiadoData({ ...fiadoData, responsible_name: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
+                <label className="block"><span className="sr-only">Telefone</span><input type="tel" autoComplete="tel" inputMode="tel" placeholder="Telefone (opcional)" value={fiadoData.phone} onChange={event => setFiadoData({ ...fiadoData, phone: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
+                <label className="block"><span className="sr-only">Observação do fiado</span><input type="text" placeholder="Observação (opcional)" value={fiadoData.observation} onChange={event => setFiadoData({ ...fiadoData, observation: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
               </div>
             )}
 
-            <input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            <label className="block"><span className="sr-only">Observação da venda</span><input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
           </section>
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border px-5 py-4 sm:flex-row sm:px-7">
-          <button onClick={onDiscard} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-5 w-5" /> Descartar</button>
-          <button onClick={() => onMinimize({ payments, observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-5 w-5" /> Minimizar</button>
-          <button onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
+          <button type="button" onClick={onDiscard} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-5 w-5" /> Descartar</button>
+          <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-5 w-5" /> Minimizar</button>
+          <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
         </div>
       </div>
     </div>

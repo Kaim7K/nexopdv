@@ -5,8 +5,8 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 
 export const PAYMENT_METHODS = [
   { method: 'dinheiro', label: 'Dinheiro', color: 'bg-green-100 text-green-800 border-green-300' },
-  { method: 'debito', label: 'CartÃ£o de DÃ©bito', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { method: 'credito', label: 'CartÃ£o de CrÃ©dito', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  { method: 'debito', label: 'Cartão de Débito', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { method: 'credito', label: 'Cartão de Crédito', color: 'bg-purple-100 text-purple-800 border-purple-300' },
   { method: 'pix', label: 'Pix', color: 'bg-teal-100 text-teal-800 border-teal-300' },
   { method: 'outros', label: 'Outros', color: 'bg-gray-100 text-gray-800 border-gray-300' },
   { method: 'fiado', label: 'Venda Fiado', color: 'bg-orange-100 text-orange-800 border-orange-300' },
@@ -34,6 +34,45 @@ export const formatDateTime = date => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+
+export const formatAuditDetails = details => {
+  if (!details) return '';
+
+  let value = details;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    try { value = JSON.parse(trimmed); } catch { return trimmed; }
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => formatAuditDetails(item)).filter(Boolean).join(' · ');
+  }
+
+  if (value && typeof value === 'object') {
+    const labels = {
+      reason: 'Motivo',
+      total: 'Total',
+      old: 'Anterior',
+      new: 'Novo',
+      sale_number: 'Venda',
+      method: 'Forma',
+    };
+    return Object.entries(value)
+      .filter(([, item]) => item !== null && item !== undefined && item !== '')
+      .map(([key, item]) => `${labels[key] || key.replaceAll('_', ' ')}: ${typeof item === 'object' ? formatAuditDetails(item) : item}`)
+      .join(' · ');
+  }
+
+  return String(value);
+};
+
+export const formatDiscount = sale => {
+  const raw = Math.max(0, Number(sale?.discount_value) || 0);
+  if (sale?.discount_type === 'percentual') return `${Math.min(raw, 100).toLocaleString('pt-BR')}%`;
+  return formatCurrency(raw);
 };
 
 export const generateInternalCode = () => `NX${Date.now().toString().slice(-8)}`;

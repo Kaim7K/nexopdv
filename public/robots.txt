@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /pdv
+Disallow: /estoque
+Disallow: /produto/
+Disallow: /vendas
+Disallow: /fiados
+Disallow: /relatorios
+Disallow: /usuarios
+Disallow: /configuracoes
+Disallow: /auditoria
+Disallow: /admin/

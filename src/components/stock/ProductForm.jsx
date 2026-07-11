@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CopyPlus, ImageIcon, Loader2, Save, Search, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
@@ -34,6 +34,19 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
+  const titleId = 'product-form-title';
+
+  const closeForm = useCallback(() => {
+    if (!saving) onClose();
+  }, [onClose, saving]);
+
+  useEffect(() => {
+    const onKeyDown = event => {
+      if (event.key === 'Escape' && !saving && !showImageSearch) closeForm();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [closeForm, saving, showImageSearch]);
 
   useEffect(() => {
     if (product) {
@@ -176,16 +189,16 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4">
-      <div className="flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4" role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
           <div>
-            <h2 className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>
+            <h2 id={titleId} className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>
             <p className="text-xs text-muted-foreground">
               {isDuplicating ? 'Código de barras e quantidade foram zerados para evitar duplicidade.' : 'Escaneie o código de barras para preencher nome e imagens.'}
             </p>
           </div>
-          <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
+          <button type="button" aria-label="Fechar cadastro de produto" onClick={closeForm} disabled={saving} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
@@ -208,19 +221,19 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           </section>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
-            <input type="text" value={form.name} onChange={event => handleChange('name', event.target.value)} autoFocus className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            <label htmlFor="product-name" className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
+            <input id="product-name" type="text" required value={form.name} onChange={event => handleChange('name', event.target.value)} autoFocus className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Categoria</label>
-              <input list="product-categories" type="text" value={form.category} onChange={event => handleChange('category', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <label htmlFor="product-category" className="text-xs font-medium text-muted-foreground">Categoria</label>
+              <input id="product-category" list="product-categories" type="text" value={form.category} onChange={event => handleChange('category', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
               <datalist id="product-categories">{categories.map(category => <option key={category} value={category} />)}</datalist>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Unidade de venda</label>
-              <select value={form.unit} onChange={event => handleChange('unit', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+              <label htmlFor="product-unit" className="text-xs font-medium text-muted-foreground">Unidade de venda</label>
+              <select id="product-unit" value={form.unit} onChange={event => handleChange('unit', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
                 <option value="unidade">Unidade</option>
                 <option value="peso">Peso (kg)</option>
                 <option value="pacote">Pacote</option>
@@ -230,33 +243,33 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Código de barras</label>
-              <input type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); setShowImageSearch(true); } }} inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <label htmlFor="product-barcode" className="text-xs font-medium text-muted-foreground">Código de barras</label>
+              <input id="product-barcode" type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); setShowImageSearch(true); } }} inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Código interno</label>
-              <input type="text" value={form.internal_code} readOnly className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-muted-foreground" />
+              <label htmlFor="product-internal-code" className="text-xs font-medium text-muted-foreground">Código interno</label>
+              <input id="product-internal-code" type="text" value={form.internal_code} readOnly className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-muted-foreground" />
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Preço de venda *</label>
-              <input type="number" min="0" step="0.01" value={form.sale_price} onChange={event => handleChange('sale_price', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <label htmlFor="product-sale-price" className="text-xs font-medium text-muted-foreground">Preço de venda *</label>
+              <input id="product-sale-price" type="number" required min="0" step="0.01" value={form.sale_price} onChange={event => handleChange('sale_price', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Preço de custo</label>
-              <input type="number" min="0" step="0.01" value={form.cost_price} onChange={event => handleChange('cost_price', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <label htmlFor="product-cost-price" className="text-xs font-medium text-muted-foreground">Preço de custo</label>
+              <input id="product-cost-price" type="number" min="0" step="0.01" value={form.cost_price} onChange={event => handleChange('cost_price', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Quantidade</label>
-              <input type="number" min="0" step="0.001" value={form.quantity} onChange={event => handleChange('quantity', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <label htmlFor="product-quantity" className="text-xs font-medium text-muted-foreground">Quantidade</label>
+              <input id="product-quantity" type="number" min="0" step="0.001" value={form.quantity} onChange={event => handleChange('quantity', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Status</label>
-            <select value={form.status} onChange={event => handleChange('status', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+            <label htmlFor="product-status" className="text-xs font-medium text-muted-foreground">Status</label>
+            <select id="product-status" value={form.status} onChange={event => handleChange('status', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="ativo">Ativo</option>
               <option value="inativo">Inativo</option>
             </select>
@@ -264,7 +277,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-          <button type="button" onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
+          <button type="button" onClick={closeForm} disabled={saving} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">Cancelar</button>
           {!isEditing && (
             <button type="button" onClick={() => saveProduct({ duplicateAfter: true })} disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-40">
               <CopyPlus className="h-5 w-5" /> Criar e duplicar
