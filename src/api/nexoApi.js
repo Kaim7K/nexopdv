@@ -1,12 +1,25 @@
 const request = async (path, options = {}) => {
-  const response = await fetch(`/api${path}`, {
-    credentials: 'include',
-    headers: options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
-    ...options,
-    body: options.body instanceof FormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(`/api${path}`, {
+      credentials: 'include',
+      headers: options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
+      ...options,
+      body: options.body instanceof FormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (cause) {
+    throw Object.assign(new Error('Não foi possível conectar ao servidor. Verifique a publicação na Vercel.'), { code: 'NETWORK_ERROR', cause });
+  }
+
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(data.message || 'Erro ao acessar o servidor'), { status: response.status });
+  if (!response.ok) {
+    const diagnostic = data.code ? ` [${data.code}${data.stage ? `: ${data.stage}` : ''}]` : '';
+    throw Object.assign(new Error(`${data.message || 'Erro ao acessar o servidor'}${diagnostic}`), {
+      status: response.status,
+      code: data.code,
+      stage: data.stage,
+    });
+  }
   return data;
 };
 
