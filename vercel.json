@@ -14,7 +14,7 @@
       "destination": "/api/index?path=$1"
     },
     {
-      "source": "/((?!api/|assets/|manifest.json|nexo-icon.svg).*)",
+      "source": "/((?!api/|assets/|landing/|manifest.json|nexo-icon.svg|nexo-pdv-og.png).*)",
       "destination": "/index.html"
     }
   ]

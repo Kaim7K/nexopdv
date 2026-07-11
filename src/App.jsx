@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -16,9 +16,11 @@ const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoq
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
+  const location = useLocation();
+  const isPublicRoute = location.pathname === '/' || location.pathname === '/login';
 
-  // Aguarda apenas a verificação da sessão atual.
-  if (isLoadingAuth) {
+  // A landing e o login aparecem imediatamente; apenas rotas privadas aguardam a sessão.
+  if (isLoadingAuth && !isPublicRoute) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
