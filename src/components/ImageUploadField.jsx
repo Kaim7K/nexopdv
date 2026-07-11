@@ -14,7 +14,7 @@ const safeFileName = value => String(value || 'imagem')
   .replace(/^-|-$/g, '')
   .slice(0, 60) || 'imagem';
 
-const blobHelp = 'Conecte um Blob Store em Vercel > Storage e faça redeploy para gerar BLOB_READ_WRITE_TOKEN.';
+const blobHelp = 'Conecte um Blob Store em Vercel > Storage ao projeto e faça redeploy.';
 
 export default function ImageUploadField({
   value,

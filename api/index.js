@@ -120,7 +120,7 @@ async function routeHandler(req, res) {
 
   if (path[0] === 'media' && path[1] === 'upload') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-    if (!process.env.BLOB_READ_WRITE_TOKEN && !(process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN)) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
       throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'O armazenamento de imagens ainda não foi conectado. Na Vercel, abra Storage, crie/conecte um Blob Store ao projeto e redeploye para gerar BLOB_READ_WRITE_TOKEN.');
     }
     const json = await handleUpload({

@@ -3,6 +3,13 @@ import { Check, ExternalLink, ImageIcon, Loader2, Search, X, ZoomIn } from 'luci
 import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
 
+const providerLabel = image => {
+  if (image.provider === 'google-cse') return 'Google';
+  if (image.background === 'transparent') return 'Transparente';
+  if (image.background === 'white') return 'Fundo branco';
+  return 'Catalogo';
+};
+
 const EMPTY_MESSAGE = 'Nenhuma imagem adequada foi encontrada para este produto. Tente revisar o nome, código de barras ou categoria.';
 
 export default function ProductImageSearch({ barcode, productName, category, onSelect, onClose }) {
@@ -75,7 +82,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
               <ImageIcon className="h-5 w-5 text-accent" /> Buscar imagem do produto
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Prioridade: produto isolado, fundo transparente ou branco. Fotos de catálogo aparecem só como alternativa.
+              Busca comum do Google Imagens. Quando houver código de barras, ele entra primeiro na pesquisa.
             </p>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -86,7 +93,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {loading && images.length === 0 ? (
             <div className="flex min-h-64 items-center justify-center text-muted-foreground">
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Buscando imagens adequadas...
+              <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Buscando imagens...
             </div>
           ) : images.length === 0 ? (
             <div className="grid min-h-64 place-items-center rounded-xl border border-dashed border-border bg-muted/20 px-6 text-center">
@@ -112,7 +119,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
                           </span>
                         )}
                         <span className="absolute left-2 top-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          {image.background === 'transparent' ? 'Transparente' : image.background === 'white' ? 'Fundo branco' : 'Catálogo'}
+                          {providerLabel(image)}
                         </span>
                       </button>
                       <div className="space-y-2 p-2.5">
@@ -145,7 +152,7 @@ export default function ProductImageSearch({ barcode, productName, category, onS
                 )}
                 {providers && !providers.googleCustomSearch && (
                   <p className="text-center text-[11px] text-muted-foreground">
-                    Busca ampliada indisponível: configure GOOGLE_CSE_API_KEY e GOOGLE_CSE_ID na Vercel para encontrar imagens limpas como packshots.
+                    Google Imagens indisponível: configure GOOGLE_CSE_API_KEY e GOOGLE_CSE_ID na Vercel.
                   </p>
                 )}
               </div>
