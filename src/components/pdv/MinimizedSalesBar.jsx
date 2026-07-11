@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable, DragDropContext, Droppable } from '@hello-pangea/dnd';
-import { GripVertical, Minus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
 const COLORS = [
@@ -31,7 +31,7 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard, onReord
               return (
                 <Draggable key={String(sale._localId)} draggableId={String(sale._localId)} index={index}>
                   {(dragProvided, snapshot) => (
-                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} style={dragProvided.draggableProps.style} className={`relative rounded-xl shadow-lg ${snapshot.isDragging ? 'ring-2 ring-white/70' : ''}`}>
+                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} {...dragProvided.dragHandleProps} style={dragProvided.draggableProps.style} className={`relative cursor-grab rounded-xl shadow-lg active:cursor-grabbing ${snapshot.isDragging ? 'ring-2 ring-white/70' : ''}`}>
                       <button
                         type="button"
                         onClick={() => onRestore(index)}
@@ -45,20 +45,11 @@ export default function MinimizedSalesBar({ sales, onRestore, onDiscard, onReord
                       </button>
                       <button
                         type="button"
-                        aria-label="Mover venda"
-                        {...dragProvided.dragHandleProps}
-                        className="absolute left-1 top-1 grid h-7 w-7 place-items-center rounded-lg bg-black/25 text-white hover:bg-black/40"
-                        title="Arraste para reorganizar"
-                      >
-                        <GripVertical className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Descartar venda minimizada"
+                        aria-label="Descartar venda aberta"
                         onClick={event => { event.stopPropagation(); onDiscard(index); }}
                         className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-lg bg-black/25 text-white hover:bg-destructive"
                       >
-                        <Minus className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   )}

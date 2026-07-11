@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { nexoApi } from "@/api/nexoApi";
 import { Store, Plus, Save, X } from "lucide-react";
 import { toast } from "react-hot-toast";
+import ImageUploadField from "@/components/ImageUploadField";
 const MODULES = [
   ["pdv", "PDV"],
   ["estoque", "Estoque"],
@@ -23,6 +25,7 @@ const EMPTY = {
   secondary_color: "#0f5132",
 };
 export default function AdminMercados() {
+  const { user } = /** @type {any} */ (useOutletContext());
   const [markets, setMarkets] = useState([]),
     [open, setOpen] = useState(false),
     [form, setForm] = useState(EMPTY),
@@ -113,7 +116,6 @@ export default function AdminMercados() {
               ["admin_name", "Nome do administrador", "text"],
               ["admin_email", "Email do administrador", "email"],
               ["admin_password", "Senha inicial", "password"],
-              ["logo_url", "URL da logo", "url"],
             ].map(([key, label, type]) => (
               <label className="text-xs" key={key}>
                 {label}
@@ -127,6 +129,17 @@ export default function AdminMercados() {
                 />
               </label>
             ))}
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                value={form.logo_url}
+                onChange={(value) => setForm({ ...form, logo_url: value })}
+                kind="market"
+                scopeId={user?.market_id || user?.id}
+                label="Logo do mercado"
+                name={form.name || "mercado"}
+                previewClassName="h-16 w-28 rounded-lg"
+              />
+            </div>
             <label className="text-xs">
               Cor principal
               <input
@@ -206,6 +219,17 @@ export default function AdminMercados() {
                   {label}
                 </label>
               ))}
+            </div>
+            <div className="mt-4 border-t pt-4">
+              <ImageUploadField
+                value={m.logo_url || ""}
+                onChange={(value) => update(m, { logo_url: value })}
+                kind="market"
+                scopeId={m.id}
+                label="Logo"
+                name={m.name}
+                previewClassName="h-14 w-24 rounded-lg"
+              />
             </div>
           </article>
         ))}

@@ -37,7 +37,7 @@ function extensionFor(contentType) {
   }[contentType] || 'jpg';
 }
 
-function safeName(value = 'produto') {
+export function safeName(value = 'imagem') {
   return String(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -81,6 +81,12 @@ export async function importRemoteProductImage({ url, productName, marketId }) {
     clearTimeout(timeout);
   }
 }
+
+export const IMAGE_UPLOAD_KINDS = {
+  product: 'products',
+  market: 'markets',
+  user: 'users',
+};
 
 export const PRODUCT_IMAGE_UPLOAD_RULES = {
   allowedContentTypes: [...ALLOWED_TYPES],

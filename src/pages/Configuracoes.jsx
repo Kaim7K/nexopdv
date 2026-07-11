@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Save, Store, Hash, MapPin, Image, Layers } from 'lucide-react';
+import { Save, Store, Hash, MapPin, Layers } from 'lucide-react';
+import ImageUploadField from '@/components/ImageUploadField';
 
 export default function Configuracoes() {
+  const { user } = /** @type {any} */ (useOutletContext());
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,12 +78,15 @@ export default function Configuracoes() {
             <input type="text" value={getValue('endereco')} onChange={(e) => handleChange('endereco', e.target.value)}
               className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" /> URL do Logo</label>
-            <input type="url" value={getValue('logo_url')} onChange={(e) => handleChange('logo_url', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-border bg-background text-foreground rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-            {getValue('logo_url') && <img src={getValue('logo_url')} alt="Logo" className="h-16 mt-2 object-contain" />}
-          </div>
+          <ImageUploadField
+            value={getValue('logo_url')}
+            onChange={value => handleChange('logo_url', value)}
+            kind="market"
+            scopeId={user?.market_id || user?.id}
+            label="Logo do mercado"
+            name={getValue('nome_mercado', user?.market_name || 'mercado')}
+            previewClassName="h-16 w-28 rounded-lg"
+          />
         </div>
 
         {/* Operational */}

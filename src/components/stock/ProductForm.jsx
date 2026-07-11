@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { CopyPlus, ImageIcon, Loader2, Save, Search, Trash2, Upload, X } from 'lucide-react';
-import { upload } from '@vercel/blob/client';
+import { CopyPlus, ImageIcon, Loader2, Save, Search, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
+import ImageUploadField from '@/components/ImageUploadField';
 import ProductImageSearch from './ProductImageSearch';
 
 const EMPTY_FORM = {
@@ -19,21 +19,18 @@ const EMPTY_FORM = {
   status: 'ativo',
 };
 
-const safeFileName = value => String(value || 'produto')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-|-$/g, '')
-  .slice(0, 60) || 'produto';
+const titleToProductName = title => String(title || '')
+  .replace(/\s*[-|–].*$/u, '')
+  .replace(/\b(produto|imagem|foto)\b/gi, '')
+  .replace(/\s{2,}/g, ' ')
+  .trim();
 
 export default function ProductForm({ product = null, duplicateSource = null, categories = [], user, onSave, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const fileRef = useRef(null);
+  const [identifying, setIdentifying] = useState(false);
+  const lastBarcodeLookup = useRef('');
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -74,44 +71,29 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   const handleChange = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
 
-  const uploadImage = async event => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) {
-      toast.error('Use uma imagem JPG, PNG, WEBP ou AVIF.');
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 8 MB.');
-      return;
-    }
-    if (!user?.market_id) {
-      toast.error('Não foi possível identificar o mercado para o upload.');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-    try {
-      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const pathname = `products/${user.market_id}/${safeFileName(form.name || file.name)}.${extension}`;
-      const blob = await upload(pathname, file, {
-        access: 'public',
-        handleUploadUrl: '/api/media/upload',
-        clientPayload: JSON.stringify({ kind: 'product' }),
-        contentType: file.type,
-        onUploadProgress: progress => setUploadProgress(Math.round(progress.percentage || 0)),
-      });
-      handleChange('image_url', blob.url);
-      toast.success('Imagem enviada.');
-    } catch (error) {
-      toast.error(error.message || 'Não foi possível enviar a imagem.');
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  };
+  useEffect(() => {
+    const barcode = form.barcode.trim();
+    if (!/^\d{6,}$/.test(barcode) || barcode === lastBarcodeLookup.current) return;
+    const timer = setTimeout(async () => {
+      lastBarcodeLookup.current = barcode;
+      setIdentifying(true);
+      try {
+        const data = await nexoApi.productImages.search({ barcode, name: form.name, category: form.category, page: 1 });
+        const first = data.results?.[0];
+        const detectedName = titleToProductName(first?.title);
+        if (!form.name.trim() && detectedName) handleChange('name', detectedName);
+        if (!form.image_url && first?.url) {
+          setShowImageSearch(true);
+          toast.success('Código identificado. Escolha uma imagem coerente para o produto.');
+        }
+      } catch {
+        // Cadastro manual continua disponível se o catálogo externo não responder.
+      } finally {
+        setIdentifying(false);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [form.barcode, form.name, form.category, form.image_url]);
 
   const validate = () => {
     if (!form.name.trim()) return 'Nome é obrigatório.';
@@ -200,7 +182,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <div>
             <h2 className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>
             <p className="text-xs text-muted-foreground">
-              {isDuplicating ? 'Código de barras e quantidade foram zerados para evitar duplicidade.' : 'Cadastre os dados e escolha uma imagem do produto.'}
+              {isDuplicating ? 'Código de barras e quantidade foram zerados para evitar duplicidade.' : 'Escaneie o código de barras para preencher nome e imagens.'}
             </p>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -212,20 +194,16 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
               {form.image_url ? <img src={form.image_url} alt={form.name || 'Produto'} className="h-full w-full object-contain p-2" /> : <ImageIcon className="h-10 w-10 text-muted-foreground/40" />}
             </div>
             <div className="flex flex-1 flex-col justify-center gap-2">
-              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
-                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                {uploading ? `Enviando ${uploadProgress}%` : 'Enviar imagem'}
-              </button>
-              <input ref={fileRef} hidden type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadImage} />
+              <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
               <button type="button" onClick={() => setShowImageSearch(true)} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
-                <Search className="h-5 w-5" /> Buscar imagem automaticamente
+                {identifying ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                Buscar imagem automaticamente
               </button>
               {form.image_url && (
                 <button type="button" onClick={() => handleChange('image_url', '')} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" /> Remover imagem
                 </button>
               )}
-              <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP ou AVIF · máximo de 8 MB.</p>
             </div>
           </section>
 
@@ -253,7 +231,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Código de barras</label>
-              <input type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <input type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); setShowImageSearch(true); } }} inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Código interno</label>
@@ -288,11 +266,11 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <button type="button" onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
           {!isEditing && (
-            <button type="button" onClick={() => saveProduct({ duplicateAfter: true })} disabled={saving || uploading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-40">
+            <button type="button" onClick={() => saveProduct({ duplicateAfter: true })} disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-40">
               <CopyPlus className="h-5 w-5" /> Criar e duplicar
             </button>
           )}
-          <button type="button" onClick={() => saveProduct()} disabled={saving || uploading} className="inline-flex min-h-11 min-w-36 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground">
+          <button type="button" onClick={() => saveProduct()} disabled={saving} className="inline-flex min-h-11 min-w-36 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground">
             {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
             {saving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Criar'}
           </button>

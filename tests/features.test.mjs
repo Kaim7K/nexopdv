@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-const [api, form, stock, payment, minimized, pdv, reports, layout, search] = await Promise.all([
+const [api, form, imageUpload, stock, payment, minimized, pdv, reports, layout, search] = await Promise.all([
   read('api/index.js'),
   read('src/components/stock/ProductForm.jsx'),
+  read('src/components/ImageUploadField.jsx'),
   read('src/pages/Estoque.jsx'),
   read('src/components/pdv/PaymentModal.jsx'),
   read('src/components/pdv/MinimizedSalesBar.jsx'),
@@ -17,7 +18,8 @@ const [api, form, stock, payment, minimized, pdv, reports, layout, search] = awa
 
 assert.match(api, /product-images.*search/s, 'A API deve expor busca de imagens.');
 assert.match(api, /media.*upload/s, 'A API deve expor upload de imagens.');
-assert.match(form, /@vercel\/blob\/client/, 'O formulário deve usar upload direto para o Blob.');
+assert.match(form, /ImageUploadField/, 'O formulário deve usar o campo compartilhado de upload.');
+assert.match(imageUpload, /@vercel\/blob\/client/, 'O campo de imagem deve usar upload direto para o Blob.');
 assert.match(form, /Criar e duplicar/, 'O cadastro completo deve permitir criar e duplicar.');
 assert.match(stock, /toggleSort/, 'O estoque deve permitir ordenação de colunas.');
 assert.match(stock, /mode: 'duplicate'/, 'O estoque deve permitir duplicar produtos.');

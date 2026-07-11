@@ -11,7 +11,7 @@ import {
 import { handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
 import { AppError } from '../server/errors.js';
 import { searchProductImages } from '../server/product-images.js';
-import { importRemoteProductImage, PRODUCT_IMAGE_UPLOAD_RULES } from '../server/media.js';
+import { IMAGE_UPLOAD_KINDS, importRemoteProductImage, PRODUCT_IMAGE_UPLOAD_RULES } from '../server/media.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -84,11 +84,8 @@ async function routeHandler(req, res) {
 
   if (path[0] === 'media' && path[1] === 'upload') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
-      return send(res, 403, { message: 'Sem permissão para enviar imagens de produtos.' });
-    }
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'Conecte um Vercel Blob ao projeto para habilitar o upload de imagens.');
+      throw new AppError(503, 'BLOB_NOT_CONFIGURED', 'O armazenamento de imagens ainda não foi conectado. Na Vercel, abra Storage, crie/conecte um Blob Store ao projeto e redeploye para gerar BLOB_READ_WRITE_TOKEN.');
     }
     const json = await handleUpload({
       body: req.body,
@@ -96,14 +93,19 @@ async function routeHandler(req, res) {
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         let payload = {};
         try { payload = clientPayload ? JSON.parse(clientPayload) : {}; } catch { payload = {}; }
-        if (payload.kind !== 'product') throw new AppError(400, 'INVALID_UPLOAD_KIND', 'Tipo de upload inválido.');
-        const prefix = `products/${user.market_id}/`;
+        const kind = IMAGE_UPLOAD_KINDS[payload.kind] ? payload.kind : '';
+        if (!kind) throw new AppError(400, 'INVALID_UPLOAD_KIND', 'Tipo de upload inválido.');
+        if (kind === 'market' && user.role !== 'super_admin' && !['admin','gerente'].includes(user.role)) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar logo do mercado.');
+        if (kind === 'user' && !['admin','gerente','super_admin'].includes(user.role)) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar foto de usuário.');
+        if (kind === 'product' && (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))))) throw new AppError(403, 'UPLOAD_FORBIDDEN', 'Sem permissão para enviar imagens de produtos.');
+        const scope = user.market_id || user.id;
+        const prefix = `${IMAGE_UPLOAD_KINDS[kind]}/${scope}/`;
         if (!String(pathname || '').startsWith(prefix)) throw new AppError(400, 'INVALID_UPLOAD_PATH', 'Destino de upload inválido.');
         return {
           ...PRODUCT_IMAGE_UPLOAD_RULES,
           addRandomSuffix: true,
           cacheControlMaxAge: 60 * 60 * 24 * 365,
-          tokenPayload: JSON.stringify({ userId: user.id, marketId: user.market_id, kind: 'product' }),
+          tokenPayload: JSON.stringify({ userId: user.id, marketId: user.market_id, kind }),
         };
       },
       onUploadCompleted: async () => {},
@@ -147,7 +149,7 @@ async function routeHandler(req, res) {
     if (!req.body.email || !/^\S+@\S+\.\S+$/.test(req.body.email)) return send(res, 400, { message: 'Informe um email válido.' });
     if (!req.body.password || req.body.password.length < 8) return send(res, 400, { message: 'A senha deve ter ao menos 8 caracteres.' });
     const hash = await bcrypt.hash(req.body.password, 12);
-    const [created] = await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role) VALUES(${user.market_id},${req.body.email},${hash},${req.body.full_name || req.body.email},${req.body.role || 'vendedor'}) RETURNING id,email,full_name,role`;
+    const [created] = await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url) VALUES(${user.market_id},${req.body.email},${hash},${req.body.full_name || req.body.email},${req.body.role || 'vendedor'},${req.body.photo_url || null}) RETURNING id,email,full_name,role,photo_url`;
     return send(res, 201, created);
   }
   if (path[0] === 'sales' && path[1] === 'next' && req.method === 'GET') {
@@ -158,8 +160,10 @@ async function routeHandler(req, res) {
     if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado.' });
     const items = Array.isArray(req.body.items) ? req.body.items : [];
     const payments = Array.isArray(req.body.payments) ? req.body.payments : [];
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!items.length) return send(res, 400, { message: 'A venda não possui itens.' });
-    if (items.some(item => !item.product_id || Number(item.quantity || item.weight) <= 0 || Number(item.unit_price) < 0)) return send(res, 400, { message: 'Há itens inválidos na venda.' });
+    if (items.some(item => !uuidPattern.test(String(item.product_id || '')) || Number(item.quantity || item.weight) <= 0 || Number(item.unit_price) < 0 || Number(item.subtotal) < 0)) return send(res, 400, { message: 'Há itens inválidos na venda. Remova e adicione o produto novamente.' });
+    if (payments.some(payment => !payment.method || Number(payment.amount || 0) < 0)) return send(res, 400, { message: 'Há pagamentos inválidos na venda.' });
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const discountValue = Math.max(0, Number(req.body.discount_value || 0));
     const discount = req.body.discount_type === 'percentual' ? subtotal * Math.min(discountValue, 100) / 100 : Math.min(discountValue, subtotal);
@@ -169,6 +173,9 @@ async function routeHandler(req, res) {
     if (!isFiado && paid + 0.009 < total) return send(res, 400, { message: 'O pagamento é menor que o total da venda.' });
     if (isFiado && !req.body.fiado?.responsible_name?.trim()) return send(res, 400, { message: 'Informe o responsável pela venda fiada.' });
     const saleData = { seller_id:user.id, seller_name:user.full_name||user.email, status:'concluida', items, payments, subtotal, discount_value:discountValue, discount_type:req.body.discount_type||'valor', total, paid_amount:paid, change_amount:Math.max(0,paid-total), observation:req.body.observation||'', sale_type:isFiado?'fiado':'normal' };
+    const productIds = [...new Set(items.map(item => item.product_id))];
+    const ownedProducts = await sql`SELECT id FROM nexo.records WHERE market_id=${user.market_id} AND entity='products' AND id=ANY(${productIds}::uuid[])`;
+    if (ownedProducts.length !== productIds.length) return send(res, 409, { message: 'A venda possui produto inexistente ou de outro mercado. Atualize o PDV e tente novamente.' });
     const [sale] = await sql`
       WITH number AS (
         UPDATE nexo.markets SET next_sale_number=next_sale_number+1 WHERE id=${user.market_id} RETURNING next_sale_number-1 AS value
@@ -187,6 +194,7 @@ async function routeHandler(req, res) {
         INSERT INTO nexo.records(market_id,entity,data)
         SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','venda_concluida','entity_type','sale','entity_id',inserted.id,'user_id',${user.id},'user_name',${user.full_name || user.email},'description','Venda #' || (inserted.data->>'sale_number') || ' concluída','details',jsonb_build_object('total',${total},'items',${items.length},'sale_type',${isFiado ? 'fiado' : 'normal'})) FROM inserted
       ) SELECT id,data,created_date,updated_date FROM inserted`;
+    if (!sale) return send(res, 409, { message: 'Não foi possível reservar o número da venda. Atualize o PDV e tente novamente.' });
     return send(res, 201, { id:sale.id, ...sale.data, created_date:sale.created_date, updated_date:sale.updated_date });
   }
   if (path[0] === 'sales' && path[2] === 'cancel' && req.method === 'POST') {

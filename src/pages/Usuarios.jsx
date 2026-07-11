@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { nexoApi } from "@/api/nexoApi";
 import { toast } from "react-hot-toast";
 import { UserPlus, Shield, User, Mail, Pencil, X } from "lucide-react";
 import EditUserModal from "@/components/users/EditUserModal";
+import ImageUploadField from "@/components/ImageUploadField";
 export default function Usuarios() {
+  const { user } = /** @type {any} */ (useOutletContext());
   const [users, setUsers] = useState([]),
     [loading, setLoading] = useState(true),
     [show, setShow] = useState(false),
@@ -14,6 +17,7 @@ export default function Usuarios() {
       email: "",
       password: "",
       role: "vendedor",
+      photo_url: "",
     });
   const load = async () => {
     setLoading(true);
@@ -39,7 +43,7 @@ export default function Usuarios() {
       await nexoApi.users.create(form);
       toast.success("Funcionário criado");
       setShow(false);
-      setForm({ full_name: "", email: "", password: "", role: "vendedor" });
+      setForm({ full_name: "", email: "", password: "", role: "vendedor", photo_url: "" });
       load();
     } catch (err) {
       toast.error(err.message);
@@ -73,8 +77,10 @@ export default function Usuarios() {
               key={u.id}
               className="bg-card border rounded-lg p-4 flex items-center gap-4"
             >
-              <div className="w-10 h-10 rounded-full bg-secondary grid place-items-center">
-                {["admin", "gerente"].includes(u.role) ? (
+              <div className="w-10 h-10 rounded-full bg-secondary grid place-items-center overflow-hidden">
+                {u.photo_url ? (
+                  <img src={u.photo_url} alt={u.full_name || u.email} className="h-full w-full object-cover" />
+                ) : ["admin", "gerente"].includes(u.role) ? (
                   <Shield className="w-5" />
                 ) : (
                   <User className="w-5" />
@@ -164,6 +170,16 @@ export default function Usuarios() {
                 <option value="admin">Administrador</option>
               </select>
             </label>
+            <ImageUploadField
+              value={form.photo_url}
+              onChange={(value) => setForm({ ...form, photo_url: value })}
+              kind="user"
+              scopeId={user?.id}
+              label="Foto do usuário"
+              name={form.full_name || form.email || "usuario"}
+              previewClassName="h-16 w-16 rounded-full"
+              objectFit="cover"
+            />
             <button
               disabled={saving}
               className="w-full bg-accent text-white rounded-lg p-2 disabled:opacity-50"

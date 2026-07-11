@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { X, User as UserIcon } from "lucide-react";
+import { X } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
 import { toast } from "react-hot-toast";
+import ImageUploadField from "@/components/ImageUploadField";
 export default function EditUserModal({ user, onClose, onSaved }) {
   const [form, setForm] = useState({
       full_name: user.full_name || "",
@@ -43,32 +44,22 @@ export default function EditUserModal({ user, onClose, onSaved }) {
             <X className="w-5" />
           </button>
         </div>
-        <div className="mx-auto w-20 h-20 rounded-full bg-secondary overflow-hidden grid place-items-center">
-          {form.photo_url ? (
-            <img
-              src={form.photo_url}
-              alt="Foto"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <UserIcon />
-          )}
-        </div>
+        <ImageUploadField
+          value={form.photo_url}
+          onChange={(value) => setForm({ ...form, photo_url: value })}
+          kind="user"
+          scopeId={user.id}
+          label="Foto do usuário"
+          name={form.full_name || user.email}
+          previewClassName="h-20 w-20 rounded-full"
+          objectFit="cover"
+        />
         <label className="text-xs block">
           Nome
           <input
             required
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            className="block border rounded p-2 mt-1 w-full"
-          />
-        </label>
-        <label className="text-xs block">
-          URL da foto
-          <input
-            type="url"
-            value={form.photo_url}
-            onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
             className="block border rounded p-2 mt-1 w-full"
           />
         </label>
