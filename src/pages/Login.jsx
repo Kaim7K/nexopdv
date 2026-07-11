@@ -17,8 +17,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await nexoApi.auth.login(email, password);
-      const user = await nexoApi.auth.me();
+      const { user } = await nexoApi.auth.login(email, password);
       window.location.href = user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");

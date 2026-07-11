@@ -9,15 +9,19 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel-build": "node scripts/deploy-database.mjs && vite build",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed-super-admin.mjs",
+    "db:setup": "node scripts/deploy-database.mjs",
+    "db:check": "node scripts/check-database.mjs",
+    "check": "npm run test && npm run typecheck && npm run lint && npm run build",
+    "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1",
-    "bcryptjs": "^3.0.2",
-    "jose": "^6.0.12",
-    "xlsx": "^0.18.5",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
+    "@neondatabase/serverless": "^1.0.1",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -48,6 +52,7 @@
     "@stripe/react-stripe-js": "^3.0.0",
     "@stripe/stripe-js": "^5.2.0",
     "@tanstack/react-query": "^5.84.1",
+    "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -57,6 +62,7 @@
     "framer-motion": "^11.16.4",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "jose": "^6.0.12",
     "jspdf": "^4.2.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
@@ -78,6 +84,7 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.171.0",
     "vaul": "^1.1.2",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {
