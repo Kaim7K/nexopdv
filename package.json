@@ -15,7 +15,7 @@
     "db:seed": "node scripts/seed-super-admin.mjs",
     "db:setup": "node scripts/deploy-database.mjs",
     "db:check": "node scripts/check-database.mjs",
-    "check": "npm run test && npm run typecheck && npm run lint && npm run build",
+    "check": "pnpm run test && pnpm run typecheck && pnpm run lint && pnpm run build",
     "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs && node tests/features.test.mjs"
   },
   "dependencies": {
@@ -105,5 +105,9 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2",
     "vite": "^6.1.0"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": "24.x"
   }
 }
