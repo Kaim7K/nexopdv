@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { CopyPlus, ExternalLink, ImageIcon, Loader2, Save, ScanSearch, Sparkles, Trash2, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, ChevronDown, CopyPlus, ExternalLink, ImageIcon, Loader2, Pencil, Save, ScanSearch, Sparkles, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { openGoogleImages } from '@/lib/google-images';
 import { readClipboardImageUrl, watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
-import { mergeProductCategories } from '@/lib/product-categories';
+import { categoriesToStorageValue, formatProductCategories, mergeProductCategories, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 import { standardizeProductName } from '@/lib/product-name';
 
 const EMPTY_FORM = {
@@ -26,10 +26,13 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [imageChanged, setImageChanged] = useState(false);
-  const [customCategory, setCustomCategory] = useState(false);
   const [identifying, setIdentifying] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState('');
+  const [editingCategory, setEditingCategory] = useState('');
+  const [savedCategoryOptions, setSavedCategoryOptions] = useState(() => mergeProductCategories(categories));
   const clipboardCleanupRef = React.useRef(null);
-  const categoryOptions = mergeProductCategories(categories);
+  const categoryOptions = useMemo(() => mergeProductCategories(categories, savedCategoryOptions), [categories, savedCategoryOptions]);
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -49,7 +52,6 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   useEffect(() => {
     if (product) {
-      setCustomCategory(Boolean(product.category && !categoryOptions.includes(product.category)));
       setImageChanged(false);
       setForm({
         name: product.name || '',
@@ -66,7 +68,6 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       return;
     }
     if (duplicateSource) {
-      setCustomCategory(Boolean(duplicateSource.category && !categoryOptions.includes(duplicateSource.category)));
       setImageChanged(true);
       setForm({
         name: `${duplicateSource.name || 'Produto'} - Cópia`,
@@ -83,9 +84,12 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       return;
     }
     setImageChanged(false);
-    setCustomCategory(false);
     setForm({ ...EMPTY_FORM, internal_code: generateInternalCode() });
   }, [product, duplicateSource]);
+
+  useEffect(() => {
+    setSavedCategoryOptions(mergeProductCategories(categories));
+  }, [categories]);
 
   useEffect(() => () => {
     clipboardCleanupRef.current?.();
@@ -95,6 +99,52 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   const handleChange = (field, value) => {
     if (field === 'image_url') setImageChanged(true);
     setForm(previous => ({ ...previous, [field]: value }));
+  };
+
+  const syncCategories = async nextCategories => {
+    const normalized = formatProductCategories(nextCategories);
+    setSavedCategoryOptions(normalized);
+    try {
+      const existing = await nexoApi.entities.SystemConfig.list();
+      const current = existing.find(item => item.key === 'product_categories');
+      const value = categoriesToStorageValue(normalized);
+      if (current?.id) await nexoApi.entities.SystemConfig.update(current.id, { value });
+      else await nexoApi.entities.SystemConfig.create({ key: 'product_categories', value, label: 'Categorias de produtos' });
+      window.dispatchEvent(new CustomEvent('nexo:config-updated', { detail: { product_categories: value } }));
+    } catch (error) {
+      toast.error(error.message || 'Nao foi possivel atualizar as categorias.');
+    }
+  };
+
+  const commitCategory = async () => {
+    const next = String(categoryDraft || '').trim();
+    if (!next) return toast.error('Digite o nome da categoria.');
+    const current = categoryOptions;
+    const nextOptions = upsertProductCategory(current, editingCategory, next);
+    await syncCategories(nextOptions);
+    setForm(previous => ({ ...previous, category: next }));
+    setCategoryDraft('');
+    setEditingCategory('');
+  };
+
+  const deleteCategory = async category => {
+    const nextOptions = removeProductCategory(categoryOptions, category);
+    if (nextOptions.length === categoryOptions.length) {
+      toast.error('Não foi possível remover esta categoria.');
+      return;
+    }
+    await syncCategories(nextOptions);
+    if (form.category === category) setForm(previous => ({ ...previous, category: '' }));
+    if (editingCategory === category) {
+      setEditingCategory('');
+      setCategoryDraft('');
+    }
+  };
+
+  const editCategory = category => {
+    setEditingCategory(category);
+    setCategoryDraft(category);
+    setCategoryMenuOpen(true);
   };
 
   const armClipboardPaste = () => {
@@ -289,18 +339,49 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
+            <div className="relative">
               <label htmlFor="product-category" className="text-xs font-medium text-muted-foreground">Categoria</label>
-              <select id="product-category" value={customCategory ? '__custom__' : form.category} onChange={event => {
-                const value = event.target.value;
-                setCustomCategory(value === '__custom__');
-                if (value !== '__custom__') handleChange('category', value);
-              }} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                <option value="">Selecione uma categoria</option>
-                {categoryOptions.map(category => <option key={category} value={category}>{category}</option>)}
-                <option value="__custom__">Editar / criar categoria...</option>
-              </select>
-              {customCategory && <input aria-label="Nome da categoria" type="text" value={form.category} onChange={event => handleChange('category', event.target.value)} autoFocus placeholder="Digite a categoria" className="mt-2 w-full rounded-lg border border-accent bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />}
+              <button
+                type="button"
+                onClick={() => setCategoryMenuOpen(open => !open)}
+                className="mt-1 flex h-11 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm text-left focus:outline-none focus:ring-2 focus:ring-accent"
+              >
+                <span className={form.category ? 'text-foreground' : 'text-muted-foreground'}>{form.category || 'Selecione uma categoria'}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+              {categoryMenuOpen && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+                  <div className="max-h-72 overflow-y-auto p-2">
+                    <button type="button" onClick={() => { handleChange('category', ''); setCategoryMenuOpen(false); }} className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm hover:bg-muted">
+                      <span className="text-muted-foreground">Selecione uma categoria</span>
+                      {!form.category && <Check className="h-4 w-4 text-accent" />}
+                    </button>
+                    {categoryOptions.map(category => (
+                      <div key={category} className="group flex items-center gap-1 rounded-xl px-2 py-1.5 hover:bg-muted/70">
+                        <button type="button" onClick={() => { handleChange('category', category); setCategoryMenuOpen(false); }} className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm">
+                          <span className="block truncate">{category}</span>
+                        </button>
+                        <button type="button" onClick={() => editCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground" aria-label={`Editar ${category}`} title="Editar categoria">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button type="button" onClick={() => deleteCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10" aria-label={`Excluir ${category}`} title="Excluir categoria">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-border bg-muted/20 p-3">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{editingCategory ? 'Editar categoria' : 'Nova categoria'}</label>
+                    <div className="mt-2 flex gap-2">
+                      <input value={categoryDraft} onChange={event => setCategoryDraft(event.target.value)} placeholder={editingCategory || 'Digite a categoria'} className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                      <button type="button" onClick={commitCategory} className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700">
+                        <Save className="h-4 w-4" /> {editingCategory ? 'Salvar' : 'Adicionar'}
+                      </button>
+                    </div>
+                    {editingCategory && <button type="button" onClick={() => { setEditingCategory(''); setCategoryDraft(''); }} className="mt-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancelar edição</button>}
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="product-unit" className="text-xs font-medium text-muted-foreground">Unidade de venda</label>
