@@ -11,12 +11,15 @@ import {
   MapPin,
   PackageSearch,
   Paintbrush,
+  Pencil,
+  Trash2,
   RotateCcw,
   Save,
   Store,
 } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
 import { deriveSidebarPalette, normalizeHex } from '@/lib/color-contrast';
+import { DEFAULT_PRODUCT_CATEGORIES, categoriesToStorageValue, formatProductCategories, isDefaultProductCategory, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 
 const RESET_OPTIONS = [
   { value: 'products', label: 'Estoque e produtos', description: 'Exclui todos os produtos e o histórico de alterações de produtos.' },
@@ -41,6 +44,9 @@ export default function Configuracoes() {
   const [resetting, setResetting] = useState(false);
   const [requireCashRegister, setRequireCashRegister] = useState(Boolean(user?.require_cash_register));
   const [initialRequireCashRegister, setInitialRequireCashRegister] = useState(Boolean(user?.require_cash_register));
+  const [productCategories, setProductCategories] = useState(DEFAULT_PRODUCT_CATEGORIES);
+  const [categoryDraft, setCategoryDraft] = useState('');
+  const [editingCategory, setEditingCategory] = useState('');
 
   const loadConfigs = async () => {
     setLoading(true);
@@ -49,7 +55,13 @@ export default function Configuracoes() {
       const map = {};
       data.forEach(config => { map[config.key] = config; });
       setConfigs(map);
-      setInitialValues(Object.fromEntries(Object.entries(map).map(([key, value]) => [key, String(value.value ?? '')])));
+      const storedCategories = parseProductCategories(map.product_categories?.value);
+      const initialCategories = storedCategories.length ? formatProductCategories(storedCategories) : DEFAULT_PRODUCT_CATEGORIES;
+      setProductCategories(initialCategories);
+      setInitialValues({
+        ...Object.fromEntries(Object.entries(map).map(([key, value]) => [key, String(value.value ?? '')])),
+        product_categories: categoriesToStorageValue(initialCategories),
+      });
     } catch (error) {
       toast.error(error.message || 'Erro ao carregar configurações.');
     } finally {
@@ -75,8 +87,11 @@ export default function Configuracoes() {
 
   const changedKeys = useMemo(() => Object.keys(configs).filter(key => String(configs[key]?.value ?? '') !== String(initialValues[key] ?? '')), [configs, initialValues]);
   const cashSettingChanged = user?.role === 'admin' && requireCashRegister !== initialRequireCashRegister;
-  const hasChanges = changedKeys.length > 0 || cashSettingChanged;
-  const changeCount = changedKeys.length + (cashSettingChanged ? 1 : 0);
+  const categoryConfigValue = categoriesToStorageValue(productCategories);
+  const initialCategoryValue = String(initialValues.product_categories ?? '');
+  const categoryChanged = categoryConfigValue !== initialCategoryValue;
+  const hasChanges = changedKeys.length > 0 || cashSettingChanged || categoryChanged;
+  const changeCount = changedKeys.length + (cashSettingChanged ? 1 : 0) + (categoryChanged ? 1 : 0);
 
   const handleSave = async event => {
     event.preventDefault();
@@ -98,14 +113,27 @@ export default function Configuracoes() {
           : await nexoApi.entities.SystemConfig.create({ key: config.key, value: config.value, label: config.label || config.key });
         return [key, saved];
       }));
+      if (categoryChanged) {
+        const config = configs.product_categories;
+        const saved = config?.id
+          ? await nexoApi.entities.SystemConfig.update(config.id, { value: categoryConfigValue })
+          : await nexoApi.entities.SystemConfig.create({ key: 'product_categories', value: categoryConfigValue, label: 'Categorias de produtos' });
+        updatedEntries.push(['product_categories', saved]);
+      }
       if (cashSettingChanged) await nexoApi.cash.updateSettings(requireCashRegister);
 
       const savedMap = Object.fromEntries(updatedEntries);
       const nextConfigs = { ...configs, ...savedMap };
       const nextValues = Object.fromEntries(Object.entries(nextConfigs).map(([key, value]) => [key, value.value ?? '']));
+      const nextCategoryValues = parseProductCategories(nextValues.product_categories);
+      const normalizedNextCategories = nextCategoryValues.length ? formatProductCategories(nextCategoryValues) : DEFAULT_PRODUCT_CATEGORIES;
       setConfigs(nextConfigs);
-      setInitialValues(Object.fromEntries(Object.entries(nextValues).map(([key, value]) => [key, String(value)])));
+      setInitialValues({
+        ...Object.fromEntries(Object.entries(nextValues).map(([key, value]) => [key, String(value)])),
+        product_categories: categoriesToStorageValue(normalizedNextCategories),
+      });
       setInitialRequireCashRegister(requireCashRegister);
+      setProductCategories(normalizedNextCategories);
       window.dispatchEvent(new CustomEvent('nexo:config-updated', { detail: nextValues }));
       toast.success('Configurações salvas.');
     } catch (error) {
@@ -141,6 +169,30 @@ export default function Configuracoes() {
 
   const brandName = getValue('nome_mercado', user?.market_name || 'Mercado');
   const logoUrl = getValue('logo_url', user?.logo_url || '');
+  const commitCategory = () => {
+    const next = String(categoryDraft || '').trim();
+    if (!next) return toast.error('Digite o nome da categoria.');
+    setProductCategories(current => upsertProductCategory(current, editingCategory, next));
+    setCategoryDraft('');
+    setEditingCategory('');
+  };
+
+  const editCategory = category => {
+    setEditingCategory(category);
+    setCategoryDraft(category);
+  };
+
+  const deleteCategory = category => {
+    if (isDefaultProductCategory(category)) {
+      toast.error('As categorias padrão não podem ser excluídas.');
+      return;
+    }
+    setProductCategories(current => removeProductCategory(current, category));
+    if (editingCategory === category) {
+      setEditingCategory('');
+      setCategoryDraft('');
+    }
+  };
 
   return (
     <form onSubmit={handleSave} className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
@@ -227,6 +279,45 @@ export default function Configuracoes() {
             Quantidade de alerta
             <input type="number" min="1" max="9999" step="1" value={getValue('limite_estoque_baixo', '5')} onChange={event => handleChange('limite_estoque_baixo', event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
           </label>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-span-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 font-bold"><PackageSearch className="h-5 w-5 text-accent" /> Categorias de produtos</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Edite, adicione ou remova as categorias usadas no estoque e no cadastro.</p>
+            </div>
+            <button type="button" onClick={() => { setProductCategories(DEFAULT_PRODUCT_CATEGORIES); setCategoryDraft(''); setEditingCategory(''); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Restaurar padrão</button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={categoryDraft}
+              onChange={event => setCategoryDraft(event.target.value)}
+              placeholder={editingCategory ? 'Editar categoria selecionada' : 'Nova categoria'}
+              className="h-11 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+            <button type="button" onClick={commitCategory} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90">
+              <Save className="h-4 w-4" /> {editingCategory ? 'Salvar edição' : 'Adicionar'}
+            </button>
+            {editingCategory && (
+              <button type="button" onClick={() => { setEditingCategory(''); setCategoryDraft(''); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {productCategories.map(category => (
+              <div key={category} className="flex items-center gap-2 rounded-xl border border-border bg-muted/25 px-3 py-2">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{category}</span>
+                <button type="button" onClick={() => editCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${category}`} title="Editar categoria">
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => deleteCategory(category)} disabled={isDefaultProductCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/20 bg-card text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Excluir ${category}`} title={isDefaultProductCategory(category) ? 'Categorias padrão não podem ser excluídas' : 'Excluir categoria'}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </section>
 
         {user?.role === 'admin' && (

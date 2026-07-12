@@ -20,7 +20,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import ProductForm from '@/components/stock/ProductForm';
-import { mergeProductCategories } from '@/lib/product-categories';
+import { mergeProductCategories, parseProductCategories } from '@/lib/product-categories';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 
@@ -109,8 +109,8 @@ export default function Estoque() {
   }, [dirty]);
 
   const categories = useMemo(() => (
-    mergeProductCategories(products.map(product => product.category))
-  ), [products]);
+    mergeProductCategories(products.map(product => product.category), parseProductCategories(config?.product_categories))
+  ), [products, config?.product_categories]);
 
   const filtered = useMemo(() => {
     const searchText = search.toLowerCase();
@@ -188,6 +188,7 @@ export default function Estoque() {
       const rows = products.map(product => Object.fromEntries([
         ['ID', product.id],
         ...EDITABLE_COLUMNS.map(([key, label]) => [label, product[key] ?? '']),
+        ['URL da imagem', product.image_url ?? ''],
         ['Última venda', product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'],
       ]));
       const sheet = XLSX.utils.json_to_sheet(rows);

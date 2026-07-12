@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, ExternalLink, Loader2, Trash2, X } from 'lucide-react';
+import { Check, ClipboardPaste, ExternalLink, Loader2, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
@@ -125,16 +125,18 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
                   <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); armClipboardPaste(); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
                     <ExternalLink className="h-4 w-4" /> Pesquisar no Google Imagens
                   </button>
-                  <button type="button" onClick={pasteImageUrl} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted">
-                    <Check className="h-4 w-4" /> Colar URL
-                  </button>
                 </div>
                 <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba sem filtro de cor de fundo. Se você copiar a URL da imagem e voltar para cá, o campo tenta preencher sozinho.</p>
               </div>
               {imageUrl && <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>}
             </div>
             <label className="block text-xs font-medium text-muted-foreground">URL da imagem</label>
-            <input type="url" value={imageUrl} onChange={event => setImageUrl(event.target.value)} placeholder="Cole aqui o endereço https:// da imagem" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            <div className="relative">
+              <input type="url" value={imageUrl} onChange={event => setImageUrl(event.target.value)} placeholder="Cole aqui o endereço https:// da imagem" className="w-full rounded-lg border border-border bg-background py-2.5 pl-3 pr-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <button type="button" onClick={pasteImageUrl} className="absolute right-1 top-1/2 inline-flex h-9 -translate-y-1/2 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700">
+                <ClipboardPaste className="h-4 w-4" /> Colar URL
+              </button>
+            </div>
           </section>
         </div>
 
