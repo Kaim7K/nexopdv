@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexo PDV Automação</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div>
+          <p class="eyebrow">Nexo PDV</p>
+          <h1>Automação em massa</h1>
+        </div>
+        <span class="pill">Chrome</span>
+      </header>
+
+      <section class="card">
+        <label class="label">Limite de itens</label>
+        <input id="limit" type="number" min="1" max="5000" value="50" />
+        <p class="hint">Quantidade máxima de produtos sem imagem para processar nesta execução.</p>
+      </section>
+
+      <section class="card">
+        <label class="row">
+          <input id="only-active" type="checkbox" checked />
+          <span>Somente produtos ativos</span>
+        </label>
+        <label class="row">
+          <input id="save-empty" type="checkbox" />
+          <span>Salvar mesmo sem imagem encontrada</span>
+        </label>
+      </section>
+
+      <section class="actions">
+        <button id="start" class="primary">Iniciar</button>
+        <button id="pause">Pausar</button>
+        <button id="stop">Parar</button>
+      </section>
+
+      <section class="card status">
+        <div><span class="label">Status</span><strong id="status">Pronto</strong></div>
+        <div><span class="label">Progresso</span><strong id="progress">0 / 0</strong></div>
+      </section>
+
+      <section class="card log">
+        <div class="label">Últimos eventos</div>
+        <div id="log" class="log-list"></div>
+      </section>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

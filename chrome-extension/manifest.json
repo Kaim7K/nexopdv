@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Nexo PDV Automação",
+  "version": "1.0.0",
+  "description": "Automação em lote para o Nexo PDV com a identidade visual do sistema.",
+  "action": {
+    "default_title": "Nexo PDV Automação",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://nexopdv-gold.vercel.app/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://nexopdv-gold.vercel.app/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
 import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
 import { AppError } from '../server/errors.js';
 import { lookupBarcode } from '../server/product-catalog.js';
+import { searchProductImages } from '../server/product-images.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -273,6 +274,15 @@ async function routeHandler(req, res) {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     const product = await lookupBarcode(req.query.barcode);
     return send(res, 200, { found: Boolean(product), product });
+  }
+  if (path[0] === 'products' && path[1] === 'image-search') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    const result = await searchProductImages({
+      query: req.query.query || req.query.name || '',
+      name: req.query.name || '',
+      page: Number(req.query.page || 1),
+    });
+    return send(res, 200, result);
   }
   const entityModules = { Sale:'vendas', FiadoRecord:'fiados', User:'usuarios' };
   const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'products' || path[0] === 'product-media' ? null : path[0] === 'cash' ? 'pdv' : path[0] === 'sales' ? (path[1] === 'complete' || path[1] === 'next' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
