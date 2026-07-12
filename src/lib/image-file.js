@@ -61,6 +61,7 @@ function renderDataUrl(source, size, quality) {
   return canvas.toDataURL('image/webp', quality);
 }
 
+/** @param {File} file @param {{kind?: string, onProgress?: (progress: number) => void}} options */
 export async function optimizeImageFile(file, { kind = 'default', onProgress } = {}) {
   const profile = PROFILES[kind] || PROFILES.default;
   onProgress?.(12);

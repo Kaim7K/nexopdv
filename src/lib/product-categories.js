@@ -13,9 +13,11 @@ export const DEFAULT_PRODUCT_CATEGORIES = [
   'Padaria',
 ];
 
+/** @param {unknown} value */
 const normalizeCategory = value => String(value || '').trim();
 const categoryKey = value => normalizeCategory(value).toLowerCase();
 
+/** @param {unknown} value */
 export function parseProductCategories(value = '') {
   if (Array.isArray(value)) return value.map(normalizeCategory).filter(Boolean);
   return String(value || '')

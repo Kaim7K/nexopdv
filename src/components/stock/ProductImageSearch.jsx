@@ -72,7 +72,7 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
     loadImages({ search: query, allowFallback: false });
   };
 
-  const useImage = image => {
+  const applyImage = image => {
     const target = image || selected || preview;
     if (!target?.url) return;
     onSelect(target.url);
@@ -142,7 +142,7 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
           <button type="button" onClick={searchAgain} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"><RotateCcw className="h-4 w-4" /> Pesquisar novamente</button>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <button type="button" onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted">Cancelar</button>
-            <button type="button" onClick={() => useImage()} disabled={!selected} className="inline-flex min-h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-4 w-4" /> Usar imagem</button>
+            <button type="button" onClick={() => applyImage()} disabled={!selected} className="inline-flex min-h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-4 w-4" /> Usar imagem</button>
           </div>
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
             <div className="grid min-h-0 flex-1 place-items-center overflow-auto bg-white p-4 sm:p-8"><img src={preview.url} alt={preview.title || productName || 'Imagem do produto'} className="max-h-[60dvh] max-w-full object-contain" referrerPolicy="no-referrer" /></div>
             <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <a href={preview.contextUrl || preview.url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"><ExternalLink className="h-4 w-4" /> Ver origem</a>
-              <div className="flex flex-col-reverse gap-2 sm:flex-row"><button type="button" onClick={searchAgain} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"><RotateCcw className="h-4 w-4" /> Pesquisar novamente</button><button type="button" onClick={() => useImage(preview)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90"><Check className="h-4 w-4" /> Usar imagem</button></div>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row"><button type="button" onClick={searchAgain} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"><RotateCcw className="h-4 w-4" /> Pesquisar novamente</button><button type="button" onClick={() => applyImage(preview)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90"><Check className="h-4 w-4" /> Usar imagem</button></div>
             </div>
           </div>
         </div>

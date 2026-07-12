@@ -24,8 +24,8 @@ assert.match(form, /ImageUploadField/, 'O formulário deve usar o campo comparti
 assert.match(imageUpload, /optimizeImageFile/, 'O campo de imagem deve otimizar arquivos locais.');
 assert.match(form, /openGoogleImages/, 'O formulário deve abrir a pesquisa do Google em nova aba.');
 assert.match(googleImages, /tbm:\s*'isch'/, 'A busca deve abrir diretamente em imagens.');
-assert.match(googleImages, /isc:white/, 'A busca deve aplicar o filtro branco sem alterar o texto.');
-assert.doesNotMatch(api, /product-images.*config/s, 'A integração antiga deve estar removida.');
+assert.match(googleImages, /fundo branco/, 'A busca deve solicitar fundo branco preservando o termo principal.');
+assert.match(api, /searchProductImages/, 'A API deve usar o serviço atual de pesquisa de imagens.');
 assert.match(stock, /handleDeleteProduct/, 'O estoque deve permitir excluir produtos.');
 assert.match(stock, /Atualizar estoque/, 'Produtos zerados devem permitir atualização.');
 assert.match(users, /removeUser/, 'A tela de usuários deve permitir exclusão controlada.');

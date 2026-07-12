@@ -93,6 +93,27 @@
     min-width: 320px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+
+  input,
+  select,
+  textarea {
+    min-width: 0;
   }
 
   button,
@@ -116,6 +137,49 @@
 
   ::selection {
     background: hsl(var(--accent) / 0.22);
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
+  }
+
+  .page-header {
+    @apply mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight sm:text-3xl;
+  }
+
+  .page-subtitle {
+    @apply mt-1 text-sm leading-6 text-muted-foreground;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-border bg-card text-card-foreground;
+  }
+
+  .empty-state {
+    @apply grid min-h-56 place-items-center rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center;
+  }
+
+  .loading-state {
+    @apply grid min-h-56 place-items-center rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground;
+  }
+}
+
+@media (max-width: 639px) {
+  [role='dialog'],
+  [role='alertdialog'] {
+    max-width: calc(100vw - 1rem);
+  }
+
+  button,
+  [role='button'],
+  a[role='button'] {
+    touch-action: manipulation;
   }
 }
 

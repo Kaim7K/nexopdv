@@ -11,8 +11,6 @@ import {
   Copy,
   Download,
   FilterX,
-  Image,
-  ImageOff,
   LayoutGrid,
   List,
   Package,
@@ -745,7 +743,7 @@ export default function Estoque() {
   );
 }
 
-function StockMetric({ label, value, alert = false, low = false, pending = false, active = false, hint = '', onClick }) {
+function StockMetric({ label, value, alert = false, low = false, pending = false, active = false, hint = '', onClick = undefined }) {
   const valueClass = alert ? 'text-red-600 dark:text-red-300' : low || pending ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
   const borderClass = alert ? 'border-red-500/35' : low ? 'border-amber-400/45' : 'border-border';
   const Component = onClick ? 'button' : 'div';

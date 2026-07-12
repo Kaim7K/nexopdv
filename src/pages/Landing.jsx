@@ -62,6 +62,21 @@ const FAQS = [
   },
 ];
 
+/** @type {Array<[React.ElementType, string]>} */
+const HERO_FEATURES = [
+  [ShoppingCart, 'PDV rápido'],
+  [WalletCards, 'Fiados sob controle'],
+  [FileSpreadsheet, 'Estoque inteligente'],
+];
+
+/** @type {Array<[React.ElementType, string]>} */
+const CTA_FEATURES = [
+  [ShoppingCart, 'Frente de caixa ágil'],
+  [FileSpreadsheet, 'Importação de estoque'],
+  [ShieldCheck, 'Perfis de acesso'],
+  [BarChart3, 'Relatórios integrados'],
+];
+
 function Logo({ light = false }) {
   return (
     <img
@@ -273,11 +288,7 @@ export default function Landing() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-2.5">
-                {[
-                  [ShoppingCart, 'PDV rápido'],
-                  [WalletCards, 'Fiados sob controle'],
-                  [FileSpreadsheet, 'Estoque inteligente'],
-                ].map(([Icon, label]) => (
+                {HERO_FEATURES.map(([Icon, label]) => (
                   <span key={label} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700 shadow-sm">
                     <Icon className="h-3.5 w-3.5 text-[#16a06a]" />
                     {label}
@@ -526,12 +537,7 @@ export default function Landing() {
             </div>
 
             <div className="relative z-10 mt-9 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                [ShoppingCart, 'Frente de caixa ágil'],
-                [FileSpreadsheet, 'Importação de estoque'],
-                [ShieldCheck, 'Perfis de acesso'],
-                [BarChart3, 'Relatórios integrados'],
-              ].map(([Icon, label]) => (
+              {CTA_FEATURES.map(([Icon, label]) => (
                 <div key={label} className="flex items-center gap-2.5 text-sm font-bold text-white/85">
                   <Icon className="h-4 w-4 text-[#6dd4aa]" />
                   {label}

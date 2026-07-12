@@ -42,7 +42,7 @@ assert.match(sales, /downloadSaleReceiptPdf/, 'O histórico deve permitir baixar
 assert.match(sales, /downloadDailySalesReportPdf/, 'A tela de vendas deve gerar relatório diário em PDF.');
 assert.match(fiados, /usePagination\(filtered, 20\)/, 'Fiados devem paginar resultados renderizados.');
 assert.match(audits, /usePagination\(filtered, 25\)/, 'Auditoria deve paginar resultados renderizados.');
-assert.match(stock, /usePagination\(filtered, 50\)/, 'Estoque deve paginar resultados renderizados.');
+assert.match(stock, /usePagination\(filtered, pageSize\)/, 'Estoque deve paginar resultados conforme a quantidade escolhida.');
 assert.match(stock, /entities\.Product\.delete/, 'Produtos devem poder ser excluídos pela tela de estoque.');
 assert.match(users, /entities\.User\.delete/, 'Usuários devem poder ser excluídos pela tela administrativa.');
 assert.match(settings, /maintenance\.reset/, 'A limpeza seletiva deve usar uma rota de manutenção protegida.');

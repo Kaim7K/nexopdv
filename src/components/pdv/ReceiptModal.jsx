@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 import { downloadSaleReceiptPdf } from '@/lib/sales-pdf';
 
-export default function ReceiptModal({ sale, config = {}, onClose, onNewSale, primaryLabel = 'Nova venda' }) {
+export default function ReceiptModal({ sale, config = /** @type {Record<string, any>} */ ({}), onClose, onNewSale, primaryLabel = 'Nova venda' }) {
   const receiptRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const subtotal = Number(sale.subtotal ?? (sale.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0));

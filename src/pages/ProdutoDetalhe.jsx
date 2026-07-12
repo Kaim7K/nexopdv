@@ -31,19 +31,19 @@ export default function ProdutoDetalhe() {
   if (!product) return <div className="text-center py-12 text-muted-foreground">Produto não encontrado</div>;
 
   return (
-    <div className="p-6 max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl p-4 sm:p-6 lg:p-8">
       <Link to="/estoque" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="w-4 h-4" /> Voltar ao estoque
       </Link>
 
-      <div className="bg-card text-card-foreground border border-border rounded-lg p-6 mb-4">
-        <div className="flex items-start gap-4">
+      <div className="mb-4 rounded-2xl border border-border bg-card p-4 text-card-foreground sm:p-6">
+        <div className="flex flex-col items-start gap-4 sm:flex-row">
           <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0 border border-border">
             {product.image_url ? <img src={product.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : <Package className="w-10 h-10 text-muted-foreground" />}
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{product.name}</h1>
-            <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+            <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
               <div><span className="text-muted-foreground">Categoria: </span>{product.category || '-'}</div>
               <div><span className="text-muted-foreground">Unidade: </span>{product.unit}</div>
               <div><span className="text-muted-foreground">Cód. Barras: </span><span className="font-mono text-xs">{product.barcode || '-'}</span></div>
@@ -62,7 +62,7 @@ export default function ProdutoDetalhe() {
       </div>
 
       {/* Audit history */}
-      <div className="bg-card text-card-foreground border border-border rounded-lg p-6">
+      <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground sm:p-6">
         <h2 className="text-sm font-bold flex items-center gap-2 mb-4"><History className="w-4 h-4 text-accent" /> Auditoria do Produto</h2>
         {audits.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Nenhuma alteração registrada.</p>

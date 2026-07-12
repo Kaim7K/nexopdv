@@ -35,8 +35,8 @@ const DEFAULT_SIDEBAR_ACCENT = '#16a06a';
 
 export default function Configuracoes() {
   const { user, config: layoutConfig = {} } = /** @type {any} */ (useOutletContext());
-  const [configs, setConfigs] = useState({});
-  const [initialValues, setInitialValues] = useState({});
+  const [configs, setConfigs] = useState(/** @type {Record<string, any>} */ ({}));
+  const [initialValues, setInitialValues] = useState(/** @type {Record<string, any>} */ ({}));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resetTarget, setResetTarget] = useState('');

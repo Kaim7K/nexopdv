@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { openGoogleImages } from '@/lib/google-images';
 import { readClipboardImageUrl, watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
-import { categoriesToStorageValue, formatProductCategories, mergeProductCategories, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
+import { categoriesToStorageValue, formatProductCategories, mergeProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 import { standardizeProductName } from '@/lib/product-name';
 
 const EMPTY_FORM = {
@@ -285,6 +285,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       if (duplicateAfter) {
         setForm({
           ...data,
+          image_url: data.image_url || '',
           name: `${data.name} - Cópia`,
           barcode: '',
           internal_code: generateInternalCode(),

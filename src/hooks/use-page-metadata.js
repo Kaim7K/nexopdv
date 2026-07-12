@@ -10,6 +10,7 @@ function upsertMeta(selector, attributes) {
 }
 
 function setCanonical(url) {
+  /** @type {HTMLLinkElement | null} */
   let link = document.head.querySelector('link[rel="canonical"]');
   if (!url) {
     link?.remove();

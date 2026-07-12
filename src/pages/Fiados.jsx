@@ -238,7 +238,7 @@ export default function Fiados() {
   );
 }
 
-function Metric({ label, value, emphasis }) {
+function Metric({ label, value, emphasis = '' }) {
   const valueClass = emphasis === 'orange' ? 'text-orange-600 dark:text-orange-300' : emphasis === 'green' ? 'text-emerald-600 dark:text-emerald-300' : 'text-foreground';
   return <div className="rounded-2xl border border-border bg-card p-4 shadow-sm"><span className="text-xs font-semibold text-muted-foreground">{label}</span><strong className={`mt-1 block text-2xl font-black tabular-nums ${valueClass}`}>{value}</strong></div>;
 }

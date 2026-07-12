@@ -10,11 +10,13 @@ export default function ImageUploadField({
   value,
   onChange,
   kind = 'product',
+  scopeId,
   label = 'Imagem',
   name = 'imagem',
   previewClassName = 'h-20 w-20 rounded-xl',
   objectFit = 'contain',
 }) {
+  void scopeId;
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);

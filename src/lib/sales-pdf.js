@@ -61,6 +61,7 @@ function calculateSaleTotals(sale) {
   return { subtotal, discount, total: Number(sale.total ?? Math.max(0, subtotal - discount)) };
 }
 
+/** @param {any} sale @param {Record<string, any>} config @param {{onLogoError?: (error: unknown) => void}} options */
 export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } = {}) {
   const { jsPDF } = await import('jspdf');
   const estimatedHeight = Math.max(200, 112 + (sale.items?.length || 0) * 14 + (sale.payments?.length || 0) * 7);
@@ -132,6 +133,7 @@ function safeDate(value, fallback = new Date()) {
   return Number.isNaN(date.getTime()) ? fallback : date;
 }
 
+/** @param {{sales: any[], summary: any, filters: any, config?: Record<string, any>, sellerName?: string, paymentLabel?: string, title?: string}} options */
 export async function downloadDailySalesReportPdf({ sales, summary, filters, config = {}, sellerName = '', paymentLabel = '', title = 'Relatório de vendas' }) {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
