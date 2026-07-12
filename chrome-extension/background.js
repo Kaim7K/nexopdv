@@ -126,19 +126,24 @@ async function extractImageFromGoogleTab(tabId) {
     target: { tabId },
     func: () => {
       const anchors = [...document.querySelectorAll('a[href]')];
-      const candidates = anchors
-        .map(anchor => {
-          const img = anchor.querySelector('img');
-          const src = img?.src || img?.dataset?.src || '';
-          return {
-            href: anchor.href || '',
-            src,
-            text: (anchor.textContent || '').trim(),
-          };
-        })
-        .filter(item => /^https?:\/\//i.test(item.src));
+      const candidates = anchors.flatMap(anchor => {
+        const img = anchor.querySelector('img');
+        const src = img?.currentSrc || img?.src || img?.dataset?.src || img?.dataset?.iurl || '';
+        const href = anchor.href || '';
+        const text = (anchor.textContent || '').trim();
+        if (!/^https?:\/\//i.test(src)) return [];
+        if (!/imgres|\/search\?/i.test(href)) return [];
+        if (/\/ogw\//i.test(src)) return [];
+        if (/s32-c-mo/i.test(src)) return [];
+        if (!/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)) return [];
+        return [{
+          href,
+          src,
+          text,
+        }];
+      });
 
-      const best = candidates.find(item => !/gstatic|googleusercontent/i.test(item.src)) || candidates[0] || null;
+      const best = candidates[0] || null;
       return best ? { url: best.src, href: best.href, text: best.text } : null;
     },
   });

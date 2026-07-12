@@ -315,19 +315,19 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <button type="button" aria-label="Fechar cadastro de produto" onClick={closeForm} disabled={saving} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row">
-            <div className="grid h-32 w-32 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+          <section className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3.5 sm:flex-row">
+            <div className="grid h-28 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
               {form.image_url ? <img src={form.image_url} alt={form.name || 'Produto'} className="h-full w-full object-contain p-2" referrerPolicy="no-referrer" /> : <ImageIcon className="h-10 w-10 text-muted-foreground/40" />}
             </div>
             <div className="flex flex-1 flex-col justify-center gap-2">
               <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
               <div className="grid gap-2 sm:grid-cols-2">
-                <button type="button" onClick={openImageSearch} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
+                <button type="button" onClick={openImageSearch} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-3.5 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
                   <ExternalLink className="h-5 w-5" />
                   Buscar no Google Imagens
                 </button>
-                <button type="button" onClick={pasteImageUrl} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">
+                <button type="button" onClick={pasteImageUrl} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-3.5 text-sm font-semibold hover:bg-muted">
                   <CopyPlus className="h-5 w-5" />
                   Colar URL
                 </button>
@@ -345,7 +345,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
             <label htmlFor="product-name" className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
             <div className="mt-1 flex gap-2">
               <input id="product-name" type="text" required value={form.name} onChange={event => handleChange('name', event.target.value)} autoFocus placeholder="Ex.: Leite líquido - Marca - 3L" className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-              <button type="button" onClick={() => standardizeName()} title="Padronizar nome" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"><Sparkles className="h-4 w-4" /><span className="hidden sm:inline">Padronizar</span></button>
+              <button type="button" onClick={() => standardizeName()} title="Padronizar nome" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"><Sparkles className="h-4 w-4" /><span className="hidden sm:inline">Padronizar</span></button>
             </div>
           </div>
 
@@ -355,7 +355,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
               <button
                 type="button"
                 onClick={() => setCategoryMenuOpen(open => !open)}
-                className="mt-1 flex h-11 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm text-left focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm text-left focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 <span className={form.category ? 'text-foreground' : 'text-muted-foreground'}>{form.category || 'Selecione uma categoria'}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -367,37 +367,37 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
                       value={categorySearch}
                       onChange={event => setCategorySearch(event.target.value)}
                       placeholder="Buscar categoria..."
-                      className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                      className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                     />
                   </div>
-                  <div className="max-h-[420px] overflow-y-auto p-2">
-                    <button type="button" onClick={() => { handleChange('category', ''); setCategoryMenuOpen(false); }} className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm hover:bg-muted">
+                  <div className="max-h-[260px] overflow-y-auto p-1">
+                    <button type="button" onClick={() => { handleChange('category', ''); setCategoryMenuOpen(false); }} className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.25 text-left text-sm hover:bg-muted">
                       <span className="text-muted-foreground">Selecione uma categoria</span>
                       {!form.category && <Check className="h-4 w-4 text-accent" />}
                     </button>
                     {filteredCategories.map(category => (
-                      <div key={category} className="group flex items-center gap-1 rounded-xl px-2 py-1.5 hover:bg-muted/70">
-                        <button type="button" onClick={() => { handleChange('category', category); setCategoryMenuOpen(false); }} className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm">
+                      <div key={category} className="group flex items-center gap-0.5 rounded-lg px-1 hover:bg-muted/70">
+                        <button type="button" onClick={() => { handleChange('category', category); setCategoryMenuOpen(false); }} className="min-w-0 flex-1 rounded-md px-2 py-1.25 text-left text-sm">
                           <span className="block truncate">{category}</span>
                         </button>
-                        <button type="button" onClick={() => editCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground" aria-label={`Editar ${category}`} title="Editar categoria">
-                          <Pencil className="h-4 w-4" />
+                        <button type="button" onClick={() => editCategory(category)} className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground" aria-label={`Editar ${category}`} title="Editar categoria">
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button type="button" onClick={() => deleteCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10" aria-label={`Excluir ${category}`} title="Excluir categoria">
-                          <Trash2 className="h-4 w-4" />
+                        <button type="button" onClick={() => deleteCategory(category)} className="grid h-7 w-7 place-items-center rounded-md text-destructive hover:bg-destructive/10" aria-label={`Excluir ${category}`} title="Excluir categoria">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-border bg-muted/20 p-3">
-                    <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{editingCategory ? 'Editar categoria' : 'Nova categoria'}</label>
-                    <div className="mt-2 flex gap-2">
-                      <input value={categoryDraft} onChange={event => setCategoryDraft(event.target.value)} placeholder={editingCategory || 'Digite a categoria'} className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
-                      <button type="button" onClick={commitCategory} className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700">
+                  <div className="border-t border-border bg-muted/20 p-2">
+                    <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{editingCategory ? 'Editar categoria' : 'Nova categoria'}</label>
+                    <div className="mt-1.5 flex gap-2">
+                      <input value={categoryDraft} onChange={event => setCategoryDraft(event.target.value)} placeholder={editingCategory || 'Digite a categoria'} className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-1.75 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                      <button type="button" onClick={commitCategory} className="inline-flex h-8 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700">
                         <Save className="h-4 w-4" /> {editingCategory ? 'Salvar' : 'Adicionar'}
                       </button>
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
                       {editingCategory && <button type="button" onClick={() => { setEditingCategory(''); setCategoryDraft(''); }} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Cancelar edição</button>}
                       {categorySearch && <button type="button" onClick={() => setCategorySearch('')} className="ml-auto text-xs font-semibold text-muted-foreground hover:text-foreground">Limpar busca</button>}
                     </div>

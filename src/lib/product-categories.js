@@ -14,6 +14,7 @@ export const DEFAULT_PRODUCT_CATEGORIES = [
 ];
 
 const normalizeCategory = value => String(value || '').trim();
+const categoryKey = value => normalizeCategory(value).toLowerCase();
 
 export function parseProductCategories(value = '') {
   if (Array.isArray(value)) return value.map(normalizeCategory).filter(Boolean);
@@ -24,15 +25,20 @@ export function parseProductCategories(value = '') {
 }
 
 export function formatProductCategories(categories = []) {
-  return [...new Set(categories.map(normalizeCategory).filter(Boolean))]
-    .sort((first, second) => first.localeCompare(second, 'pt-BR'));
+  const unique = new Map();
+  for (const category of categories.map(normalizeCategory).filter(Boolean)) {
+    const key = categoryKey(category);
+    if (!unique.has(key)) unique.set(key, category);
+  }
+  return [...unique.values()].sort((first, second) => first.localeCompare(second, 'pt-BR'));
 }
 
 export function mergeProductCategories(categories = [], customCategories = []) {
+  const custom = parseProductCategories(customCategories);
+  const base = custom.length ? custom : DEFAULT_PRODUCT_CATEGORIES;
   return formatProductCategories([
-    ...DEFAULT_PRODUCT_CATEGORIES,
+    ...base,
     ...categories,
-    ...parseProductCategories(customCategories),
   ]);
 }
 
@@ -43,28 +49,28 @@ export function isDefaultProductCategory(category) {
 export function isProtectedProductCategory(category, customCategories = []) {
   const value = normalizeCategory(category);
   if (!value) return false;
-  return isDefaultProductCategory(value) || parseProductCategories(customCategories).includes(value);
+  return parseProductCategories(customCategories).includes(value);
 }
 
 export function removeProductCategory(categories = [], target = '') {
-  const normalizedTarget = normalizeCategory(target);
-  return formatProductCategories(categories.filter(category => normalizeCategory(category) !== normalizedTarget));
+  const normalizedTarget = categoryKey(target);
+  return formatProductCategories(categories.filter(category => categoryKey(category) !== normalizedTarget));
 }
 
 export function upsertProductCategory(categories = [], target = '', nextValue = '') {
-  const normalizedTarget = normalizeCategory(target);
+  const normalizedTarget = categoryKey(target);
   const normalizedNext = normalizeCategory(nextValue);
   const filtered = categories
     .map(normalizeCategory)
     .filter(Boolean)
-    .filter(category => category !== normalizedTarget);
+    .filter(category => categoryKey(category) !== normalizedTarget);
   if (normalizedNext) filtered.push(normalizedNext);
   return formatProductCategories(filtered);
 }
 
 export function hasProductCategory(categories = [], target = '') {
-  const normalizedTarget = normalizeCategory(target);
-  return formatProductCategories(categories).includes(normalizedTarget);
+  const normalizedTarget = categoryKey(target);
+  return formatProductCategories(categories).some(category => categoryKey(category) === normalizedTarget);
 }
 
 export function categoriesToStorageValue(categories = []) {

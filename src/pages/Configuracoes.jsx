@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
 import { deriveSidebarPalette, normalizeHex } from '@/lib/color-contrast';
-import { DEFAULT_PRODUCT_CATEGORIES, categoriesToStorageValue, formatProductCategories, isDefaultProductCategory, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
+import { DEFAULT_PRODUCT_CATEGORIES, categoriesToStorageValue, formatProductCategories, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 
 const RESET_OPTIONS = [
   { value: 'products', label: 'Estoque e produtos', description: 'Exclui todos os produtos e o histórico de alterações de produtos.' },
@@ -183,10 +183,6 @@ export default function Configuracoes() {
   };
 
   const deleteCategory = category => {
-    if (isDefaultProductCategory(category)) {
-      toast.error('As categorias padrão não podem ser excluídas.');
-      return;
-    }
     setProductCategories(current => removeProductCategory(current, category));
     if (editingCategory === category) {
       setEditingCategory('');
@@ -312,7 +308,7 @@ export default function Configuracoes() {
                 <button type="button" onClick={() => editCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${category}`} title="Editar categoria">
                   <Pencil className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={() => deleteCategory(category)} disabled={isDefaultProductCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/20 bg-card text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Excluir ${category}`} title={isDefaultProductCategory(category) ? 'Categorias padrão não podem ser excluídas' : 'Excluir categoria'}>
+                <button type="button" onClick={() => deleteCategory(category)} className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/20 bg-card text-destructive hover:bg-destructive/10" aria-label={`Excluir ${category}`} title="Excluir categoria">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

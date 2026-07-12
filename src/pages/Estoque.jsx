@@ -181,10 +181,12 @@ export default function Estoque() {
     }
     setSaving(true);
     try {
+      captureView();
       await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(EDITABLE_COLUMNS.map(([key]) => [key, product[key]])) })));
       setDirty(new Set());
       setProducts(current => current.map(product => dirty.has(product.id) ? { ...product, updated_date: new Date().toISOString() } : product));
       nexoApi.cache.clear();
+      await load();
       toast.success('Estoque atualizado.');
     } catch (error) {
       toast.error(error.message);
@@ -424,7 +426,7 @@ export default function Estoque() {
       </div>
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_220px_180px_180px_190px_180px_160px_auto]">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.4fr)_minmax(180px,220px)_minmax(150px,180px)_minmax(150px,180px)_minmax(160px,190px)_minmax(160px,180px)_minmax(150px,160px)_auto]">
           <label className="relative md:col-span-2 xl:col-span-1">
             <span className="sr-only">Pesquisar produtos</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -455,7 +457,7 @@ export default function Estoque() {
             <option value="100">100 por página</option>
             <option value="200">200 por página</option>
           </select>
-          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted"><FilterX className="h-4 w-4" /> Limpar</button>}
+          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted xl:self-start"><FilterX className="h-4 w-4" /> Limpar</button>}
         </div>
       </section>
 
@@ -569,6 +571,11 @@ export default function Estoque() {
                           <label className="relative block"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span><input aria-label={`${label} de ${product.name}`} className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold hover:border-border focus:border-accent focus:bg-background focus:outline-none" type="number" min="0" step="0.01" value={product[key] ?? ''} onChange={event => editInline(product.id, key, event.target.value, type)} /></label>
                           {key === 'sale_price' && hasCostPrice && <span className={`mt-0.5 block px-2 text-[10px] font-bold ${unitProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>{unitProfit >= 0 ? '+ ' : '− '}{formatCurrency(Math.abs(unitProfit))}</span>}
                         </div>
+                      ) : key === 'category' ? (
+                        <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[190px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.category || ''} onChange={event => editInline(product.id, key, event.target.value, type)}>
+                          <option value="">Sem categoria</option>
+                          {categories.map(option => <option key={option} value={option}>{option}</option>)}
+                        </select>
                       ) : key === 'status' ? (
                         <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[120px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.status || 'ativo'} onChange={event => editInline(product.id, key, event.target.value, type)}>
                           <option value="ativo">Ativo</option>
