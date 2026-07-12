@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import { lazy, Suspense } from 'react';
 import { Toaster as HotToaster } from 'react-hot-toast';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 // Add page imports here
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -64,6 +65,7 @@ function App() {
         </Router>
         <Toaster />
         <HotToaster position="top-right" />
+        <SpeedInsights />
       </QueryClientProvider>
     </AuthProvider>
   )
