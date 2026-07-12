@@ -133,9 +133,10 @@ function waitForTabComplete(tabId, timeoutMs = 15000) {
 }
 
 async function extractImageFromGoogleTab(tabId) {
-  const [{ result } = {}] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => {
+  const collect = async () => {
+    const [{ result } = {}] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
       const anchors = [...document.querySelectorAll('a[href]')];
       const images = [...document.querySelectorAll('img')];
       const candidates = [];
@@ -154,6 +155,8 @@ async function extractImageFromGoogleTab(tabId) {
           src,
           direct,
           text,
+          width: Number(img.naturalWidth || img.width || 0),
+          height: Number(img.naturalHeight || img.height || 0),
           score: Number(Boolean(direct)) + Number(/imgres/i.test(href)) + Number(/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)),
         });
       }
@@ -169,19 +172,83 @@ async function extractImageFromGoogleTab(tabId) {
             src,
             direct: img.dataset?.iurl || img.dataset?.src || '',
             text: (img.alt || img.title || '').trim(),
+            width: Number(img.naturalWidth || img.width || 0),
+            height: Number(img.naturalHeight || img.height || 0),
             score: Number(Boolean(img.dataset?.iurl || img.dataset?.src)) + Number(/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)),
           });
         }
       }
 
       candidates.sort((first, second) => second.score - first.score);
-      const best = candidates[0] || null;
-      if (!best) return null;
-      const direct = String(best.direct || '').trim();
-      return { url: direct || best.src, href: best.href, text: best.text };
-    },
-  });
-  return result || null;
+      return candidates.slice(0, 20).map(candidate => ({
+        url: String(candidate.direct || candidate.src || '').trim(),
+        href: String(candidate.href || ''),
+        text: String(candidate.text || ''),
+        width: Number(candidate.width || 0),
+        height: Number(candidate.height || 0),
+      }));
+      },
+    });
+    return Array.isArray(result) ? result.filter(item => item?.url) : [];
+  };
+
+  const allCandidates = [];
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const candidates = await collect();
+    for (const candidate of candidates) {
+      if (allCandidates.some(existing => existing.url === candidate.url && existing.href === candidate.href)) continue;
+      allCandidates.push(candidate);
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => window.scrollBy({ top: Math.round(window.innerHeight * 0.9), behavior: 'instant' }),
+    }).catch(() => {});
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(500);
+  }
+
+  return allCandidates;
+}
+
+function getGoogleCandidateScore(product, candidate) {
+  const name = sanitizeQuery(product.name || '').toLowerCase();
+  const barcode = sanitizeQuery(product.barcode || '').toLowerCase();
+  const text = sanitizeQuery(`${candidate.text || ''} ${candidate.href || ''}`).toLowerCase();
+  const url = String(candidate.url || '').toLowerCase();
+  let score = 0;
+
+  if (/\/ogw\//i.test(url) || /s32-c-mo/i.test(url)) return -1000;
+  if (!isImageUrl(candidate.url)) return -1000;
+
+  const matchesBarcode = barcode && text.includes(barcode);
+  const matchesName = name && name.split(/\s+/).filter(Boolean).some(token => token.length >= 3 && text.includes(token));
+  const titleHasName = name && text.includes(name);
+
+  if (matchesBarcode) score += 8;
+  if (titleHasName) score += 6;
+  if (matchesName) score += 3;
+  if (/imgres/i.test(candidate.href || '')) score += 2;
+  if (/googleusercontent\.com|gstatic\.com/i.test(url)) score += 2;
+
+  const width = Number(candidate.width || 0);
+  const height = Number(candidate.height || 0);
+  if (width > 0 && height > 0) {
+    const ratio = width / height;
+    const closeness = 1 - Math.min(1, Math.abs(Math.log(ratio))); // 1 perto de quadrado, 0 longe
+    score += closeness * 5;
+    if (ratio >= 0.8 && ratio <= 1.25) score += 3;
+    if (width >= 120 && height >= 120) score += 1;
+  }
+
+  if (width < 80 || height < 80) score -= 3;
+  if (/logo|ícone|icon|avatar|perfil|user|usuario|perfil/i.test(text)) score -= 8;
+  if (/papel higiênico|papel higienico/i.test(text) && /leite|líquido|liquido|ibituruna/i.test(name)) score -= 12;
+  if (/leite|ibituruna/i.test(name) && /papel|higiênico|higienico/i.test(text)) score -= 12;
+  if (/caninha|duro/i.test(name) && /papel|higiênico|higienico/i.test(text)) score -= 12;
+
+  return score;
 }
 
 async function searchFirstImage(product) {
@@ -219,14 +286,29 @@ async function searchFirstImage(product) {
   try {
     await waitForTabComplete(tab.id);
     await sleep(1000);
-    const image = await extractImageFromGoogleTab(tab.id);
+    const candidates = await extractImageFromGoogleTab(tab.id);
+    const image = candidates
+      .map(candidate => ({ ...candidate, score: getGoogleCandidateScore(product, candidate) }))
+      .sort((first, second) => second.score - first.score)[0] || null;
     pushDebug({
       ...debugBase,
       source: 'google-images-tab',
+      resultCount: candidates.length,
+      candidates: candidates.slice(0, 5).map(candidate => ({
+        url: candidate.url || '',
+        href: candidate.href || '',
+        text: candidate.text || '',
+        width: candidate.width || 0,
+        height: candidate.height || 0,
+        score: getGoogleCandidateScore(product, candidate),
+      })),
       selected: image ? {
         url: image.url || '',
         href: image.href || '',
         text: image.text || '',
+        width: image.width || 0,
+        height: image.height || 0,
+        score: getGoogleCandidateScore(product, image),
       } : null,
     });
     if (image?.url && isImageUrl(image.url)) return { ...image, debugSource: 'google-images-tab' };
@@ -283,31 +365,39 @@ async function startBatch(options = {}) {
         const image = await searchFirstImage(product);
         if (!image?.url) {
           pushLog(`Sem imagem encontrada para ${label}.`);
-        } else if (!isImageUrl(image.url)) {
-          pushLog(`URL inválida para ${label}.`);
-        } else {
-          pushDebug({
-            productId: product.id,
-            productName: label,
-            chosenUrl: image.url,
-            chosenSource: image.debugSource || image.provider || image.source || '',
-            title: image.title || '',
-          });
-          await apiRequest(`/entities/Product/${product.id}`, {
-            method: 'PATCH',
-            body: { image_url: image.url },
-          });
-          const confirmed = await verifySavedImage(product.id, image.url);
-          state.lastRun = {
-            productId: product.id,
-            productName: label,
-            imageUrl: image.url,
-            imageSource: image.debugSource || image.provider || image.source || '',
-            confirmed,
-          };
-          if (confirmed) pushLog(`Salvo: ${label}`);
-          else pushLog(`A API respondeu OK, mas a imagem não ficou gravada em ${label}.`);
+          state.progress.current = index + 1;
+          broadcast();
+          // eslint-disable-next-line no-continue
+          continue;
         }
+        if (!isImageUrl(image.url)) {
+          pushLog(`URL inválida para ${label}.`);
+          state.progress.current = index + 1;
+          broadcast();
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+        pushDebug({
+          productId: product.id,
+          productName: label,
+          chosenUrl: image.url,
+          chosenSource: image.debugSource || image.provider || image.source || '',
+          title: image.title || '',
+        });
+        await apiRequest(`/entities/Product/${product.id}`, {
+          method: 'PATCH',
+          body: { image_url: image.url },
+        });
+        const confirmed = await verifySavedImage(product.id, image.url);
+        state.lastRun = {
+          productId: product.id,
+          productName: label,
+          imageUrl: image.url,
+          imageSource: image.debugSource || image.provider || image.source || '',
+          confirmed,
+        };
+        if (confirmed) pushLog(`Salvo: ${label}`);
+        else pushLog(`A API respondeu OK, mas a imagem não ficou gravada em ${label}.`);
       } catch (error) {
         pushLog(`Erro em ${label}: ${error.message || 'falha inesperada'}`);
         state.lastRun = {

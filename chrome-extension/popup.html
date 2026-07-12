@@ -9,10 +9,12 @@
   <body>
     <div class="shell">
       <header class="hero">
-        <div>
-          <p class="eyebrow">Nexo PDV</p>
-          <h1>Automaçao de imagem</h1>
-          <p class="subtitle">Busca produtos sem foto e preenche tudo em segundo plano.</p>
+        <div class="brand-lockup">
+          <img src="nexo-logo.svg" alt="Nexo PDV" class="brand-logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">Nexo PDV</p>
+            <h1>Automaçao de imagem</h1>
+          </div>
         </div>
         <div class="brand-badge">Chrome</div>
       </header>
@@ -29,7 +31,7 @@
         </div>
       </section>
 
-      <section class="card two-col">
+      <section class="card controls">
         <div>
           <label class="field-label" for="limit">Limite</label>
           <input id="limit" type="number" min="1" max="5000" value="50" />
@@ -38,10 +40,7 @@
           <label class="field-label" for="pause-after">Intervalo</label>
           <input id="pause-after" type="number" min="0" max="5000" value="350" />
         </div>
-      </section>
-
-      <section class="card options">
-        <label class="toggle">
+        <label class="toggle compact-toggle">
           <input id="only-active" type="checkbox" checked />
           <span>Somente ativos</span>
         </label>
@@ -59,11 +58,13 @@
       </section>
 
       <section class="card">
-        <div class="field-label">Depuração</div>
-        <label class="toggle" style="margin-bottom:10px;">
+        <div class="card-head">
+          <div class="field-label">Depuração</div>
+          <label class="toggle inline-toggle">
           <input id="debug-mode" type="checkbox" checked />
           <span>Registrar detalhes da busca</span>
-        </label>
+          </label>
+        </div>
         <div class="debug-box">
           <div><span class="debug-label">Fonte</span><strong id="debug-source">-</strong></div>
           <div><span class="debug-label">Imagem</span><strong id="debug-url">-</strong></div>
