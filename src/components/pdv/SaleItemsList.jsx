@@ -14,7 +14,7 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overscroll-contain overflow-y-auto">
       <div className="sticky top-0 z-10 hidden grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] gap-3 border-b border-border bg-card px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
         <span>Quantidade</span>
         <span>Produto</span>
@@ -24,7 +24,7 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
       </div>
 
       {items.map((item, index) => (
-        <div key={`${item.product_id}-${index}`} className="grid grid-cols-[1fr_auto] gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-muted/30 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center">
+        <div key={`${item.product_id}-${index}`} className="grid grid-cols-[1fr_auto] gap-2.5 border-b border-border px-3 py-3 transition-colors hover:bg-muted/30 sm:px-4 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3">
           <div className="order-2 lg:order-1">
             {item.unit === 'peso' ? (
               <div className="flex items-center gap-1.5">
@@ -41,7 +41,7 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
               </div>
             ) : (
               <div className="flex items-center gap-1">
-                <button type="button" aria-label="Diminuir quantidade" onClick={() => onUpdateQuantity(index, Math.max(1, Number(item.quantity || 1) - 1))} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
+                <button type="button" aria-label="Diminuir quantidade" onClick={() => onUpdateQuantity(index, Math.max(1, Number(item.quantity || 1) - 1))} className="grid h-11 w-11 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9 sm:rounded-lg">
                   <Minus className="h-4 w-4" />
                 </button>
                 <input
@@ -51,9 +51,9 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
                   step="1"
                   value={item.quantity ?? 1}
                   onChange={event => onUpdateQuantity(index, Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
-                  className="h-9 w-14 rounded-lg border border-border bg-background px-1 text-center text-base font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="h-11 w-14 rounded-xl border border-border bg-background px-1 text-center text-base font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent sm:h-9 sm:rounded-lg"
                 />
-                <button type="button" aria-label="Aumentar quantidade" onClick={() => onUpdateQuantity(index, Number(item.quantity || 1) + 1)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
+                <button type="button" aria-label="Aumentar quantidade" onClick={() => onUpdateQuantity(index, Number(item.quantity || 1) + 1)} className="grid h-11 w-11 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9 sm:rounded-lg">
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
@@ -61,7 +61,7 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
           </div>
 
           <div className="order-1 min-w-0 lg:order-2">
-            <p className="truncate text-sm font-semibold">{item.product_name}</p>
+            <p className="line-clamp-2 text-sm font-semibold leading-5 lg:truncate">{item.product_name}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {item.unit === 'peso' ? `Peso: ${Number(item.weight || 0).toFixed(3)} kg` : `Quantidade: ${item.quantity || 1}`}
             </p>
@@ -92,7 +92,7 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
             <p className="text-sm font-bold tabular-nums">{formatCurrency(item.subtotal)}</p>
           </div>
 
-          <button type="button" aria-label={`Remover ${item.product_name}`} onClick={() => onRemoveItem(index)} className="order-5 col-span-2 ml-auto grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10 lg:col-span-1 lg:ml-0">
+          <button type="button" aria-label={`Remover ${item.product_name}`} onClick={() => onRemoveItem(index)} className="order-5 col-span-2 ml-auto grid h-11 w-11 place-items-center rounded-xl text-destructive hover:bg-destructive/10 sm:h-9 sm:w-9 sm:rounded-lg lg:col-span-1 lg:ml-0">
             <Trash2 className="h-5 w-5" />
           </button>
         </div>

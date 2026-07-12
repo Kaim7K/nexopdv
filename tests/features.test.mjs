@@ -41,6 +41,7 @@ assert.match(pdv, /PDV_DRAFT_INACTIVITY_MS/, 'O PDV deve controlar o limite de i
 assert.match(pdv, /visibilitychange/, 'O descarte deve considerar a visibilidade da tela.');
 assert.match(pdv, /5 minutos fora do PDV/, 'O usuário deve receber uma mensagem clara.');
 assert.match(pdv, /CashRegisterModal/, 'O PDV deve controlar abertura e fechamento do caixa.');
+assert.match(pdv, /Continuar sem caixa/, 'O vendedor deve poder acessar outros módulos sem abrir o caixa.');
 assert.match(layout, /config\.logo_url \|\| user\.logo_url/, 'A sidebar deve usar a logo do mercado.');
 assert.doesNotMatch(reports, /bg-white/, 'Relatórios não devem forçar fundo branco no tema escuro.');
 assert.match(css, /--background:\s*220 8% 8%/, 'O tema escuro deve usar fundo grafite.');

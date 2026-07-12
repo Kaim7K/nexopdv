@@ -86,6 +86,7 @@
   html {
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -94,6 +95,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-wrap: break-word;
+    overscroll-behavior-y: none;
   }
 
   img,

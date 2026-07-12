@@ -195,12 +195,12 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex h-14 flex-none items-center gap-3 border-b border-border bg-card/95 px-3 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 border-b border-border bg-card/95 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur md:hidden">
           <button type="button" aria-label="Abrir menu" onClick={() => setMobileMenu(true)} className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"><Menu className="h-5 w-5" /></button>
           <div className="min-w-0 flex-1"><div className="truncate text-sm font-black">{currentItem?.label}</div><div className="truncate text-[11px] text-muted-foreground">{brandName}</div></div>
           <ThemeToggle className="!text-foreground hover:!bg-muted hover:!text-foreground" />
         </header>
-        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-auto bg-muted/25 outline-none">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overscroll-contain overflow-auto bg-muted/25 outline-none">
           <Outlet context={{ user, config }} />
         </main>
       </div>

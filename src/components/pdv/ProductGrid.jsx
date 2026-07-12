@@ -43,7 +43,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Search + Category filter */}
-      <div className="px-4 pt-3 pb-2 space-y-2 border-b border-border">
+      <div className="space-y-2 border-b border-border px-3 pb-2 pt-2 sm:px-4 sm:pt-3">
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -63,10 +63,10 @@ export default function ProductGrid({ products, onSelect, loading }) {
           </select>
         </div>
         {categories.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               onClick={() => setCategory('')}
-              className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${!category ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
+              className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${!category ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
             >
               Todos
             </button>
@@ -74,7 +74,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
               <button
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${category === cat ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
+                className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${category === cat ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
               >
                 {cat}
               </button>
@@ -84,28 +84,28 @@ export default function ProductGrid({ products, onSelect, loading }) {
       </div>
 
       {/* Product grid */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3">
         {visibleProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <Package className="w-10 h-10 mb-2 opacity-40" />
             <p className="text-sm">Nenhum produto encontrado.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-3 lg:grid-cols-4">
             {visibleProducts.map(product => (
               <button
                 key={product.id}
                 onClick={() => onSelect(product)}
-                className="group flex flex-col bg-card rounded-xl border border-border p-2.5 text-left hover:border-accent hover:shadow-md transition-all"
+                className="group flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 text-left transition active:scale-[0.98] sm:p-2.5 sm:hover:border-accent sm:hover:shadow-md"
               >
-                <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden mb-2">
+                <div className="mb-1.5 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-muted sm:mb-2 sm:aspect-square">
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-contain p-1" />
                   ) : (
                     <Package className="w-8 h-8 text-muted-foreground/40" />
                   )}
                 </div>
-                <div className="text-xs font-medium leading-tight line-clamp-2 mb-1">{product.name}</div>
+                <div className="mb-1 line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 sm:text-xs">{product.name}</div>
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-sm font-bold text-accent">{formatCurrency(product.sale_price)}</span>
                   {product.quantity <= 0 ? (

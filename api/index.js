@@ -1000,8 +1000,34 @@ async function routeHandler(req, res) {
   if (path[0] === 'sales' && path[1] && !path[2] && req.method === 'DELETE') {
     if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem excluir vendas.' });
     if (!isUuid(path[1])) return send(res, 400, { message: 'Venda inválida.' });
-    const [removed] = await sql`WITH deleted AS (DELETE FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='sales' AND data->>'status'='cancelada' RETURNING id,data), audit AS (INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','venda_excluida','entity_type','sale','entity_id',deleted.id,'user_id',${user.id},'user_name',${user.full_name || user.email},'description','Venda #' || (deleted.data->>'sale_number') || ' excluída') FROM deleted) SELECT id FROM deleted`;
-    return send(res, removed ? 200 : 409, removed ? { ok:true } : { message:'Cancele a venda antes de excluí-la.' });
+    const [removed] = await sql`
+      WITH deleted AS (
+        DELETE FROM nexo.records
+        WHERE id=${path[1]}
+          AND market_id=${user.market_id}
+          AND entity='sales'
+          AND data->>'status'='cancelada'
+        RETURNING id, data
+      ), audit AS (
+        INSERT INTO nexo.records(market_id, entity, data)
+        SELECT ${user.market_id}, 'general_audits', jsonb_build_object(
+          'action_type', 'venda_excluida',
+          'entity_type', 'sale',
+          'entity_id', deleted.id,
+          'user_id', ${user.id},
+          'user_name', ${user.full_name || user.email},
+          'description', 'Venda #' || COALESCE(deleted.data->>'sale_number', deleted.id::text) || ' excluída'
+        )
+        FROM deleted
+        RETURNING id
+      )
+      SELECT deleted.id, deleted.data->>'sale_number' AS sale_number
+      FROM deleted
+      WHERE EXISTS (SELECT 1 FROM audit)
+    `;
+    return send(res, removed ? 200 : 409, removed
+      ? { ok: true, id: removed.id, sale_number: removed.sale_number }
+      : { message: 'Cancele a venda antes de excluí-la.' });
   }
   if (path[0] === 'stock' && path[1] === 'import' && req.method === 'POST') {
     if (!user.market_id || !['admin','gerente','vendedor'].includes(user.role)) return send(res, 403, { message: 'Sem permissão para alterar o estoque.' });

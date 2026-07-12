@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Banknote, CheckCircle2, Clock3, Download, LockKeyhole, X } from 'lucide-react';
+import { ArrowRight, Banknote, CheckCircle2, Clock3, Download, LockKeyhole, X } from 'lucide-react';
 import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 
-export default function CashRegisterModal({ mode, cashState, processing, reporting = false, onClose, onOpen, onCloseCash, onDownloadReport }) {
+export default function CashRegisterModal({ mode, cashState, processing, reporting = false, onClose, onContinue, onOpen, onCloseCash, onDownloadReport }) {
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
   const summary = cashState?.summary || {};
@@ -91,6 +91,7 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
 
         <div className="flex flex-col-reverse gap-2 border-t border-border p-5 sm:flex-row sm:justify-end sm:p-6">
           {onClose && <button type="button" disabled={processing || reporting} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button>}
+          {isOpenMode && onContinue && <button type="button" disabled={processing || reporting} onClick={onContinue} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Continuar sem caixa <ArrowRight className="h-4 w-4" /></button>}
           {!isOpenMode && onDownloadReport && (
             <button type="button" disabled={processing || reporting} onClick={onDownloadReport} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50">
               <Download className="h-4 w-4" /> {reporting ? 'Gerando relatório...' : 'Baixar relatório do caixa'}

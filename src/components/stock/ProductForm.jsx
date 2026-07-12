@@ -304,9 +304,9 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 sm:p-4" role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3.5 sm:px-6 sm:py-4">
           <div>
             <h2 id={titleId} className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>
             <p className="text-xs text-muted-foreground">
@@ -316,7 +316,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <button type="button" aria-label="Fechar cadastro de produto" onClick={closeForm} disabled={saving} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3.5 sm:flex-row">
             <div className="grid h-28 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
               {form.image_url ? <img src={form.image_url} alt={form.name || 'Produto'} className="h-full w-full object-contain p-2" referrerPolicy="no-referrer" /> : <ImageIcon className="h-10 w-10 text-muted-foreground/40" />}
@@ -469,7 +469,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           </label>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <div className="flex flex-col-reverse gap-2 border-t border-border bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
           <button type="button" onClick={closeForm} disabled={saving} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">Cancelar</button>
           {!isEditing && (
             <button type="button" onClick={() => saveProduct({ duplicateAfter: true })} disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-40">

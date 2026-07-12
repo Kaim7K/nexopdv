@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Banknote, Edit3, LayoutGrid, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Banknote, Edit3, LayoutGrid, LockKeyhole } from 'lucide-react';
 import ProductSearch from '@/components/pdv/ProductSearch';
 import SearchResults from '@/components/pdv/SearchResults';
 import SaleSummary from '@/components/pdv/SaleSummary';
@@ -33,6 +33,7 @@ const Kbd = ({ children }) => (
 
 export default function PDV() {
   const { user, config } = /** @type {any} */ (useOutletContext());
+  const navigate = useNavigate();
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
   const [initialDraft] = useState(() => readSavedPdvDraft(draftStorageKey));
   const [products, setProducts] = useState([]);
@@ -118,6 +119,17 @@ export default function PDV() {
   }, []);
 
   const canUsePdv = user.role !== 'vendedor' || !cashState.required || Boolean(cashState.session);
+  const continuePath = useMemo(() => {
+    const enabled = Array.isArray(user.enabled_modules) ? user.enabled_modules : [];
+    const preferredModules = ['estoque', 'vendas', 'fiados', 'relatorios', 'auditoria', 'usuarios', 'configuracoes'];
+    const target = preferredModules.find(module => enabled.includes(module));
+    return target ? `/${target}` : null;
+  }, [user.enabled_modules]);
+  const continueWithoutCash = () => {
+    if (!continuePath) return;
+    setCashModal(null);
+    navigate(continuePath);
+  };
   const receiptConfig = useMemo(() => ({
     ...config,
     logo_url: config.logo_url || user.logo_url,
@@ -582,7 +594,7 @@ export default function PDV() {
 
   return (
     <div className="flex h-full flex-col bg-muted/20">
-      <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-3 py-3 sm:px-5">
+      <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
         <div>
           <h1 className="text-base font-black">
             Venda #{saleNumber}
@@ -613,13 +625,16 @@ export default function PDV() {
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent"><LockKeyhole className="h-7 w-7" /></div>
             <h2 className="mt-5 text-2xl font-black">Abra o caixa para começar</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">Informe o valor inicial disponível para troco. Depois disso, o PDV será liberado para suas vendas.</p>
-            <button type="button" onClick={() => setCashModal('open')} className="mt-5 min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90">Abrir caixa</button>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              {continuePath && <button type="button" onClick={continueWithoutCash} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-bold hover:bg-muted">Continuar sem caixa <ArrowRight className="h-4 w-4" /></button>}
+              <button type="button" onClick={() => setCashModal('open')} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90">Abrir caixa</button>
+            </div>
           </div>
         </div>
       ) : (
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="flex h-[42%] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
-          <div className="flex-shrink-0 p-4 pb-2">
+        <div className="flex h-[48%] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
+          <div className="flex-shrink-0 p-3 pb-1.5 sm:p-4 sm:pb-2">
             <div className="relative" ref={searchContainerRef}>
               <ProductSearch query={searchQuery} onQueryChange={setSearchQuery} inputRef={inputRef} onFocus={() => setShowResults(true)} />
               {showResults && searchQuery && (
@@ -632,7 +647,7 @@ export default function PDV() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden px-4 pb-4">
+          <div className="flex-1 overflow-hidden px-3 pb-3 sm:px-4 sm:pb-4">
             <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <div className="flex gap-2 border-b border-border bg-muted/30 px-4 py-2.5 text-xs font-semibold"><LayoutGrid className="h-5 w-5" /> Produtos</div>
               <ProductGrid products={products} onSelect={addProductToSale} loading={productsLoading} />
@@ -694,6 +709,7 @@ export default function PDV() {
         reporting={cashReporting}
         onClose={cashState.required && !cashState.session && cashModal === 'open' ? undefined : () => { setCashModal(null); if (cashModal === 'closed') setClosedCashReport(null); }}
         onOpen={handleOpenCash}
+        onContinue={cashModal === 'open' && !cashState.session ? continueWithoutCash : undefined}
         onCloseCash={handleCloseCash}
         onDownloadReport={cashModal === 'close' || cashModal === 'closed' ? downloadCashReport : undefined}
       />}

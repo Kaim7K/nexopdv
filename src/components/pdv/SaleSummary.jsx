@@ -4,7 +4,7 @@ import { calculateSaleTotals, formatCurrency } from '@/lib/helpers';
 import SaleItemsList from './SaleItemsList';
 
 const Kbd = ({ children }) => (
-  <kbd className="rounded-md border border-current/20 bg-black/10 px-2 py-1 font-mono text-xs font-bold leading-none">{children}</kbd>
+  <kbd className="hidden rounded-md border border-current/20 bg-black/10 px-2 py-1 font-mono text-xs font-bold leading-none sm:inline-block">{children}</kbd>
 );
 
 export default function SaleSummary({
@@ -26,7 +26,7 @@ export default function SaleSummary({
 
   return (
     <div className="flex h-full flex-col border-t border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5 sm:px-5 sm:py-3.5">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-accent" />
           <span className="text-sm font-bold">Produtos da venda</span>
@@ -35,7 +35,7 @@ export default function SaleSummary({
       </div>
 
       {canDiscount && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/30 px-5 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/30 px-4 py-2 sm:px-5 sm:py-2.5">
           <Tag className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground">Desconto</span>
           <select value={sale.discount_type || 'valor'} onChange={event => onDiscountChange({ ...sale, discount_type: event.target.value })} className="h-9 rounded-lg border border-border bg-card px-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
@@ -48,7 +48,7 @@ export default function SaleSummary({
 
       <SaleItemsList items={sale.items} onUpdateQuantity={onUpdateQuantity} onUpdateWeight={onUpdateWeight} onUpdatePrice={onUpdatePrice} onRemoveItem={onRemoveItem} />
 
-      <div className="border-t border-border bg-muted/20 px-5 py-4">
+      <div className="border-t border-border bg-muted/20 px-4 py-3 sm:px-5 sm:py-4">
         <div className="mb-2 flex justify-between text-xs text-muted-foreground">
           <span>Subtotal</span>
           <span className="tabular-nums">{formatCurrency(subtotal)}</span>
@@ -61,24 +61,24 @@ export default function SaleSummary({
         )}
         <div className="flex items-end justify-between gap-4 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
           <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Total da venda</span>
-          <span className="text-3xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-4xl">{formatCurrency(total)}</span>
+          <span className="text-2xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-4xl">{formatCurrency(total)}</span>
         </div>
       </div>
 
-      <div className="space-y-2 p-4">
+      <div className="space-y-2 p-3 sm:p-4">
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-14 items-center justify-center gap-2 rounded-xl border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30">
+          <button onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
             <Trash2 className="h-5 w-5" />
             <span className="text-sm font-semibold">Descartar</span>
             <Kbd>F6</Kbd>
           </button>
-          <button onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-14 items-center justify-center gap-2 rounded-xl border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30">
+          <button onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
             <Minimize2 className="h-5 w-5" />
             <span className="text-sm font-semibold">Minimizar</span>
             <Kbd>F7</Kbd>
           </button>
         </div>
-        <button onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-accent px-4 text-base font-black text-accent-foreground shadow-sm transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30">
+        <button onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-accent px-4 text-base font-black text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-16">
           <CreditCard className="h-6 w-6" /> Pagamento <Kbd>F1</Kbd>
         </button>
       </div>

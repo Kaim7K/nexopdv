@@ -104,8 +104,8 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-5" role="presentation">
-      <div className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-0 backdrop-blur-sm sm:p-5" role="presentation">
+      <div className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[95dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
         <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
           <div>
             <h2 id="payment-title" className="text-xl font-black">Forma de pagamento</h2>
@@ -114,7 +114,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
           <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-6 w-6" /></button>
         </div>
 
-        <div className="grid flex-1 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid flex-1 overscroll-contain overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
           <section className="space-y-5 border-b border-border p-5 lg:border-b-0 lg:border-r lg:p-7">
             <div className="max-h-56 overflow-y-auto rounded-xl border border-border bg-muted/20 p-4">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
@@ -218,7 +218,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
           </section>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border px-5 py-4 sm:flex-row sm:px-7">
+        <div className="flex flex-col gap-2 border-t border-border bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:px-7 sm:py-4">
           <button type="button" onClick={onDiscard} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-5 w-5" /> Descartar</button>
           <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-5 w-5" /> Minimizar</button>
           <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-base font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-6 w-6" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>

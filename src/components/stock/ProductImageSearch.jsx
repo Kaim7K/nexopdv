@@ -90,8 +90,8 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 p-3 sm:p-4" role="presentation">
-      <div className="flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="product-image-search-title">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 p-0 sm:p-4" role="presentation">
+      <div className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-3xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="product-image-search-title">
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div>
             <h2 id="product-image-search-title" className="flex items-center gap-2 text-lg font-bold"><ImageIcon className="h-5 w-5 text-accent" /> Buscar imagem do produto</h2>
@@ -114,13 +114,13 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
           {searchedQuery && <p className="mt-2 truncate text-xs text-muted-foreground">Resultados para: <strong className="text-foreground">{searchedQuery}</strong></p>}
         </form>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-6">
           {(loading || initializing) && images.length === 0 ? (
             <div className="grid min-h-72 place-items-center text-muted-foreground"><div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-accent" /><p className="mt-3 text-sm font-semibold">Buscando no Google Imagens...</p></div></div>
           ) : images.length === 0 ? (
             <div className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 text-center"><div><Search className="mx-auto h-10 w-10 text-muted-foreground/40" /><p className="mt-3 max-w-md text-sm text-muted-foreground">{query.trim() ? EMPTY_MESSAGE : 'Digite o nome ou o código de barras para começar.'}</p></div></div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
               {images.map((image, index) => {
                 const active = selected?.url === image.url;
                 return (
@@ -138,7 +138,7 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-between sm:px-6">
+        <div className="flex flex-col-reverse gap-2 border-t border-border bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:justify-between sm:px-6 sm:py-4">
           <button type="button" onClick={searchAgain} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"><RotateCcw className="h-4 w-4" /> Pesquisar novamente</button>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <button type="button" onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted">Cancelar</button>
