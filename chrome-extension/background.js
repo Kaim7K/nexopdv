@@ -39,6 +39,16 @@ function isImageUrl(url) {
   return /^https?:\/\//i.test(url || '');
 }
 
+function extractImageUrlFromHref(href = '') {
+  try {
+    const url = new URL(href, 'https://www.google.com');
+    const direct = String(url.searchParams.get('imgurl') || url.searchParams.get('img_url') || url.searchParams.get('mediaurl') || '').trim();
+    return isImageUrl(direct) ? direct : '';
+  } catch {
+    return '';
+  }
+}
+
 function sanitizeQuery(value) {
   return String(value || '')
     .replace(/\s+/g, ' ')
@@ -144,7 +154,16 @@ async function extractImageFromGoogleTab(tabId) {
       });
 
       const best = candidates[0] || null;
-      return best ? { url: best.src, href: best.href, text: best.text } : null;
+      if (!best) return null;
+      const direct = (() => {
+        try {
+          const url = new URL(best.href);
+          return String(url.searchParams.get('imgurl') || url.searchParams.get('img_url') || url.searchParams.get('mediaurl') || '').trim();
+        } catch {
+          return '';
+        }
+      })();
+      return { url: direct || best.src, href: best.href, text: best.text };
     },
   });
   return result || null;
