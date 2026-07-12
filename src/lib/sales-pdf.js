@@ -1,5 +1,7 @@
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 
+const pdfCurrency = value => formatCurrency(value).replace(/[\u00a0\u202f]/g, ' ');
+
 function loadImageElement(source) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -55,7 +57,7 @@ function calculateSaleTotals(sale) {
 
 export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } = {}) {
   const { jsPDF } = await import('jspdf');
-  const estimatedHeight = Math.max(200, 105 + (sale.items?.length || 0) * 12 + (sale.payments?.length || 0) * 7);
+  const estimatedHeight = Math.max(200, 112 + (sale.items?.length || 0) * 14 + (sale.payments?.length || 0) * 7);
   const doc = new jsPDF({ unit: 'mm', format: [80, estimatedHeight] });
   const totals = calculateSaleTotals(sale);
   let y = 8;
@@ -93,18 +95,24 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   line('--------------------------------', { center: true, gap: 4 });
 
   for (const item of sale.items || []) {
-    const amount = item.unit === 'peso' ? `${Number(item.weight || 0).toLocaleString('pt-BR')} kg` : `${Number(item.quantity || 0)}x`;
+    const amount = item.unit === 'peso'
+      ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+      : `${Number(item.quantity || 0)}x`;
     line(`${amount} ${item.product_name}`, { gap: 4 });
-    line(`   ${formatCurrency(item.unit_price)} → ${formatCurrency(item.subtotal)}`, { gap: 4 });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, 8, y);
+    doc.text(`Total: ${pdfCurrency(item.subtotal)}`, 76, y, { align: 'right' });
+    y += 4.5;
   }
 
   line('--------------------------------', { center: true, gap: 4 });
-  line(`Subtotal: ${formatCurrency(totals.subtotal)}`, { gap: 4 });
-  if (totals.discount > 0) line(`Desconto: ${formatCurrency(totals.discount)}`, { gap: 4 });
-  line(`TOTAL: ${formatCurrency(totals.total)}`, { bold: true, size: 11, gap: 6 });
+  line(`Subtotal: ${pdfCurrency(totals.subtotal)}`, { gap: 4 });
+  if (totals.discount > 0) line(`Desconto: ${pdfCurrency(totals.discount)}`, { gap: 4 });
+  line(`TOTAL: ${pdfCurrency(totals.total)}`, { bold: true, size: 11, gap: 6 });
   line('--------------------------------', { center: true, gap: 4 });
-  for (const payment of sale.payments || []) line(`${getPaymentLabel(payment.method)}: ${formatCurrency(payment.amount)}`, { gap: 4 });
-  if (Number(sale.change_amount || 0) > 0) line(`Troco: ${formatCurrency(sale.change_amount)}`, { gap: 4 });
+  for (const payment of sale.payments || []) line(`${getPaymentLabel(payment.method)}: ${pdfCurrency(payment.amount)}`, { gap: 4 });
+  if (Number(sale.change_amount || 0) > 0) line(`Troco: ${pdfCurrency(sale.change_amount)}`, { gap: 4 });
   if (sale.observation) line(`Observação: ${sale.observation}`, { gap: 4 });
   line('', { gap: 3 });
   line('Obrigado pela preferência!', { center: true, gap: 4 });
@@ -167,9 +175,9 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
   y += 10;
 
   const metrics = [
-    ['Faturamento', formatCurrency(summary.total)],
+    ['Faturamento', pdfCurrency(summary.total)],
     ['Vendas', String(summary.sales_count || 0)],
-    ['Ticket médio', formatCurrency(summary.average_ticket)],
+    ['Ticket médio', pdfCurrency(summary.average_ticket)],
     ['Canceladas', String(summary.cancelled_count || 0)],
   ];
   const boxWidth = 43;
@@ -198,7 +206,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
     y += 7;
   } else {
     for (const [method, amount] of paymentEntries) {
-      doc.text(`${getPaymentLabel(method)}: ${formatCurrency(amount)}`, margin, y);
+      doc.text(`${getPaymentLabel(method)}: ${pdfCurrency(amount)}`, margin, y);
       y += 5;
     }
     y += 3;
@@ -237,7 +245,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
     doc.text(formatDateTime(sale.created_date), margin + 3, y + 10);
     doc.text(String(sale.seller_name || 'Sem vendedor').slice(0, 42), pageWidth - margin - 3, y + 5.5, { align: 'right' });
     doc.setFont('helvetica', 'bold');
-    doc.text(formatCurrency(sale.total), pageWidth - margin - 3, y + 10, { align: 'right' });
+    doc.text(pdfCurrency(sale.total), pageWidth - margin - 3, y + 10, { align: 'right' });
     doc.setTextColor(15, 23, 42);
     y += 17;
 
@@ -260,7 +268,9 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.text(nameLines, margin + 4, y);
-        doc.text(`${formatCurrency(item.unit_price)}  →  ${formatCurrency(item.subtotal)}`, pageWidth - margin - 3, y, { align: 'right' });
+        doc.text(`Unit. ${pdfCurrency(item.unit_price)}`, pageWidth - margin - 44, y, { align: 'right' });
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total ${pdfCurrency(item.subtotal)}`, pageWidth - margin - 3, y, { align: 'right' });
         y += Math.max(6, nameLines.length * 4);
       }
     }
@@ -271,14 +281,14 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
     y += 5;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Subtotal: ${formatCurrency(totals.subtotal)}`, margin + 4, y);
-    if (totals.discount > 0) doc.text(`Desconto: ${formatCurrency(totals.discount)}`, margin + 60, y);
+    doc.text(`Subtotal: ${pdfCurrency(totals.subtotal)}`, margin + 4, y);
+    if (totals.discount > 0) doc.text(`Desconto: ${pdfCurrency(totals.discount)}`, margin + 60, y);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${formatCurrency(totals.total)}`, pageWidth - margin - 3, y, { align: 'right' });
+    doc.text(`Total: ${pdfCurrency(totals.total)}`, pageWidth - margin - 3, y, { align: 'right' });
     y += 6;
 
     doc.setFont('helvetica', 'normal');
-    const paymentText = (sale.payments || []).map(payment => `${getPaymentLabel(payment.method)} ${formatCurrency(payment.amount)}`).join(' · ') || 'Sem pagamento informado';
+    const paymentText = (sale.payments || []).map(payment => `${getPaymentLabel(payment.method)} ${pdfCurrency(payment.amount)}`).join(' · ') || 'Sem pagamento informado';
     const paymentLines = doc.splitTextToSize(`Pagamento: ${paymentText}`, contentWidth - 8);
     doc.text(paymentLines, margin + 4, y);
     y += Math.max(6, paymentLines.length * 4);

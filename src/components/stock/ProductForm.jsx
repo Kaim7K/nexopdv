@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CopyPlus, ImageIcon, Loader2, Save, Search, Trash2, X } from 'lucide-react';
+import { CopyPlus, ExternalLink, ImageIcon, Loader2, Save, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
-import ProductImageSearch from './ProductImageSearch';
+import { openGoogleImages } from '@/lib/google-images';
 
 const EMPTY_FORM = {
   name: '',
@@ -21,7 +21,6 @@ const EMPTY_FORM = {
 
 export default function ProductForm({ product = null, duplicateSource = null, categories = [], user, onSave, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
-  const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageChanged, setImageChanged] = useState(false);
 
@@ -35,11 +34,11 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   useEffect(() => {
     const onKeyDown = event => {
-      if (event.key === 'Escape' && !saving && !showImageSearch) closeForm();
+      if (event.key === 'Escape' && !saving) closeForm();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [closeForm, saving, showImageSearch]);
+  }, [closeForm, saving]);
 
   useEffect(() => {
     if (product) {
@@ -175,7 +174,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <div>
             <h2 id={titleId} className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>
             <p className="text-xs text-muted-foreground">
-              {isDuplicating ? 'Código de barras e quantidade foram zerados para evitar duplicidade.' : 'Escaneie o código de barras para preencher nome e imagens.'}
+              {isDuplicating ? 'Código de barras e quantidade foram zerados para evitar duplicidade.' : 'Use o código de barras ou o nome para pesquisar a imagem no Google.'}
             </p>
           </div>
           <button type="button" aria-label="Fechar cadastro de produto" onClick={closeForm} disabled={saving} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"><X className="h-5 w-5" /></button>
@@ -188,10 +187,11 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
             </div>
             <div className="flex flex-1 flex-col justify-center gap-2">
               <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
-              <button type="button" onClick={() => setShowImageSearch(true)} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
-                <Search className="h-5 w-5" />
-                Buscar imagem
+              <button type="button" onClick={() => { try { openGoogleImages({ barcode: form.barcode, productName: form.name }); } catch (error) { toast.error(error.message); } }} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
+                <ExternalLink className="h-5 w-5" />
+                Buscar no Google Imagens
               </button>
+              <p className="text-[11px] leading-4 text-muted-foreground">A pesquisa abre em outra aba já em Imagens e prioriza fundo branco. Copie o endereço da imagem escolhida e cole no campo de URL acima.</p>
               {form.image_url && (
                 <button type="button" onClick={() => handleChange('image_url', '')} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" /> Remover imagem
@@ -224,7 +224,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="product-barcode" className="text-xs font-medium text-muted-foreground">Código de barras</label>
-              <input id="product-barcode" type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); setShowImageSearch(true); } }} inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <input id="product-barcode" type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)}  inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
             </div>
             <div>
               <label htmlFor="product-internal-code" className="text-xs font-medium text-muted-foreground">Código interno</label>
@@ -270,14 +270,6 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         </div>
       </div>
 
-      {showImageSearch && (
-        <ProductImageSearch
-          productName={form.name}
-          barcode={form.barcode}
-          onSelect={url => handleChange('image_url', url)}
-          onClose={() => setShowImageSearch(false)}
-        />
-      )}
     </div>
   );
 }

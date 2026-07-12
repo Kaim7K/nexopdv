@@ -1,3 +1,13 @@
+export const PDV_DRAFT_INACTIVITY_MS = 5 * 60 * 1000;
+
+export const isPdvDraftExpired = (draft, now = Date.now(), maxInactiveMs = PDV_DRAFT_INACTIVITY_MS) => {
+  if (!draft || typeof draft !== 'object') return false;
+  const inactiveSince = Number(draft.inactiveSince || 0);
+  const lastActiveAt = Number(draft.lastActiveAt || Date.parse(draft.savedAt || '') || 0);
+  if (inactiveSince > 0) return now - inactiveSince >= maxInactiveMs;
+  return lastActiveAt > 0 && now - lastActiveAt >= maxInactiveMs;
+};
+
 export const createEmptySale = () => ({
   items: [],
   payments: [],
@@ -7,12 +17,18 @@ export const createEmptySale = () => ({
   sale_type: 'normal',
 });
 
-export const readSavedPdvDraft = key => {
+export const readSavedPdvDraft = (key, { maxInactiveMs = PDV_DRAFT_INACTIVITY_MS } = {}) => {
   if (typeof window === 'undefined') return null;
   try {
     const saved = JSON.parse(window.localStorage.getItem(key) || 'null');
-    return saved && typeof saved === 'object' ? saved : null;
+    if (!saved || typeof saved !== 'object') return null;
+    if (isPdvDraftExpired(saved, Date.now(), maxInactiveMs)) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+    return saved;
   } catch {
+    window.localStorage.removeItem(key);
     return null;
   }
 };

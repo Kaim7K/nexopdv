@@ -365,17 +365,6 @@ async function routeHandler(req, res) {
     return res.status(200).send(buffer);
   }
 
-  if (path[0] === 'product-images' && path[1] === 'config') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
-      return send(res, 403, { message: 'Sem permissão para buscar imagens de produtos.' });
-    }
-    const engineId = String(process.env.GOOGLE_CSE_ID || '').trim();
-    if (!engineId) return send(res, 503, { code: 'GOOGLE_IMAGE_SEARCH_NOT_CONFIGURED', message: 'A busca do Google ainda não foi configurada para este ambiente.' });
-    res.setHeader('Cache-Control', 'private, max-age=300, stale-while-revalidate=3600');
-    return send(res, 200, { engineId });
-  }
-
 
   if (path[0] === 'cash') {
     if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
@@ -1015,7 +1004,7 @@ async function routeHandler(req, res) {
       if (req.method === 'DELETE') {
         if (!isUuid(id)) return send(res, 400, { message: 'Usuário inválido.' });
         if (id === user.id) return send(res, 400, { message: 'Você não pode excluir o próprio usuário.' });
-        const [target] = await sql`SELECT id,email,full_name,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id}`;
+        const [target] = await sql`SELECT id,email,full_name,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true`;
         if (!target) return send(res, 404, { message: 'Usuário não encontrado.' });
         if (user.role === 'gerente' && target.role !== 'vendedor') return send(res, 403, { message: 'Gerentes podem excluir apenas usuários vendedores.' });
         if (target.role === 'admin') {
@@ -1023,33 +1012,54 @@ async function routeHandler(req, res) {
           if (Number(state?.active_admins || 0) <= 1) return send(res, 409, { message: 'Mantenha pelo menos um administrador ativo no mercado.' });
         }
         const deletedEmail = `deleted+${String(id).replace(/-/g, '')}@nexo.invalid`;
-        const [disabled] = await sql`WITH target AS (
-          SELECT id,email,full_name,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true
-        ), deactivated AS (
-          UPDATE nexo.users account
-          SET active=false,
-              email=${deletedEmail},
-              full_name=COALESCE(NULLIF(account.full_name,''),target.email) || ' (excluído)',
-              photo_url=NULL,
-              password_hash=${await bcrypt.hash(randomUUID(), 10)},
-              updated_date=now()
-          FROM target
-          WHERE account.id=target.id
-          RETURNING account.id,target.email AS previous_email,target.full_name AS previous_name,target.role
-        ), audit AS (
-          INSERT INTO nexo.records(market_id,entity,data)
-          SELECT ${user.market_id},'general_audits',jsonb_build_object(
-            'action_type','usuario_excluido',
-            'entity_type','user',
-            'entity_id',deactivated.id,
-            'user_id',${user.id},
-            'user_name',${user.full_name || user.email},
-            'description','Usuário ' || COALESCE(deactivated.previous_name,deactivated.previous_email) || ' excluído',
-            'details',jsonb_build_object('email',deactivated.previous_email,'role',deactivated.role,'method','soft_delete')
-          FROM deactivated
-          RETURNING id
-        ) SELECT id FROM deactivated`;
-        if (!disabled) return send(res, 409, { message: 'O usuário já foi excluído ou está inativo.' });
+        const deletedName = `${target.full_name || target.email} (excluído)`;
+        const revokedPasswordHash = await bcrypt.hash(randomUUID(), 10);
+        const auditPayload = {
+          action_type: 'usuario_excluido',
+          entity_type: 'user',
+          entity_id: id,
+          user_id: user.id,
+          user_name: user.full_name || user.email,
+          description: `Usuário ${target.full_name || target.email} excluído`,
+          details: {
+            email: target.email,
+            role: target.role,
+            method: 'soft_delete',
+          },
+        };
+
+        // A desativação e a auditoria permanecem atômicas, mas sem depender
+        // de aliases externos no RETURNING. Essa forma é compatível com o
+        // driver serverless do Neon e evita o erro 500 observado na exclusão.
+        const [disabledRows] = await sql.transaction(tx => [
+          tx`
+            UPDATE nexo.users
+            SET active=false,
+                email=${deletedEmail},
+                full_name=${deletedName},
+                photo_url=NULL,
+                password_hash=${revokedPasswordHash},
+                updated_date=now()
+            WHERE id=${id}
+              AND market_id=${user.market_id}
+              AND active=true
+            RETURNING id
+          `,
+          tx`
+            INSERT INTO nexo.records(market_id,entity,data)
+            SELECT ${user.market_id},'general_audits',${JSON.stringify(auditPayload)}::jsonb
+            WHERE EXISTS (
+              SELECT 1
+              FROM nexo.users
+              WHERE id=${id}
+                AND market_id=${user.market_id}
+                AND active=false
+                AND email=${deletedEmail}
+            )
+            RETURNING id
+          `,
+        ]);
+        if (!disabledRows?.[0]) return send(res, 409, { message: 'O usuário já foi excluído ou está inativo.' });
         return send(res, 200, { ok: true });
       }
       if (req.method === 'PATCH') {

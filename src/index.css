@@ -49,32 +49,33 @@
 
   .dark {
     color-scheme: dark;
-    --background: 164 28% 7%;
-    --foreground: 150 20% 96%;
-    --card: 164 24% 11%;
-    --card-foreground: 150 20% 96%;
-    --popover: 164 24% 12%;
-    --popover-foreground: 150 20% 96%;
+    /* O tema escuro usa grafite neutro. O verde permanece apenas nos destaques. */
+    --background: 220 8% 8%;
+    --foreground: 0 0% 96%;
+    --card: 220 7% 12%;
+    --card-foreground: 0 0% 96%;
+    --popover: 220 7% 13%;
+    --popover-foreground: 0 0% 96%;
     --primary: 156 76% 48%;
-    --primary-foreground: 164 32% 6%;
-    --secondary: 164 18% 18%;
-    --secondary-foreground: 150 20% 94%;
-    --muted: 164 16% 17%;
-    --muted-foreground: 150 10% 74%;
+    --primary-foreground: 220 12% 7%;
+    --secondary: 220 6% 17%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 220 6% 16%;
+    --muted-foreground: 220 5% 72%;
     --accent: 156 76% 48%;
-    --accent-foreground: 164 32% 6%;
+    --accent-foreground: 220 12% 7%;
     --destructive: 0 76% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 164 15% 24%;
-    --input: 164 15% 24%;
+    --border: 220 6% 24%;
+    --input: 220 6% 24%;
     --ring: 156 76% 52%;
-    --sidebar-background: 165 32% 7%;
-    --sidebar-foreground: 150 18% 92%;
+    --sidebar-background: 220 10% 9%;
+    --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 156 76% 48%;
-    --sidebar-primary-foreground: 164 32% 6%;
-    --sidebar-accent: 164 22% 16%;
-    --sidebar-accent-foreground: 150 20% 96%;
-    --sidebar-border: 164 18% 18%;
+    --sidebar-primary-foreground: 220 12% 7%;
+    --sidebar-accent: 220 8% 16%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 220 8% 20%;
     --sidebar-ring: 156 76% 52%;
   }
 

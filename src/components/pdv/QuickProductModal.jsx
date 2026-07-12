@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Check, Loader2, Search, Trash2, X } from 'lucide-react';
+import { Check, ExternalLink, Loader2, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
-import ProductImageSearch from '@/components/stock/ProductImageSearch';
+import { openGoogleImages } from '@/lib/google-images';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
 
 
@@ -47,7 +46,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-bold">Cadastro rápido</h2>
-            <p className="text-xs text-muted-foreground">Cadastre o produto e escolha uma imagem sem sair desta tela.</p>
+            <p className="text-xs text-muted-foreground">Pesquise no Google, copie o endereço da imagem e cole no cadastro.</p>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
@@ -76,22 +75,22 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
             <input type="number" min="0" step="0.01" value={price} onChange={event => setPrice(event.target.value)} placeholder="0,00" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
 
-          {imageUrl ? (
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
-              <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-white">
-                <img src={imageUrl} alt={name || 'Produto'} className="h-full w-full object-contain p-1" />
+          <section className="space-y-2 rounded-xl border border-border bg-muted/20 p-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-16 w-16 flex-none place-items-center overflow-hidden rounded-lg border border-border bg-white">
+                {imageUrl ? <img src={imageUrl} alt={name || 'Produto'} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[10px] text-muted-foreground">Sem imagem</span>}
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold">Imagem selecionada</p>
-                <button type="button" onClick={() => setShowImageSearch(true)} className="mt-1 text-xs font-semibold text-accent hover:underline">Trocar imagem</button>
+              <div className="min-w-0 flex-1">
+                <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+                  <ExternalLink className="h-4 w-4" /> Pesquisar no Google Imagens
+                </button>
+                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba com prioridade para fundo branco.</p>
               </div>
-              <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
+              {imageUrl && <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>}
             </div>
-          ) : (
-            <button type="button" onClick={() => setShowImageSearch(true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">
-              <Search className="h-5 w-5" /> Buscar imagem do produto
-            </button>
-          )}
+            <label className="block text-xs font-medium text-muted-foreground">URL da imagem</label>
+            <input type="url" value={imageUrl} onChange={event => setImageUrl(event.target.value)} placeholder="Cole aqui o endereço https:// da imagem" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+          </section>
         </div>
 
         <div className="flex gap-2 border-t border-border px-5 py-4">
@@ -102,14 +101,6 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         </div>
       </div>
 
-      {showImageSearch && (
-        <ProductImageSearch
-          productName={name}
-          barcode={barcode}
-          onSelect={setImageUrl}
-          onClose={() => setShowImageSearch(false)}
-        />
-      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -18,6 +18,7 @@ import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
 import {
   addProductToSaleItems,
   createEmptySale,
+  PDV_DRAFT_INACTIVITY_MS,
   findProductByCapture,
   readSavedPdvDraft,
   removeSaleItem,
@@ -36,6 +37,16 @@ export default function PDV() {
   const [products, setProducts] = useState([]);
   const [activeSale, setActiveSale] = useState(() => initialDraft?.activeSale || createEmptySale());
   const [minimizedSales, setMinimizedSales] = useState(() => Array.isArray(initialDraft?.minimizedSales) ? initialDraft.minimizedSales : []);
+  const latestDraftRef = useRef({
+    activeSale: initialDraft?.activeSale || createEmptySale(),
+    minimizedSales: Array.isArray(initialDraft?.minimizedSales) ? initialDraft.minimizedSales : [],
+  });
+  const draftMetaRef = useRef({
+    lastActiveAt: Number(initialDraft?.lastActiveAt || Date.now()),
+    inactiveSince: Number(initialDraft?.inactiveSince || 0) || null,
+  });
+  const inactivityTimerRef = useRef(null);
+  const discardedWhileAwayRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -61,6 +72,43 @@ export default function PDV() {
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const modalsOpen = showPayment || showQuickProduct || showReceipt || showPriceCorrection || cashModal;
+
+  const writeLocalDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const draft = latestDraftRef.current;
+    const hasDraft = Boolean(draft.activeSale?.items?.length || draft.minimizedSales?.length);
+    if (!hasDraft) {
+      window.localStorage.removeItem(draftStorageKey);
+      return;
+    }
+    const now = Date.now();
+    window.localStorage.setItem(draftStorageKey, JSON.stringify({
+      activeSale: draft.activeSale,
+      minimizedSales: draft.minimizedSales,
+      savedAt: new Date(now).toISOString(),
+      lastActiveAt: draftMetaRef.current.lastActiveAt || now,
+      inactiveSince: draftMetaRef.current.inactiveSince,
+    }));
+  }, [draftStorageKey]);
+
+  const discardLocalDraft = useCallback(({ notifyWhenVisible = true } = {}) => {
+    const draft = latestDraftRef.current;
+    const hadDraft = Boolean(draft.activeSale?.items?.length || draft.minimizedSales?.length);
+    if (inactivityTimerRef.current) window.clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = null;
+    draftMetaRef.current = { lastActiveAt: Date.now(), inactiveSince: null };
+    latestDraftRef.current = { activeSale: createEmptySale(), minimizedSales: [] };
+    window.localStorage.removeItem(draftStorageKey);
+    setShowPayment(false);
+    setActiveSale(createEmptySale());
+    setMinimizedSales([]);
+    if (!hadDraft) return;
+    if (notifyWhenVisible && document.visibilityState === 'visible') {
+      toast('As vendas abertas foram descartadas após 5 minutos fora do PDV.', { icon: '⏱️' });
+    } else {
+      discardedWhileAwayRef.current = true;
+    }
+  }, [draftStorageKey]);
 
   useEffect(() => {
     loadCash();
@@ -112,17 +160,90 @@ export default function PDV() {
   }, []);
 
   useEffect(() => {
-    const hasDraft = activeSale.items.length || minimizedSales.length;
-    if (!hasDraft) {
-      window.localStorage.removeItem(draftStorageKey);
-      return;
+    latestDraftRef.current = { activeSale, minimizedSales };
+    if (document.visibilityState === 'visible' && document.hasFocus()) {
+      draftMetaRef.current.lastActiveAt = Date.now();
+      draftMetaRef.current.inactiveSince = null;
     }
-    window.localStorage.setItem(draftStorageKey, JSON.stringify({
-      activeSale,
-      minimizedSales,
-      savedAt: new Date().toISOString(),
-    }));
-  }, [activeSale, minimizedSales, draftStorageKey]);
+    writeLocalDraft();
+  }, [activeSale, minimizedSales, writeLocalDraft]);
+
+  useEffect(() => {
+    const hasDraft = () => Boolean(
+      latestDraftRef.current.activeSale?.items?.length
+      || latestDraftRef.current.minimizedSales?.length
+    );
+
+    const clearInactivityTimer = () => {
+      if (inactivityTimerRef.current) window.clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    };
+
+    const markInactive = () => {
+      if (!hasDraft()) return;
+      if (!draftMetaRef.current.inactiveSince) draftMetaRef.current.inactiveSince = Date.now();
+      writeLocalDraft();
+      clearInactivityTimer();
+      const remaining = Math.max(
+        0,
+        PDV_DRAFT_INACTIVITY_MS - (Date.now() - draftMetaRef.current.inactiveSince),
+      );
+      inactivityTimerRef.current = window.setTimeout(() => {
+        if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+          discardLocalDraft({ notifyWhenVisible: false });
+        }
+      }, remaining);
+    };
+
+    const markActive = () => {
+      clearInactivityTimer();
+      const inactiveSince = Number(draftMetaRef.current.inactiveSince || 0);
+      if (hasDraft() && inactiveSince && Date.now() - inactiveSince >= PDV_DRAFT_INACTIVITY_MS) {
+        discardLocalDraft({ notifyWhenVisible: false });
+      } else {
+        draftMetaRef.current.inactiveSince = null;
+        draftMetaRef.current.lastActiveAt = Date.now();
+        writeLocalDraft();
+      }
+      if (discardedWhileAwayRef.current) {
+        discardedWhileAwayRef.current = false;
+        toast('As vendas abertas foram descartadas após 5 minutos fora do PDV.', { icon: '⏱️' });
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') markActive();
+      else markInactive();
+    };
+
+    const heartbeat = window.setInterval(() => {
+      if (document.visibilityState !== 'visible' || !document.hasFocus() || !hasDraft()) return;
+      draftMetaRef.current.lastActiveAt = Date.now();
+      draftMetaRef.current.inactiveSince = null;
+      writeLocalDraft();
+    }, 30_000);
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', markInactive);
+    window.addEventListener('focus', markActive);
+    window.addEventListener('pagehide', markInactive);
+
+    if (document.visibilityState === 'visible' && document.hasFocus()) markActive();
+    else markInactive();
+
+    return () => {
+      if (hasDraft()) {
+        if (!draftMetaRef.current.inactiveSince) draftMetaRef.current.inactiveSince = Date.now();
+        writeLocalDraft();
+      }
+      window.clearInterval(heartbeat);
+      clearInactivityTimer();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', markInactive);
+      window.removeEventListener('focus', markActive);
+      window.removeEventListener('pagehide', markInactive);
+    };
+  }, [discardLocalDraft, writeLocalDraft]);
 
   useEffect(() => {
     const handler = event => {
