@@ -63,6 +63,15 @@ const pickRowValue = (row, normalizedRow, labels = []) => {
   }
   return '';
 };
+const normalizeImportedImageUrl = value => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (/^https?:\/\//i.test(text)) return text;
+  if (/^www\./i.test(text)) return `https://${text}`;
+  if (/^\/\/[^/]+/i.test(text)) return `https:${text}`;
+  if (/^data:image\/(jpeg|png|webp|avif);base64,[a-z0-9+/=\s]+$/i.test(text)) return text.replace(/\s+/g, '');
+  return '';
+};
 
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 const productNameKey = value => String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
@@ -275,7 +284,7 @@ export default function Estoque() {
         return {
           id: normalizedRow.id || undefined,
           ...Object.fromEntries(EDITABLE_COLUMNS.map(([key, label, type]) => [key, normalize(row[label] ?? normalizedRow[normalizeHeader(label)], type)])),
-          image_url: String(imageUrlValue ?? '').trim(),
+          image_url: normalizeImportedImageUrl(imageUrlValue),
         };
       });
       if (mapped.some(product => !product.name.trim() || Number(product.sale_price) < 0 || Number(product.quantity) < 0)) {
@@ -522,7 +531,7 @@ export default function Estoque() {
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : viewMode === 'grid' ? (
-          <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid gap-2.5 p-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {visibleProducts.map(product => {
               const quantity = Number(product.quantity || 0);
               const isZero = quantity <= 0;
@@ -539,25 +548,25 @@ export default function Estoque() {
                   key={product.id}
                   type="button"
                   onClick={() => openProductModal('edit', product)}
-                  className={`group overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusClass}`}
+                  className={`group overflow-hidden rounded-xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusClass}`}
                 >
                   <div className="aspect-square bg-muted/30">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-3" loading="lazy" referrerPolicy="no-referrer" />
+                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-2" loading="lazy" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="grid h-full place-items-center text-muted-foreground/30">
-                        <Package className="h-12 w-12" />
+                        <Package className="h-10 w-10" />
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2 p-3">
+                  <div className="space-y-1.5 p-2.5">
                     <div>
-                      <p className="line-clamp-2 text-sm font-bold leading-5">{product.name}</p>
+                      <p className="line-clamp-2 text-xs font-bold leading-4">{product.name}</p>
                       <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.category || 'Sem categoria'}</p>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-black text-accent">{formatCurrency(product.sale_price || 0)}</span>
-                      <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{product.unit || 'unidade'}</span>
+                      <span className="text-sm font-black text-accent">{formatCurrency(product.sale_price || 0)}</span>
+                      <span className="rounded-full border border-border bg-background px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">{product.unit || 'unidade'}</span>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
                       <span className={isZero ? 'font-bold text-destructive' : 'text-muted-foreground'}>{isZero ? 'Sem estoque' : `Estoque: ${quantity}`}</span>

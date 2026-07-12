@@ -32,10 +32,12 @@ const MAX_INLINE_IMAGE_LENGTH = 1_650_000;
 function normalizeImageValue(value) {
   const image = String(value ?? '').trim();
   if (!image) return '';
-  if (/^https:\/\//i.test(image)) {
+  if (/^https?:\/\//i.test(image)) {
     if (image.length > 2048) throw new AppError(400, 'INVALID_IMAGE', 'O endereço da imagem é muito longo.');
     return image;
   }
+  if (/^www\./i.test(image)) return `https://${image}`;
+  if (/^\/\/[^/]+/i.test(image)) return `https:${image}`;
   if (/^data:image\/(jpeg|png|webp|avif);base64,[a-z0-9+/=\s]+$/i.test(image)) {
     if (image.length > MAX_INLINE_IMAGE_LENGTH) throw new AppError(413, 'IMAGE_TOO_LARGE', 'A imagem otimizada ultrapassa o tamanho permitido.');
     return image.replace(/\s+/g, '');
