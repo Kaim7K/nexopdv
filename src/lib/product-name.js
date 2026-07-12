@@ -15,8 +15,12 @@ const WORD_FIXES = new Map([
 function cleanWords(value) {
   const text = String(value || '').trim().replace(/\s+/g, ' ');
   if (!text) return '';
-  const corrected = text.split(' ').map(word => WORD_FIXES.get(word.toLocaleLowerCase('pt-BR')) || word.toLocaleLowerCase('pt-BR')).join(' ');
-  return corrected.charAt(0).toLocaleUpperCase('pt-BR') + corrected.slice(1);
+  return text.split(/([\s\-/]+)/).map(part => {
+    if (/^[\s\-/]+$/.test(part)) return part;
+    const lower = part.toLocaleLowerCase('pt-BR');
+    const corrected = WORD_FIXES.get(lower) || lower;
+    return corrected.charAt(0).toLocaleUpperCase('pt-BR') + corrected.slice(1);
+  }).join('');
 }
 
 export function standardizeProductName(name, { brand = '', quantity = '' } = {}) {
