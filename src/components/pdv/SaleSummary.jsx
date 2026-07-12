@@ -15,6 +15,7 @@ export default function SaleSummary({
   onDiscountChange,
   onUpdateQuantity,
   onUpdateWeight,
+  onUpdatePrice,
   onRemoveItem,
   canDiscount,
   minimizedCount,
@@ -45,7 +46,7 @@ export default function SaleSummary({
         </div>
       )}
 
-      <SaleItemsList items={sale.items} onUpdateQuantity={onUpdateQuantity} onUpdateWeight={onUpdateWeight} onRemoveItem={onRemoveItem} />
+      <SaleItemsList items={sale.items} onUpdateQuantity={onUpdateQuantity} onUpdateWeight={onUpdateWeight} onUpdatePrice={onUpdatePrice} onRemoveItem={onRemoveItem} />
 
       <div className="border-t border-border bg-muted/20 px-5 py-4">
         <div className="mb-2 flex justify-between text-xs text-muted-foreground">

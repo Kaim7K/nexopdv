@@ -22,6 +22,7 @@ import {
   findProductByCapture,
   readSavedPdvDraft,
   removeSaleItem,
+  updateSaleItemPrice,
   updateSaleItemQuantity,
   updateSaleItemWeight,
 } from '@/lib/pdv';
@@ -462,6 +463,8 @@ export default function PDV() {
 
   const updateWeight = (index, weight) => setActiveSale(previous => ({ ...previous, items: updateSaleItemWeight(previous.items, index, weight) }));
 
+  const updatePrice = (index, price) => setActiveSale(previous => ({ ...previous, items: updateSaleItemPrice(previous.items, index, price) }));
+
   const removeItem = index => setActiveSale(previous => ({ ...previous, items: removeSaleItem(previous.items, index) }));
 
   const handlePriceCorrection = async (index, newPrice) => {
@@ -646,6 +649,7 @@ export default function PDV() {
             onDiscountChange={setActiveSale}
             onUpdateQuantity={updateQuantity}
             onUpdateWeight={updateWeight}
+            onUpdatePrice={updatePrice}
             onRemoveItem={removeItem}
             canDiscount
             minimizedCount={minimizedSales.length}

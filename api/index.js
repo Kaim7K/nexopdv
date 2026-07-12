@@ -21,7 +21,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const MARKET_MODULES = ['pdv','estoque','vendas','fiados','relatorios','auditoria','usuarios','configuracoes'];
 const USER_ROLES = ['vendedor', 'gerente', 'admin'];
 const PAYMENT_METHODS = new Set(['dinheiro', 'pix', 'debito', 'credito', 'outros', 'fiado']);
-const PRODUCT_FIELDS = ['name','category','barcode','internal_code','image_url','sale_price','cost_price','quantity','unit','status'];
+const PRODUCT_FIELDS = ['name','category','barcode','internal_code','image_url','sale_price','cost_price','quantity','unit','status','allow_pdv_price_edit'];
 const PRODUCT_UNITS = new Set(['unidade','peso','pacote']);
 const PRODUCT_STATUSES = new Set(['ativo','inativo']);
 
@@ -134,6 +134,7 @@ function normalizeProductPayload(data, partial = false) {
       clean[field] = source[field] === null || source[field] === '' ? (field === 'cost_price' ? null : 0) : Number(source[field]);
     } else if (field === 'unit') clean[field] = PRODUCT_UNITS.has(source[field]) ? source[field] : 'unidade';
     else if (field === 'status') clean[field] = PRODUCT_STATUSES.has(source[field]) ? source[field] : 'ativo';
+    else if (field === 'allow_pdv_price_edit') clean[field] = Boolean(source[field]);
     else if (field === 'image_url') clean[field] = normalizeImageValue(source[field]);
     else clean[field] = text(source[field], 180);
   }
@@ -207,6 +208,7 @@ function validateProductPayload(data, partial = false) {
   }
   if (data.unit !== undefined && !PRODUCT_UNITS.has(data.unit)) throw new AppError(400, 'INVALID_PRODUCT', 'Unidade de venda inválida.');
   if (data.status !== undefined && !PRODUCT_STATUSES.has(data.status)) throw new AppError(400, 'INVALID_PRODUCT', 'Status do produto inválido.');
+  if (data.allow_pdv_price_edit !== undefined && typeof data.allow_pdv_price_edit !== 'boolean') throw new AppError(400, 'INVALID_PRODUCT', 'Permissão de preço no PDV inválida.');
 }
 
 async function routeHandler(req, res) {

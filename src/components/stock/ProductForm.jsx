@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   quantity: '',
   unit: 'unidade',
   status: 'ativo',
+  allow_pdv_price_edit: false,
 };
 
 export default function ProductForm({ product = null, duplicateSource = null, categories = [], user, onSave, onClose }) {
@@ -69,6 +70,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         quantity: product.quantity ?? '',
         unit: product.unit || 'unidade',
         status: product.status || 'ativo',
+        allow_pdv_price_edit: Boolean(product.allow_pdv_price_edit),
       });
       return;
     }
@@ -85,6 +87,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         quantity: '0',
         unit: duplicateSource.unit || 'unidade',
         status: duplicateSource.status || 'ativo',
+        allow_pdv_price_edit: false,
       });
       return;
     }
@@ -232,6 +235,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       quantity: form.quantity === '' ? 0 : Number.parseFloat(form.quantity),
       unit: form.unit,
       status: form.status,
+      allow_pdv_price_edit: Boolean(form.allow_pdv_price_edit),
     };
     if (!isEditing || imageChanged || !product?.image_is_inline) data.image_url = form.image_url || '';
     return data;
@@ -287,6 +291,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           sale_price: String(data.sale_price ?? ''),
           cost_price: String(data.cost_price ?? ''),
           quantity: '0',
+          allow_pdv_price_edit: false,
         });
         toast.success('Primeiro produto criado. Ajuste a cópia e clique em Criar.');
       }
@@ -446,6 +451,21 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
               <option value="inativo">Inativo</option>
             </select>
           </div>
+
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
+            <input
+              type="checkbox"
+              checked={Boolean(form.allow_pdv_price_edit)}
+              onChange={event => handleChange('allow_pdv_price_edit', event.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent"
+            />
+            <span>
+              <strong className="block text-sm">Permitir edição de valor no PDV</strong>
+              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                Use para produtos com preço variável. Por padrão esta opção fica desativada.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">

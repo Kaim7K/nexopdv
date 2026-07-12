@@ -1,8 +1,8 @@
 import React from 'react';
-import { Minus, Package, Plus, Trash2 } from 'lucide-react';
+import { Minus, Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
-export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight, onRemoveItem }) {
+export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight, onUpdatePrice, onRemoveItem }) {
   if (!items.length) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-muted-foreground">
@@ -69,7 +69,22 @@ export default function SaleItemsList({ items, onUpdateQuantity, onUpdateWeight,
 
           <div className="order-3 col-span-1 text-left lg:col-span-1 lg:text-right">
             <span className="text-[10px] uppercase text-muted-foreground lg:hidden">Unitário</span>
-            <p className="text-sm font-medium tabular-nums">{formatCurrency(item.unit_price)}</p>
+            {item.allow_pdv_price_edit ? (
+              <div className="flex items-center gap-2 lg:justify-end">
+                <input
+                  aria-label={`Valor unitário de ${item.product_name}`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.unit_price ?? ''}
+                  onChange={event => onUpdatePrice(index, event.target.value)}
+                  className="h-10 w-24 rounded-lg border border-amber-300 bg-amber-50 px-2 text-right text-sm font-semibold tabular-nums text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400/30 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
+                />
+                <Pencil className="h-4 w-4 text-amber-600" />
+              </div>
+            ) : (
+              <p className="text-sm font-medium tabular-nums">{formatCurrency(item.unit_price)}</p>
+            )}
           </div>
 
           <div className="order-4 text-right">

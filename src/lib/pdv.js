@@ -54,6 +54,7 @@ const saleItemFromProduct = product => {
     unit_price: unitPrice,
     subtotal: (isWeighted ? 0.1 : 1) * unitPrice,
     unit: product.unit,
+    allow_pdv_price_edit: Boolean(product.allow_pdv_price_edit),
   };
 };
 
@@ -87,6 +88,13 @@ export const updateSaleItemWeight = (items, index, weight) => {
   const safeWeight = Math.max(0, Number.parseFloat(weight) || 0);
   return items.map((item, currentIndex) => currentIndex === index
     ? { ...item, weight: safeWeight, subtotal: safeWeight * item.unit_price }
+    : item);
+};
+
+export const updateSaleItemPrice = (items, index, price) => {
+  const safePrice = Math.max(0, Number.parseFloat(price) || 0);
+  return items.map((item, currentIndex) => currentIndex === index
+    ? { ...item, unit_price: safePrice, subtotal: safePrice * (item.unit === 'peso' ? Number(item.weight || 0) : Number(item.quantity || 0)) }
     : item);
 };
 
