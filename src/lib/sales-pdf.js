@@ -1,6 +1,12 @@
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 
 const pdfCurrency = value => formatCurrency(value).replace(/[\u00a0\u202f]/g, ' ');
+const safeFilePart = value => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/gi, '-')
+  .replace(/^-+|-+$/g, '')
+  .toLowerCase();
 
 function loadImageElement(source) {
   return new Promise((resolve, reject) => {
@@ -117,7 +123,8 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   line('', { gap: 3 });
   line('Obrigado pela preferência!', { center: true, gap: 4 });
   line('Volte sempre!', { center: true, gap: 4 });
-  doc.save(`recibo-venda-${sale.sale_number}.pdf`);
+  const marketPart = safeFilePart(config.nome_mercado || config.market_name || 'nexo-pdv');
+  doc.save(`recibo-${marketPart}-venda-${sale.sale_number}.pdf`);
 }
 
 function safeDate(value, fallback = new Date()) {
@@ -301,5 +308,6 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
   }
 
   const dateLabel = from.toISOString().slice(0, 10);
-  doc.save(`relatorio-vendas-${dateLabel}.pdf`);
+  const marketPart = safeFilePart(config.nome_mercado || config.market_name || 'nexo-pdv');
+  doc.save(`relatorio-${marketPart}-vendas-${dateLabel}.pdf`);
 }

@@ -13,6 +13,8 @@ import {
   FilterX,
   Image,
   ImageOff,
+  LayoutGrid,
+  List,
   Package,
   Pencil,
   Plus,
@@ -47,9 +49,29 @@ const TABLE_COLUMNS = [
 const normalize = (value, type) => type === 'number'
   ? (value === '' ? '' : Number(value))
   : String(value ?? '');
+const normalizeHeader = value => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .trim()
+  .toLowerCase();
+const pickRowValue = (row, normalizedRow, labels = []) => {
+  for (const label of labels) {
+    const value = row?.[label];
+    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+    const normalized = normalizedRow?.[normalizeHeader(label)];
+    if (normalized !== undefined && normalized !== null && String(normalized).trim() !== '') return normalized;
+  }
+  return '';
+};
 
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 const productNameKey = value => String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
+const safeFilePart = value => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/gi, '-')
+  .replace(/^-+|-+$/g, '')
+  .toLowerCase();
 
 const discardDuplicateProducts = items => {
   const seenNames = new Set();
@@ -79,6 +101,7 @@ export default function Estoque() {
   const [stock, setStock] = useState('todos');
   const [imageFilter, setImageFilter] = useState('all');
   const [pageSize, setPageSize] = useState(() => Math.max(10, Number(localStorage.getItem('nexo-estoque-page-size') || 50)));
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('nexo-estoque-view-mode') || 'table');
   const [dirty, setDirty] = useState(new Set());
   const [productModal, setProductModal] = useState(null);
   const [sort, setSort] = useState({ key: 'name', direction: 'asc' });
@@ -106,6 +129,10 @@ export default function Estoque() {
   useEffect(() => {
     localStorage.setItem('nexo-estoque-page-size', String(pageSize));
   }, [pageSize]);
+
+  useEffect(() => {
+    localStorage.setItem('nexo-estoque-view-mode', viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     if (!dirty.size) return undefined;
@@ -208,7 +235,8 @@ export default function Estoque() {
       const sheet = XLSX.utils.json_to_sheet(rows);
       const book = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(book, sheet, 'Estoque');
-      XLSX.writeFile(book, 'estoque-nexo-pdv.xlsx');
+      const marketPart = safeFilePart(config?.nome_mercado || user?.market_name || 'nexo-pdv');
+      XLSX.writeFile(book, `estoque-${marketPart}.xlsx`);
       toast.success('Planilha gerada.');
     } catch (error) {
       toast.error(error.message || 'Não foi possível gerar a planilha.');
@@ -230,10 +258,26 @@ export default function Estoque() {
       const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       if (!rows.length) throw new Error('A planilha está vazia.');
       if (rows.length > 5000) throw new Error('A planilha pode ter no máximo 5.000 produtos por importação.');
-      const mapped = rows.map(row => ({
-        id: row.ID || undefined,
-        ...Object.fromEntries(EDITABLE_COLUMNS.map(([key, label, type]) => [key, normalize(row[label], type)])),
-      }));
+      const mapped = rows.map(row => {
+        const normalizedRow = Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [normalizeHeader(key), value]));
+        const imageUrlValue = pickRowValue(row, normalizedRow, [
+          'URL da imagem',
+          'Url da imagem',
+          'url da imagem',
+          'URL imagem',
+          'Url imagem',
+          'url imagem',
+          'Imagem URL',
+          'image url',
+          'image_url',
+          'Imagem',
+        ]);
+        return {
+          id: normalizedRow.id || undefined,
+          ...Object.fromEntries(EDITABLE_COLUMNS.map(([key, label, type]) => [key, normalize(row[label] ?? normalizedRow[normalizeHeader(label)], type)])),
+          image_url: String(imageUrlValue ?? '').trim(),
+        };
+      });
       if (mapped.some(product => !product.name.trim() || Number(product.sale_price) < 0 || Number(product.quantity) < 0)) {
         throw new Error('Há produtos com nome, preço ou quantidade inválidos.');
       }
@@ -426,7 +470,7 @@ export default function Estoque() {
       </div>
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.4fr)_minmax(180px,220px)_minmax(150px,180px)_minmax(150px,180px)_minmax(160px,190px)_minmax(160px,180px)_minmax(150px,160px)_auto]">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.4fr)_minmax(180px,220px)_minmax(150px,180px)_minmax(150px,180px)_minmax(160px,190px)_minmax(160px,180px)_minmax(150px,160px)_auto_auto]">
           <label className="relative md:col-span-2 xl:col-span-1">
             <span className="sr-only">Pesquisar produtos</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -457,6 +501,14 @@ export default function Estoque() {
             <option value="100">100 por página</option>
             <option value="200">200 por página</option>
           </select>
+          <div className="inline-flex overflow-hidden rounded-xl border border-border bg-background">
+            <button type="button" onClick={() => setViewMode('table')} className={`inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}>
+              <List className="h-4 w-4" /> Tabela
+            </button>
+            <button type="button" onClick={() => setViewMode('grid')} className={`inline-flex min-h-11 items-center gap-2 border-l border-border px-3 text-sm font-semibold ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}>
+              <LayoutGrid className="h-4 w-4" /> Grade
+            </button>
+          </div>
           {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted xl:self-start"><FilterX className="h-4 w-4" /> Limpar</button>}
         </div>
       </section>
@@ -469,6 +521,53 @@ export default function Estoque() {
       <div ref={tableRef} className="max-h-[calc(100vh-300px)] min-h-[360px] scroll-mt-4 overflow-auto rounded-2xl border border-border bg-card shadow-sm">
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {visibleProducts.map(product => {
+              const quantity = Number(product.quantity || 0);
+              const isZero = quantity <= 0;
+              const isLow = !isZero && quantity <= lowStockThreshold;
+              const statusClass = dirty.has(product.id)
+                ? 'border-amber-500/40 bg-amber-500/10'
+                : isZero
+                  ? 'border-red-500/30 bg-red-500/10'
+                  : isLow
+                    ? 'border-amber-500/30 bg-amber-500/5'
+                    : 'border-border bg-card';
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => openProductModal('edit', product)}
+                  className={`group overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusClass}`}
+                >
+                  <div className="aspect-square bg-muted/30">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-3" loading="lazy" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="grid h-full place-items-center text-muted-foreground/30">
+                        <Package className="h-12 w-12" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2 p-3">
+                    <div>
+                      <p className="line-clamp-2 text-sm font-bold leading-5">{product.name}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.category || 'Sem categoria'}</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-base font-black text-accent">{formatCurrency(product.sale_price || 0)}</span>
+                      <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{product.unit || 'unidade'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className={isZero ? 'font-bold text-destructive' : 'text-muted-foreground'}>{isZero ? 'Sem estoque' : `Estoque: ${quantity}`}</span>
+                      <span className="text-muted-foreground">{product.barcode || product.internal_code || '-'}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         ) : (
           <>
             <div className="space-y-3 p-3 md:hidden">
