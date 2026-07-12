@@ -114,18 +114,28 @@ async function extractImageFromGoogleTab(tabId) {
 }
 
 async function searchFirstImage(product) {
+  const query = sanitizeQuery(product.barcode || product.name || '');
+  const name = sanitizeQuery(product.name || '');
+  if (!query && !name) return null;
+
+  try {
+    const result = await apiRequest(`/products/image-search?query=${encodeURIComponent(query)}&name=${encodeURIComponent(name)}&page=1`);
+    const first = result?.results?.[0] || null;
+    if (first?.url && isImageUrl(first.url)) return first;
+  } catch (error) {
+    pushLog(`Busca oficial falhou para ${name || query}: ${error.message || 'erro desconhecido'}`);
+  }
+
   const url = buildGoogleImagesUrl(product);
   if (!url) return null;
 
   const tab = await createHiddenTab(url);
   try {
     await waitForTabComplete(tab.id);
-    await sleep(800);
-    let image = await extractImageFromGoogleTab(tab.id);
+    await sleep(1000);
+    const image = await extractImageFromGoogleTab(tab.id);
     if (image?.url && isImageUrl(image.url)) return image;
-
-    const fallback = await apiRequest(`/products/image-search?query=${encodeURIComponent(product.barcode || product.name || '')}&name=${encodeURIComponent(product.name || '')}&page=1`);
-    return fallback?.results?.[0] || null;
+    return null;
   } finally {
     if (tab?.id) {
       chrome.tabs.remove(tab.id).catch(() => {});
