@@ -33,6 +33,17 @@ async function sendMessage(message) {
   return chrome.runtime.sendMessage(message);
 }
 
+async function loadSavedState() {
+  const result = await chrome.storage.local.get('nexo_auto_state');
+  const saved = result?.nexo_auto_state;
+  if (!saved || typeof saved !== 'object') return;
+  state.status = saved.status || state.status;
+  state.progress = saved.progress || state.progress;
+  state.logs = Array.isArray(saved.logs) ? saved.logs : state.logs;
+  state.debug = Array.isArray(saved.debug) ? saved.debug : state.debug;
+  state.lastRun = saved.lastRun || state.lastRun;
+}
+
 function pushLog(text) {
   state.logs = [text, ...state.logs].slice(0, 12);
   render();
@@ -80,7 +91,8 @@ $('stop').addEventListener('click', async () => {
   }
 });
 
-sendMessage({ type: 'nexo:get-state' })
+loadSavedState()
+  .then(() => sendMessage({ type: 'nexo:get-state' }))
   .then(response => {
     if (response?.ok && response.state) {
       state.status = response.state.status || state.status;
@@ -90,6 +102,8 @@ sendMessage({ type: 'nexo:get-state' })
       state.lastRun = response.state.lastRun || state.lastRun;
       render();
     }
+    }
+    render();
   })
   .catch(() => render());
 

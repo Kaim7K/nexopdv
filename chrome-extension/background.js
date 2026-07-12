@@ -12,7 +12,22 @@ const state = { ...DEFAULT_STATE };
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+function persistState() {
+  chrome.storage.local.set({
+    nexo_auto_state: {
+      status: state.status,
+      progress: state.progress,
+      logs: state.logs,
+      debug: state.debug,
+      lastRun: state.lastRun,
+      running: state.running,
+      stopRequested: state.stopRequested,
+    },
+  }).catch(() => {});
+}
+
 function broadcast() {
+  persistState();
   chrome.runtime.sendMessage({
     type: 'nexo:auto-state',
     status: state.status,
@@ -149,7 +164,7 @@ async function extractImageFromGoogleTab(tabId) {
         const text = (anchor.textContent || '').trim();
         if (!src && !href) continue;
         if (/\/ogw\//i.test(src) || /s32-c-mo/i.test(src)) continue;
-        const direct = img.dataset?.iurl || img.dataset?.src || '';
+        const direct = extractImageUrlFromHref(href) || img.dataset?.iurl || img.dataset?.src || '';
         candidates.push({
           href,
           src,
@@ -221,6 +236,7 @@ function getGoogleCandidateScore(product, candidate) {
 
   if (/\/ogw\//i.test(url) || /s32-c-mo/i.test(url)) return -1000;
   if (!isImageUrl(candidate.url)) return -1000;
+  if (/^data:image\//i.test(candidate.url)) score -= 10;
 
   const matchesBarcode = barcode && text.includes(barcode);
   const matchesName = name && name.split(/\s+/).filter(Boolean).some(token => token.length >= 3 && text.includes(token));
@@ -457,3 +473,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   return false;
 });
+
+chrome.storage.local.get('nexo_auto_state').then(result => {
+  const saved = result?.nexo_auto_state;
+  if (!saved || typeof saved !== 'object') return;
+  state.status = saved.status || state.status;
+  state.progress = saved.progress || state.progress;
+  state.logs = Array.isArray(saved.logs) ? saved.logs : state.logs;
+  state.debug = Array.isArray(saved.debug) ? saved.debug : state.debug;
+  state.lastRun = saved.lastRun || state.lastRun;
+  state.running = Boolean(saved.running);
+  state.stopRequested = Boolean(saved.stopRequested);
+  broadcast();
+}).catch(() => {});
