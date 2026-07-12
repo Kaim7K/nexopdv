@@ -17,6 +17,7 @@ function readOptions() {
     limit: Number($('limit').value || 50),
     onlyActive: $('only-active').checked,
     saveEmpty: $('save-empty').checked,
+    mode: $('mode-batch').checked ? 'batch' : 'current',
   };
 }
 

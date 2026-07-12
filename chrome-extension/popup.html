@@ -17,6 +17,18 @@
       </header>
 
       <section class="card">
+        <label class="label">Modo</label>
+        <label class="row">
+          <input id="mode-current" type="radio" name="mode" checked />
+          <span>Produto atual: buscar imagem e salvar nesta tela</span>
+        </label>
+        <label class="row">
+          <input id="mode-batch" type="radio" name="mode" />
+          <span>Lote: preencher produtos sem imagem</span>
+        </label>
+      </section>
+
+      <section class="card">
         <label class="label">Limite de itens</label>
         <input id="limit" type="number" min="1" max="5000" value="50" />
         <p class="hint">Quantidade máxima de produtos sem imagem para processar nesta execução.</p>
