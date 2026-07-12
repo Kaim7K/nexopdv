@@ -4,6 +4,7 @@ import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import { openGoogleImages } from '@/lib/google-images';
+import { watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
 import { standardizeProductName } from '@/lib/product-name';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
@@ -12,6 +13,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
   const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [identifying, setIdentifying] = useState(false);
+  const clipboardCleanupRef = React.useRef(null);
 
   useEffect(() => {
     if (!/^\d{6,14}$/.test(String(barcode || ''))) return;
@@ -25,6 +27,19 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
     }).catch(() => {}).finally(() => active && setIdentifying(false));
     return () => { active = false; };
   }, [barcode]);
+
+  useEffect(() => () => {
+    clipboardCleanupRef.current?.();
+    clipboardCleanupRef.current = null;
+  }, []);
+
+  const armClipboardPaste = () => {
+    clipboardCleanupRef.current?.();
+    clipboardCleanupRef.current = watchClipboardForImageUrl(url => {
+      setImageUrl(url);
+      toast.success('URL da imagem colada automaticamente.');
+    });
+  };
 
 
 
@@ -96,10 +111,10 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
                 {imageUrl ? <img src={imageUrl} alt={name || 'Produto'} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[10px] text-muted-foreground">Sem imagem</span>}
               </div>
               <div className="min-w-0 flex-1">
-                <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
+                <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); armClipboardPaste(); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
                   <ExternalLink className="h-4 w-4" /> Pesquisar no Google Imagens
                 </button>
-                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba sem filtro de cor de fundo.</p>
+                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba sem filtro de cor de fundo. Se você copiar a URL da imagem e voltar para cá, o campo tenta preencher sozinho.</p>
               </div>
               {imageUrl && <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>}
             </div>
