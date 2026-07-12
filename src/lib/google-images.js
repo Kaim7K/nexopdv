@@ -1,8 +1,9 @@
 const GOOGLE_IMAGES_BASE_URL = 'https://www.google.com/search';
 
 export function buildGoogleImagesUrl({ barcode = '', productName = '' } = {}) {
-  const query = String(barcode || productName || '').trim();
-  if (!query) throw new Error('Informe o código de barras ou o nome do produto.');
+  const baseQuery = String(barcode || productName || '').trim();
+  if (!baseQuery) throw new Error('Informe o código de barras ou o nome do produto.');
+  const query = `${baseQuery} fundo branco`.trim();
 
   const params = new URLSearchParams({
     q: query,

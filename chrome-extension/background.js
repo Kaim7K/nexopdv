@@ -97,8 +97,9 @@ async function loadProducts({ onlyActive = true, limit = 50 } = {}) {
 }
 
 function buildGoogleImagesUrl(product) {
-  const query = sanitizeQuery([product.barcode, product.name].filter(Boolean).join(' '));
-  if (!query) return null;
+  const baseQuery = sanitizeQuery(product.barcode || product.name || '');
+  if (!baseQuery) return null;
+  const query = sanitizeQuery(`${baseQuery} fundo branco`);
   const params = new URLSearchParams({
     q: query,
     tbm: 'isch',
@@ -136,33 +137,47 @@ async function extractImageFromGoogleTab(tabId) {
     target: { tabId },
     func: () => {
       const anchors = [...document.querySelectorAll('a[href]')];
-      const candidates = anchors.flatMap(anchor => {
+      const images = [...document.querySelectorAll('img')];
+      const candidates = [];
+
+      for (const anchor of anchors) {
         const img = anchor.querySelector('img');
-        const src = img?.currentSrc || img?.src || img?.dataset?.src || img?.dataset?.iurl || '';
+        if (!img) continue;
+        const src = img.currentSrc || img.src || img.dataset?.src || img.dataset?.iurl || '';
         const href = anchor.href || '';
         const text = (anchor.textContent || '').trim();
-        if (!/^https?:\/\//i.test(src)) return [];
-        if (!/imgres|\/search\?/i.test(href)) return [];
-        if (/\/ogw\//i.test(src)) return [];
-        if (/s32-c-mo/i.test(src)) return [];
-        if (!/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)) return [];
-        return [{
+        if (!src && !href) continue;
+        if (/\/ogw\//i.test(src) || /s32-c-mo/i.test(src)) continue;
+        const direct = img.dataset?.iurl || img.dataset?.src || '';
+        candidates.push({
           href,
           src,
+          direct,
           text,
-        }];
-      });
+          score: Number(Boolean(direct)) + Number(/imgres/i.test(href)) + Number(/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)),
+        });
+      }
 
+      if (!candidates.length) {
+        for (const img of images) {
+          const src = img.currentSrc || img.src || img.dataset?.src || img.dataset?.iurl || '';
+          if (!src) continue;
+          if (/\/ogw\//i.test(src) || /s32-c-mo/i.test(src)) continue;
+          if (!/^https?:\/\//i.test(src)) continue;
+          candidates.push({
+            href: '',
+            src,
+            direct: img.dataset?.iurl || img.dataset?.src || '',
+            text: (img.alt || img.title || '').trim(),
+            score: Number(Boolean(img.dataset?.iurl || img.dataset?.src)) + Number(/encrypted-tbn\d*\.gstatic\.com|googleusercontent\.com\/(?:tbn|gstatic|lh\d+)/i.test(src)),
+          });
+        }
+      }
+
+      candidates.sort((first, second) => second.score - first.score);
       const best = candidates[0] || null;
       if (!best) return null;
-      const direct = (() => {
-        try {
-          const url = new URL(best.href);
-          return String(url.searchParams.get('imgurl') || url.searchParams.get('img_url') || url.searchParams.get('mediaurl') || '').trim();
-        } catch {
-          return '';
-        }
-      })();
+      const direct = String(best.direct || '').trim();
       return { url: direct || best.src, href: best.href, text: best.text };
     },
   });
