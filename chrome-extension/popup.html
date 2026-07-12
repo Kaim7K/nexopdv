@@ -3,61 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexo PDV Automação</title>
+    <title>Nexo Automação</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="app">
-      <header class="header">
+    <div class="shell">
+      <header class="hero">
         <div>
           <p class="eyebrow">Nexo PDV</p>
-          <h1>Automação em massa</h1>
+          <h1>Automaçao de imagem</h1>
+          <p class="subtitle">Busca produtos sem foto e preenche tudo em segundo plano.</p>
         </div>
-        <span class="pill">Chrome</span>
+        <div class="brand-badge">Chrome</div>
       </header>
 
-      <section class="card">
-        <label class="label">Modo</label>
-        <label class="row">
-          <input id="mode-current" type="radio" name="mode" checked />
-          <span>Produto atual: buscar imagem e salvar nesta tela</span>
-        </label>
-        <label class="row">
-          <input id="mode-batch" type="radio" name="mode" />
-          <span>Lote: preencher produtos sem imagem</span>
-        </label>
+      <section class="status-card">
+        <div class="status-line">
+          <span class="dot"></span>
+          <span id="status-text">Pronto para iniciar</span>
+        </div>
+        <div class="progress-wrap"><div id="progress-bar"></div></div>
+        <div class="meta-row">
+          <span>Última ação</span>
+          <strong id="last-action">Nenhuma</strong>
+        </div>
       </section>
 
-      <section class="card">
-        <label class="label">Limite de itens</label>
-        <input id="limit" type="number" min="1" max="5000" value="50" />
-        <p class="hint">Quantidade máxima de produtos sem imagem para processar nesta execução.</p>
+      <section class="card two-col">
+        <div>
+          <label class="field-label" for="limit">Limite</label>
+          <input id="limit" type="number" min="1" max="5000" value="50" />
+        </div>
+        <div>
+          <label class="field-label" for="pause-after">Intervalo</label>
+          <input id="pause-after" type="number" min="0" max="5000" value="350" />
+        </div>
       </section>
 
-      <section class="card">
-        <label class="row">
+      <section class="card options">
+        <label class="toggle">
           <input id="only-active" type="checkbox" checked />
-          <span>Somente produtos ativos</span>
-        </label>
-        <label class="row">
-          <input id="save-empty" type="checkbox" />
-          <span>Salvar mesmo sem imagem encontrada</span>
+          <span>Somente ativos</span>
         </label>
       </section>
 
       <section class="actions">
-        <button id="start" class="primary">Iniciar</button>
+        <button id="start" class="primary">Executar</button>
         <button id="pause">Pausar</button>
         <button id="stop">Parar</button>
       </section>
 
-      <section class="card status">
-        <div><span class="label">Status</span><strong id="status">Pronto</strong></div>
-        <div><span class="label">Progresso</span><strong id="progress">0 / 0</strong></div>
-      </section>
-
-      <section class="card log">
-        <div class="label">Últimos eventos</div>
+      <section class="card">
+        <div class="field-label">Eventos recentes</div>
         <div id="log" class="log-list"></div>
       </section>
     </div>

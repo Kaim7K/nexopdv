@@ -7,25 +7,22 @@ const state = {
 const $ = id => document.getElementById(id);
 
 function render() {
-  $('status').textContent = state.status;
-  $('progress').textContent = `${state.progress.current} / ${state.progress.total}`;
+  $('status-text').textContent = state.status;
+  $('progress-bar').style.width = `${state.progress.total ? Math.min(100, (state.progress.current / state.progress.total) * 100) : 0}%`;
+  $('last-action').textContent = state.logs[0] || 'Nenhuma';
   $('log').innerHTML = state.logs.slice(0, 6).map(entry => `<div class="log-item">${entry}</div>`).join('');
 }
 
 function readOptions() {
   return {
-    limit: Number($('limit').value || 50),
     onlyActive: $('only-active').checked,
-    saveEmpty: $('save-empty').checked,
-    mode: $('mode-batch').checked ? 'batch' : 'current',
+    pauseAfter: Number($('pause-after').value || 350),
+    limit: Number($('limit').value || 50),
   };
 }
 
 async function sendMessage(message) {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const tab = tabs[0];
-  if (!tab?.id) throw new Error('Abra o site do Nexo PDV para usar a automação.');
-  return chrome.tabs.sendMessage(tab.id, message);
+  return chrome.runtime.sendMessage(message);
 }
 
 function pushLog(text) {
@@ -45,31 +42,43 @@ chrome.runtime.onMessage.addListener(message => {
 $('start').addEventListener('click', async () => {
   try {
     const options = readOptions();
-    state.status = 'Iniciando...';
+    state.status = 'Executando...';
     render();
-    await sendMessage({ type: 'nexo:auto-start', options });
+    const response = await sendMessage({ type: 'nexo:start-batch', options });
+    if (!response?.ok) throw new Error(response?.error || 'Falha ao iniciar automação.');
+    state.status = 'Finalizado';
+    render();
   } catch (error) {
     state.status = 'Erro';
     pushLog(error.message || 'Falha ao iniciar automação.');
+    render();
   }
 });
 
 $('pause').addEventListener('click', async () => {
-  try {
-    await sendMessage({ type: 'nexo:auto-pause' });
-  } catch (error) {
-    pushLog(error.message || 'Falha ao pausar.');
-  }
+  pushLog('A automação em lote roda sem precisar da aba ativa.');
 });
 
 $('stop').addEventListener('click', async () => {
   try {
-    await sendMessage({ type: 'nexo:auto-stop' });
-    state.status = 'Parado';
+    await sendMessage({ type: 'nexo:stop-batch' });
+    state.status = 'Parando';
+    pushLog('Solicitação de parada enviada.');
     render();
   } catch (error) {
     pushLog(error.message || 'Falha ao parar.');
   }
 });
+
+sendMessage({ type: 'nexo:get-state' })
+  .then(response => {
+    if (response?.ok && response.state) {
+      state.status = response.state.status || state.status;
+      state.progress = response.state.progress || state.progress;
+      state.logs = response.state.logs || state.logs;
+      render();
+    }
+  })
+  .catch(() => render());
 
 render();
