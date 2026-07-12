@@ -69,16 +69,28 @@ export function buildStockAlertEmail({ marketName, products, generatedAt }) {
 }
 
 export async function sendStockAlertEmail({ to, marketName, products, generatedAt = new Date().toISOString() }) {
-  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
   const from = String(process.env.EMAIL_FROM || '').trim();
-  if (!apiKey || !from) throw new AppError(503, 'EMAIL_NOT_CONFIGURED', 'Configure RESEND_API_KEY e EMAIL_FROM para enviar relatórios.');
+  const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
+  const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
+  if ((!brevoApiKey && !resendApiKey) || !from) throw new AppError(503, 'EMAIL_NOT_CONFIGURED', 'Configure BREVO_API_KEY (ou RESEND_API_KEY) e EMAIL_FROM para enviar relatórios.');
   const recipients = [...new Set((Array.isArray(to) ? to : [to]).map(value => String(value || '').trim().toLowerCase()).filter(value => EMAIL_PATTERN.test(value)))];
   if (!recipients.length) throw new AppError(400, 'INVALID_RECIPIENT', 'Informe pelo menos um e-mail válido.');
   const content = buildStockAlertEmail({ marketName, products, generatedAt });
-  const response = await fetch('https://api.resend.com/emails', { method:'POST', headers:{ Authorization:`Bearer ${apiKey}`, 'Content-Type':'application/json' }, body:JSON.stringify({ from, to:recipients, subject:content.subject, html:content.html }) });
+
+  if (brevoApiKey) {
+    const match = /^(.*?)\s*<([^<>]+)>$/.exec(from);
+    const sender = { name:String(match?.[1] || 'Nexo PDV').trim(), email:String(match?.[2] || from).trim().toLowerCase() };
+    if (!EMAIL_PATTERN.test(sender.email)) throw new AppError(503, 'EMAIL_FROM_INVALID', 'EMAIL_FROM não contém um remetente válido.');
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', { method:'POST', headers:{ 'api-key':brevoApiKey, Accept:'application/json', 'Content-Type':'application/json' }, body:JSON.stringify({ sender, to:recipients.map(email => ({ email })), subject:content.subject, htmlContent:content.html }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new AppError(502, 'EMAIL_SEND_FAILED', result.message || 'O Brevo recusou o envio do e-mail.');
+    return { id:result.messageId || null, recipients, provider:'brevo' };
+  }
+
+  const response = await fetch('https://api.resend.com/emails', { method:'POST', headers:{ Authorization:`Bearer ${resendApiKey}`, 'Content-Type':'application/json' }, body:JSON.stringify({ from, to:recipients, subject:content.subject, html:content.html }) });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new AppError(502, 'EMAIL_SEND_FAILED', result.message || 'O provedor recusou o envio do e-mail.');
-  return { id: result.id || null, recipients };
+  return { id:result.id || null, recipients, provider:'resend' };
 }
 
 export function isValidAlertEmail(value) { return EMAIL_PATTERN.test(String(value || '').trim()); }
