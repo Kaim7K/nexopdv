@@ -16,7 +16,7 @@
     "db:setup": "node scripts/deploy-database.mjs",
     "db:check": "node scripts/check-database.mjs",
     "check": "pnpm run test && pnpm run typecheck && pnpm run lint && pnpm run build",
-    "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs && node tests/features.test.mjs && node tests/product-images.test.mjs && node tests/regressions.test.mjs && node tests/ui-performance-security.test.mjs",
+    "test": "node tests/architecture.test.mjs && node tests/auth.test.mjs && node tests/features.test.mjs && node tests/product-images.test.mjs && node tests/stock-alerts.test.mjs && node tests/regressions.test.mjs && node tests/ui-performance-security.test.mjs",
     "test:source": "node tests/features.test.mjs && node tests/product-images.test.mjs && node tests/regressions.test.mjs && node tests/ui-performance-security.test.mjs"
   },
   "dependencies": {

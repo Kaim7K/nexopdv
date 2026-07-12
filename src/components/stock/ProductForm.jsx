@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   unit: 'unidade',
   status: 'ativo',
   allow_pdv_price_edit: false,
+  track_stock: true,
 };
 
 export default function ProductForm({ product = null, duplicateSource = null, categories = [], user, onSave, onClose }) {
@@ -71,6 +72,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         unit: product.unit || 'unidade',
         status: product.status || 'ativo',
         allow_pdv_price_edit: Boolean(product.allow_pdv_price_edit),
+        track_stock: product.track_stock !== false,
       });
       return;
     }
@@ -88,6 +90,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         unit: duplicateSource.unit || 'unidade',
         status: duplicateSource.status || 'ativo',
         allow_pdv_price_edit: false,
+        track_stock: duplicateSource.track_stock !== false,
       });
       return;
     }
@@ -236,6 +239,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       unit: form.unit,
       status: form.status,
       allow_pdv_price_edit: Boolean(form.allow_pdv_price_edit),
+      track_stock: Boolean(form.track_stock),
     };
     if (!isEditing || imageChanged || !product?.image_is_inline) data.image_url = form.image_url || '';
     return data;
@@ -293,6 +297,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           cost_price: String(data.cost_price ?? ''),
           quantity: '0',
           allow_pdv_price_edit: false,
+          track_stock: data.track_stock !== false,
         });
         toast.success('Primeiro produto criado. Ajuste a cópia e clique em Criar.');
       }
@@ -466,6 +471,10 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
                 Use para produtos com preço variável. Por padrão esta opção fica desativada.
               </span>
             </span>
+          </label>
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
+            <input type="checkbox" checked={Boolean(form.track_stock)} onChange={event => handleChange('track_stock', event.target.checked)} className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent" />
+            <span><strong className="block text-sm">Controlar estoque deste produto</strong><span className="mt-0.5 block text-xs leading-5 text-muted-foreground">Quando desativado, o produto não entra nos alertas nem no relatório de reposição.</span></span>
           </label>
         </div>
 

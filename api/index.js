@@ -12,6 +12,7 @@ import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, s
 import { AppError } from '../server/errors.js';
 import { lookupBarcode } from '../server/product-catalog.js';
 import { searchProductImages } from '../server/product-images.js';
+import { isValidAlertEmail, loadStockAlertReport, sendStockAlertEmail } from '../server/stock-alerts.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -21,9 +22,10 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const MARKET_MODULES = ['pdv','estoque','vendas','fiados','relatorios','auditoria','usuarios','configuracoes'];
 const USER_ROLES = ['vendedor', 'gerente', 'admin'];
 const PAYMENT_METHODS = new Set(['dinheiro', 'pix', 'debito', 'credito', 'outros', 'fiado']);
-const PRODUCT_FIELDS = ['name','category','barcode','internal_code','image_url','sale_price','cost_price','quantity','unit','status','allow_pdv_price_edit'];
+const PRODUCT_FIELDS = ['name','category','barcode','internal_code','image_url','sale_price','cost_price','quantity','unit','status','allow_pdv_price_edit','track_stock'];
 const PRODUCT_UNITS = new Set(['unidade','peso','pacote']);
 const PRODUCT_STATUSES = new Set(['ativo','inativo']);
+const STOCK_ALERT_TIMEZONE = 'America/Bahia';
 
 const text = (value, max = 500) => String(value ?? '').trim().slice(0, max);
 const productNameKey = value => text(value, 180).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
@@ -83,6 +85,58 @@ function summarizeSales(sales) {
   };
 }
 
+function zonedDateParts(date = new Date()) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: STOCK_ALERT_TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hourCycle:'h23' }).formatToParts(date).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour || 0) };
+}
+
+async function processScheduledStockAlerts(sql, now = new Date()) {
+  const clock = zonedDateParts(now);
+  const markets = await sql`
+    SELECT market.id, market.name,
+      COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_time' LIMIT 1), '20:00') AS alert_time,
+      COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_enabled' LIMIT 1), 'true') AS alert_enabled
+    FROM nexo.markets market
+    WHERE market.active=true
+      AND EXISTS (SELECT 1 FROM nexo.records recipient WHERE recipient.market_id=market.id AND recipient.entity='stock_alert_recipients' AND recipient.data->>'active'='true')
+  `;
+  const results = [];
+  for (const market of markets) {
+    if (market.alert_enabled !== 'true') continue;
+    const scheduledHour = Math.max(0, Math.min(23, Number(String(market.alert_time || '20:00').split(':')[0]) || 20));
+    if (clock.hour < scheduledHour) continue;
+    const deliveryKey = `${market.id}:${clock.date}`;
+    const [claim] = await sql`
+      WITH retried AS (
+        UPDATE nexo.records SET data=data || jsonb_build_object('status','processando','attempts',COALESCE((data->>'attempts')::int,0)+1,'last_attempt_at',now()), updated_date=now()
+        WHERE market_id=${market.id} AND entity='stock_alert_deliveries' AND data->>'delivery_key'=${deliveryKey} AND data->>'status'='falhou' AND COALESCE((data->>'attempts')::int,0)<3
+        RETURNING id
+      ), inserted AS (
+        INSERT INTO nexo.records(market_id,entity,data) VALUES(${market.id},'stock_alert_deliveries',${JSON.stringify({ delivery_key:deliveryKey, report_date:clock.date, status:'processando', attempts:1 })}::jsonb)
+        ON CONFLICT DO NOTHING RETURNING id
+      ) SELECT id FROM retried UNION ALL SELECT id FROM inserted LIMIT 1
+    `;
+    if (!claim) continue;
+    try {
+      const products = await loadStockAlertReport(sql, market.id, now);
+      const recipientRows = await sql`SELECT data FROM nexo.records WHERE market_id=${market.id} AND entity='stock_alert_recipients' AND data->>'active'='true'`;
+      const recipients = recipientRows.map(row => row.data?.email).filter(Boolean);
+      if (!products.length || !recipients.length) {
+        await sql`UPDATE nexo.records SET data=data || ${JSON.stringify({ status:'ignorado', product_count:products.length, recipients, finished_at:now.toISOString() })}::jsonb,updated_date=now() WHERE id=${claim.id}`;
+        results.push({ market_id:market.id, status:'ignorado', products:products.length });
+        continue;
+      }
+      const sent = await sendStockAlertEmail({ to:recipients, marketName:market.name, products, generatedAt:now.toISOString() });
+      await sql`UPDATE nexo.records SET data=data || ${JSON.stringify({ status:'enviado', product_count:products.length, recipients:sent.recipients, provider_id:sent.id, finished_at:now.toISOString() })}::jsonb,updated_date=now() WHERE id=${claim.id}`;
+      results.push({ market_id:market.id, status:'enviado', products:products.length });
+    } catch (error) {
+      await sql`UPDATE nexo.records SET data=data || ${JSON.stringify({ status:'falhou', error:text(error?.message,500), finished_at:now.toISOString() })}::jsonb,updated_date=now() WHERE id=${claim.id}`;
+      results.push({ market_id:market.id, status:'falhou' });
+    }
+  }
+  return results;
+}
+
 async function findOpenCashSession(sql, marketId, sellerId) {
   const rows = await sql`
     SELECT id, data, created_date, updated_date
@@ -137,6 +191,7 @@ function normalizeProductPayload(data, partial = false) {
     } else if (field === 'unit') clean[field] = PRODUCT_UNITS.has(source[field]) ? source[field] : 'unidade';
     else if (field === 'status') clean[field] = PRODUCT_STATUSES.has(source[field]) ? source[field] : 'ativo';
     else if (field === 'allow_pdv_price_edit') clean[field] = Boolean(source[field]);
+    else if (field === 'track_stock') clean[field] = source[field] !== false;
     else if (field === 'image_url') clean[field] = normalizeImageValue(source[field]);
     else clean[field] = text(source[field], 180);
   }
@@ -211,6 +266,7 @@ function validateProductPayload(data, partial = false) {
   if (data.unit !== undefined && !PRODUCT_UNITS.has(data.unit)) throw new AppError(400, 'INVALID_PRODUCT', 'Unidade de venda inválida.');
   if (data.status !== undefined && !PRODUCT_STATUSES.has(data.status)) throw new AppError(400, 'INVALID_PRODUCT', 'Status do produto inválido.');
   if (data.allow_pdv_price_edit !== undefined && typeof data.allow_pdv_price_edit !== 'boolean') throw new AppError(400, 'INVALID_PRODUCT', 'Permissão de preço no PDV inválida.');
+  if (data.track_stock !== undefined && typeof data.track_stock !== 'boolean') throw new AppError(400, 'INVALID_PRODUCT', 'Controle de estoque inválido.');
 }
 
 async function routeHandler(req, res) {
@@ -255,6 +311,14 @@ async function routeHandler(req, res) {
 
   await assertDatabaseReady(sql);
 
+  if (path[0] === 'cron' && path[1] === 'stock-alerts') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    const cronSecret = String(process.env.CRON_SECRET || '').trim();
+    if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) return send(res, 401, { message: 'Agendamento não autorizado.' });
+    const results = await processScheduledStockAlerts(sql);
+    return send(res, 200, { ok:true, processed:results.length, results });
+  }
+
   if (path[0] === 'auth' && path[1] === 'login') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     const authenticated = await authenticateCredentials(sql, req.body);
@@ -292,6 +356,68 @@ async function routeHandler(req, res) {
   const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'products' || path[0] === 'product-media' ? null : path[0] === 'cash' ? 'pdv' : path[0] === 'sales' ? (path[1] === 'complete' || path[1] === 'next' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
   if (user.role !== 'super_admin' && requiredModule && !(user.enabled_modules || []).includes(requiredModule)) return send(res, 403, { message: 'Esta funcionalidade não está habilitada para o mercado.' });
   if (user.role !== 'super_admin' && path[0] === 'entities' && path[1] === 'Product' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
+
+  if (path[0] === 'stock-alerts') {
+    if (!user.market_id || !['admin','gerente'].includes(user.role)) return send(res, 403, { message:'Sem permissão para configurar alertas de estoque.' });
+    if (path[1] === 'settings' && req.method === 'GET') {
+      const [recipients, deliveries, configRows] = await Promise.all([
+        sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='stock_alert_recipients' ORDER BY created_date`,
+        sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='stock_alert_deliveries' ORDER BY created_date DESC LIMIT 20`,
+        sql`SELECT data FROM nexo.records WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=ANY(ARRAY['stock_alert_time','stock_alert_enabled'])`,
+      ]);
+      const config = Object.fromEntries(configRows.map(row => [row.data?.key, row.data?.value]));
+      return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
+    }
+    if (path[1] === 'settings' && req.method === 'PATCH') {
+      const time = text(req.body.time, 5);
+      const enabled = req.body.enabled !== false;
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return send(res, 400, { message:'Informe um horário válido.' });
+      const entries = [
+        { key:'stock_alert_time', value:time, label:'Horário do alerta de estoque' },
+        { key:'stock_alert_enabled', value:String(enabled), label:'Envio automático do alerta de estoque' },
+      ];
+      for (const payload of entries) {
+        await sql`
+          WITH updated AS (
+            UPDATE nexo.records SET data=data || ${JSON.stringify(payload)}::jsonb,updated_date=now()
+            WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=${payload.key} RETURNING id
+          )
+          INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'system_configs',${JSON.stringify(payload)}::jsonb WHERE NOT EXISTS(SELECT 1 FROM updated)
+        `;
+      }
+      return send(res, 200, { enabled, time, timezone:STOCK_ALERT_TIMEZONE });
+    }
+    if (path[1] === 'preview' && req.method === 'GET') {
+      const products = await loadStockAlertReport(sql, user.market_id);
+      return send(res, 200, { generated_at:new Date().toISOString(), products });
+    }
+    if (path[1] === 'recipients' && !path[2] && req.method === 'POST') {
+      const email = text(req.body.email, 320).toLowerCase();
+      if (!isValidAlertEmail(email)) return send(res, 400, { message:'Informe um endereço de e-mail válido.' });
+      const [recipient] = await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'stock_alert_recipients',${JSON.stringify({ email, active:req.body.active !== false })}::jsonb) RETURNING id,data,created_date,updated_date`;
+      return send(res, 201, recordFromRow(recipient));
+    }
+    if (path[1] === 'recipients' && path[2] && req.method === 'PATCH') {
+      if (!isUuid(path[2])) return send(res, 400, { message:'Destinatário inválido.' });
+      const email = text(req.body.email, 320).toLowerCase();
+      if (!isValidAlertEmail(email)) return send(res, 400, { message:'Informe um endereço de e-mail válido.' });
+      const [recipient] = await sql`UPDATE nexo.records SET data=data || ${JSON.stringify({ email, active:req.body.active !== false })}::jsonb,updated_date=now() WHERE id=${path[2]} AND market_id=${user.market_id} AND entity='stock_alert_recipients' RETURNING id,data,created_date,updated_date`;
+      return send(res, recipient ? 200 : 404, recipient ? recordFromRow(recipient) : { message:'Destinatário não encontrado.' });
+    }
+    if (path[1] === 'recipients' && path[2] && req.method === 'DELETE') {
+      if (!isUuid(path[2])) return send(res, 400, { message:'Destinatário inválido.' });
+      const [removed] = await sql`DELETE FROM nexo.records WHERE id=${path[2]} AND market_id=${user.market_id} AND entity='stock_alert_recipients' RETURNING id`;
+      return send(res, removed ? 200 : 404, removed ? { ok:true } : { message:'Destinatário não encontrado.' });
+    }
+    if (path[1] === 'test' && req.method === 'POST') {
+      const email = text(req.body.email, 320).toLowerCase();
+      if (!isValidAlertEmail(email)) return send(res, 400, { message:'Informe um endereço de e-mail válido.' });
+      const products = await loadStockAlertReport(sql, user.market_id);
+      const sent = await sendStockAlertEmail({ to:[email], marketName:user.market_name || 'Nexo PDV', products, generatedAt:new Date().toISOString() });
+      return send(res, 200, { ok:true, provider_id:sent.id, product_count:products.length });
+    }
+    return methodNotAllowed(res, ['GET','POST','PATCH','DELETE']);
+  }
 
 
   if (path[0] === 'products' && path[1] === 'delete-inactive') {

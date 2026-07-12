@@ -18,6 +18,7 @@ import {
   Store,
 } from 'lucide-react';
 import ImageUploadField from '@/components/ImageUploadField';
+import StockAlertSettings from '@/components/settings/StockAlertSettings';
 import { deriveSidebarPalette, normalizeHex } from '@/lib/color-contrast';
 import { DEFAULT_PRODUCT_CATEGORIES, categoriesToStorageValue, formatProductCategories, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 
@@ -358,6 +359,7 @@ export default function Configuracoes() {
             </label>
           </section>
         )}
+        {['admin','gerente'].includes(user?.role) && <StockAlertSettings />}
       </div>
 
       {user?.role === 'admin' && (

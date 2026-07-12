@@ -97,6 +97,15 @@ export const nexoApi = {
     deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
   },
   stock: { bulkUpdate: (products, existingMode = 'update') => request('/stock/import', { method: 'POST', body: { products, existing_mode: existingMode }, timeout: 60_000 }) },
+  stockAlerts: {
+    settings: () => request('/stock-alerts/settings', { cacheTTL: 10_000 }),
+    updateSettings: settings => request('/stock-alerts/settings', { method:'PATCH', body:settings }),
+    preview: () => request('/stock-alerts/preview'),
+    addRecipient: data => request('/stock-alerts/recipients', { method:'POST', body:data }),
+    updateRecipient: (id, data) => request(`/stock-alerts/recipients/${id}`, { method:'PATCH', body:data }),
+    removeRecipient: id => request(`/stock-alerts/recipients/${id}`, { method:'DELETE' }),
+    test: email => request('/stock-alerts/test', { method:'POST', body:{ email }, timeout:60_000 }),
+  },
   maintenance: {
     reset: (target, confirmation) => request('/maintenance/reset', { method: 'POST', body: { target, confirmation }, timeout: 60_000 }),
   },

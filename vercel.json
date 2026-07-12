@@ -3,6 +3,12 @@
   "installCommand": "corepack enable && corepack prepare pnpm@10.28.1 --activate && pnpm install --frozen-lockfile --reporter=append-only",
   "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/cron/stock-alerts",
+      "schedule": "0 * * * *"
+    }
+  ],
   "functions": {
     "api/index.js": {
       "maxDuration": 30
