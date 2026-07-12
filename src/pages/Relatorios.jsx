@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { AlertTriangle, BarChart3, CalendarRange, DollarSign, Lightbulb, Receipt, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
 
 const PERIODS = [
@@ -10,6 +10,13 @@ const PERIODS = [
   { key: 'month', label: 'Mensal' },
   { key: 'year', label: 'Anual' },
   { key: 'custom', label: 'Personalizado' },
+];
+
+const BREAKDOWNS = [
+  { key: 'hour', label: 'Hora' },
+  { key: 'day', label: 'Dia' },
+  { key: 'weekday', label: 'Dia da semana' },
+  { key: 'month', label: 'Mês' },
 ];
 
 const CHART_COLORS = [
@@ -36,6 +43,7 @@ export default function Relatorios() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [fiados, setFiados] = useState([]);
+  const [breakdown, setBreakdown] = useState('hour');
 
   const customRangeValid = period !== 'custom' || (customStart && customEnd && new Date(customStart) <= new Date(customEnd));
 
@@ -148,8 +156,36 @@ export default function Relatorios() {
     }
     const dailyData = Object.entries(dailyMap).sort(([first], [second]) => first.localeCompare(second)).map(([, value]) => value);
 
-    return { totalRevenue, revenueChange, totalSales, avgTicket, cancelled, topProducts, paymentData, sellerData, pendingFiado, dailyData };
-  }, [periodSales, prevPeriodSales, sales, fiados, startDate, endDate, period]);
+    const breakdownMap = {};
+    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    for (const sale of periodSales) {
+      const date = new Date(sale.created_date);
+      let key;
+      let label;
+      if (breakdown === 'hour') {
+        key = date.getHours();
+        label = `${key}h`;
+      } else if (breakdown === 'weekday') {
+        key = date.getDay();
+        label = weekdayNames[key];
+      } else if (breakdown === 'month') {
+        key = date.getMonth();
+        label = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        label = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      }
+      if (!breakdownMap[key]) breakdownMap[key] = { key, label, revenue: 0, sales: 0 };
+      breakdownMap[key].revenue += Number(sale.total || 0);
+      breakdownMap[key].sales += 1;
+    }
+    const breakdownData = Object.values(breakdownMap).sort((first, second) => String(first.key).localeCompare(String(second.key), 'pt-BR', { numeric: true })).map(item => ({
+      ...item,
+      average: item.sales ? item.revenue / item.sales : 0,
+    }));
+
+    return { totalRevenue, revenueChange, totalSales, avgTicket, cancelled, topProducts, paymentData, sellerData, pendingFiado, dailyData, breakdownData };
+  }, [periodSales, prevPeriodSales, sales, fiados, startDate, endDate, period, breakdown]);
 
   const insights = useMemo(() => {
     const list = [];
@@ -198,6 +234,34 @@ export default function Relatorios() {
         <StatCard icon={Receipt} label="Ticket médio" value={formatCurrency(stats.avgTicket)} />
         <StatCard icon={AlertTriangle} label="Cancelamentos" value={stats.cancelled} alert={stats.cancelled > 0} />
       </div>
+
+      <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
+        <div className="border-b border-border p-4">
+          <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
+          <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
+            {BREAKDOWNS.map(item => <button type="button" key={item.key} onClick={() => setBreakdown(item.key)} className={`border-b-2 px-2 py-2 text-xs font-bold uppercase transition ${breakdown === item.key ? 'border-accent text-accent' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{item.label}</button>)}
+          </div>
+        </div>
+        {stats.breakdownData.length ? <>
+          <div className="p-4">
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={stats.breakdownData} margin={{ left: 8, right: 16 }}>
+                <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={{ stroke: 'hsl(var(--border))' }} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={value => `R$ ${Number(value).toFixed(0)}`} axisLine={false} tickLine={false} />
+                <Tooltip formatter={value => formatCurrency(value)} contentStyle={TOOLTIP_STYLE} />
+                <Line type="monotone" dataKey="revenue" name="Faturamento" stroke="hsl(var(--chart-1))" strokeWidth={2.5} dot={{ r: 4, fill: 'hsl(var(--chart-1))' }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="overflow-x-auto border-t border-border">
+            <table className="w-full min-w-[620px] text-left text-sm">
+              <thead className="bg-muted/60 text-xs uppercase text-muted-foreground"><tr><th className="px-4 py-3">{BREAKDOWNS.find(item => item.key === breakdown)?.label}</th><th className="px-4 py-3">Faturamento</th><th className="px-4 py-3">Vendas</th><th className="px-4 py-3">Ticket médio</th></tr></thead>
+              <tbody>{stats.breakdownData.map(row => <tr key={row.key} className="border-t border-border/70"><td className="px-4 py-3 font-bold">{row.label}</td><td className="px-4 py-3 font-semibold">{formatCurrency(row.revenue)}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3">{formatCurrency(row.average)}</td></tr>)}</tbody>
+            </table>
+          </div>
+        </> : <ChartEmpty text="Sem vendas no período selecionado." />}
+      </section>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">

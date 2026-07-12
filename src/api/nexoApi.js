@@ -93,6 +93,7 @@ export const nexoApi = {
   },
   products: {
     catalog: (limit = 1000) => request(`/products/catalog?limit=${limit}`, { cacheTTL: 20_000 }),
+    lookupBarcode: barcode => request(`/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`, { cacheTTL: 86_400_000 }),
     deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
   },
   stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products }, timeout: 60_000 }) },

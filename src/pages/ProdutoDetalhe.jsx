@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { ArrowLeft, Package, Edit, History } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import ProductForm from '@/components/stock/ProductForm';
+import { DEFAULT_PRODUCT_CATEGORIES } from '@/lib/product-categories';
 
 export default function ProdutoDetalhe() {
   const { id } = useParams();
@@ -87,7 +88,7 @@ export default function ProdutoDetalhe() {
       </div>
 
       {showEdit && (
-        <ProductForm product={product} categories={[]} user={user}
+        <ProductForm product={product} categories={DEFAULT_PRODUCT_CATEGORIES} user={user}
           onSave={() => { setShowEdit(false); load(); }}
           onClose={() => setShowEdit(false)} />
       )}

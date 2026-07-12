@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, ExternalLink, Loader2, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import { openGoogleImages } from '@/lib/google-images';
+import { standardizeProductName } from '@/lib/product-name';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
+
+  useEffect(() => {
+    if (!/^\d{6,14}$/.test(String(barcode || ''))) return;
+    let active = true;
+    setIdentifying(true);
+    nexoApi.products.lookupBarcode(barcode).then(result => {
+      if (!active || !result.found) return;
+      setName(standardizeProductName(result.product.name, result.product));
+      setImageUrl(result.product.image_url || '');
+      toast.success('Produto identificado pelo código de barras.');
+    }).catch(() => {}).finally(() => active && setIdentifying(false));
+    return () => { active = false; };
+  }, [barcode]);
 
 
 
@@ -65,7 +80,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
               value={name}
               onChange={event => setName(event.target.value)}
               autoFocus
-              placeholder="Digite o nome do produto"
+              placeholder={identifying ? 'Identificando produto...' : 'Digite o nome do produto'}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               onKeyDown={event => event.key === 'Enter' && handleSave()}
             />

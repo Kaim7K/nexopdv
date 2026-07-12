@@ -20,6 +20,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import ProductForm from '@/components/stock/ProductForm';
+import { mergeProductCategories } from '@/lib/product-categories';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 
@@ -46,6 +47,21 @@ const normalize = (value, type) => type === 'number'
   : String(value ?? '');
 
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+const productNameKey = value => String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
+
+const discardDuplicateProducts = items => {
+  const seenNames = new Set();
+  const seenBarcodes = new Set();
+  const products = items.filter(product => {
+    const name = productNameKey(product.name);
+    const barcode = String(product.barcode || '').trim();
+    if (seenNames.has(name) || (barcode && seenBarcodes.has(barcode))) return false;
+    seenNames.add(name);
+    if (barcode) seenBarcodes.add(barcode);
+    return true;
+  });
+  return { products, discarded: items.length - products.length };
+};
 
 export default function Estoque() {
   const { user, config } = /** @type {any} */ (useOutletContext());
@@ -93,7 +109,7 @@ export default function Estoque() {
   }, [dirty]);
 
   const categories = useMemo(() => (
-    [...new Set(products.map(product => product.category).filter(Boolean))].sort((a, b) => collator.compare(a, b))
+    mergeProductCategories(products.map(product => product.category))
   ), [products]);
 
   const filtered = useMemo(() => {
@@ -206,8 +222,10 @@ export default function Estoque() {
       if (mapped.some(product => !product.name.trim() || Number(product.sale_price) < 0 || Number(product.quantity) < 0)) {
         throw new Error('Há produtos com nome, preço ou quantidade inválidos.');
       }
-      await nexoApi.stock.bulkUpdate(mapped);
-      toast.success(`${mapped.length} produtos importados.`);
+      const unique = discardDuplicateProducts(mapped);
+      const result = await nexoApi.stock.bulkUpdate(unique.products);
+      const discarded = Math.max(unique.discarded, Number(result.discarded || 0));
+      toast.success(`${unique.products.length} produto(s) importado(s).${discarded ? ` ${discarded} repetido(s) descartado(s).` : ''}`);
       await load();
     } catch (error) {
       toast.error(error.message || 'Não foi possível importar a planilha.');
@@ -269,7 +287,13 @@ export default function Estoque() {
       });
       toast.success('Produto excluído do estoque.');
     } catch (error) {
-      toast.error(error.message || 'Não foi possível excluir o produto.');
+      if (error.status === 404) {
+        setProducts(current => current.filter(item => item.id !== product.id));
+        nexoApi.cache.clear();
+        toast.success('O produto já havia sido excluído. A lista foi atualizada.');
+      } else {
+        toast.error(error.message || 'Não foi possível excluir o produto.');
+      }
     } finally {
       setDeletingId(null);
     }

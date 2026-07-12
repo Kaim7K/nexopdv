@@ -10,6 +10,7 @@ import {
 } from '../server/auth.js';
 import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
 import { AppError } from '../server/errors.js';
+import { lookupBarcode } from '../server/product-catalog.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -24,6 +25,7 @@ const PRODUCT_UNITS = new Set(['unidade','peso','pacote']);
 const PRODUCT_STATUSES = new Set(['ativo','inativo']);
 
 const text = (value, max = 500) => String(value ?? '').trim().slice(0, max);
+const productNameKey = value => text(value, 180).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
 const MAX_INLINE_IMAGE_LENGTH = 1_650_000;
 
 function normalizeImageValue(value) {
@@ -267,6 +269,11 @@ async function routeHandler(req, res) {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     return send(res, 200, publicUser(user));
   }
+  if (path[0] === 'products' && path[1] === 'barcode-lookup') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    const product = await lookupBarcode(req.query.barcode);
+    return send(res, 200, { found: Boolean(product), product });
+  }
   const entityModules = { Sale:'vendas', FiadoRecord:'fiados', User:'usuarios' };
   const requiredModule = path[0] === 'stock' ? 'estoque' : path[0] === 'products' || path[0] === 'product-media' ? null : path[0] === 'cash' ? 'pdv' : path[0] === 'sales' ? (path[1] === 'complete' || path[1] === 'next' ? 'pdv' : 'vendas') : path[0] === 'users' ? 'usuarios' : path[0] === 'maintenance' ? 'configuracoes' : path[0] === 'entities' ? entityModules[path[1]] : null;
   if (user.role !== 'super_admin' && requiredModule && !(user.enabled_modules || []).includes(requiredModule)) return send(res, 403, { message: 'Esta funcionalidade não está habilitada para o mercado.' });
@@ -277,7 +284,7 @@ async function routeHandler(req, res) {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     if (!user.market_id || !['admin','gerente'].includes(user.role) || !(user.enabled_modules || []).includes('estoque')) return send(res, 403, { message: 'Sem permissão para apagar produtos inativos.' });
     if (req.body.confirmation !== 'APAGAR_INATIVOS') return send(res, 400, { message: 'Confirmação inválida.' });
-    const [result] = await sql`
+    const removed = await sql`
       WITH candidates AS (
         SELECT id, data
         FROM nexo.records
@@ -290,27 +297,27 @@ async function routeHandler(req, res) {
             END,
             created_date
           ) < now() - interval '2 months'
-      ), removed AS (
-        DELETE FROM nexo.records product
-        USING candidates
-        WHERE product.id=candidates.id
-        RETURNING product.id
-      ), audit AS (
-        INSERT INTO nexo.records(market_id,entity,data)
-        SELECT ${user.market_id},'general_audits',jsonb_build_object(
-          'action_type','produtos_inativos_excluidos',
-          'entity_type','product',
-          'entity_id',NULL,
-          'user_id',${user.id},
-          'user_name',${user.full_name || user.email},
-          'description',(SELECT count(*) FROM removed)::text || ' produto(s) sem venda há 2 meses foram excluídos',
-          'details',jsonb_build_object('deleted',(SELECT count(*) FROM removed),'cutoff',now() - interval '2 months')
-        )
-        WHERE EXISTS(SELECT 1 FROM removed)
       )
-      SELECT count(*)::int AS deleted FROM removed
+      DELETE FROM nexo.records product
+      USING candidates
+      WHERE product.id=candidates.id
+      RETURNING product.id
     `;
-    return send(res, 200, { deleted: Number(result?.deleted || 0) });
+    const deleted = removed.length;
+    if (deleted) {
+      try {
+        const auditData = {
+          action_type: 'produtos_inativos_excluidos', entity_type: 'product', entity_id: null,
+          user_id: user.id, user_name: user.full_name || user.email,
+          description: `${deleted} produto(s) sem venda há 2 meses foram excluídos`,
+          details: { deleted },
+        };
+        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditData)}::jsonb)`;
+      } catch (auditError) {
+        console.error('Falha ao auditar exclusão de produtos inativos:', auditError?.message);
+      }
+    }
+    return send(res, 200, { deleted });
   }
 
 
@@ -967,11 +974,22 @@ async function routeHandler(req, res) {
   if (path[0] === 'stock' && path[1] === 'import' && req.method === 'POST') {
     if (!user.market_id || !['admin','gerente','vendedor'].includes(user.role)) return send(res, 403, { message: 'Sem permissão para alterar o estoque.' });
     if (!Array.isArray(req.body.products) || req.body.products.length > 5000) return send(res, 400, { message: 'Planilha inválida ou muito grande.' });
-    const cleanProducts = req.body.products.map(product => {
+    const normalizedProducts = req.body.products.map(product => {
       const clean = normalizeProductPayload(product);
       validateProductPayload(clean);
       return product.id ? { id: String(product.id), ...clean } : clean;
     });
+    const seenNames = new Set();
+    const seenBarcodes = new Set();
+    const cleanProducts = normalizedProducts.filter(product => {
+      const nameKey = productNameKey(product.name);
+      const barcodeKey = text(product.barcode, 180);
+      if (seenNames.has(nameKey) || (barcodeKey && seenBarcodes.has(barcodeKey))) return false;
+      seenNames.add(nameKey);
+      if (barcodeKey) seenBarcodes.add(barcodeKey);
+      return true;
+    });
+    const discarded = normalizedProducts.length - cleanProducts.length;
     const ids = cleanProducts.filter(product => product.id).map(product => product.id);
     if (ids.some(id => !isUuid(id))) return send(res, 400, { message: 'A planilha contém IDs inválidos.' });
     if (ids.length) {
@@ -992,7 +1010,7 @@ async function routeHandler(req, res) {
     }
     const payload = JSON.stringify(cleanProducts);
     await sql`WITH input AS (SELECT item FROM jsonb_array_elements(${payload}::jsonb) item), updated AS (UPDATE nexo.records record SET data=record.data || (input.item-'id'),updated_date=now() FROM input WHERE input.item?'id' AND record.id=(input.item->>'id')::uuid AND record.market_id=${user.market_id} AND record.entity='products') INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'products',item FROM input WHERE NOT item?'id'`;
-    return send(res, 200, { updated: cleanProducts.length });
+    return send(res, 200, { updated: cleanProducts.length, discarded });
   }
   if (path[0] === 'entities') {
     const table = ENTITIES[path[1]];
@@ -1150,27 +1168,23 @@ async function routeHandler(req, res) {
     }
     if (table === 'products' && req.method === 'DELETE') {
       if (!isUuid(id)) return send(res, 400, { message: 'Produto inválido.' });
-      const [removed] = await sql`WITH deleted AS (
+      const [removed] = await sql`
         DELETE FROM nexo.records
         WHERE id=${id} AND market_id=${user.market_id} AND entity='products'
         RETURNING id,data
-      ), audit AS (
-        INSERT INTO nexo.records(market_id,entity,data)
-        SELECT ${user.market_id},'general_audits',jsonb_build_object(
-          'action_type','produto_excluido',
-          'entity_type','product',
-          'entity_id',deleted.id,
-          'user_id',${user.id},
-          'user_name',${user.full_name || user.email},
-          'description','Produto ' || COALESCE(NULLIF(deleted.data->>'name',''),'sem nome') || ' excluído do estoque',
-          'details',jsonb_build_object(
-            'barcode',COALESCE(deleted.data->>'barcode',''),
-            'internal_code',COALESCE(deleted.data->>'internal_code','')
-          )
-        FROM deleted
-        RETURNING id
-      ) SELECT id FROM deleted`;
-      if (!removed) return send(res, 404, { message: 'Produto não encontrado.' });
+      `;
+      if (!removed) return send(res, 404, { message: 'Produto não encontrado ou já excluído.' });
+      try {
+        const auditData = {
+          action_type: 'produto_excluido', entity_type: 'product', entity_id: removed.id,
+          user_id: user.id, user_name: user.full_name || user.email,
+          description: `Produto ${text(removed.data?.name, 180) || 'sem nome'} excluído do estoque`,
+          details: { barcode: text(removed.data?.barcode, 180), internal_code: text(removed.data?.internal_code, 180) },
+        };
+        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditData)}::jsonb)`;
+      } catch (auditError) {
+        console.error('Falha ao auditar exclusão de produto:', auditError?.message);
+      }
       return send(res, 200, { ok: true });
     }
     if (req.method === 'DELETE') { if (!isUuid(id)) return send(res, 400, { message: 'Identificador inválido.' }); await sql`DELETE FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity=${table}`; return send(res,200,{ok:true}); }

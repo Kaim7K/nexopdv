@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CopyPlus, ExternalLink, ImageIcon, Loader2, Save, Trash2, X } from 'lucide-react';
+import { CopyPlus, ExternalLink, ImageIcon, Loader2, Save, ScanSearch, Sparkles, Trash2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { openGoogleImages } from '@/lib/google-images';
+import { mergeProductCategories } from '@/lib/product-categories';
+import { standardizeProductName } from '@/lib/product-name';
 
 const EMPTY_FORM = {
   name: '',
@@ -23,6 +25,9 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [imageChanged, setImageChanged] = useState(false);
+  const [customCategory, setCustomCategory] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
+  const categoryOptions = mergeProductCategories(categories);
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -42,6 +47,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   useEffect(() => {
     if (product) {
+      setCustomCategory(Boolean(product.category && !categoryOptions.includes(product.category)));
       setImageChanged(false);
       setForm({
         name: product.name || '',
@@ -58,6 +64,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       return;
     }
     if (duplicateSource) {
+      setCustomCategory(Boolean(duplicateSource.category && !categoryOptions.includes(duplicateSource.category)));
       setImageChanged(true);
       setForm({
         name: `${duplicateSource.name || 'Produto'} - Cópia`,
@@ -74,12 +81,44 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       return;
     }
     setImageChanged(false);
+    setCustomCategory(false);
     setForm({ ...EMPTY_FORM, internal_code: generateInternalCode() });
   }, [product, duplicateSource]);
 
   const handleChange = (field, value) => {
     if (field === 'image_url') setImageChanged(true);
     setForm(previous => ({ ...previous, [field]: value }));
+  };
+
+  const standardizeName = (catalog = {}) => {
+    const standardized = standardizeProductName(catalog.name || form.name, catalog);
+    if (!standardized) return toast.error('Digite um nome para padronizar.');
+    setForm(previous => ({
+      ...previous,
+      name: standardized,
+      image_url: previous.image_url || catalog.image_url || '',
+    }));
+    if (catalog.image_url) setImageChanged(true);
+  };
+
+  const identifyBarcode = async () => {
+    const barcode = form.barcode.replace(/\D/g, '');
+    if (!/^\d{6,14}$/.test(barcode) || identifying) return;
+    setIdentifying(true);
+    try {
+      const result = await nexoApi.products.lookupBarcode(barcode);
+      if (!result.found) return toast('Produto não encontrado no catálogo. Você pode preencher manualmente.');
+      if (form.name.trim()) {
+        standardizeName({ ...result.product, name: form.name });
+      } else {
+        standardizeName(result.product);
+      }
+      toast.success('Produto identificado e nome padronizado.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível identificar o produto.');
+    } finally {
+      setIdentifying(false);
+    }
   };
 
 
@@ -202,14 +241,25 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
           <div>
             <label htmlFor="product-name" className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
-            <input id="product-name" type="text" required value={form.name} onChange={event => handleChange('name', event.target.value)} autoFocus className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+            <div className="mt-1 flex gap-2">
+              <input id="product-name" type="text" required value={form.name} onChange={event => handleChange('name', event.target.value)} autoFocus placeholder="Ex.: Leite líquido - Marca - 3L" className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <button type="button" onClick={() => standardizeName()} title="Padronizar nome" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"><Sparkles className="h-4 w-4" /><span className="hidden sm:inline">Padronizar</span></button>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="product-category" className="text-xs font-medium text-muted-foreground">Categoria</label>
-              <input id="product-category" list="product-categories" type="text" value={form.category} onChange={event => handleChange('category', event.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-              <datalist id="product-categories">{categories.map(category => <option key={category} value={category} />)}</datalist>
+              <select id="product-category" value={customCategory ? '__custom__' : form.category} onChange={event => {
+                const value = event.target.value;
+                setCustomCategory(value === '__custom__');
+                if (value !== '__custom__') handleChange('category', value);
+              }} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="">Selecione uma categoria</option>
+                {categoryOptions.map(category => <option key={category} value={category}>{category}</option>)}
+                <option value="__custom__">Editar / criar categoria...</option>
+              </select>
+              {customCategory && <input aria-label="Nome da categoria" type="text" value={form.category} onChange={event => handleChange('category', event.target.value)} autoFocus placeholder="Digite a categoria" className="mt-2 w-full rounded-lg border border-accent bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />}
             </div>
             <div>
               <label htmlFor="product-unit" className="text-xs font-medium text-muted-foreground">Unidade de venda</label>
@@ -224,7 +274,10 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="product-barcode" className="text-xs font-medium text-muted-foreground">Código de barras</label>
-              <input id="product-barcode" type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value)}  inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              <div className="mt-1 flex gap-2">
+                <input id="product-barcode" type="text" value={form.barcode} onChange={event => handleChange('barcode', event.target.value.replace(/\D/g, ''))} onBlur={identifyBarcode} inputMode="numeric" autoComplete="off" placeholder="Escaneie ou digite o código" className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <button type="button" onClick={identifyBarcode} disabled={identifying || !/^\d{6,14}$/.test(form.barcode)} aria-label="Identificar produto pelo código de barras" title="Identificar produto" className="grid min-h-11 w-11 place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-40">{identifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanSearch className="h-4 w-4" />}</button>
+              </div>
             </div>
             <div>
               <label htmlFor="product-internal-code" className="text-xs font-medium text-muted-foreground">Código interno</label>
