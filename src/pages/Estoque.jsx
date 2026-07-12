@@ -531,7 +531,7 @@ export default function Estoque() {
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : viewMode === 'grid' ? (
-          <div className="grid gap-2 p-3 sm:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          <div className="grid gap-1.5 p-2.5 sm:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
             {visibleProducts.map(product => {
               const quantity = Number(product.quantity || 0);
               const isZero = quantity <= 0;
@@ -548,27 +548,27 @@ export default function Estoque() {
                   key={product.id}
                   type="button"
                   onClick={() => openProductModal('edit', product)}
-                  className={`group overflow-hidden rounded-lg border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusClass}`}
+                  className={`group overflow-hidden rounded-md border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusClass}`}
                 >
                   <div className="aspect-square bg-muted/30">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-1.5" loading="lazy" referrerPolicy="no-referrer" />
+                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-1" loading="lazy" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="grid h-full place-items-center text-muted-foreground/30">
-                        <Package className="h-8 w-8" />
+                        <Package className="h-7 w-7" />
                       </div>
                     )}
                   </div>
-                  <div className="space-y-1 p-2">
+                  <div className="space-y-0.5 p-1.5">
                     <div>
-                      <p className="line-clamp-2 text-[11px] font-bold leading-4">{product.name}</p>
-                      <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">{product.category || 'Sem categoria'}</p>
+                      <p className="line-clamp-2 text-[10px] font-bold leading-3.5">{product.name}</p>
+                      <p className="mt-0.5 line-clamp-1 text-[9px] text-muted-foreground">{product.category || 'Sem categoria'}</p>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black text-accent">{formatCurrency(product.sale_price || 0)}</span>
-                      <span className="rounded-full border border-border bg-background px-1 py-0.5 text-[8px] font-semibold text-muted-foreground">{product.unit || 'unidade'}</span>
+                      <span className="text-[11px] font-black text-accent">{formatCurrency(product.sale_price || 0)}</span>
+                      <span className="rounded-full border border-border bg-background px-1 py-0.5 text-[7px] font-semibold text-muted-foreground">{product.unit || 'unidade'}</span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px]">
+                    <div className="flex items-center justify-between text-[9px]">
                       <span className={isZero ? 'font-bold text-destructive' : 'text-muted-foreground'}>{isZero ? 'Sem estoque' : `Estq: ${quantity}`}</span>
                       <span className="text-muted-foreground">{product.barcode || product.internal_code || '-'}</span>
                     </div>
