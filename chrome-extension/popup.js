@@ -100,8 +100,6 @@ loadSavedState()
       state.logs = response.state.logs || state.logs;
       state.debug = response.state.debug || state.debug;
       state.lastRun = response.state.lastRun || state.lastRun;
-      render();
-    }
     }
     render();
   })
