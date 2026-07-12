@@ -1,24 +1,36 @@
-import React, { useState, useMemo } from 'react';
-import { Package, Search, AlertTriangle } from 'lucide-react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
+import { AlertTriangle, Package, Search, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
 export default function ProductGrid({ products, onSelect, loading }) {
   const [category, setCategory] = useState('');
   const [localSearch, setLocalSearch] = useState('');
+  const [sortMode, setSortMode] = useState('sold_desc');
+  const deferredSearch = useDeferredValue(localSearch);
 
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
     return cats.sort();
   }, [products]);
 
-  const filtered = useMemo(() => {
-    return products.filter(p => {
+  const visibleProducts = useMemo(() => {
+    const q = deferredSearch.toLowerCase();
+    const filtered = products.filter(p => {
       const matchCat = !category || p.category === category;
-      const q = localSearch.toLowerCase();
       const matchSearch = !q || String(p.name || '').toLowerCase().includes(q) || String(p.barcode || '').includes(q);
       return matchCat && matchSearch;
-    }).slice(0, 100);
-  }, [products, category, localSearch]);
+    });
+
+    const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortMode === 'sold_desc') return Number(b.sales_count || 0) - Number(a.sales_count || 0) || collator.compare(String(a.name || ''), String(b.name || ''));
+      if (sortMode === 'name_asc') return collator.compare(String(a.name || ''), String(b.name || ''));
+      if (sortMode === 'name_desc') return collator.compare(String(b.name || ''), String(a.name || ''));
+      return 0;
+    });
+
+    return sorted.slice(0, 100);
+  }, [products, category, deferredSearch, sortMode]);
 
   if (loading) {
     return (
@@ -32,16 +44,23 @@ export default function ProductGrid({ products, onSelect, loading }) {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Search + Category filter */}
       <div className="px-4 pt-3 pb-2 space-y-2 border-b border-border">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Filtrar produtos..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:bg-card transition-colors"
-            autoComplete="off"
-          />
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="Filtrar produtos..."
+              className="w-full pl-9 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:bg-card transition-colors"
+              autoComplete="off"
+            />
+          </div>
+          <select value={sortMode} onChange={event => setSortMode(event.target.value)} className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+            <option value="sold_desc">Mais vendidos</option>
+            <option value="name_asc">Nome A-Z</option>
+            <option value="name_desc">Nome Z-A</option>
+          </select>
         </div>
         {categories.length > 0 && (
           <div className="flex gap-1.5 flex-wrap">
@@ -66,14 +85,14 @@ export default function ProductGrid({ products, onSelect, loading }) {
 
       {/* Product grid */}
       <div className="flex-1 overflow-y-auto p-3">
-        {filtered.length === 0 ? (
+        {visibleProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <Package className="w-10 h-10 mb-2 opacity-40" />
             <p className="text-sm">Nenhum produto encontrado.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {filtered.map(product => (
+            {visibleProducts.map(product => (
               <button
                 key={product.id}
                 onClick={() => onSelect(product)}
@@ -97,6 +116,11 @@ export default function ProductGrid({ products, onSelect, loading }) {
                     <span className="text-[10px] text-muted-foreground">Estq: {product.quantity}</span>
                   )}
                 </div>
+                {sortMode === 'sold_desc' && (
+                  <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <TrendingUp className="h-3 w-3" /> {Number(product.sales_count || 0)} venda(s)
+                  </div>
+                )}
               </button>
             ))}
           </div>

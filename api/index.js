@@ -326,12 +326,29 @@ async function routeHandler(req, res) {
     if (!user.market_id || !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module))) return send(res, 403, { message: 'Produtos não estão habilitados para o mercado.' });
     const limit = Math.max(1, Math.min(Number(req.query.limit) || 1000, 3000));
     const rows = await sql`
+      WITH sales_by_product AS (
+        SELECT
+          (item->>'product_id')::uuid AS product_id,
+          SUM(CASE
+            WHEN COALESCE(item->>'unit','') = 'peso' THEN COALESCE((item->>'weight')::numeric, 0)
+            ELSE COALESCE((item->>'quantity')::numeric, 0)
+          END) AS sold_quantity
+        FROM nexo.records sale
+        CROSS JOIN LATERAL jsonb_array_elements(COALESCE(sale.data->'items','[]'::jsonb)) item
+        WHERE sale.market_id=${user.market_id}
+          AND sale.entity='sales'
+          AND sale.data->>'status'='concluida'
+          AND item ? 'product_id'
+        GROUP BY 1
+      )
       SELECT id, data - 'image_url' AS data,
         COALESCE(data->>'image_url','') <> '' AS has_image,
         CASE WHEN COALESCE(data->>'image_url','') LIKE 'data:image/%' THEN true ELSE false END AS image_is_inline,
         CASE WHEN COALESCE(data->>'image_url','') ~ '^https://' THEN data->>'image_url' ELSE '' END AS remote_image_url,
+        COALESCE(sales_by_product.sold_quantity, 0) AS sales_count,
         created_date, updated_date
       FROM nexo.records
+      LEFT JOIN sales_by_product ON sales_by_product.product_id = nexo.records.id
       WHERE market_id=${user.market_id} AND entity='products'
       ORDER BY updated_date DESC
       LIMIT ${limit}
@@ -341,6 +358,7 @@ async function routeHandler(req, res) {
       ...(row.data || {}),
       image_url: row.remote_image_url || (row.has_image ? `/api/product-media/${row.id}?v=${new Date(row.updated_date).getTime()}` : ''),
       image_is_inline: Boolean(row.image_is_inline),
+      sales_count: Number(row.sales_count || 0),
       created_date: row.created_date,
       updated_date: row.updated_date,
     }));

@@ -51,3 +51,14 @@ export function watchClipboardForImageUrl(onPaste) {
   document.addEventListener('visibilitychange', handleActiveState);
   return cleanup;
 }
+
+export async function readClipboardImageUrl() {
+  if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
+    throw new Error('Seu navegador nao permite acessar a area de transferencia.');
+  }
+  const text = String(await navigator.clipboard.readText() || '').trim();
+  if (!isLikelyImageUrl(text)) {
+    throw new Error('A area de transferencia nao contem uma URL valida de imagem.');
+  }
+  return text;
+}

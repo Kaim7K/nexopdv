@@ -5,7 +5,7 @@ import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { openGoogleImages } from '@/lib/google-images';
-import { watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
+import { readClipboardImageUrl, watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
 import { mergeProductCategories } from '@/lib/product-categories';
 import { standardizeProductName } from '@/lib/product-name';
 
@@ -112,6 +112,16 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       armClipboardPaste();
     } catch (error) {
       toast.error(error.message);
+    }
+  };
+
+  const pasteImageUrl = async () => {
+    try {
+      const url = await readClipboardImageUrl();
+      handleChange('image_url', url);
+      toast.success('URL da imagem colada.');
+    } catch (error) {
+      toast.error(error.message || 'Nao foi possivel colar a URL da imagem.');
     }
   };
 
@@ -251,10 +261,16 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
             </div>
             <div className="flex flex-1 flex-col justify-center gap-2">
               <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
-              <button type="button" onClick={openImageSearch} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
-                <ExternalLink className="h-5 w-5" />
-                Buscar no Google Imagens
-              </button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={openImageSearch} disabled={!form.barcode.trim() && !form.name.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">
+                  <ExternalLink className="h-5 w-5" />
+                  Buscar no Google Imagens
+                </button>
+                <button type="button" onClick={pasteImageUrl} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">
+                  <CopyPlus className="h-5 w-5" />
+                  Colar URL
+                </button>
+              </div>
               <p className="text-[11px] leading-4 text-muted-foreground">A pesquisa abre em outra aba já em Imagens, sem filtro de cor de fundo. Se você copiar a URL da imagem e voltar para cá, o campo tenta preencher sozinho.</p>
               {form.image_url && (
                 <button type="button" onClick={() => handleChange('image_url', '')} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10">
