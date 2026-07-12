@@ -2,6 +2,8 @@ const state = {
   status: 'Pronto',
   progress: { current: 0, total: 0 },
   logs: [],
+  debug: [],
+  lastRun: null,
 };
 
 const $ = id => document.getElementById(id);
@@ -11,6 +13,12 @@ function render() {
   $('progress-bar').style.width = `${state.progress.total ? Math.min(100, (state.progress.current / state.progress.total) * 100) : 0}%`;
   $('last-action').textContent = state.logs[0] || 'Nenhuma';
   $('log').innerHTML = state.logs.slice(0, 6).map(entry => `<div class="log-item">${entry}</div>`).join('');
+
+  const lastRun = state.lastRun || {};
+  $('debug-source').textContent = lastRun.imageSource || lastRun.chosenSource || '-';
+  $('debug-url').textContent = lastRun.imageUrl || lastRun.chosenUrl || '-';
+  $('debug-confirmed').textContent = typeof lastRun.confirmed === 'boolean' ? (lastRun.confirmed ? 'Sim' : 'Não') : '-';
+  $('debug-json').textContent = state.debug.length ? JSON.stringify(state.debug.slice(0, 8), null, 2) : 'Nenhum detalhe ainda.';
 }
 
 function readOptions() {
@@ -34,6 +42,8 @@ chrome.runtime.onMessage.addListener(message => {
   if (message?.type === 'nexo:auto-state') {
     state.status = message.status || state.status;
     state.progress = message.progress || state.progress;
+    state.debug = message.debug || state.debug;
+    state.lastRun = message.lastRun || state.lastRun;
     if (message.log) pushLog(message.log);
     else render();
   }
@@ -76,6 +86,8 @@ sendMessage({ type: 'nexo:get-state' })
       state.status = response.state.status || state.status;
       state.progress = response.state.progress || state.progress;
       state.logs = response.state.logs || state.logs;
+      state.debug = response.state.debug || state.debug;
+      state.lastRun = response.state.lastRun || state.lastRun;
       render();
     }
   })

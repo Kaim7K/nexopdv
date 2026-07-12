@@ -57,6 +57,20 @@
         <div class="field-label">Eventos recentes</div>
         <div id="log" class="log-list"></div>
       </section>
+
+      <section class="card">
+        <div class="field-label">Depuração</div>
+        <label class="toggle" style="margin-bottom:10px;">
+          <input id="debug-mode" type="checkbox" checked />
+          <span>Registrar detalhes da busca</span>
+        </label>
+        <div class="debug-box">
+          <div><span class="debug-label">Fonte</span><strong id="debug-source">-</strong></div>
+          <div><span class="debug-label">Imagem</span><strong id="debug-url">-</strong></div>
+          <div><span class="debug-label">Confirmado</span><strong id="debug-confirmed">-</strong></div>
+        </div>
+        <pre id="debug-json" class="debug-json">Nenhum detalhe ainda.</pre>
+      </section>
     </div>
     <script src="popup.js"></script>
   </body>

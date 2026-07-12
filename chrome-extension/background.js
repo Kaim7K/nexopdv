@@ -4,6 +4,8 @@ const DEFAULT_STATE = {
   progress: { current: 0, total: 0 },
   logs: [],
   stopRequested: false,
+  debug: [],
+  lastRun: null,
 };
 
 const state = { ...DEFAULT_STATE };
@@ -16,11 +18,20 @@ function broadcast() {
     status: state.status,
     progress: state.progress,
     log: state.logs[0] || '',
+    debug: state.debug,
+    lastRun: state.lastRun,
   }).catch(() => {});
 }
 
 function pushLog(text) {
   state.logs = [text, ...state.logs].slice(0, 20);
+  console.log('[NexoExt]', text);
+  broadcast();
+}
+
+function pushDebug(entry) {
+  state.debug = [{ at: new Date().toISOString(), ...entry }, ...state.debug].slice(0, 50);
+  console.log('[NexoExt][debug]', entry);
   broadcast();
 }
 
@@ -118,23 +129,47 @@ async function searchFirstImage(product) {
   const name = sanitizeQuery(product.name || '');
   if (!query && !name) return null;
 
+  const debugBase = { productId: product.id, productName: name || query, barcode: product.barcode || '' };
+
   try {
     const result = await apiRequest(`/products/image-search?query=${encodeURIComponent(query)}&name=${encodeURIComponent(name)}&page=1`);
     const first = result?.results?.[0] || null;
-    if (first?.url && isImageUrl(first.url)) return first;
+    pushDebug({
+      ...debugBase,
+      source: 'api/products/image-search',
+      resultCount: Array.isArray(result?.results) ? result.results.length : 0,
+      selected: first ? {
+        url: first.url || '',
+        source: first.source || '',
+        title: first.title || '',
+        provider: first.provider || '',
+      } : null,
+    });
+    if (first?.url && isImageUrl(first.url)) return { ...first, debugSource: 'api/products/image-search' };
   } catch (error) {
     pushLog(`Busca oficial falhou para ${name || query}: ${error.message || 'erro desconhecido'}`);
+    pushDebug({ ...debugBase, source: 'api/products/image-search', error: error.message || 'erro desconhecido' });
   }
 
   const url = buildGoogleImagesUrl(product);
   if (!url) return null;
 
+  pushDebug({ ...debugBase, source: 'google-images-tab', googleUrl: url });
   const tab = await createHiddenTab(url);
   try {
     await waitForTabComplete(tab.id);
     await sleep(1000);
     const image = await extractImageFromGoogleTab(tab.id);
-    if (image?.url && isImageUrl(image.url)) return image;
+    pushDebug({
+      ...debugBase,
+      source: 'google-images-tab',
+      selected: image ? {
+        url: image.url || '',
+        href: image.href || '',
+        text: image.text || '',
+      } : null,
+    });
+    if (image?.url && isImageUrl(image.url)) return { ...image, debugSource: 'google-images-tab' };
     return null;
   } finally {
     if (tab?.id) {
@@ -181,16 +216,35 @@ async function startBatch(options = {}) {
         } else if (!isImageUrl(image.url)) {
           pushLog(`URL inválida para ${label}.`);
         } else {
+          pushDebug({
+            productId: product.id,
+            productName: label,
+            chosenUrl: image.url,
+            chosenSource: image.debugSource || image.provider || image.source || '',
+            title: image.title || '',
+          });
           await apiRequest(`/entities/Product/${product.id}`, {
             method: 'PATCH',
             body: { image_url: image.url },
           });
           const confirmed = await verifySavedImage(product.id, image.url);
+          state.lastRun = {
+            productId: product.id,
+            productName: label,
+            imageUrl: image.url,
+            imageSource: image.debugSource || image.provider || image.source || '',
+            confirmed,
+          };
           if (confirmed) pushLog(`Salvo: ${label}`);
           else pushLog(`A API respondeu OK, mas a imagem não ficou gravada em ${label}.`);
         }
       } catch (error) {
         pushLog(`Erro em ${label}: ${error.message || 'falha inesperada'}`);
+        state.lastRun = {
+          productId: product.id,
+          productName: label,
+          error: error.message || 'falha inesperada',
+        };
       }
 
       state.progress.current = index + 1;
@@ -229,7 +283,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
   if (message?.type === 'nexo:get-state') {
-    sendResponse({ ok: true, state: { status: state.status, progress: state.progress, logs: state.logs } });
+    sendResponse({ ok: true, state: { status: state.status, progress: state.progress, logs: state.logs, debug: state.debug, lastRun: state.lastRun } });
     return true;
   }
   return false;
