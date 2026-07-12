@@ -3,7 +3,19 @@
   "name": "Nexo PDV Automação",
   "version": "1.1.0",
   "description": "Automação em lote para o Nexo PDV com a identidade visual do sistema.",
+  "icons": {
+    "16": "nexo-symbol.svg",
+    "32": "nexo-symbol.svg",
+    "48": "nexo-symbol.svg",
+    "128": "nexo-symbol.svg"
+  },
   "action": {
+    "default_icon": {
+      "16": "nexo-symbol.svg",
+      "32": "nexo-symbol.svg",
+      "48": "nexo-symbol.svg",
+      "128": "nexo-symbol.svg"
+    },
     "default_title": "Nexo PDV Automação",
     "default_popup": "popup.html"
   },

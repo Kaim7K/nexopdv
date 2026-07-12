@@ -169,12 +169,38 @@ export default function Configuracoes() {
 
   const brandName = getValue('nome_mercado', user?.market_name || 'Mercado');
   const logoUrl = getValue('logo_url', user?.logo_url || '');
-  const commitCategory = () => {
+  const saveCategoriesNow = async nextCategories => {
+    const normalized = formatProductCategories(nextCategories);
+    const value = categoriesToStorageValue(normalized);
+    const currentConfig = configs.product_categories;
+    const saved = currentConfig?.id
+      ? await nexoApi.entities.SystemConfig.update(currentConfig.id, { value })
+      : await nexoApi.entities.SystemConfig.create({ key: 'product_categories', value, label: 'Categorias de produtos' });
+
+    setConfigs(current => ({
+      ...current,
+      product_categories: saved,
+    }));
+    setInitialValues(current => ({
+      ...current,
+      product_categories: value,
+    }));
+    setProductCategories(normalized);
+    window.dispatchEvent(new CustomEvent('nexo:config-updated', { detail: { product_categories: value } }));
+  };
+
+  const commitCategory = async () => {
     const next = String(categoryDraft || '').trim();
     if (!next) return toast.error('Digite o nome da categoria.');
-    setProductCategories(current => upsertProductCategory(current, editingCategory, next));
+    const nextCategories = upsertProductCategory(productCategories, editingCategory, next);
     setCategoryDraft('');
     setEditingCategory('');
+    try {
+      await saveCategoriesNow(nextCategories);
+      toast.success(editingCategory ? 'Categoria atualizada.' : 'Categoria salva.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível salvar a categoria.');
+    }
   };
 
   const editCategory = category => {
@@ -182,11 +208,17 @@ export default function Configuracoes() {
     setCategoryDraft(category);
   };
 
-  const deleteCategory = category => {
-    setProductCategories(current => removeProductCategory(current, category));
+  const deleteCategory = async category => {
+    const nextCategories = removeProductCategory(productCategories, category);
     if (editingCategory === category) {
       setEditingCategory('');
       setCategoryDraft('');
+    }
+    try {
+      await saveCategoriesNow(nextCategories);
+      toast.success('Categoria removida.');
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível remover a categoria.');
     }
   };
 

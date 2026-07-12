@@ -252,30 +252,39 @@ function getGoogleCandidateScore(product, candidate) {
 }
 
 async function searchFirstImage(product) {
-  const query = sanitizeQuery(product.barcode || product.name || '');
+  const barcode = sanitizeQuery(product.barcode || '');
   const name = sanitizeQuery(product.name || '');
-  if (!query && !name) return null;
+  if (!barcode && !name) return null;
 
-  const debugBase = { productId: product.id, productName: name || query, barcode: product.barcode || '' };
+  const debugBase = { productId: product.id, productName: name || barcode, barcode };
 
-  try {
-    const result = await apiRequest(`/products/image-search?query=${encodeURIComponent(query)}&name=${encodeURIComponent(name)}&page=1`);
-    const first = result?.results?.[0] || null;
-    pushDebug({
-      ...debugBase,
-      source: 'api/products/image-search',
-      resultCount: Array.isArray(result?.results) ? result.results.length : 0,
-      selected: first ? {
-        url: first.url || '',
-        source: first.source || '',
-        title: first.title || '',
-        provider: first.provider || '',
-      } : null,
-    });
-    if (first?.url && isImageUrl(first.url)) return { ...first, debugSource: 'api/products/image-search' };
-  } catch (error) {
-    pushLog(`Busca oficial falhou para ${name || query}: ${error.message || 'erro desconhecido'}`);
-    pushDebug({ ...debugBase, source: 'api/products/image-search', error: error.message || 'erro desconhecido' });
+  const tries = [
+    barcode ? { query: barcode, name } : null,
+    name ? { query: name, name } : null,
+  ].filter(Boolean);
+
+  for (const attempt of tries) {
+    try {
+      const result = await apiRequest(`/products/image-search?query=${encodeURIComponent(attempt.query)}&name=${encodeURIComponent(attempt.name || '')}&page=1`);
+      const results = Array.isArray(result?.results) ? result.results : [];
+      const best = results[0] || null;
+      pushDebug({
+        ...debugBase,
+        source: 'api/products/image-search',
+        query: attempt.query,
+        resultCount: results.length,
+        selected: best ? {
+          url: best.url || '',
+          source: best.source || '',
+          title: best.title || '',
+          provider: best.provider || '',
+        } : null,
+      });
+      if (best?.url && isImageUrl(best.url)) return { ...best, debugSource: 'api/products/image-search' };
+    } catch (error) {
+      pushLog(`Busca oficial falhou para ${attempt.query}: ${error.message || 'erro desconhecido'}`);
+      pushDebug({ ...debugBase, source: 'api/products/image-search', query: attempt.query, error: error.message || 'erro desconhecido' });
+    }
   }
 
   const url = buildGoogleImagesUrl(product);
