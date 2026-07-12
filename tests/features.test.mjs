@@ -17,12 +17,12 @@ const [api, form, imageUpload, stock, users, settings, receipt, receiptPdf, paym
   read('src/pages/PDV.jsx'),
   read('src/pages/Relatorios.jsx'),
   read('src/components/Layout.jsx'),
-  read('server/product-images.js'),
+  read('src/lib/google-image-search.js'),
   read('src/components/stock/ProductImageSearch.jsx'),
   read('src/index.css'),
 ]);
 
-assert.match(api, /product-images.*search/s, 'A API deve expor busca de imagens.');
+assert.match(api, /product-images.*config/s, 'A API deve expor a configuração pública da busca de imagens.');
 assert.match(form, /ImageUploadField/, 'O formulário deve usar o campo compartilhado de upload.');
 assert.match(imageUpload, /optimizeImageFile/, 'O campo de imagem deve otimizar o arquivo local antes de salvar.');
 assert.doesNotMatch(imageUpload, /@vercel\/blob\/client/, 'O upload local não deve depender do Vercel Blob.');
@@ -52,10 +52,10 @@ assert.match(pdv, /Finalize ou descarte as vendas abertas antes de fechar o caix
 assert.match(layout, /config\.logo_url \|\| user\.logo_url/, 'A barra lateral deve usar a logo enviada pelo mercado.');
 assert.doesNotMatch(reports, /bg-white/, 'Relatórios não devem forçar cartões brancos no tema escuro.');
 assert.doesNotMatch(layout, /active \? 'text-sidebar-primary'/, 'O ícone ativo não pode perder contraste no menu.');
-assert.match(search, /searchGoogleImages\(searchQuery/, 'A busca deve consultar o termo informado no modal.');
-assert.match(imageSearchUi, /fundo branco/, 'A pesquisa automática deve priorizar fundo branco pelo nome do produto.');
+assert.match(search, /searchGoogleProductImages/, 'A busca deve consultar o termo informado no modal pelo Google.');
+assert.match(search, /image_dominantcolor:\s*'white'/, 'A pesquisa deve priorizar fundo branco sem alterar a consulta visível.');
 assert.match(imageSearchUi, /Pesquisar novamente/, 'O usuário deve poder refazer a pesquisa sem fechar o modal.');
-assert.doesNotMatch(search, /imageGeometryScore|productSimilarity/, 'A busca não deve filtrar imagens por adequação, formato ou similaridade.');
+assert.doesNotMatch(search, /imageGeometryScore|productSimilarity|openfoodfacts/i, 'A busca não deve usar filtros próprios nem Open Food Facts.');
 assert.doesNotMatch(imageSearchUi, /Google Imagens indisponível|GOOGLE_CSE_API_KEY|GOOGLE_CSE_ID/, 'A interface não deve exibir erro exigindo configuração do Google.');
 assert.match(css, /--market-primary:\s*#16a06a/, 'A identidade deve voltar à cor principal antiga.');
 assert.match(css, /--sidebar-background:\s*165 30% 9%/, 'A paleta antiga da barra lateral deve ser preservada.');

@@ -23,6 +23,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   const [form, setForm] = useState(EMPTY_FORM);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imageChanged, setImageChanged] = useState(false);
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -42,6 +43,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   useEffect(() => {
     if (product) {
+      setImageChanged(false);
       setForm({
         name: product.name || '',
         category: product.category || '',
@@ -57,6 +59,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       return;
     }
     if (duplicateSource) {
+      setImageChanged(true);
       setForm({
         name: `${duplicateSource.name || 'Produto'} - Cópia`,
         category: duplicateSource.category || '',
@@ -71,10 +74,14 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       });
       return;
     }
+    setImageChanged(false);
     setForm({ ...EMPTY_FORM, internal_code: generateInternalCode() });
   }, [product, duplicateSource]);
 
-  const handleChange = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
+  const handleChange = (field, value) => {
+    if (field === 'image_url') setImageChanged(true);
+    setForm(previous => ({ ...previous, [field]: value }));
+  };
 
 
 
@@ -85,18 +92,21 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
     return '';
   };
 
-  const payload = () => ({
-    name: form.name.trim(),
-    category: form.category.trim(),
-    barcode: form.barcode.trim(),
-    internal_code: form.internal_code,
-    image_url: form.image_url || '',
-    sale_price: Number.parseFloat(form.sale_price) || 0,
-    cost_price: form.cost_price === '' ? null : Number.parseFloat(form.cost_price),
-    quantity: form.quantity === '' ? 0 : Number.parseFloat(form.quantity),
-    unit: form.unit,
-    status: form.status,
-  });
+  const payload = () => {
+    const data = {
+      name: form.name.trim(),
+      category: form.category.trim(),
+      barcode: form.barcode.trim(),
+      internal_code: form.internal_code,
+      sale_price: Number.parseFloat(form.sale_price) || 0,
+      cost_price: form.cost_price === '' ? null : Number.parseFloat(form.cost_price),
+      quantity: form.quantity === '' ? 0 : Number.parseFloat(form.quantity),
+      unit: form.unit,
+      status: form.status,
+    };
+    if (!isEditing || imageChanged || !product?.image_is_inline) data.image_url = form.image_url || '';
+    return data;
+  };
 
   const saveProduct = async ({ duplicateAfter = false } = {}) => {
     const invalid = validate();
@@ -174,7 +184,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
         <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row">
             <div className="grid h-32 w-32 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
-              {form.image_url ? <img src={form.image_url} alt={form.name || 'Produto'} className="h-full w-full object-contain p-2" /> : <ImageIcon className="h-10 w-10 text-muted-foreground/40" />}
+              {form.image_url ? <img src={form.image_url} alt={form.name || 'Produto'} className="h-full w-full object-contain p-2" referrerPolicy="no-referrer" /> : <ImageIcon className="h-10 w-10 text-muted-foreground/40" />}
             </div>
             <div className="flex flex-1 flex-col justify-center gap-2">
               <ImageUploadField value={form.image_url} onChange={value => handleChange('image_url', value)} kind="product" scopeId={user?.market_id} label="Imagem do produto" name={form.name || form.barcode || 'produto'} previewClassName="hidden" />
@@ -263,6 +273,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
       {showImageSearch && (
         <ProductImageSearch
           productName={form.name}
+          barcode={form.barcode}
           onSelect={url => handleChange('image_url', url)}
           onClose={() => setShowImageSearch(false)}
         />

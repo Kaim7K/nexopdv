@@ -38,7 +38,7 @@ export default function ProdutoDetalhe() {
       <div className="bg-card text-card-foreground border border-border rounded-lg p-6 mb-4">
         <div className="flex items-start gap-4">
           <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0 border border-border">
-            {product.image_url ? <img src={product.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-10 h-10 text-muted-foreground" />}
+            {product.image_url ? <img src={product.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : <Package className="w-10 h-10 text-muted-foreground" />}
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{product.name}</h1>

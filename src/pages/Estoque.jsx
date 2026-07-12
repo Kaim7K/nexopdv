@@ -6,7 +6,6 @@ import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import {
   ArrowDownAZ,
   ArrowDownZA,
-  AlertTriangle,
   ArrowRight,
   ArrowUpDown,
   Copy,
@@ -154,9 +153,11 @@ export default function Estoque() {
     }
     setSaving(true);
     try {
-      await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(EDITABLE_COLUMNS.map(([key]) => [key, product[key]])) }))); 
+      await nexoApi.stock.bulkUpdate(changed.map(product => ({ id: product.id, ...Object.fromEntries(EDITABLE_COLUMNS.map(([key]) => [key, product[key]])) })));
+      setDirty(new Set());
+      setProducts(current => current.map(product => dirty.has(product.id) ? { ...product, updated_date: new Date().toISOString() } : product));
+      nexoApi.cache.clear();
       toast.success('Estoque atualizado.');
-      await load();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -220,6 +221,10 @@ export default function Estoque() {
       setProductModal({ mode: 'create' });
       return;
     }
+    if (mode === 'edit' || !product.image_is_inline) {
+      setProductModal({ mode, product });
+      return;
+    }
     setProductModal({ mode: 'loading', product });
     try {
       const fullProduct = await nexoApi.entities.Product.get(product.id);
@@ -231,8 +236,20 @@ export default function Estoque() {
   };
 
   const closeModal = () => setProductModal(null);
-  const handleModalSave = async (_saved, options = {}) => {
-    await load();
+  const handleModalSave = (saved, options = {}) => {
+    const rawImage = String(saved?.image_url || '');
+    const normalized = {
+      ...saved,
+      image_is_inline: rawImage.startsWith('data:image/'),
+      image_url: rawImage.startsWith('data:image/') ? `/api/product-media/${saved.id}?v=${Date.now()}` : rawImage,
+    };
+    setProducts(current => {
+      const exists = current.some(product => product.id === normalized.id);
+      return exists
+        ? current.map(product => product.id === normalized.id ? { ...product, ...normalized } : product)
+        : [normalized, ...current];
+    });
+    nexoApi.cache.clear();
     if (!options.keepOpen) closeModal();
   };
 
@@ -333,39 +350,12 @@ export default function Estoque() {
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-4">
-        <StockMetric label="Produtos cadastrados" value={products.length} />
-        <StockMetric label="Estoque baixo" value={lowStockCount} low={lowStockCount > 0} />
-        <StockMetric label="Sem estoque" value={zeroStockCount} alert={zeroStockCount > 0} />
-        <StockMetric label="Alterações pendentes" value={dirty.size} pending={dirty.size > 0} />
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StockMetric label="Produtos cadastrados" value={products.length} hint="Todos os itens" />
+        <StockMetric label="Estoque baixo" value={lowStockCount} low={lowStockCount > 0} active={stock === 'baixo'} hint={lowStockCount ? `Até ${lowStockThreshold} unidades · clique para ver` : 'Nenhum alerta'} onClick={() => focusStock('baixo')} />
+        <StockMetric label="Sem estoque" value={zeroStockCount} alert={zeroStockCount > 0} active={stock === 'zerado'} hint={zeroStockCount ? 'Clique para atualizar os produtos' : 'Nenhum produto zerado'} onClick={() => focusStock('zerado')} />
+        <StockMetric label="Alterações pendentes" value={dirty.size} pending={dirty.size > 0} hint={dirty.size ? 'Salve para aplicar' : 'Tudo atualizado'} />
       </div>
-
-      {(zeroStockCount > 0 || lowStockCount > 0) && (
-        <section className="mb-4 grid gap-3 lg:grid-cols-2" aria-label="Alertas de estoque">
-          {zeroStockCount > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-red-500/45 bg-red-600 text-white shadow-lg">
-              <div className="flex items-start gap-3 p-4"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-white/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{zeroStockCount} produto{zeroStockCount === 1 ? '' : 's'} sem estoque</h2><p className="mt-1 text-sm text-white/85">Atualize os produtos abaixo para liberá-los novamente para venda.</p></div></div>
-              <div className="space-y-1 border-t border-white/15 bg-black/10 p-2">
-                {products.filter(product => Number(product.quantity || 0) <= 0).slice(0, 6).map(product => (
-                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl bg-white/10 px-3 py-2"><span className="min-w-0 truncate text-sm font-bold">{product.name}</span><button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex min-h-9 flex-none items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-black text-red-700 hover:bg-red-50">Atualizar estoque <ArrowRight className="h-3.5 w-3.5" /></button></div>
-                ))}
-                {zeroStockCount > 6 && <button type="button" onClick={() => focusStock('zerado')} className="w-full rounded-lg px-3 py-2 text-xs font-bold text-white/90 hover:bg-white/10">Ver mais {zeroStockCount - 6} produto(s)</button>}
-              </div>
-            </div>
-          )}
-          {lowStockCount > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-amber-400/60 bg-amber-500/10 text-amber-900 dark:text-amber-100">
-              <div className="flex items-start gap-3 p-4"><span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-amber-500/15"><AlertTriangle className="h-5 w-5" /></span><div><h2 className="font-black">{lowStockCount} produto{lowStockCount === 1 ? '' : 's'} com estoque baixo</h2><p className="mt-1 text-sm opacity-80">Alerta configurado para {lowStockThreshold} unidade{lowStockThreshold === 1 ? '' : 's'} ou menos.</p></div></div>
-              <div className="space-y-1 border-t border-amber-400/25 p-2">
-                {products.filter(product => Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold).slice(0, 6).map(product => (
-                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl bg-card/70 px-3 py-2"><span className="min-w-0 truncate text-sm font-bold">{product.name} <small className="font-semibold opacity-70">({product.quantity})</small></span><button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex min-h-9 flex-none items-center gap-1.5 rounded-lg border border-amber-500/40 bg-card px-3 text-xs font-black text-amber-800 hover:bg-amber-500/10 dark:text-amber-200">Atualizar estoque <ArrowRight className="h-3.5 w-3.5" /></button></div>
-                ))}
-                {lowStockCount > 6 && <button type="button" onClick={() => focusStock('baixo')} className="w-full rounded-lg px-3 py-2 text-xs font-bold hover:bg-amber-500/10">Ver mais {lowStockCount - 6} produto(s)</button>}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_220px_180px_180px_190px_auto]">
@@ -428,7 +418,7 @@ export default function Estoque() {
                 <tr key={product.id} className={`border-t border-border transition hover:bg-muted/25 ${rowBackground}`}>
                   <td className={`sticky left-0 z-10 p-2 ${stickyBackground}`}>
                     <button type="button" onClick={() => openProductModal('edit', product)} className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-white" aria-label={`Editar ${product.name}`}>
-                      {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" loading="lazy" /> : <Package className="h-5 w-5 text-muted-foreground" />}
+                      {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" loading="lazy" referrerPolicy="no-referrer" /> : <Package className="h-5 w-5 text-muted-foreground" />}
                     </button>
                   </td>
                   {TABLE_COLUMNS.map(([key, label, type]) => (
@@ -465,6 +455,7 @@ export default function Estoque() {
                   ))}
                   <td className={`sticky right-0 z-10 p-2 ${stickyBackground}`}>
                     <div className="flex justify-end gap-1">
+                      {isZero && <button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/35 bg-red-500/10 px-3 text-xs font-bold text-red-700 hover:bg-red-500/15 dark:text-red-300">Atualizar estoque <ArrowRight className="h-3.5 w-3.5" /></button>}
                       <button type="button" onClick={() => openProductModal('edit', product)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Editar ${product.name} no formulário`} title="Editar no formulário"><Pencil className="h-[18px] w-[18px]" /></button>
                       <button type="button" onClick={() => openProductModal('duplicate', product)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Duplicar ${product.name}`} title="Duplicar produto"><Copy className="h-[18px] w-[18px]" /></button>
                       {['admin', 'gerente'].includes(user.role) && (
@@ -491,8 +482,15 @@ export default function Estoque() {
   );
 }
 
-function StockMetric({ label, value, alert = false, low = false, pending = false }) {
+function StockMetric({ label, value, alert = false, low = false, pending = false, active = false, hint = '', onClick }) {
   const valueClass = alert ? 'text-red-600 dark:text-red-300' : low || pending ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
-  const borderClass = alert ? 'border-red-500/30' : low ? 'border-amber-400/40' : 'border-border';
-  return <div className={`rounded-2xl border bg-card p-4 shadow-sm ${borderClass}`}><span className="text-xs font-semibold text-muted-foreground">{label}</span><strong className={`mt-1 block text-2xl font-black tabular-nums ${valueClass}`}>{value}</strong></div>;
+  const borderClass = alert ? 'border-red-500/35' : low ? 'border-amber-400/45' : 'border-border';
+  const Component = onClick ? 'button' : 'div';
+  return (
+    <Component type={onClick ? 'button' : undefined} onClick={onClick} className={`rounded-2xl border bg-card p-4 text-left shadow-sm transition ${borderClass} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}>
+      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+      <strong className={`mt-1 block text-2xl font-bold tabular-nums ${valueClass}`}>{value}</strong>
+      {hint && <span className="mt-1 block text-[11px] text-muted-foreground">{hint}</span>}
+    </Component>
+  );
 }

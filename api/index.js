@@ -10,8 +10,6 @@ import {
 } from '../server/auth.js';
 import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, send } from '../server/http.js';
 import { AppError } from '../server/errors.js';
-import { searchProductImages } from '../server/product-images.js';
-import { importRemoteProductImage } from '../server/media.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -323,6 +321,8 @@ async function routeHandler(req, res) {
     const rows = await sql`
       SELECT id, data - 'image_url' AS data,
         COALESCE(data->>'image_url','') <> '' AS has_image,
+        CASE WHEN COALESCE(data->>'image_url','') LIKE 'data:image/%' THEN true ELSE false END AS image_is_inline,
+        CASE WHEN COALESCE(data->>'image_url','') ~ '^https://' THEN data->>'image_url' ELSE '' END AS remote_image_url,
         created_date, updated_date
       FROM nexo.records
       WHERE market_id=${user.market_id} AND entity='products'
@@ -332,7 +332,8 @@ async function routeHandler(req, res) {
     const products = rows.map(row => ({
       id: row.id,
       ...(row.data || {}),
-      image_url: row.has_image ? `/api/product-media/${row.id}?v=${new Date(row.updated_date).getTime()}` : '',
+      image_url: row.remote_image_url || (row.has_image ? `/api/product-media/${row.id}?v=${new Date(row.updated_date).getTime()}` : ''),
+      image_is_inline: Boolean(row.image_is_inline),
       created_date: row.created_date,
       updated_date: row.updated_date,
     }));
@@ -364,31 +365,17 @@ async function routeHandler(req, res) {
     return res.status(200).send(buffer);
   }
 
-  if (path[0] === 'product-images' && path[1] === 'search') {
+  if (path[0] === 'product-images' && path[1] === 'config') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
       return send(res, 403, { message: 'Sem permissão para buscar imagens de produtos.' });
     }
-    const result = await searchProductImages({
-      query: req.query.query,
-      name: req.query.name,
-      page: req.query.page,
-    });
-    return send(res, 200, result);
+    const engineId = String(process.env.GOOGLE_CSE_ID || '').trim();
+    if (!engineId) return send(res, 503, { code: 'GOOGLE_IMAGE_SEARCH_NOT_CONFIGURED', message: 'A busca do Google ainda não foi configurada para este ambiente.' });
+    res.setHeader('Cache-Control', 'private, max-age=300, stale-while-revalidate=3600');
+    return send(res, 200, { engineId });
   }
 
-  if (path[0] === 'media' && path[1] === 'import') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-    if (!user.market_id || (user.role !== 'super_admin' && !['pdv','estoque'].some(module => (user.enabled_modules || []).includes(module)))) {
-      return send(res, 403, { message: 'Sem permissão para importar imagens de produtos.' });
-    }
-    const imported = await importRemoteProductImage({
-      url: req.body.url,
-      productName: req.body.productName,
-      marketId: user.market_id,
-    });
-    return send(res, 201, imported);
-  }
 
   if (path[0] === 'cash') {
     if (!user.market_id) return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
@@ -1024,7 +1011,7 @@ async function routeHandler(req, res) {
     const id = path[2];
     if (table === 'users') {
       if (!['admin','gerente'].includes(user.role)) return send(res, 403, { message: 'Sem permissão para gerenciar usuários.' });
-      if (req.method === 'GET') return send(res, 200, await sql`SELECT id,email,full_name,role,photo_url,active,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id}`);
+      if (req.method === 'GET') return send(res, 200, await sql`SELECT id,email,full_name,role,photo_url,active,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id} AND active=true ORDER BY full_name NULLS LAST,email`);
       if (req.method === 'DELETE') {
         if (!isUuid(id)) return send(res, 400, { message: 'Usuário inválido.' });
         if (id === user.id) return send(res, 400, { message: 'Você não pode excluir o próprio usuário.' });
@@ -1035,25 +1022,41 @@ async function routeHandler(req, res) {
           const [state] = await sql`SELECT count(*)::int AS active_admins FROM nexo.users WHERE market_id=${user.market_id} AND role='admin' AND active=true`;
           if (Number(state?.active_admins || 0) <= 1) return send(res, 409, { message: 'Mantenha pelo menos um administrador ativo no mercado.' });
         }
-        await sql`WITH removed AS (
-          DELETE FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role
-        ) INSERT INTO nexo.records(market_id,entity,data)
+        const deletedEmail = `deleted+${String(id).replace(/-/g, '')}@nexo.invalid`;
+        const [disabled] = await sql`WITH target AS (
+          SELECT id,email,full_name,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true
+        ), deactivated AS (
+          UPDATE nexo.users account
+          SET active=false,
+              email=${deletedEmail},
+              full_name=COALESCE(NULLIF(account.full_name,''),target.email) || ' (excluído)',
+              photo_url=NULL,
+              password_hash=${await bcrypt.hash(randomUUID(), 10)},
+              updated_date=now()
+          FROM target
+          WHERE account.id=target.id
+          RETURNING account.id,target.email AS previous_email,target.full_name AS previous_name,target.role
+        ), audit AS (
+          INSERT INTO nexo.records(market_id,entity,data)
           SELECT ${user.market_id},'general_audits',jsonb_build_object(
             'action_type','usuario_excluido',
             'entity_type','user',
-            'entity_id',removed.id,
+            'entity_id',deactivated.id,
             'user_id',${user.id},
             'user_name',${user.full_name || user.email},
-            'description','Usuário ' || COALESCE(removed.full_name, removed.email) || ' excluído',
-            'details',jsonb_build_object('email',removed.email,'role',removed.role)
-          ) FROM removed`;
+            'description','Usuário ' || COALESCE(deactivated.previous_name,deactivated.previous_email) || ' excluído',
+            'details',jsonb_build_object('email',deactivated.previous_email,'role',deactivated.role,'method','soft_delete')
+          FROM deactivated
+          RETURNING id
+        ) SELECT id FROM deactivated`;
+        if (!disabled) return send(res, 409, { message: 'O usuário já foi excluído ou está inativo.' });
         return send(res, 200, { ok: true });
       }
       if (req.method === 'PATCH') {
         if (!isUuid(id)) return send(res, 400, { message: 'Usuário inválido.' });
         if (req.body.role && !USER_ROLES.includes(req.body.role)) return send(res, 400, { message: 'Perfil de usuário inválido.' });
         if (id === user.id && req.body.active === false) return send(res, 400, { message: 'Você não pode desativar o próprio acesso.' });
-        const [target] = await sql`SELECT id,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id}`;
+        const [target] = await sql`SELECT id,role FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true`;
         if (!target) return send(res, 404, { message: 'Usuário não encontrado.' });
         if (user.role === 'gerente') {
           if (target.id !== user.id && target.role !== 'vendedor') return send(res, 403, { message: 'Gerentes podem alterar apenas usuários vendedores.' });
@@ -1137,21 +1140,27 @@ async function routeHandler(req, res) {
     }
     if (table === 'products' && req.method === 'DELETE') {
       if (!isUuid(id)) return send(res, 400, { message: 'Produto inválido.' });
-      const [removed] = await sql`DELETE FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity='products' RETURNING id,data`;
+      const [removed] = await sql`WITH deleted AS (
+        DELETE FROM nexo.records
+        WHERE id=${id} AND market_id=${user.market_id} AND entity='products'
+        RETURNING id,data
+      ), audit AS (
+        INSERT INTO nexo.records(market_id,entity,data)
+        SELECT ${user.market_id},'general_audits',jsonb_build_object(
+          'action_type','produto_excluido',
+          'entity_type','product',
+          'entity_id',deleted.id,
+          'user_id',${user.id},
+          'user_name',${user.full_name || user.email},
+          'description','Produto ' || COALESCE(NULLIF(deleted.data->>'name',''),'sem nome') || ' excluído do estoque',
+          'details',jsonb_build_object(
+            'barcode',COALESCE(deleted.data->>'barcode',''),
+            'internal_code',COALESCE(deleted.data->>'internal_code','')
+          )
+        FROM deleted
+        RETURNING id
+      ) SELECT id FROM deleted`;
       if (!removed) return send(res, 404, { message: 'Produto não encontrado.' });
-      const auditPayload = {
-        action_type: 'produto_excluido',
-        entity_type: 'product',
-        entity_id: removed.id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        description: `Produto ${text(removed.data?.name, 180) || 'sem nome'} excluído do estoque`,
-        details: {
-          barcode: text(removed.data?.barcode, 80),
-          internal_code: text(removed.data?.internal_code, 80),
-        },
-      };
-      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditPayload)}::jsonb)`;
       return send(res, 200, { ok: true });
     }
     if (req.method === 'DELETE') { if (!isUuid(id)) return send(res, 400, { message: 'Identificador inválido.' }); await sql`DELETE FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity=${table}`; return send(res,200,{ok:true}); }

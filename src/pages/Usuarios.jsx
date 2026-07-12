@@ -63,7 +63,7 @@ export default function Usuarios() {
 
   const removeUser = async item => {
     if (item.id === user.id || deletingId) return;
-    const confirmed = window.confirm(`Excluir o usuário "${item.full_name || item.email}"? O acesso será removido permanentemente.`);
+    const confirmed = window.confirm(`Excluir o usuário "${item.full_name || item.email}"? O acesso será removido e o histórico de vendas será preservado.`);
     if (!confirmed) return;
 
     setDeletingId(item.id);
@@ -91,11 +91,11 @@ export default function Usuarios() {
 
     setSaving(true);
     try {
-      await nexoApi.users.create(payload);
+      const created = await nexoApi.users.create(payload);
+      setUsers(current => [...current, { ...created, active: true }].sort((first, second) => String(first.full_name || first.email).localeCompare(String(second.full_name || second.email), 'pt-BR')));
       toast.success('Funcionário criado.');
       setShowCreate(false);
       setForm(EMPTY_FORM);
-      await load();
     } catch (error) {
       toast.error(error.message || 'Não foi possível criar o funcionário.');
     } finally {

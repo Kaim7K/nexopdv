@@ -32,7 +32,7 @@ export default function SearchResults({ results, onSelect, loading }) {
         >
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
             {product.image_url ? (
-              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
             ) : (
               <Package className="w-5 h-5 text-muted-foreground/40" />
             )}

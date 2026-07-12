@@ -5,6 +5,7 @@ import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import { usePageMetadata } from '@/hooks/use-page-metadata';
+import { applySidebarPalette, deriveSidebarPalette } from '@/lib/color-contrast';
 
 const MENU_ITEMS = [
   { path: '/pdv', label: 'PDV', icon: ShoppingCart, roles: ['gerente', 'vendedor', 'admin'] },
@@ -20,6 +21,34 @@ const MENU_ITEMS = [
 
 const ROUTE_ACCESS_ALIASES = { '/produto': '/estoque' };
 const ROLE_LABELS = { vendedor: 'Vendedor', gerente: 'Gerente', admin: 'Administrador', super_admin: 'Superadministrador' };
+
+const ROUTE_PREFETCHERS = {
+  '/pdv': () => import('@/pages/PDV'),
+  '/estoque': () => import('@/pages/Estoque'),
+  '/vendas': () => import('@/pages/Vendas'),
+  '/fiados': () => import('@/pages/Fiados'),
+  '/relatorios': () => import('@/pages/Relatorios'),
+  '/auditoria': () => import('@/pages/AuditoriaGeral'),
+  '/usuarios': () => import('@/pages/Usuarios'),
+  '/configuracoes': () => import('@/pages/Configuracoes'),
+  '/admin/mercados': () => import('@/pages/AdminMercados'),
+};
+const CONFIG_CACHE_KEY = 'nexo:system-config';
+
+function readCachedConfig() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(CONFIG_CACHE_KEY) || 'null');
+    return cached && cached.expiresAt > Date.now() && cached.values ? cached.values : {};
+  } catch {
+    return {};
+  }
+}
+
+function cacheConfig(values) {
+  try {
+    sessionStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ values, expiresAt: Date.now() + 120_000 }));
+  } catch { /* armazenamento opcional */ }
+}
 
 function hexToHsl(hex, { minLightness = 0 } = {}) {
   const value = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex.slice(1) : '16a06a';
@@ -39,7 +68,7 @@ function hexToHsl(hex, { minLightness = 0 } = {}) {
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const [config, setConfig] = useState({});
+  const [config, setConfig] = useState(() => readCachedConfig());
   const [mobileMenu, setMobileMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const location = useLocation();
@@ -51,25 +80,38 @@ export default function Layout() {
 
   useEffect(() => {
     if (!user) return undefined;
+    const root = document.documentElement;
     if (user.primary_color) {
-      const root = document.documentElement;
       const accent = hexToHsl(user.primary_color, { minLightness: 46 });
       root.style.setProperty('--accent', accent);
       root.style.setProperty('--ring', accent);
-      root.style.setProperty('--sidebar-primary', accent);
       root.style.setProperty('--market-primary', user.primary_color);
     }
 
     let cancelled = false;
+    const applyConfig = values => {
+      if (cancelled) return;
+      setConfig(values);
+      cacheConfig(values);
+      applySidebarPalette(root, deriveSidebarPalette(
+        values.sidebar_background_color || '#0f1b17',
+        values.sidebar_accent_color || user.primary_color || '#16a06a',
+      ));
+    };
+
+    applyConfig(readCachedConfig());
+    const onConfigUpdated = event => applyConfig(event.detail || {});
+    window.addEventListener('nexo:config-updated', onConfigUpdated);
+
     if (user.market_id) {
       nexoApi.entities.SystemConfig.list()
-        .then(configs => {
-          if (cancelled) return;
-          setConfig(Object.fromEntries(configs.map(item => [item.key, item.value])));
-        })
-        .catch(() => { if (!cancelled) setConfig({}); });
+        .then(configs => applyConfig(Object.fromEntries(configs.map(item => [item.key, item.value]))))
+        .catch(() => { /* mantém o cache visual enquanto a rede se recupera */ });
     }
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.removeEventListener('nexo:config-updated', onConfigUpdated);
+    };
   }, [user]);
 
   const filteredItems = useMemo(() => {
@@ -129,7 +171,7 @@ export default function Layout() {
           {filteredItems.map(item => {
             const active = accessPath.startsWith(item.path);
             return (
-              <Link key={item.path} to={item.path} aria-current={active ? 'page' : undefined} className={`group flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}>
+              <Link key={item.path} to={item.path} onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()} onFocus={() => ROUTE_PREFETCHERS[item.path]?.()} onTouchStart={() => ROUTE_PREFETCHERS[item.path]?.()} aria-current={active ? 'page' : undefined} className={`group flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}>
                 <item.icon className={`h-[18px] w-[18px] flex-none transition ${active ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'}`} />
                 <span>{item.label}</span>
                 {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />}

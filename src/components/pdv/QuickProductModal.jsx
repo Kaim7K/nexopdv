@@ -105,6 +105,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
       {showImageSearch && (
         <ProductImageSearch
           productName={name}
+          barcode={barcode}
           onSelect={setImageUrl}
           onClose={() => setShowImageSearch(false)}
         />

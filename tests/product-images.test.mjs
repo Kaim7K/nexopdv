@@ -1,50 +1,28 @@
 import assert from 'node:assert/strict';
-import { searchProductImages } from '../server/product-images.js';
+import { readFile } from 'node:fs/promises';
 
-const originalFetch = globalThis.fetch;
-const originalKey = process.env.GOOGLE_CSE_API_KEY;
-const originalId = process.env.GOOGLE_CSE_ID;
-delete process.env.GOOGLE_CSE_API_KEY;
-delete process.env.GOOGLE_CSE_ID;
+const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+const [client, modal, api, env, vercel] = await Promise.all([
+  read('src/lib/google-image-search.js'),
+  read('src/components/stock/ProductImageSearch.jsx'),
+  read('api/index.js'),
+  read('.env.example'),
+  read('vercel.json'),
+]);
 
-const calls = [];
-globalThis.fetch = async input => {
-  const url = new URL(String(input));
-  calls.push(url);
+assert.match(client, /cse\.google\.com\/cse\.js\?cx=/, 'A pesquisa deve usar o Google Programmable Search no navegador.');
+assert.match(client, /image_dominantcolor:\s*'white'/, 'O filtro de fundo branco deve ser aplicado por trás da busca.');
+assert.match(client, /defaultToImageSearch:\s*true/, 'O mecanismo deve abrir diretamente nos resultados de imagem.');
+assert.match(client, /disableWebSearch:\s*true/, 'A busca deve retornar somente imagens.');
+assert.match(client, /result\?\.image\?\.url/, 'A URL original da imagem deve ser extraída dos resultados do Google.');
+assert.match(modal, /onSelect\(target\.url\)/, 'A seleção deve salvar somente o endereço da imagem.');
+assert.match(modal, /Pesquisar novamente/, 'A pesquisa deve poder ser refeita dentro do mesmo modal.');
+assert.match(modal, /barcode \|\| productName/, 'A busca automática deve priorizar o código e usar o nome como alternativa.');
+assert.doesNotMatch(modal, /setQuery\([^)]*fundo branco|automaticQuery[^;]*fundo branco/i, 'O termo fundo branco não pode ser inserido no campo visível.');
+assert.doesNotMatch(client + modal + api, /openfoodfacts|Open Food Facts/i, 'O sistema não deve consultar o Open Food Facts.');
+assert.match(api, /path\[0\] === 'product-images' && path\[1\] === 'config'/, 'A API deve entregar somente o ID público do mecanismo do Google.');
+assert.doesNotMatch(api, /GOOGLE_CSE_API_KEY/, 'A busca do navegador não deve exigir chave da JSON API.');
+assert.match(env, /GOOGLE_CSE_ID=/, 'O ambiente deve documentar o ID do Google Programmable Search.');
+assert.match(vercel, /cse\.google\.com/, 'A CSP deve permitir o script oficial de busca do Google.');
 
-  if (url.hostname.includes('openfoodfacts.org')) {
-    assert.equal(url.searchParams.get('search_terms'), 'Coca-Cola Original 2L PET', 'O catálogo deve remover apenas o termo visual fundo branco.');
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
-        products: [{
-          product_name: 'Coca-Cola Original 2L PET',
-          image_front_url: 'https://images.openfoodfacts.org/coca-cola.jpg',
-          image_front_small_url: 'https://images.openfoodfacts.org/coca-cola-small.jpg',
-        }],
-      }),
-    };
-  }
-  if (url.hostname === 'commons.wikimedia.org') {
-    assert.equal(url.searchParams.get('gsrsearch'), 'Coca-Cola Original 2L PET fundo branco');
-    return { ok: true, status: 200, json: async () => ({ query: { pages: [] } }) };
-  }
-  throw new Error(`URL inesperada no teste: ${url}`);
-};
-
-try {
-  const result = await searchProductImages({ query: 'Coca-Cola Original 2L PET fundo branco', page: 1 });
-  assert.equal(result.query, 'Coca-Cola Original 2L PET fundo branco');
-  assert.equal(result.results.length, 1, 'A busca pelo nome deve retornar imagens válidas sem exigir o Google.');
-  assert.equal(result.results[0].title, 'Coca-Cola Original 2L PET');
-  assert(calls.some(url => url.hostname.includes('openfoodfacts.org')), 'O catálogo de produtos deve ser consultado.');
-  assert(calls.some(url => url.hostname === 'commons.wikimedia.org'), 'A busca visual deve ser consultada com fundo branco.');
-  assert.equal(result.providers.googleCustomSearch, false, 'A busca deve continuar funcionando sem configurar o Google CSE.');
-} finally {
-  globalThis.fetch = originalFetch;
-  if (originalKey === undefined) delete process.env.GOOGLE_CSE_API_KEY; else process.env.GOOGLE_CSE_API_KEY = originalKey;
-  if (originalId === undefined) delete process.env.GOOGLE_CSE_ID; else process.env.GOOGLE_CSE_ID = originalId;
-}
-
-console.log('Teste da busca de imagens aprovado.');
+console.log('Teste da busca Google Imagens aprovado.');

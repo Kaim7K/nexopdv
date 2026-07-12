@@ -31,6 +31,10 @@ async function performRequest(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && !path.startsWith('/auth/login') && !path.startsWith('/auth/me') && typeof window !== 'undefined') {
+      responseCache.clear();
+      window.dispatchEvent(new CustomEvent('nexo:session-expired'));
+    }
     throw Object.assign(new Error(data.message || 'Erro ao acessar o servidor.'), {
       status: response.status,
       code: data.code,
@@ -94,15 +98,6 @@ export const nexoApi = {
   stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products }, timeout: 60_000 }) },
   maintenance: {
     reset: (target, confirmation) => request('/maintenance/reset', { method: 'POST', body: { target, confirmation }, timeout: 60_000 }),
-  },
-  media: {
-    importProductImage: (url, productName) => request('/media/import', { method: 'POST', body: { url, productName }, timeout: 45_000 }),
-  },
-  productImages: {
-    search: ({ query = '', name = '', page = 1 }) => {
-      const params = new URLSearchParams({ query: query || name, page: String(page) });
-      return request(`/product-images/search?${params.toString()}`, { cacheTTL: 60_000 });
-    },
   },
   cash: {
     current: () => request('/cash/current', { cacheTTL: 5_000 }),
