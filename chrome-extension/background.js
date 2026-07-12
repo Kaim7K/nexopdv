@@ -28,6 +28,14 @@ function isImageUrl(url) {
   return /^https?:\/\//i.test(url || '');
 }
 
+function sanitizeQuery(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s\-().,]/gu, ' ')
+    .trim()
+    .slice(0, 180);
+}
+
 async function apiRequest(path, options = {}) {
   const response = await fetch(`https://nexopdv-gold.vercel.app/api${path}`, {
     credentials: 'include',
@@ -40,57 +48,88 @@ async function apiRequest(path, options = {}) {
   return data;
 }
 
-function sanitizeQuery(value) {
-  return String(value || '')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\p{L}\p{N}\s\-().,]/gu, ' ')
-    .trim()
-    .slice(0, 180);
-}
-
 async function loadProducts({ onlyActive = true, limit = 50 } = {}) {
   const products = await apiRequest('/products/catalog?limit=3000');
   const filtered = products.filter(product => (!onlyActive || product.status === 'ativo') && !String(product.image_url || '').trim());
   return filtered.slice(0, Math.max(1, Number(limit) || 50));
 }
 
+function buildGoogleImagesUrl(product) {
+  const query = sanitizeQuery([product.barcode, product.name].filter(Boolean).join(' '));
+  if (!query) return null;
+  const params = new URLSearchParams({
+    q: query,
+    tbm: 'isch',
+    safe: 'active',
+    hl: 'pt-BR',
+  });
+  return `https://www.google.com/search?${params.toString()}`;
+}
+
+async function createHiddenTab(url) {
+  const tab = await chrome.tabs.create({ url, active: false });
+  return tab;
+}
+
+function waitForTabComplete(tabId, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(listener);
+      reject(new Error('Tempo limite ao carregar o Google Imagens.'));
+    }, timeoutMs);
+
+    const listener = (id, info) => {
+      if (id !== tabId || info.status !== 'complete') return;
+      clearTimeout(timeout);
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve();
+    };
+
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
+
+async function extractImageFromGoogleTab(tabId) {
+  const [{ result } = {}] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      const anchors = [...document.querySelectorAll('a[href]')];
+      const candidates = anchors
+        .map(anchor => {
+          const img = anchor.querySelector('img');
+          const src = img?.src || img?.dataset?.src || '';
+          return {
+            href: anchor.href || '',
+            src,
+            text: (anchor.textContent || '').trim(),
+          };
+        })
+        .filter(item => /^https?:\/\//i.test(item.src));
+
+      const best = candidates.find(item => !/gstatic|googleusercontent/i.test(item.src)) || candidates[0] || null;
+      return best ? { url: best.src, href: best.href, text: best.text } : null;
+    },
+  });
+  return result || null;
+}
+
 async function searchFirstImage(product) {
-  const query = sanitizeQuery(product.barcode || product.name || '');
-  const name = sanitizeQuery(product.name || '');
-  if (!query && !name) return null;
+  const url = buildGoogleImagesUrl(product);
+  if (!url) return null;
 
-  const googleQuery = encodeURIComponent([query, name].filter(Boolean).join(' '));
+  const tab = await createHiddenTab(url);
   try {
-    const response = await fetch(`https://www.google.com/search?tbm=isch&q=${googleQuery}&safe=active&hl=pt-BR`, {
-      credentials: 'omit',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      },
-    });
-    const html = await response.text();
-    const matches = [
-      ...html.matchAll(/"ou":"(https?:\\\/\\\/[^"]+)"/g),
-      ...html.matchAll(/"imgurl":"(https?:\\\/\\\/[^"]+)"/g),
-    ];
-    if (matches.length) {
-      const raw = matches[0][1].replace(/\\\//g, '/');
-      return { url: raw, source: 'google-images', provider: 'google-images-html' };
+    await waitForTabComplete(tab.id);
+    await sleep(800);
+    let image = await extractImageFromGoogleTab(tab.id);
+    if (image?.url && isImageUrl(image.url)) return image;
+
+    const fallback = await apiRequest(`/products/image-search?query=${encodeURIComponent(product.barcode || product.name || '')}&name=${encodeURIComponent(product.name || '')}&page=1`);
+    return fallback?.results?.[0] || null;
+  } finally {
+    if (tab?.id) {
+      chrome.tabs.remove(tab.id).catch(() => {});
     }
-  } catch (error) {
-    pushLog(`Google falhou para ${name || query}: ${error.message || 'erro desconhecido'}`);
-  }
-
-  try {
-    const params = new URLSearchParams({
-      query: query || name,
-      name,
-      page: '1',
-    });
-    const result = await apiRequest(`/products/image-search?${params.toString()}`);
-    return result?.results?.[0] || null;
-  } catch {
-    return null;
   }
 }
 
