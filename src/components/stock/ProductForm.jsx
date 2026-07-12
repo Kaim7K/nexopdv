@@ -230,7 +230,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
                 <ExternalLink className="h-5 w-5" />
                 Buscar no Google Imagens
               </button>
-              <p className="text-[11px] leading-4 text-muted-foreground">A pesquisa abre em outra aba já em Imagens e prioriza fundo branco. Copie o endereço da imagem escolhida e cole no campo de URL acima.</p>
+              <p className="text-[11px] leading-4 text-muted-foreground">A pesquisa abre em outra aba já em Imagens, sem filtro de cor de fundo. Copie o endereço da imagem escolhida e cole no campo de URL acima.</p>
               {form.image_url && (
                 <button type="button" onClick={() => handleChange('image_url', '')} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" /> Remover imagem

@@ -426,13 +426,68 @@ export default function Estoque() {
         {loading ? (
           <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : (
-          <table className="w-full min-w-[1480px] whitespace-nowrap text-sm">
+          <>
+            <div className="space-y-3 p-3 md:hidden">
+              {visibleProducts.map(product => {
+                const quantity = Number(product.quantity || 0);
+                const isZero = quantity <= 0;
+                const isLow = !isZero && quantity <= lowStockThreshold;
+                const badgeClass = dirty.has(product.id)
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200'
+                  : isZero
+                    ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200'
+                    : isLow
+                      ? 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-200'
+                      : 'border-border bg-muted/30 text-foreground';
+                return (
+                  <article key={product.id} className={`rounded-2xl border p-4 shadow-sm ${badgeClass}`}>
+                    <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => openProductModal('edit', product)} className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white" aria-label={`Editar ${product.name}`}>
+                        {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-contain p-1" loading="lazy" referrerPolicy="no-referrer" /> : <Package className="h-5 w-5 text-muted-foreground" />}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-bold leading-6 break-words">{product.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{product.category || 'Sem categoria'}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-full border border-border bg-background px-2.5 py-1">Estoque: {quantity}</span>
+                          <span className="rounded-full border border-border bg-background px-2.5 py-1">Preço: {formatCurrency(product.sale_price || 0)}</span>
+                          <span className="rounded-full border border-border bg-background px-2.5 py-1">{product.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
+                        </div>
+                        <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                          <span>Código de barras: {product.barcode || '-'}</span>
+                          <span>Código interno: {product.internal_code || '-'}</span>
+                          <span>Última venda: {product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => openProductModal('edit', product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold hover:bg-muted">Editar</button>
+                      <button type="button" onClick={() => openProductModal('duplicate', product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold hover:bg-muted">Duplicar</button>
+                      {['admin', 'gerente'].includes(user.role) && (
+                        <button type="button" disabled={deletingId === product.id} onClick={() => handleDeleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-destructive/25 bg-card px-3 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50">Excluir</button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+              {!filtered.length && <div className="rounded-2xl border border-border p-8 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>}
+            </div>
+            <table className="hidden w-full min-w-[1280px] text-sm md:table md:min-w-[1480px]">
             <thead className="sticky top-0 z-20 bg-secondary text-secondary-foreground shadow-sm">
               <tr>
                 <th className="sticky left-0 z-30 bg-secondary p-3 text-left"><span className="sr-only">Imagem</span><Package className="h-5 w-5" /></th>
                 {TABLE_COLUMNS.map(([key, label]) => (
                   <th key={key} className={`p-0 text-left ${key === 'name' ? 'sticky left-14 z-30 bg-secondary' : ''}`}>
-                    <button type="button" onClick={() => toggleSort(key)} className="flex w-full min-w-[135px] items-center gap-2 px-3 py-3 font-semibold hover:bg-muted" aria-label={`Ordenar por ${label}`}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(key)}
+                      className={`flex w-full items-center gap-2 px-3 py-3 font-semibold hover:bg-muted ${
+                        key === 'name'
+                          ? 'min-w-[260px] whitespace-normal text-left leading-5'
+                          : 'min-w-[135px] whitespace-nowrap'
+                      }`}
+                      aria-label={`Ordenar por ${label}`}
+                    >
                       {label} <SortIcon column={key} />
                     </button>
                   </th>
@@ -457,7 +512,14 @@ export default function Estoque() {
                     </button>
                   </td>
                   {TABLE_COLUMNS.map(([key, label, type]) => (
-                    <td key={key} className={`p-1 ${key === 'name' ? `sticky left-14 z-10 ${stickyBackground}` : ''}`}>
+                    <td
+                      key={key}
+                      className={`p-1 align-top ${
+                        key === 'name'
+                          ? `sticky left-14 z-10 ${stickyBackground}`
+                          : ''
+                      }`}
+                    >
                       {key === 'last_sale_at' ? (
                         <div className="min-w-[150px] px-2"><span className="block text-sm font-bold">{product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{product.last_sale_at ? 'Última saída registrada' : 'Sem vendas registradas'}</span></div>
                       ) : key === 'sale_price' || key === 'cost_price' ? (
@@ -475,6 +537,14 @@ export default function Estoque() {
                           <option value="unidade">Unidade</option>
                           <option value="peso">Peso</option>
                         </select>
+                      ) : key === 'name' ? (
+                        <input
+                          aria-label={`${label} de ${product.name}`}
+                          className="h-10 w-full min-w-[260px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                          type={type}
+                          value={product[key] ?? ''}
+                          onChange={event => editInline(product.id, key, event.target.value, type)}
+                        />
                       ) : (
                         <input
                           aria-label={`${label} de ${product.name}`}
@@ -504,6 +574,7 @@ export default function Estoque() {
               {!filtered.length && <tr><td colSpan={TABLE_COLUMNS.length + 2} className="p-16 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</td></tr>}
             </tbody>
           </table>
+          </>
         )}
       </div>
 

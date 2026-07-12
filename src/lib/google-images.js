@@ -7,7 +7,6 @@ export function buildGoogleImagesUrl({ barcode = '', productName = '' } = {}) {
   const params = new URLSearchParams({
     q: query,
     tbm: 'isch',
-    tbs: 'ic:specific,isc:white',
     safe: 'active',
   });
 

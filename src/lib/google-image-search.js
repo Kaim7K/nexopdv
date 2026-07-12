@@ -62,7 +62,6 @@ function configureCallbacks(resolve, reject) {
             disableWebSearch: true,
             imageSearchLayout: 'classic',
             imageSearchResultSetSize: 'large',
-            image_dominantcolor: 'white',
             image_gl: 'br',
             safeSearch: 'active',
             autoSearchOnLoad: false,

@@ -95,7 +95,7 @@ export default function ProductImageSearch({ productName, barcode = '', onSelect
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div>
             <h2 id="product-image-search-title" className="flex items-center gap-2 text-lg font-bold"><ImageIcon className="h-5 w-5 text-accent" /> Buscar imagem do produto</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Resultados do Google Imagens com prioridade para fundo branco. O filtro não altera o texto pesquisado.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Resultados do Google Imagens sem filtro de cor de fundo. O texto pesquisado continua igual.</p>
           </div>
           <button type="button" aria-label="Fechar busca de imagens" onClick={onClose} className="grid h-10 w-10 flex-none place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>

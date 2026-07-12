@@ -99,7 +99,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
                 <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
                   <ExternalLink className="h-4 w-4" /> Pesquisar no Google Imagens
                 </button>
-                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba com prioridade para fundo branco.</p>
+                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba sem filtro de cor de fundo.</p>
               </div>
               {imageUrl && <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>}
             </div>
