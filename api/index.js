@@ -990,12 +990,29 @@ async function routeHandler(req, res) {
       return true;
     });
     const discarded = normalizedProducts.length - cleanProducts.length;
-    const ids = cleanProducts.filter(product => product.id).map(product => product.id);
-    if (ids.some(id => !isUuid(id))) return send(res, 400, { message: 'A planilha contém IDs inválidos.' });
-    if (ids.length) {
-      const owned=await sql`SELECT id FROM nexo.records WHERE market_id=${user.market_id} AND entity='products' AND id=ANY(${ids}::uuid[])`;
-      if(owned.length!==new Set(ids).size)return send(res,404,{message:'A planilha contém produtos inexistentes ou de outro mercado.'});
+    const existingMode = ['preview','keep','update'].includes(req.body.existing_mode) ? req.body.existing_mode : 'update';
+    const existingRows = await sql`SELECT id,data FROM nexo.records WHERE market_id=${user.market_id} AND entity='products'`;
+    const existingById = new Map(existingRows.map(record => [record.id, record]));
+    const existingByBarcode = new Map(existingRows.filter(record => text(record.data?.barcode, 180)).map(record => [text(record.data.barcode, 180), record]));
+    const existingByName = new Map(existingRows.map(record => [productNameKey(record.data?.name), record]));
+    const reconciled = [];
+    let existingCount = 0;
+    for (const product of cleanProducts) {
+      const match = (isUuid(product.id) && existingById.get(product.id))
+        || (product.barcode && existingByBarcode.get(product.barcode))
+        || existingByName.get(productNameKey(product.name));
+      if (match) {
+        existingCount += 1;
+        if (existingMode === 'keep') continue;
+        reconciled.push({ ...product, id: match.id });
+      } else {
+        const newProduct = { ...product };
+        delete newProduct.id;
+        reconciled.push(newProduct);
+      }
     }
+    if (existingMode === 'preview') return send(res, 200, { existing: existingCount, new: cleanProducts.length - existingCount, discarded });
+    cleanProducts.splice(0, cleanProducts.length, ...reconciled);
     const barcodeOwners = new Map();
     for (const product of cleanProducts) {
       if (!product.barcode) continue;
@@ -1010,7 +1027,7 @@ async function routeHandler(req, res) {
     }
     const payload = JSON.stringify(cleanProducts);
     await sql`WITH input AS (SELECT item FROM jsonb_array_elements(${payload}::jsonb) item), updated AS (UPDATE nexo.records record SET data=record.data || (input.item-'id'),updated_date=now() FROM input WHERE input.item?'id' AND record.id=(input.item->>'id')::uuid AND record.market_id=${user.market_id} AND record.entity='products') INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'products',item FROM input WHERE NOT item?'id'`;
-    return send(res, 200, { updated: cleanProducts.length, discarded });
+    return send(res, 200, { updated: cleanProducts.length, existing: existingCount, discarded });
   }
   if (path[0] === 'entities') {
     const table = ENTITIES[path[1]];

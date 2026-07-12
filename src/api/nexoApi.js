@@ -96,7 +96,7 @@ export const nexoApi = {
     lookupBarcode: barcode => request(`/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`, { cacheTTL: 86_400_000 }),
     deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
   },
-  stock: { bulkUpdate: products => request('/stock/import', { method: 'POST', body: { products }, timeout: 60_000 }) },
+  stock: { bulkUpdate: (products, existingMode = 'update') => request('/stock/import', { method: 'POST', body: { products, existing_mode: existingMode }, timeout: 60_000 }) },
   maintenance: {
     reset: (target, confirmation) => request('/maintenance/reset', { method: 'POST', body: { target, confirmation }, timeout: 60_000 }),
   },

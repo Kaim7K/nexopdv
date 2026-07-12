@@ -223,9 +223,20 @@ export default function Estoque() {
         throw new Error('Há produtos com nome, preço ou quantidade inválidos.');
       }
       const unique = discardDuplicateProducts(mapped);
-      const result = await nexoApi.stock.bulkUpdate(unique.products);
+      const preview = await nexoApi.stock.bulkUpdate(unique.products, 'preview');
+      let existingMode = 'update';
+      if (Number(preview.existing || 0) > 0) {
+        const updateExisting = window.confirm(
+          `${preview.existing} produto(s) da planilha já existem no estoque.\n\n` +
+          'OK: atualizar os produtos existentes com os valores da planilha.\n' +
+          'Cancelar: manter os valores atuais e importar somente produtos novos.'
+        );
+        existingMode = updateExisting ? 'update' : 'keep';
+      }
+      const result = await nexoApi.stock.bulkUpdate(unique.products, existingMode);
       const discarded = Math.max(unique.discarded, Number(result.discarded || 0));
-      toast.success(`${unique.products.length} produto(s) importado(s).${discarded ? ` ${discarded} repetido(s) descartado(s).` : ''}`);
+      const action = existingMode === 'update' ? 'atualizado(s)/importado(s)' : 'novo(s) importado(s)';
+      toast.success(`${Number(result.updated || 0)} produto(s) ${action}.${discarded ? ` ${discarded} repetido(s) descartado(s).` : ''}`);
       await load();
     } catch (error) {
       toast.error(error.message || 'Não foi possível importar a planilha.');
