@@ -369,7 +369,7 @@ async function routeHandler(req, res) {
       return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
     }
     if (path[1] === 'settings' && req.method === 'PATCH') {
-      const time = text(req.body.time, 5);
+      const time = '20:00';
       const enabled = req.body.enabled !== false;
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return send(res, 400, { message:'Informe um horário válido.' });
       const entries = [

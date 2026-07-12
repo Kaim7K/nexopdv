@@ -67,7 +67,7 @@ export default function StockAlertSettings() {
         <div><h2 id="stock-alert-title" className="flex items-center gap-2 font-bold"><Mail className="h-5 w-5 text-accent" /> Relatório diário de reposição</h2><p className="mt-1 text-sm text-muted-foreground">Envia somente quando houver produtos que precisam de reposição. Horário de Salvador/Bahia.</p></div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-3 text-sm font-semibold"><span>Ativar envio automático</span><input type="checkbox" checked={data.enabled !== false} disabled={busy === 'settings'} onChange={event => saveSettings({ ...data, enabled:event.target.checked })} className="h-5 w-5 accent-[var(--market-primary)]" /></label>
-          <label className="flex items-center gap-2 text-sm font-semibold"><Clock3 className="h-4 w-4 text-muted-foreground" /> Horário<input type="time" value={data.time} disabled={busy === 'settings' || data.enabled === false} onChange={event => saveSettings({ ...data, time:event.target.value })} className="h-11 rounded-xl border border-border bg-background px-3 disabled:bg-muted disabled:opacity-60" /></label>
+          <label className="flex items-center gap-2 text-sm font-semibold"><Clock3 className="h-4 w-4 text-muted-foreground" /> Horário<input type="time" value="20:00" disabled className="h-11 rounded-xl border border-border bg-muted px-3 opacity-70" title="No plano Hobby da Vercel, o agendamento gratuito pode executar apenas uma vez por dia." /></label>
         </div>
       </div>
 
