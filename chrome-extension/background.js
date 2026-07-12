@@ -111,8 +111,8 @@ async function loadProducts({ onlyActive = true, limit = 50 } = {}) {
   return filtered.slice(0, Math.max(1, Number(limit) || 50));
 }
 
-function buildGoogleImagesUrl(product) {
-  const baseQuery = sanitizeQuery(product.barcode || product.name || '');
+function buildGoogleImagesUrl(queryText) {
+  const baseQuery = sanitizeQuery(queryText || '');
   if (!baseQuery) return null;
   const query = sanitizeQuery(`${baseQuery} fundo branco`);
   const params = new URLSearchParams({
@@ -303,10 +303,11 @@ async function searchFirstImage(product) {
     }
   }
 
-  const url = buildGoogleImagesUrl(product);
+  const fallbackQuery = name || barcode;
+  const url = buildGoogleImagesUrl(fallbackQuery);
   if (!url) return null;
 
-  pushDebug({ ...debugBase, source: 'google-images-tab', googleUrl: url });
+  pushDebug({ ...debugBase, source: 'google-images-tab', googleUrl: url, fallbackQuery });
   const tab = await createHiddenTab(url);
   try {
     await waitForTabComplete(tab.id);
