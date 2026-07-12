@@ -1126,30 +1126,38 @@ async function routeHandler(req, res) {
   if (path[0] === 'sales' && path[1] && !path[2] && req.method === 'DELETE') {
     if (user.role !== 'admin') return send(res, 403, { message: 'Apenas administradores podem excluir vendas.' });
     if (!isUuid(path[1])) return send(res, 400, { message: 'Venda inválida.' });
+    const deletionAudit = {
+      action_type: 'venda_excluida',
+      entity_type: 'sale',
+      entity_id: path[1],
+      user_id: user.id,
+      user_name: user.full_name || user.email,
+    };
     const [removed] = await sql`
-      WITH deleted AS (
-        DELETE FROM nexo.records
+      WITH target AS MATERIALIZED (
+        SELECT id, data
+        FROM nexo.records
         WHERE id=${path[1]}
           AND market_id=${user.market_id}
           AND entity='sales'
           AND data->>'status'='cancelada'
-        RETURNING id, data
+        FOR UPDATE
       ), audit AS (
         INSERT INTO nexo.records(market_id, entity, data)
-        SELECT ${user.market_id}, 'general_audits', jsonb_build_object(
-          'action_type', 'venda_excluida',
-          'entity_type', 'sale',
-          'entity_id', deleted.id,
-          'user_id', ${user.id},
-          'user_name', ${user.full_name || user.email},
-          'description', 'Venda #' || COALESCE(deleted.data->>'sale_number', deleted.id::text) || ' excluída'
+        SELECT ${user.market_id}, 'general_audits', ${JSON.stringify(deletionAudit)}::jsonb || jsonb_build_object(
+          'description', 'Venda #' || COALESCE(target.data->>'sale_number', target.id::text) || ' excluída'
         )
-        FROM deleted
+        FROM target
         RETURNING id
+      ), deleted AS (
+        DELETE FROM nexo.records sale
+        USING target
+        WHERE sale.id=target.id
+          AND EXISTS (SELECT 1 FROM audit)
+        RETURNING sale.id, sale.data
       )
       SELECT deleted.id, deleted.data->>'sale_number' AS sale_number
       FROM deleted
-      WHERE EXISTS (SELECT 1 FROM audit)
     `;
     return send(res, removed ? 200 : 409, removed
       ? { ok: true, id: removed.id, sale_number: removed.sale_number }

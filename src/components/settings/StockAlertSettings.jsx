@@ -27,8 +27,8 @@ export default function StockAlertSettings() {
     finally { setBusy(''); }
   };
 
-  const saveRecipient = async event => {
-    event.preventDefault();
+  const saveRecipient = async () => {
+    if (busy === 'recipient' || !email.trim()) return;
     setBusy('recipient');
     try {
       if (editingId) await nexoApi.stockAlerts.updateRecipient(editingId, { email, active:true });
@@ -71,11 +71,11 @@ export default function StockAlertSettings() {
         </div>
       </div>
 
-      <form onSubmit={saveRecipient} className="mt-5 flex flex-col gap-2 sm:flex-row">
-        <label className="min-w-0 flex-1"><span className="sr-only">E-mail destinatário</span><input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="responsavel@mercado.com" className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" /></label>
-        <button disabled={busy === 'recipient'} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50">{editingId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editingId ? 'Salvar edição' : 'Adicionar e-mail'}</button>
+      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+        <label className="min-w-0 flex-1"><span className="sr-only">E-mail destinatário</span><input type="email" value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); saveRecipient(); } }} placeholder="responsavel@mercado.com" className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" /></label>
+        <button type="button" onClick={saveRecipient} disabled={busy === 'recipient' || !email.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50">{editingId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editingId ? 'Salvar edição' : 'Adicionar e-mail'}</button>
         {editingId && <button type="button" onClick={() => { setEditingId(''); setEmail(''); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold"><X className="h-4 w-4" /> Cancelar</button>}
-      </form>
+      </div>
 
       <div className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
         {loading ? <p className="p-5 text-sm text-muted-foreground">Carregando destinatários...</p> : !data.recipients.length ? <p className="p-5 text-sm text-muted-foreground">Nenhum destinatário cadastrado.</p> : data.recipients.map(recipient => (

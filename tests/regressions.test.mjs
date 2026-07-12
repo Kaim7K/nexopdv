@@ -53,7 +53,7 @@ assert.match(receipt, /downloadSaleReceiptPdf/, 'O modal de recibo deve usar o g
 assert.match(receiptPdf, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
 assert.match(api, /user\.role !== 'admin'.*zerar dados do mercado/s, 'Somente administradores podem zerar dados.');
 assert.match(api, /CASH_REGISTER_REQUIRED/, 'O backend deve impedir venda obrigatória sem caixa aberto.');
-assert.match(api, /action_type', 'venda_excluida'[\s\S]*FROM deleted[\s\S]*RETURNING id[\s\S]*WHERE EXISTS \(SELECT 1 FROM audit\)/, 'A exclusão definitiva deve registrar auditoria atomicamente antes de confirmar sucesso.');
+assert.match(api, /deletionAudit[\s\S]*target AS MATERIALIZED[\s\S]*FROM target[\s\S]*EXISTS \(SELECT 1 FROM audit\)/, 'A exclusão definitiva deve bloquear a venda e registrar auditoria atomicamente antes de removê-la.');
 assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve oferecer relatório diário de vendas.');
 assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');
 assert.match(stock, /Última venda/, 'O estoque deve mostrar a última venda de cada produto.');
