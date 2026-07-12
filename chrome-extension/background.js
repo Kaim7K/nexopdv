@@ -133,6 +133,16 @@ async function searchFirstImage(product) {
   }
 }
 
+async function verifySavedImage(productId, expectedUrl) {
+  try {
+    const saved = await apiRequest(`/entities/Product/${productId}`);
+    const actualUrl = String(saved?.image_url || saved?.data?.image_url || '').trim();
+    return actualUrl === String(expectedUrl || '').trim();
+  } catch {
+    return false;
+  }
+}
+
 async function startBatch(options = {}) {
   if (state.running) return { ok: false, error: 'Uma automação já está em execução.' };
 
@@ -165,7 +175,9 @@ async function startBatch(options = {}) {
             method: 'PATCH',
             body: { image_url: image.url },
           });
-          pushLog(`Salvo: ${label}`);
+          const confirmed = await verifySavedImage(product.id, image.url);
+          if (confirmed) pushLog(`Salvo: ${label}`);
+          else pushLog(`A API respondeu OK, mas a imagem não ficou gravada em ${label}.`);
         }
       } catch (error) {
         pushLog(`Erro em ${label}: ${error.message || 'falha inesperada'}`);
