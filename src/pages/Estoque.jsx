@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -11,6 +12,8 @@ import {
   Copy,
   Download,
   FilterX,
+  Image,
+  ImageOff,
   Package,
   Pencil,
   Plus,
@@ -67,6 +70,7 @@ export default function Estoque() {
   const { user, config } = /** @type {any} */ (useOutletContext());
   const fileRef = useRef(null);
   const tableRef = useRef(null);
+  const pendingViewRef = useRef(null);
   const lowStockThreshold = Math.max(1, Number.parseInt(config?.limite_estoque_baixo, 10) || 5);
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
@@ -74,6 +78,8 @@ export default function Estoque() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [stock, setStock] = useState('todos');
+  const [imageFilter, setImageFilter] = useState('all');
+  const [pageSize, setPageSize] = useState(() => Math.max(10, Number(localStorage.getItem('nexo-estoque-page-size') || 50)));
   const [dirty, setDirty] = useState(new Set());
   const [productModal, setProductModal] = useState(null);
   const [sort, setSort] = useState({ key: 'name', direction: 'asc' });
@@ -99,6 +105,10 @@ export default function Estoque() {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
+    localStorage.setItem('nexo-estoque-page-size', String(pageSize));
+  }, [pageSize]);
+
+  useEffect(() => {
     if (!dirty.size) return undefined;
     const warnBeforeLeave = event => {
       event.preventDefault();
@@ -121,6 +131,9 @@ export default function Estoque() {
       && (!category || product.category === category)
       && (min === null || Number(product.sale_price || 0) >= min)
       && (max === null || Number(product.sale_price || 0) <= max)
+      && (imageFilter === 'all'
+        || (imageFilter === 'with' && Boolean(String(product.image_url || '').trim()))
+        || (imageFilter === 'without' && !String(product.image_url || '').trim()))
       && (stock === 'todos'
         || (stock === 'disponivel' && Number(product.quantity || 0) > lowStockThreshold)
         || (stock === 'baixo' && Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold)
@@ -138,9 +151,9 @@ export default function Estoque() {
       else result = collator.compare(String(first || ''), String(second || ''));
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [products, search, category, minPrice, maxPrice, stock, sort, lowStockThreshold]);
+  }, [products, search, category, minPrice, maxPrice, stock, imageFilter, sort, lowStockThreshold]);
 
-  const { page, setPage, pageCount, visibleItems: visibleProducts, pageSize } = usePagination(filtered, 50);
+  const { page, setPage, pageCount, visibleItems: visibleProducts } = usePagination(filtered, pageSize);
 
   const toggleSort = key => {
     setSort(current => current.key === key
@@ -238,6 +251,7 @@ export default function Estoque() {
       const discarded = Math.max(unique.discarded, Number(result.discarded || 0));
       const action = existingMode === 'update' ? 'atualizado(s)/importado(s)' : 'novo(s) importado(s)';
       toast.success(`${Number(result.updated || 0)} produto(s) ${action}.${discarded ? ` ${discarded} repetido(s) descartado(s).` : ''}`);
+      captureView();
       await load();
     } catch (error) {
       toast.error(error.message || 'Não foi possível importar a planilha.');
@@ -330,6 +344,7 @@ export default function Estoque() {
     try {
       const result = await nexoApi.products.deleteInactive();
       toast.success(`${Number(result.deleted || 0)} produto(s) inativo(s) apagado(s).`);
+      captureView();
       await load();
     } catch (error) {
       toast.error(error.message || 'Não foi possível apagar os produtos inativos.');
@@ -345,6 +360,7 @@ export default function Estoque() {
     setMinPrice('');
     setMaxPrice('');
     setStock('todos');
+    setImageFilter('all');
   };
   const zeroStockCount = products.filter(product => Number(product.quantity || 0) <= 0).length;
   const lowStockCount = products.filter(product => Number(product.quantity || 0) > 0 && Number(product.quantity || 0) <= lowStockThreshold).length;
@@ -353,6 +369,21 @@ export default function Estoque() {
     setPage(1);
     window.setTimeout(() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
+
+  const captureView = () => {
+    pendingViewRef.current = {
+      page,
+      scrollTop: tableRef.current?.scrollTop || 0,
+    };
+  };
+
+  useEffect(() => {
+    if (loading || !pendingViewRef.current) return;
+    const { page: pendingPage, scrollTop } = pendingViewRef.current;
+    pendingViewRef.current = null;
+    setPage(Math.min(pendingPage, pageCount));
+    window.requestAnimationFrame(() => tableRef.current?.scrollTo({ top: scrollTop, behavior: 'auto' }));
+  }, [loading, pageCount, setPage]);
 
   return (
     <div className="mx-auto max-w-[1700px] p-4 sm:p-6 lg:p-8">
@@ -394,7 +425,7 @@ export default function Estoque() {
       </div>
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_220px_180px_180px_190px_auto]">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_220px_180px_180px_190px_180px_160px_auto]">
           <label className="relative md:col-span-2 xl:col-span-1">
             <span className="sr-only">Pesquisar produtos</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -413,6 +444,17 @@ export default function Estoque() {
             <option value="disponivel">Estoque normal</option>
             <option value="baixo">Estoque baixo</option>
             <option value="zerado">Sem estoque</option>
+          </select>
+          <select aria-label="Filtrar por imagem" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={imageFilter} onChange={event => setImageFilter(event.target.value)}>
+            <option value="all">Com ou sem imagem</option>
+            <option value="with">Somente com imagem</option>
+            <option value="without">Somente sem imagem</option>
+          </select>
+          <select aria-label="Quantidade por página" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>
+            <option value="20">20 por página</option>
+            <option value="50">50 por página</option>
+            <option value="100">100 por página</option>
+            <option value="200">200 por página</option>
           </select>
           {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted"><FilterX className="h-4 w-4" /> Limpar</button>}
         </div>

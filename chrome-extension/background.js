@@ -47,6 +47,27 @@ function sanitizeQuery(value) {
     .slice(0, 180);
 }
 
+function standardizeProductName(name) {
+  const raw = String(name || '').trim().replace(/\s+/g, ' ');
+  if (!raw) return '';
+  const parts = raw.split(/\s+-\s+/).map(part => part.trim()).filter(Boolean);
+  let product = parts.shift() || raw;
+  let brand = '';
+  let quantity = '';
+
+  if (parts.length > 1) brand = parts.shift();
+  if (parts.length) quantity = parts.shift();
+
+  product = product.replace(/(\d+(?:[.,]\d+)?)\s*(litros?|lts?|l|mililitros?|ml|quilogramas?|quilos?|kgs?|kg|gramas?|grs?|g)\b/gi, (_, amount, unit) => `${String(amount).replace(',', '.')}${unit.toLowerCase().startsWith('l') ? 'L' : unit.toLowerCase().startsWith('g') ? 'g' : unit.toLowerCase()}`);
+  product = product.replace(/\b(liquid|liquido)\b/gi, 'Líquido');
+  product = product.replace(/\s+/g, ' ').trim();
+
+  const out = [product.charAt(0).toLocaleUpperCase('pt-BR') + product.slice(1)];
+  if (brand) out.push(brand.charAt(0).toLocaleUpperCase('pt-BR') + brand.slice(1));
+  if (quantity) out.push(quantity.replace(/\s+/g, ''));
+  return out.filter(Boolean).join(' - ');
+}
+
 async function apiRequest(path, options = {}) {
   const response = await fetch(`https://nexopdv-gold.vercel.app/api${path}`, {
     credentials: 'include',
@@ -210,6 +231,16 @@ async function startBatch(options = {}) {
       pushLog(`Buscando imagem para ${label}...`);
 
       try {
+        const standardized = standardizeProductName(product.name);
+        if (standardized && standardized !== product.name) {
+          pushDebug({ productId: product.id, productName: product.name, standardized });
+          await apiRequest(`/entities/Product/${product.id}`, {
+            method: 'PATCH',
+            body: { name: standardized },
+          });
+          product.name = standardized;
+          pushLog(`Nome padronizado: ${standardized}`);
+        }
         const image = await searchFirstImage(product);
         if (!image?.url) {
           pushLog(`Sem imagem encontrada para ${label}.`);

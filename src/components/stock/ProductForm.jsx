@@ -28,11 +28,16 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
   const [imageChanged, setImageChanged] = useState(false);
   const [identifying, setIdentifying] = useState(false);
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
   const [categoryDraft, setCategoryDraft] = useState('');
   const [editingCategory, setEditingCategory] = useState('');
   const [savedCategoryOptions, setSavedCategoryOptions] = useState(() => mergeProductCategories(categories));
   const clipboardCleanupRef = React.useRef(null);
   const categoryOptions = useMemo(() => mergeProductCategories(categories, savedCategoryOptions), [categories, savedCategoryOptions]);
+  const filteredCategories = useMemo(() => {
+    const query = String(categorySearch || '').trim().toLowerCase();
+    return query ? categoryOptions.filter(category => category.toLowerCase().includes(query)) : categoryOptions;
+  }, [categoryOptions, categorySearch]);
 
   const isEditing = Boolean(product);
   const isDuplicating = !isEditing && Boolean(duplicateSource);
@@ -145,6 +150,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
     setEditingCategory(category);
     setCategoryDraft(category);
     setCategoryMenuOpen(true);
+    setCategorySearch('');
   };
 
   const armClipboardPaste = () => {
@@ -351,12 +357,20 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
               </button>
               {categoryMenuOpen && (
                 <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-                  <div className="max-h-72 overflow-y-auto p-2">
+                  <div className="sticky top-0 border-b border-border bg-card p-2">
+                    <input
+                      value={categorySearch}
+                      onChange={event => setCategorySearch(event.target.value)}
+                      placeholder="Buscar categoria..."
+                      className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                  <div className="max-h-[420px] overflow-y-auto p-2">
                     <button type="button" onClick={() => { handleChange('category', ''); setCategoryMenuOpen(false); }} className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm hover:bg-muted">
                       <span className="text-muted-foreground">Selecione uma categoria</span>
                       {!form.category && <Check className="h-4 w-4 text-accent" />}
                     </button>
-                    {categoryOptions.map(category => (
+                    {filteredCategories.map(category => (
                       <div key={category} className="group flex items-center gap-1 rounded-xl px-2 py-1.5 hover:bg-muted/70">
                         <button type="button" onClick={() => { handleChange('category', category); setCategoryMenuOpen(false); }} className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm">
                           <span className="block truncate">{category}</span>
@@ -378,7 +392,10 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
                         <Save className="h-4 w-4" /> {editingCategory ? 'Salvar' : 'Adicionar'}
                       </button>
                     </div>
-                    {editingCategory && <button type="button" onClick={() => { setEditingCategory(''); setCategoryDraft(''); }} className="mt-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancelar edição</button>}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      {editingCategory && <button type="button" onClick={() => { setEditingCategory(''); setCategoryDraft(''); }} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Cancelar edição</button>}
+                      {categorySearch && <button type="button" onClick={() => setCategorySearch('')} className="ml-auto text-xs font-semibold text-muted-foreground hover:text-foreground">Limpar busca</button>}
+                    </div>
                   </div>
                 </div>
               )}
