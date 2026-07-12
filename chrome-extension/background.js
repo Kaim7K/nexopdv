@@ -40,6 +40,14 @@ async function apiRequest(path, options = {}) {
   return data;
 }
 
+function sanitizeQuery(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s\-().,]/gu, ' ')
+    .trim()
+    .slice(0, 180);
+}
+
 async function loadProducts({ onlyActive = true, limit = 50 } = {}) {
   const products = await apiRequest('/products/catalog?limit=3000');
   const filtered = products.filter(product => (!onlyActive || product.status === 'ativo') && !String(product.image_url || '').trim());
@@ -47,13 +55,43 @@ async function loadProducts({ onlyActive = true, limit = 50 } = {}) {
 }
 
 async function searchFirstImage(product) {
-  const params = new URLSearchParams({
-    query: product.barcode || product.name || '',
-    name: product.name || '',
-    page: '1',
-  });
-  const result = await apiRequest(`/products/image-search?${params.toString()}`);
-  return result?.results?.[0] || null;
+  const query = sanitizeQuery(product.barcode || product.name || '');
+  const name = sanitizeQuery(product.name || '');
+  if (!query && !name) return null;
+
+  const googleQuery = encodeURIComponent([query, name].filter(Boolean).join(' '));
+  try {
+    const response = await fetch(`https://www.google.com/search?tbm=isch&q=${googleQuery}&safe=active&hl=pt-BR`, {
+      credentials: 'omit',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      },
+    });
+    const html = await response.text();
+    const matches = [
+      ...html.matchAll(/"ou":"(https?:\\\/\\\/[^"]+)"/g),
+      ...html.matchAll(/"imgurl":"(https?:\\\/\\\/[^"]+)"/g),
+    ];
+    if (matches.length) {
+      const raw = matches[0][1].replace(/\\\//g, '/');
+      return { url: raw, source: 'google-images', provider: 'google-images-html' };
+    }
+  } catch (error) {
+    pushLog(`Google falhou para ${name || query}: ${error.message || 'erro desconhecido'}`);
+  }
+
+  try {
+    const params = new URLSearchParams({
+      query: query || name,
+      name,
+      page: '1',
+    });
+    const result = await apiRequest(`/products/image-search?${params.toString()}`);
+    return result?.results?.[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 async function startBatch(options = {}) {

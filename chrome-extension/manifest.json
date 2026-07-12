@@ -13,6 +13,8 @@
   "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://nexopdv-gold.vercel.app/*",
+    "https://www.google.com/*",
+    "https://google.com/*",
     "http://localhost:*/*",
     "http://127.0.0.1:*/*"
   ],
