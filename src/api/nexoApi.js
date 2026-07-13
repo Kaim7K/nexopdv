@@ -152,12 +152,62 @@ export const nexoApi = {
     cancel: (id, reason) => request(`/sales/${id}/cancel`, { method: 'POST', body: { reason } }),
     delete: id => request(`/sales/${id}`, { method: 'DELETE' }),
   },
+  finance: {
+    bootstrap: () => request('/finance/bootstrap', { cacheTTL: 20_000 }),
+    dashboard: filters => request(`/finance/dashboard?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
+    ledger: filters => request(`/finance/ledger?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
+    receivables: filters => request(`/finance/receivables?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
+    reconciliation: filters => request(`/finance/reconciliation?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
+    history: limit => request(`/finance/history?limit=${limit || 100}`, { cacheTTL: 8_000 }),
+    transactions: {
+      list: filters => request(`/finance/transactions?${new URLSearchParams(filters || {})}`, { cacheTTL: 5_000 }),
+      detail: id => request(`/finance/transactions/${id}`, { cacheTTL: 5_000 }),
+      create: data => request('/finance/transactions', { method:'POST', body:data, timeout:60_000 }),
+      update: (id,data) => request(`/finance/transactions/${id}`, { method:'PATCH', body:data, timeout:60_000 }),
+      pay: (id,data) => request(`/finance/transactions/${id}/pay`, { method:'POST', body:data, timeout:60_000 }),
+      cancel: (id,reason) => request(`/finance/transactions/${id}/cancel`, { method:'POST', body:{reason}, timeout:60_000 }),
+      duplicate: id => request(`/finance/transactions/${id}/duplicate`, { method:'POST', timeout:60_000 }),
+      batch: data => request('/finance/transactions/batch', { method:'POST', body:data, timeout:60_000 }),
+    },
+    categories: {
+      create: data => request('/finance/categories', { method:'POST', body:data }),
+      update: (id,data) => request(`/finance/categories/${id}`, { method:'PATCH', body:data }),
+      remove: id => request(`/finance/categories/${id}`, { method:'DELETE' }),
+    },
+    suppliers: {
+      create: data => request('/finance/suppliers', { method:'POST', body:data }),
+      update: (id,data) => request(`/finance/suppliers/${id}`, { method:'PATCH', body:data }),
+      remove: id => request(`/finance/suppliers/${id}`, { method:'DELETE' }),
+    },
+    accounts: {
+      create: data => request('/finance/accounts', { method:'POST', body:data }),
+      update: (id,data) => request(`/finance/accounts/${id}`, { method:'PATCH', body:data }),
+    },
+    recurring: {
+      create: data => request('/finance/recurring', { method:'POST', body:data }),
+      update: (id,data) => request(`/finance/recurring/${id}`, { method:'PATCH', body:data }),
+    },
+    purchases: {
+      list: () => request('/finance/purchases', { cacheTTL:5_000 }),
+      create: data => request('/finance/purchases', { method:'POST', body:data, timeout:60_000 }),
+      confirm: id => request(`/finance/purchases/${id}/confirm`, { method:'POST', timeout:60_000 }),
+      cancel: (id,reason) => request(`/finance/purchases/${id}/cancel`, { method:'POST', body:{reason}, timeout:60_000 }),
+    },
+    goals: {
+      create: data => request('/finance/goals', { method:'POST', body:data }),
+      update: (id,data) => request(`/finance/goals/${id}`, { method:'PATCH', body:data }),
+      remove: id => request(`/finance/goals/${id}`, { method:'DELETE' }),
+    },
+    settings: { update: data => request('/finance/settings', { method:'PATCH', body:data }) },
+    permissions: { update: (userId,data) => request(`/finance/permissions/${userId}`, { method:'PATCH', body:data }) },
+  },
   admin: {
     overview: () => request('/admin/overview',{ cacheTTL:15_000 }),
     plans: {
       list: () => request('/admin/plans',{ cacheTTL:15_000 }),
       create: data => request('/admin/plans',{ method:'POST',body:data }),
       update: (id,data) => request(`/admin/plans/${id}`,{ method:'PATCH',body:data }),
+      delete: id => request(`/admin/plans/${id}`,{ method:'DELETE' }),
     },
     subscriptions: {
       list: () => request('/admin/subscriptions',{ cacheTTL:10_000 }),

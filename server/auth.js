@@ -9,7 +9,12 @@ const ISSUER = 'nexo-pdv';
 const AUDIENCE = 'nexo-web';
 
 const loginSchema = z.object({
-  email: z.string().trim().email().max(254).transform(value => value.toLowerCase()),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(254)
+    .transform((value) => value.toLowerCase()),
   password: z.string().min(1).max(256),
 });
 
@@ -18,8 +23,8 @@ const secret = () => new TextEncoder().encode(getRuntimeConfig().jwtSecret);
 function readCookie(req, name) {
   const entry = String(req.headers.cookie || '')
     .split(';')
-    .map(value => value.trim())
-    .find(value => value.startsWith(`${name}=`));
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(`${name}=`));
   return entry ? decodeURIComponent(entry.slice(name.length + 1)) : undefined;
 }
 
@@ -36,6 +41,7 @@ export function publicUser(user) {
     primary_color: user.primary_color,
     secondary_color: user.secondary_color,
     enabled_modules: user.enabled_modules || [],
+    enabled_features: user.enabled_features || [],
     require_cash_register: Boolean(user.require_cash_register),
     unit_id: user.unit_id || null,
     unit_name: user.unit_name || null,
@@ -48,14 +54,18 @@ export function publicUser(user) {
 export async function authenticateCredentials(sql, input) {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) {
-    throw new AppError(400, 'INVALID_CREDENTIALS_FORMAT', 'Informe um e-mail e uma senha válidos.');
+    throw new AppError(
+      400,
+      'INVALID_CREDENTIALS_FORMAT',
+      'Informe um e-mail e uma senha válidos.',
+    );
   }
 
   const rows = await sql`
     SELECT
       u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
       unit.name AS unit_name,
-      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register,
+      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
       COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
       COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
       COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice
@@ -69,10 +79,18 @@ export async function authenticateCredentials(sql, input) {
   `;
 
   const user = rows[0];
-  const validHash = typeof user?.password_hash === 'string' && user.password_hash.startsWith('$2');
-  const passwordMatches = validHash ? await bcrypt.compare(parsed.data.password, user.password_hash) : false;
+  const validHash =
+    typeof user?.password_hash === 'string' &&
+    user.password_hash.startsWith('$2');
+  const passwordMatches = validHash
+    ? await bcrypt.compare(parsed.data.password, user.password_hash)
+    : false;
   if (!user || !passwordMatches) {
-    throw new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.');
+    throw new AppError(
+      401,
+      'INVALID_CREDENTIALS',
+      'E-mail ou senha inválidos.',
+    );
   }
 
   return user;
@@ -80,7 +98,10 @@ export async function authenticateCredentials(sql, input) {
 
 export async function createSession(user, res, sessionHours = 12) {
   const config = getRuntimeConfig();
-  const durationSeconds = Math.max(3600,Math.min(168 * 3600,Number(sessionHours || 12) * 3600));
+  const durationSeconds = Math.max(
+    3600,
+    Math.min(168 * 3600, Number(sessionHours || 12) * 3600),
+  );
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setSubject(String(user.id))
@@ -93,13 +114,16 @@ export async function createSession(user, res, sessionHours = 12) {
   const secure = config.isProduction ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${durationSeconds}${secure}`
+    `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${durationSeconds}${secure}`,
   );
 }
 
 export function clearSession(res) {
   const secure = getRuntimeConfig().isProduction ? '; Secure' : '';
-  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`,
+  );
 }
 
 export async function currentUser(req, sql) {
@@ -107,14 +131,17 @@ export async function currentUser(req, sql) {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, secret(), { issuer: ISSUER, audience: AUDIENCE });
+    const { payload } = await jwtVerify(token, secret(), {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+    });
     if (!payload.sub) return null;
 
     const rows = await sql`
       SELECT
         u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
         unit.name AS unit_name,
-        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register,
+        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
         COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
         COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
         COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice

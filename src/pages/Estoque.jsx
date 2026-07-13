@@ -46,6 +46,27 @@ const TABLE_COLUMNS = [
   EDITABLE_COLUMNS[8],
 ];
 
+const TABLE_COLUMN_VISIBILITY = {
+  category: 'hidden min-[1440px]:table-cell',
+  barcode: 'hidden min-[1440px]:table-cell',
+  status: 'hidden min-[1440px]:table-cell',
+  internal_code: 'hidden min-[1800px]:table-cell',
+  cost_price: 'hidden min-[1800px]:table-cell',
+};
+
+const tableColumnWidth = key => ({
+  name: 'min-w-[220px]',
+  category: 'min-w-[150px]',
+  barcode: 'min-w-[130px]',
+  internal_code: 'min-w-[120px]',
+  sale_price: 'min-w-[112px]',
+  cost_price: 'min-w-[112px]',
+  quantity: 'min-w-[88px]',
+  unit: 'min-w-[100px]',
+  last_sale_at: 'min-w-[132px]',
+  status: 'min-w-[104px]',
+}[key] || 'min-w-[112px]');
+
 const normalize = (value, type) => type === 'number'
   ? (value === '' ? '' : Number(value))
   : String(value ?? '');
@@ -495,38 +516,38 @@ export default function Estoque() {
       </div>
 
       <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros do estoque">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.4fr)_minmax(180px,220px)_minmax(150px,180px)_minmax(150px,180px)_minmax(160px,190px)_minmax(160px,180px)_minmax(150px,160px)_auto_auto]">
-          <label className="relative md:col-span-2 xl:col-span-1">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_repeat(2,minmax(110px,.7fr))_repeat(2,minmax(145px,.9fr))_minmax(125px,.75fr)_auto]">
+          <label className="relative sm:col-span-2 lg:col-span-2 2xl:col-span-1">
             <span className="sr-only">Pesquisar produtos</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder="Produto, categoria ou código" value={search} onChange={event => setSearch(event.target.value)} />
           </label>
-          <select aria-label="Filtrar por categoria" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={category} onChange={event => setCategory(event.target.value)}>
+          <select aria-label="Filtrar por categoria" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={category} onChange={event => setCategory(event.target.value)}>
             <option value="">Todas as categorias</option>
             {categories.map(value => <option key={value}>{value}</option>)}
           </select>
           <label className="sr-only" htmlFor="min-price">Preço mínimo</label>
-          <input id="min-price" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" type="number" min="0" step="0.01" placeholder="Preço mínimo" value={minPrice} onChange={event => setMinPrice(event.target.value)} />
+          <input id="min-price" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" type="number" min="0" step="0.01" placeholder="Preço mínimo" value={minPrice} onChange={event => setMinPrice(event.target.value)} />
           <label className="sr-only" htmlFor="max-price">Preço máximo</label>
-          <input id="max-price" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" type="number" min="0" step="0.01" placeholder="Preço máximo" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} />
-          <select aria-label="Filtrar por disponibilidade" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={stock} onChange={event => setStock(event.target.value)}>
+          <input id="max-price" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" type="number" min="0" step="0.01" placeholder="Preço máximo" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} />
+          <select aria-label="Filtrar por disponibilidade" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={stock} onChange={event => setStock(event.target.value)}>
             <option value="todos">Qualquer estoque</option>
             <option value="disponivel">Estoque normal</option>
             <option value="baixo">Estoque baixo</option>
             <option value="zerado">Sem estoque</option>
           </select>
-          <select aria-label="Filtrar por imagem" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={imageFilter} onChange={event => setImageFilter(event.target.value)}>
+          <select aria-label="Filtrar por imagem" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={imageFilter} onChange={event => setImageFilter(event.target.value)}>
             <option value="all">Com ou sem imagem</option>
             <option value="with">Somente com imagem</option>
             <option value="without">Somente sem imagem</option>
           </select>
-          <select aria-label="Quantidade por página" className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>
+          <select aria-label="Quantidade por página" className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>
             <option value="20">20 por página</option>
             <option value="50">50 por página</option>
             <option value="100">100 por página</option>
             <option value="200">200 por página</option>
           </select>
-          <div className="inline-flex overflow-hidden rounded-xl border border-border bg-background">
+          <div className="inline-flex min-w-0 overflow-hidden rounded-xl border border-border bg-background sm:justify-self-start 2xl:justify-self-stretch">
             <button type="button" onClick={() => setViewMode('table')} className={`inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}>
               <List className="h-4 w-4" /> Tabela
             </button>
@@ -534,16 +555,16 @@ export default function Estoque() {
               <LayoutGrid className="h-4 w-4" /> Grade
             </button>
           </div>
-          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted xl:self-start"><FilterX className="h-4 w-4" /> Limpar</button>}
+          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"><FilterX className="h-4 w-4" /> Limpar</button>}
         </div>
       </section>
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>{filtered.length} de {products.length} produtos</span>
-        <span className="md:hidden">Deslize a tabela para editar todas as colunas.</span>
+        <span className="xl:hidden">Abra um produto para editar todos os dados.</span>
       </div>
 
-      <div ref={tableRef} className="min-h-[360px] scroll-mt-4 overflow-visible rounded-2xl border border-border bg-card sm:max-h-[calc(100dvh-300px)] sm:overflow-auto">
+      <div ref={tableRef} className="min-h-[360px] scroll-mt-4 overflow-visible rounded-2xl border border-border bg-card xl:max-h-[calc(100dvh-300px)] xl:overflow-auto">
         {loading ? (
           <div role="status" aria-live="polite" aria-busy="true" className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
         ) : loadError && !products.length ? (
@@ -597,7 +618,7 @@ export default function Estoque() {
           </div>
         ) : (
           <>
-            <div className="space-y-3 p-3 md:hidden">
+            <div className="space-y-3 p-3 xl:hidden">
               {visibleProducts.map(product => {
                 const quantity = Number(product.quantity || 0);
                 const isZero = quantity <= 0;
@@ -642,20 +663,16 @@ export default function Estoque() {
               })}
               {!filtered.length && <div className="rounded-2xl border border-border p-8 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground/25" /><p className="mt-3 font-bold">Nenhum produto encontrado</p><p className="mt-1 text-sm text-muted-foreground">Altere os filtros ou cadastre um novo produto.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>}
             </div>
-            <table className="hidden w-full min-w-[1280px] text-sm md:table md:min-w-[1480px]">
+            <table className="hidden w-full text-sm xl:table">
             <thead className="sticky top-0 z-20 bg-secondary text-secondary-foreground shadow-sm">
               <tr>
                 <th className="sticky left-0 z-30 bg-secondary p-3 text-left"><span className="sr-only">Imagem</span><Package className="h-5 w-5" /></th>
                 {TABLE_COLUMNS.map(([key, label]) => (
-                  <th key={key} className={`p-0 text-left ${key === 'name' ? 'sticky left-14 z-30 bg-secondary' : ''}`}>
+                  <th key={key} className={`p-0 text-left ${TABLE_COLUMN_VISIBILITY[key] || ''} ${key === 'name' ? 'sticky left-14 z-30 bg-secondary' : ''}`}>
                     <button
                       type="button"
                       onClick={() => toggleSort(key)}
-                      className={`flex w-full items-center gap-2 px-3 py-3 font-semibold hover:bg-muted ${
-                        key === 'name'
-                          ? 'min-w-[260px] whitespace-normal text-left leading-5'
-                          : 'min-w-[135px] whitespace-nowrap'
-                      }`}
+                      className={`flex w-full items-center gap-1.5 px-2.5 py-3 font-semibold hover:bg-muted ${tableColumnWidth(key)} ${key === 'name' ? 'whitespace-normal text-left leading-5' : 'whitespace-nowrap'}`}
                       aria-label={`Ordenar por ${label}`}
                     >
                       {label} <SortIcon column={key} />
@@ -684,26 +701,26 @@ export default function Estoque() {
                   {TABLE_COLUMNS.map(([key, label, type]) => (
                     <td
                       key={key}
-                      className={`p-1 align-top ${
+                      className={`p-1 align-top ${TABLE_COLUMN_VISIBILITY[key] || ''} ${
                         key === 'name'
                           ? `sticky left-14 z-10 ${stickyBackground}`
                           : ''
                       }`}
                     >
                       {key === 'last_sale_at' ? (
-                        <div className="min-w-[150px] px-2"><span className="block text-sm font-bold">{product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{product.last_sale_at ? 'Última saída registrada' : 'Sem vendas registradas'}</span></div>
+                        <div className="min-w-[132px] px-1.5"><span className="block text-xs font-bold">{product.last_sale_at ? formatDateTime(product.last_sale_at) : 'Nunca vendido'}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{product.last_sale_at ? 'Última saída registrada' : 'Sem vendas registradas'}</span></div>
                       ) : key === 'sale_price' || key === 'cost_price' ? (
-                        <div className="min-w-[145px] px-1">
+                        <div className="min-w-[112px] px-0.5">
                           <label className="relative block"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span><input aria-label={`${label} de ${product.name}`} className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold hover:border-border focus:border-accent focus:bg-background focus:outline-none" type="number" min="0" step="0.01" value={product[key] ?? ''} onChange={event => editInline(product.id, key, event.target.value, type)} /></label>
                           {key === 'sale_price' && hasCostPrice && <span className={`mt-0.5 block px-2 text-[10px] font-bold ${unitProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>{unitProfit >= 0 ? '+ ' : '− '}{formatCurrency(Math.abs(unitProfit))}</span>}
                         </div>
                       ) : key === 'category' ? (
-                        <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[190px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.category || ''} onChange={event => editInline(product.id, key, event.target.value, type)}>
+                        <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[150px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.category || ''} onChange={event => editInline(product.id, key, event.target.value, type)}>
                           <option value="">Sem categoria</option>
                           {categories.map(option => <option key={option} value={option}>{option}</option>)}
                         </select>
                       ) : key === 'status' ? (
-                        <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[120px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.status || 'ativo'} onChange={event => editInline(product.id, key, event.target.value, type)}>
+                        <select aria-label={`${label} de ${product.name}`} className="h-10 w-full min-w-[104px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none" value={product.status || 'ativo'} onChange={event => editInline(product.id, key, event.target.value, type)}>
                           <option value="ativo">Ativo</option>
                           <option value="inativo">Inativo</option>
                         </select>
@@ -715,7 +732,7 @@ export default function Estoque() {
                       ) : key === 'name' ? (
                         <input
                           aria-label={`${label} de ${product.name}`}
-                          className="h-10 w-full min-w-[260px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                          className="h-10 w-full min-w-[220px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                           type={type}
                           value={product[key] ?? ''}
                           onChange={event => editInline(product.id, key, event.target.value, type)}
@@ -723,7 +740,7 @@ export default function Estoque() {
                       ) : (
                         <input
                           aria-label={`${label} de ${product.name}`}
-                          className="h-10 w-full min-w-[135px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                          className={`h-10 w-full rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none ${tableColumnWidth(key)}`}
                           type={type}
                           min={type === 'number' ? '0' : undefined}
                           step={key === 'sale_price' || key === 'cost_price' ? '0.01' : 'any'}

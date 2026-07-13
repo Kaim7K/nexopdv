@@ -1,35 +1,43 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Check, CreditCard, Loader2, Plus, Save, X } from "lucide-react";
-import { nexoApi } from "@/api/nexoApi";
-import { toast } from "react-hot-toast";
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Check,
+  CreditCard,
+  Loader2,
+  Plus,
+  Power,
+  RotateCcw,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { nexoApi } from '@/api/nexoApi';
+import { toast } from 'react-hot-toast';
 import {
   EmptyState,
   ErrorState,
   LoadingState,
-} from "@/components/common/PageState";
-import { useModalBehavior } from "@/hooks/use-modal-behavior";
-import { formatCurrency } from "@/lib/helpers";
-import { useConfirm } from "@/components/common/ConfirmProvider";
+} from '@/components/common/PageState';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { formatCurrency } from '@/lib/helpers';
+import { useConfirm } from '@/components/common/ConfirmProvider';
+import ModuleSwitch from '@/components/admin/ModuleSwitch';
+import {
+  MARKET_FEATURE_KEYS,
+  MARKET_FEATURES,
+  MARKET_MODULE_KEYS,
+  MARKET_MODULES,
+} from '@/lib/market-modules';
 
-const MODULES = [
-  ["pdv", "PDV"],
-  ["estoque", "Estoque"],
-  ["vendas", "Vendas"],
-  ["fiados", "Fiados"],
-  ["relatorios", "Relatórios"],
-  ["auditoria", "Auditoria"],
-  ["usuarios", "Usuários"],
-  ["configuracoes", "Configurações"],
-];
 const EMPTY = {
-  name: "",
-  description: "",
-  monthly_price: "",
-  trial_days: "14",
-  user_limit: "",
-  product_limit: "",
-  unit_limit: "",
-  enabled_modules: MODULES.map(([key]) => key),
+  name: '',
+  description: '',
+  monthly_price: '',
+  trial_days: '14',
+  user_limit: '',
+  product_limit: '',
+  unit_limit: '',
+  enabled_modules: MARKET_MODULE_KEYS,
+  enabled_features: MARKET_FEATURE_KEYS,
   active: true,
 };
 export default function AdminPlanos() {
@@ -38,17 +46,18 @@ export default function AdminPlanos() {
     [subscriptions, setSubscriptions] = useState([]),
     [payments, setPayments] = useState([]),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [form, setForm] = useState(EMPTY),
     [open, setOpen] = useState(false),
     [saving, setSaving] = useState(false),
+    [busyPlanId, setBusyPlanId] = useState(''),
     [editing, setEditing] = useState(null);
   const [paymentForm, setPaymentForm] = useState({
-    subscription_id: "",
-    amount: "",
-    due_date: "",
-    status: "pendente",
-    notes: "",
+    subscription_id: '',
+    amount: '',
+    due_date: '',
+    status: 'pendente',
+    notes: '',
   });
   const modalRef = useModalBehavior({
     active: open,
@@ -57,7 +66,7 @@ export default function AdminPlanos() {
   });
   const load = async () => {
     setLoading(true);
-    setError("");
+    setError('');
     try {
       const [p, s, pay] = await Promise.all([
         nexoApi.admin.plans.list(),
@@ -69,7 +78,7 @@ export default function AdminPlanos() {
       setPayments(pay);
     } catch (cause) {
       setError(
-        cause.message || "Não foi possível carregar planos e assinaturas.",
+        cause.message || 'Não foi possível carregar planos e assinaturas.',
       );
     } finally {
       setLoading(false);
@@ -85,6 +94,7 @@ export default function AdminPlanos() {
       ...plan,
       monthly_price: String(plan.monthly_price),
       enabled_modules: plan.enabled_modules || [],
+      enabled_features: plan.enabled_features || [],
     });
     setOpen(true);
   };
@@ -95,32 +105,94 @@ export default function AdminPlanos() {
     try {
       if (editing) await nexoApi.admin.plans.update(editing.id, form);
       else await nexoApi.admin.plans.create(form);
-      toast.success(editing ? "Plano atualizado." : "Plano criado.");
+      toast.success(editing ? 'Plano atualizado.' : 'Plano criado.');
       setOpen(false);
       setEditing(null);
       setForm(EMPTY);
       await load();
     } catch (cause) {
-      toast.error(cause.message || "Não foi possível salvar o plano.");
+      toast.error(cause.message || 'Não foi possível salvar o plano.');
     } finally {
       setSaving(false);
     }
   };
   const changeStatus = async (item, status) => {
-    if (["cancelada","suspensa","inadimplente"].includes(status)) {
-      const accepted = await confirm({ title:status === "cancelada" ? "Cancelar assinatura?" : "Alterar acesso do mercadinho?",description:`${item.market_name} ficará com a assinatura ${status}. O histórico financeiro será preservado.`,confirmLabel:"Confirmar alteração",tone:status === "cancelada" ? "danger" : "warning" });
+    if (['cancelada', 'suspensa', 'inadimplente'].includes(status)) {
+      const accepted = await confirm({
+        title:
+          status === 'cancelada'
+            ? 'Cancelar assinatura?'
+            : 'Alterar acesso do mercadinho?',
+        description: `${item.market_name} ficará com a assinatura ${status}. O histórico financeiro será preservado.`,
+        confirmLabel: 'Confirmar alteração',
+        tone: status === 'cancelada' ? 'danger' : 'warning',
+      });
       if (!accepted) return;
     }
     try {
       await nexoApi.admin.subscriptions.update(item.id, {
         status,
         cancellation_reason:
-          status === "cancelada" ? "Cancelamento administrativo" : "",
+          status === 'cancelada' ? 'Cancelamento administrativo' : '',
       });
-      toast.success("Assinatura atualizada.");
+      toast.success('Assinatura atualizada.');
       await load();
     } catch (cause) {
-      toast.error(cause.message || "Não foi possível atualizar a assinatura.");
+      toast.error(cause.message || 'Não foi possível atualizar a assinatura.');
+    }
+  };
+  const togglePlan = async (plan) => {
+    if (busyPlanId) return;
+    const nextActive = !plan.active;
+    if (!nextActive) {
+      const accepted = await confirm({
+        title: 'Desativar plano?',
+        description: `${plan.name} deixará de aparecer para novas contratações. Mercadinhos e assinaturas existentes serão preservados.`,
+        confirmLabel: 'Desativar plano',
+      });
+      if (!accepted) return;
+    }
+    setBusyPlanId(plan.id);
+    try {
+      await nexoApi.admin.plans.update(plan.id, {
+        ...plan,
+        active: nextActive,
+      });
+      toast.success(nextActive ? 'Plano reativado.' : 'Plano desativado.');
+      await load();
+    } catch (cause) {
+      toast.error(cause.message || 'Não foi possível alterar o plano.');
+    } finally {
+      setBusyPlanId('');
+    }
+  };
+  const removePlan = async (plan) => {
+    if (busyPlanId) return;
+    if (
+      Number(plan.total_subscription_count || 0) > 0 ||
+      Number(plan.market_count || 0) > 0
+    ) {
+      toast.error(
+        'Este plano possui histórico ou mercadinhos vinculados. Desative-o para impedir novas contratações.',
+      );
+      return;
+    }
+    const accepted = await confirm({
+      title: 'Excluir plano definitivamente?',
+      description: `${plan.name} será removido do catálogo. Esta ação não poderá ser desfeita.`,
+      confirmLabel: 'Excluir plano',
+      tone: 'destructive',
+    });
+    if (!accepted) return;
+    setBusyPlanId(plan.id);
+    try {
+      await nexoApi.admin.plans.delete(plan.id);
+      toast.success('Plano excluído.');
+      await load();
+    } catch (cause) {
+      toast.error(cause.message || 'Não foi possível excluir o plano.');
+    } finally {
+      setBusyPlanId('');
     }
   };
   const createPayment = async (event) => {
@@ -129,17 +201,17 @@ export default function AdminPlanos() {
     setSaving(true);
     try {
       await nexoApi.admin.payments.create(paymentForm);
-      toast.success("Cobrança registrada.");
+      toast.success('Cobrança registrada.');
       setPaymentForm({
-        subscription_id: "",
-        amount: "",
-        due_date: "",
-        status: "pendente",
-        notes: "",
+        subscription_id: '',
+        amount: '',
+        due_date: '',
+        status: 'pendente',
+        notes: '',
       });
       await load();
     } catch (cause) {
-      toast.error(cause.message || "Não foi possível registrar a cobrança.");
+      toast.error(cause.message || 'Não foi possível registrar a cobrança.');
     } finally {
       setSaving(false);
     }
@@ -196,21 +268,18 @@ export default function AdminPlanos() {
                     key={plan.id}
                     className="rounded-2xl border border-border bg-card p-5 shadow-sm"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-lg font-black">{plan.name}</h3>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {plan.description || "Sem descrição"}
+                          {plan.description || 'Sem descrição'}
                         </p>
                       </div>
                       <span
-                        className={
-                          plan.active
-                            ? "text-emerald-600"
-                            : "text-muted-foreground"
-                        }
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${plan.active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'}`}
                       >
-                        <Check className="h-5 w-5" />
+                        <Check className="h-3.5 w-3.5" />{' '}
+                        {plan.active ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
                     <strong className="mt-5 block text-2xl font-black">
@@ -223,28 +292,55 @@ export default function AdminPlanos() {
                       <Info label="Teste" value={`${plan.trial_days} dias`} />
                       <Info
                         label="Usuários"
-                        value={plan.user_limit || "Ilimitado"}
+                        value={plan.user_limit || 'Ilimitado'}
                       />
                       <Info
                         label="Produtos"
-                        value={plan.product_limit || "Ilimitado"}
+                        value={plan.product_limit || 'Ilimitado'}
                       />
                       <Info
                         label="Unidades"
-                        value={plan.unit_limit || "Ilimitado"}
+                        value={plan.unit_limit || 'Ilimitado'}
                       />
                     </dl>
                     <p className="mt-4 text-xs text-muted-foreground">
-                      {plan.subscription_count} assinatura(s) ·{" "}
-                      {(plan.enabled_modules || []).length} funcionalidades
+                      {plan.subscription_count} assinatura(s) ·{' '}
+                      {(plan.enabled_modules || []).length} módulo(s) ·{' '}
+                      {(plan.enabled_features || []).length} recurso(s)
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => edit(plan)}
-                      className="mt-4 min-h-10 w-full rounded-xl border border-border text-sm font-bold hover:bg-muted"
-                    >
-                      Editar plano
-                    </button>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => edit(plan)}
+                        disabled={Boolean(busyPlanId)}
+                        className="min-h-10 rounded-xl border border-border text-sm font-bold hover:bg-muted disabled:opacity-50"
+                      >
+                        Editar plano
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => togglePlan(plan)}
+                        disabled={Boolean(busyPlanId)}
+                        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border px-2 text-xs font-bold hover:bg-muted disabled:opacity-50"
+                      >
+                        {busyPlanId === plan.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : plan.active ? (
+                          <Power className="h-4 w-4" />
+                        ) : (
+                          <RotateCcw className="h-4 w-4" />
+                        )}
+                        {plan.active ? 'Desativar' : 'Reativar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePlan(plan)}
+                        disabled={Boolean(busyPlanId)}
+                        className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-destructive/25 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" /> Excluir plano
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -269,7 +365,7 @@ export default function AdminPlanos() {
                       <div>
                         <strong className="block">{item.market_name}</strong>
                         <span className="text-xs text-muted-foreground">
-                          {item.plan_name || "Sem plano"} ·{" "}
+                          {item.plan_name || 'Sem plano'} ·{' '}
                           {formatCurrency(item.monthly_price)}/mês
                         </span>
                       </div>
@@ -278,33 +374,33 @@ export default function AdminPlanos() {
                           {item.status}
                         </span>
                         <span className="ml-2 text-xs text-muted-foreground">
-                          {(paidBySubscription.get(item.id) || []).length}{" "}
+                          {(paidBySubscription.get(item.id) || []).length}{' '}
                           cobrança(s)
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {item.status !== "ativa" && (
-                          <Action onClick={() => changeStatus(item, "ativa")}>
+                        {item.status !== 'ativa' && (
+                          <Action onClick={() => changeStatus(item, 'ativa')}>
                             Reativar
                           </Action>
                         )}
-                        {item.status !== "inadimplente" && (
+                        {item.status !== 'inadimplente' && (
                           <Action
-                            onClick={() => changeStatus(item, "inadimplente")}
+                            onClick={() => changeStatus(item, 'inadimplente')}
                           >
                             Inadimplente
                           </Action>
                         )}
-                        {item.status !== "suspensa" && (
+                        {item.status !== 'suspensa' && (
                           <Action
-                            onClick={() => changeStatus(item, "suspensa")}
+                            onClick={() => changeStatus(item, 'suspensa')}
                           >
                             Suspender
                           </Action>
                         )}
-                        {item.status !== "cancelada" && (
+                        {item.status !== 'cancelada' && (
                           <Action
-                            onClick={() => changeStatus(item, "cancelada")}
+                            onClick={() => changeStatus(item, 'cancelada')}
                           >
                             Cancelar
                           </Action>
@@ -345,10 +441,10 @@ export default function AdminPlanos() {
                 >
                   <option value="">Selecione</option>
                   {subscriptions
-                    .filter((item) => item.status !== "cancelada")
+                    .filter((item) => item.status !== 'cancelada')
                     .map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.market_name} · {item.plan_name || "Sem plano"}
+                        {item.market_name} · {item.plan_name || 'Sem plano'}
                       </option>
                     ))}
                 </select>
@@ -409,42 +505,77 @@ export default function AdminPlanos() {
               </button>
             </form>
             {payments.length ? (
-              <div className="mt-5 overflow-x-auto">
-                <table className="w-full min-w-[680px] text-sm">
-                  <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2">Mercadinho</th>
-                      <th className="px-3 py-2">Plano</th>
-                      <th className="px-3 py-2">Vencimento</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2 text-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {payments.map((payment) => (
-                      <tr key={payment.id}>
-                        <td className="px-3 py-3 font-bold">
-                          {payment.market_name}
-                        </td>
-                        <td className="px-3 py-3">
-                          {payment.plan_name || "Sem plano"}
-                        </td>
-                        <td className="px-3 py-3">
+              <>
+                <div className="mt-5 grid gap-2 lg:hidden">
+                  {payments.map((payment) => (
+                    <article
+                      key={payment.id}
+                      className="rounded-xl border border-border bg-muted/15 p-3 text-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <strong className="block break-words">
+                            {payment.market_name}
+                          </strong>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {payment.plan_name || 'Sem plano'}
+                          </span>
+                        </div>
+                        <strong className="shrink-0 tabular-nums">
+                          {formatCurrency(payment.amount)}
+                        </strong>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs">
+                        <span>
+                          Vence em{' '}
                           {new Date(
                             `${payment.due_date}T12:00:00`,
-                          ).toLocaleDateString("pt-BR")}
-                        </td>
-                        <td className="px-3 py-3 capitalize">
+                          ).toLocaleDateString('pt-BR')}
+                        </span>
+                        <span className="rounded-full border border-border bg-background px-2.5 py-1 font-bold capitalize">
                           {payment.status}
-                        </td>
-                        <td className="px-3 py-3 text-right font-black">
-                          {formatCurrency(payment.amount)}
-                        </td>
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <div className="mt-5 hidden overflow-x-auto lg:block">
+                  <table className="w-full min-w-[680px] text-sm">
+                    <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">Mercadinho</th>
+                        <th className="px-3 py-2">Plano</th>
+                        <th className="px-3 py-2">Vencimento</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2 text-right">Valor</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {payments.map((payment) => (
+                        <tr key={payment.id}>
+                          <td className="px-3 py-3 font-bold">
+                            {payment.market_name}
+                          </td>
+                          <td className="px-3 py-3">
+                            {payment.plan_name || 'Sem plano'}
+                          </td>
+                          <td className="px-3 py-3">
+                            {new Date(
+                              `${payment.due_date}T12:00:00`,
+                            ).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-3 py-3 capitalize">
+                            {payment.status}
+                          </td>
+                          <td className="px-3 py-3 text-right font-black">
+                            {formatCurrency(payment.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <p className="mt-5 text-sm text-muted-foreground">
                 Nenhuma cobrança registrada.
@@ -465,7 +596,7 @@ export default function AdminPlanos() {
             <div className="flex items-start justify-between sm:col-span-2">
               <div>
                 <h2 className="text-xl font-black">
-                  {editing ? "Editar plano" : "Novo plano"}
+                  {editing ? 'Editar plano' : 'Novo plano'}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Defina preço, teste, limites e acesso.
@@ -520,7 +651,7 @@ export default function AdminPlanos() {
                 type="number"
                 className="field"
                 placeholder="Ilimitado"
-                value={form.user_limit || ""}
+                value={form.user_limit || ''}
                 onChange={(e) =>
                   setForm((v) => ({ ...v, user_limit: e.target.value }))
                 }
@@ -532,7 +663,7 @@ export default function AdminPlanos() {
                 type="number"
                 className="field"
                 placeholder="Ilimitado"
-                value={form.product_limit || ""}
+                value={form.product_limit || ''}
                 onChange={(e) =>
                   setForm((v) => ({ ...v, product_limit: e.target.value }))
                 }
@@ -544,7 +675,7 @@ export default function AdminPlanos() {
                 type="number"
                 className="field"
                 placeholder="Ilimitado"
-                value={form.unit_limit || ""}
+                value={form.unit_limit || ''}
                 onChange={(e) =>
                   setForm((v) => ({ ...v, unit_limit: e.target.value }))
                 }
@@ -559,36 +690,125 @@ export default function AdminPlanos() {
                 }
               />
             </Field>
+            <label className="flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5 sm:col-span-2">
+              <span>
+                <strong className="block text-sm text-foreground">
+                  Disponível para contratação
+                </strong>
+                <span className="mt-0.5 block text-[11px] font-normal leading-4 text-muted-foreground">
+                  Planos inativos permanecem no histórico, mas não podem ser
+                  contratados.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={form.active !== false}
+                onChange={(event) =>
+                  setForm((value) => ({
+                    ...value,
+                    active: event.target.checked,
+                  }))
+                }
+                className="h-5 w-5 shrink-0 accent-[var(--market-primary)]"
+              />
+            </label>
             <fieldset className="sm:col-span-2">
               <legend className="text-xs font-bold text-muted-foreground">
-                Funcionalidades
+                Módulos do sistema
               </legend>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {MODULES.map(([key, label]) => (
-                  <label
-                    key={key}
-                    className="flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold"
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                Defina o acesso padrão de novas contratações. Exceções
+                individuais podem ser ajustadas em Mercadinhos.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {MARKET_MODULES.map((module) => (
+                  <ModuleSwitch
+                    key={module.key}
+                    module={module}
+                    checked={form.enabled_modules.includes(module.key)}
+                    onChange={(checked) =>
+                      setForm((value) => ({
+                        ...value,
+                        enabled_modules: checked
+                          ? [...new Set([...value.enabled_modules, module.key])]
+                          : value.enabled_modules.filter(
+                              (key) => key !== module.key,
+                            ),
+                      }))
+                    }
+                  />
+                ))}
+              </div>
+              {form.active !== false && !form.enabled_modules.length && (
+                <p
+                  role="alert"
+                  className="mt-2 text-xs font-semibold text-destructive"
+                >
+                  Ative pelo menos uma funcionalidade ou desative o plano.
+                </p>
+              )}
+            </fieldset>
+            <fieldset className="sm:col-span-2">
+              <legend className="text-xs font-bold text-muted-foreground">
+                Recursos do plano
+              </legend>
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                Controle automações e personalizações específicas,
+                independentemente das telas liberadas.
+              </p>
+              <div className="mt-3 space-y-4">
+                {[
+                  ...new Set(MARKET_FEATURES.map((feature) => feature.group)),
+                ].map((group) => (
+                  <section
+                    key={group}
+                    aria-labelledby={`feature-group-${group}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={form.enabled_modules.includes(key)}
-                      onChange={(e) =>
-                        setForm((v) => ({
-                          ...v,
-                          enabled_modules: e.target.checked
-                            ? [...v.enabled_modules, key]
-                            : v.enabled_modules.filter((x) => x !== key),
-                        }))
-                      }
-                    />
-                    {label}
-                  </label>
+                    <h3
+                      id={`feature-group-${group}`}
+                      className="mb-2 text-xs font-bold text-foreground"
+                    >
+                      {group}
+                    </h3>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {MARKET_FEATURES.filter(
+                        (feature) => feature.group === group,
+                      ).map((feature) => (
+                        <ModuleSwitch
+                          key={feature.key}
+                          module={feature}
+                          checked={(form.enabled_features || []).includes(
+                            feature.key,
+                          )}
+                          onChange={(checked) =>
+                            setForm((value) => ({
+                              ...value,
+                              enabled_features: checked
+                                ? [
+                                    ...new Set([
+                                      ...(value.enabled_features || []),
+                                      feature.key,
+                                    ]),
+                                  ]
+                                : (value.enabled_features || []).filter(
+                                    (key) => key !== feature.key,
+                                  ),
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
             </fieldset>
             <button
               type="submit"
-              disabled={saving}
+              disabled={
+                saving ||
+                (form.active !== false && !form.enabled_modules.length)
+              }
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 font-bold text-accent-foreground sm:col-span-2"
             >
               {saving ? (
@@ -596,7 +816,7 @@ export default function AdminPlanos() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {saving ? "Salvando..." : "Salvar plano"}
+              {saving ? 'Salvando...' : 'Salvar plano'}
             </button>
           </form>
         </div>
@@ -626,7 +846,7 @@ function Action({ children, onClick }) {
 function Field({ label, children, wide = false }) {
   return (
     <label
-      className={`text-xs font-bold text-muted-foreground ${wide ? "sm:col-span-2" : ""}`}
+      className={`text-xs font-bold text-muted-foreground ${wide ? 'sm:col-span-2' : ''}`}
     >
       {label}
       {children}

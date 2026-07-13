@@ -24,7 +24,7 @@ const [api, http, media, app, sales, fiados, audits, stock, users, settings, adm
 ]);
 
 assert.match(api, /WITH sale_number AS[\s\S]*INSERT INTO nexo\.records[\s\S]*UPDATE nexo\.records product[\s\S]*INSERT INTO nexo\.records\(market_id, entity, data\)/, 'A conclusão da venda deve manter numeração, venda, estoque e fiado na mesma instrução atômica.');
-assert.match(api, /sql\.transaction\(tx => \[/, 'O cancelamento deve executar venda, estoque, fiado e auditoria em transação.');
+assert.match(api, /sql\.transaction\(\(?tx\)?\s*=>\s*\[/, 'O cancelamento deve executar venda, estoque, fiado e auditoria em transação.');
 assert.match(api, /fiado\.data->>'sale_id'=\$\{saleId\}[\s\S]*fiado\.data->>'status'='pendente'/, 'Cancelar uma venda deve cancelar o fiado pendente relacionado.');
 assert.match(api, /cancellation_operation_id/, 'O cancelamento deve impedir devolução duplicada do estoque.');
 assert.match(api, /const cancellationReason = text\(req\.body\.reason, 500\)/, 'O motivo do cancelamento deve ser limitado e normalizado.');

@@ -262,7 +262,10 @@ export default function Relatorios() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="overflow-x-auto border-t border-border">
+          <div className="grid gap-2 border-t border-border p-3 lg:hidden">
+            {stats.breakdownData.map(row => <article key={row.key} className="rounded-xl border border-border bg-muted/15 p-3"><strong className="block text-sm">{row.label}</strong><dl className="mt-3 grid grid-cols-3 gap-2 text-xs"><div><dt className="text-muted-foreground">Faturamento</dt><dd className="mt-1 font-bold tabular-nums">{formatCurrency(row.revenue)}</dd></div><div><dt className="text-muted-foreground">Vendas</dt><dd className="mt-1 font-bold tabular-nums">{row.sales}</dd></div><div><dt className="text-muted-foreground">Ticket médio</dt><dd className="mt-1 font-bold tabular-nums">{formatCurrency(row.average)}</dd></div></dl></article>)}
+          </div>
+          <div className="hidden overflow-x-auto border-t border-border lg:block">
             <table className="w-full min-w-[620px] text-left text-sm">
               <thead className="bg-muted/60 text-xs uppercase text-muted-foreground"><tr><th className="px-4 py-3">{BREAKDOWNS.find(item => item.key === breakdown)?.label}</th><th className="px-4 py-3">Faturamento</th><th className="px-4 py-3">Vendas</th><th className="px-4 py-3">Ticket médio</th></tr></thead>
               <tbody>{stats.breakdownData.map(row => <tr key={row.key} className="border-t border-border/70"><td className="px-4 py-3 font-bold">{row.label}</td><td className="px-4 py-3 font-semibold">{formatCurrency(row.revenue)}</td><td className="px-4 py-3">{row.sales}</td><td className="px-4 py-3">{formatCurrency(row.average)}</td></tr>)}</tbody>

@@ -1,36 +1,32 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import { nexoApi } from "@/api/nexoApi";
-import { Eye, LockKeyhole, Plus, Save, Search, Store, X } from "lucide-react";
-import { toast } from "react-hot-toast";
-import ImageUploadField from "@/components/ImageUploadField";
-import { useModalBehavior } from "@/hooks/use-modal-behavior";
-import { ErrorState } from "@/components/common/PageState";
-import { useConfirm } from "@/components/common/ConfirmProvider";
-
-const MODULES = [
-  ["pdv", "PDV"],
-  ["estoque", "Estoque"],
-  ["vendas", "Vendas"],
-  ["fiados", "Fiados"],
-  ["relatorios", "Relatórios"],
-  ["auditoria", "Auditoria"],
-  ["usuarios", "Usuários"],
-  ["configuracoes", "Configurações"],
-];
+import React, { useEffect, useMemo, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { nexoApi } from '@/api/nexoApi';
+import { Eye, LockKeyhole, Plus, Save, Search, Store, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import ImageUploadField from '@/components/ImageUploadField';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { ErrorState } from '@/components/common/PageState';
+import { useConfirm } from '@/components/common/ConfirmProvider';
+import ModuleSwitch from '@/components/admin/ModuleSwitch';
+import {
+  MARKET_FEATURE_KEYS,
+  MARKET_FEATURES,
+  MARKET_MODULE_KEYS,
+  MARKET_MODULES,
+} from '@/lib/market-modules';
 
 const EMPTY = {
-  name: "",
-  slug: "",
-  logo_url: "",
-  admin_name: "",
-  admin_email: "",
-  admin_password: "",
-  primary_color: "#16a06a",
-  secondary_color: "#0f5132",
+  name: '',
+  slug: '',
+  logo_url: '',
+  admin_name: '',
+  admin_email: '',
+  admin_password: '',
+  primary_color: '#16a06a',
+  secondary_color: '#0f5132',
   require_cash_register: false,
-  plan_id: "",
-  status: "teste",
+  plan_id: '',
+  status: 'teste',
 };
 
 export default function AdminMercados() {
@@ -38,26 +34,29 @@ export default function AdminMercados() {
   const { user } = /** @type {any} */ (useOutletContext());
   const [markets, setMarkets] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [detail,setDetail] = useState(null);
-  const [detailLoading,setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [loadError, setLoadError] = useState('');
   const [updatingIds, setUpdatingIds] = useState(new Set());
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const createModalRef = useModalBehavior({
     active: open,
     disabled: saving,
     onClose: () => setOpen(false),
   });
-  const detailModalRef = useModalBehavior({ active:Boolean(detail),onClose:()=>setDetail(null) });
+  const detailModalRef = useModalBehavior({
+    active: Boolean(detail),
+    onClose: () => setDetail(null),
+  });
 
   const load = async () => {
     setLoading(true);
-    setLoadError("");
+    setLoadError('');
     try {
       const [marketRows, planRows] = await Promise.all([
         nexoApi.markets.list(),
@@ -66,8 +65,8 @@ export default function AdminMercados() {
       setMarkets(marketRows);
       setPlans(planRows);
     } catch (error) {
-      setLoadError(error.message || "Não foi possível carregar os mercados.");
-      toast.error(error.message || "Erro ao carregar mercados.");
+      setLoadError(error.message || 'Não foi possível carregar os mercados.');
+      toast.error(error.message || 'Erro ao carregar mercados.');
     } finally {
       setLoading(false);
     }
@@ -80,10 +79,10 @@ export default function AdminMercados() {
   useEffect(() => {
     if (!open) return undefined;
     const closeOnEscape = (event) => {
-      if (event.key === "Escape" && !saving) setOpen(false);
+      if (event.key === 'Escape' && !saving) setOpen(false);
     };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
   }, [open, saving]);
 
   const filtered = useMemo(() => {
@@ -91,10 +90,10 @@ export default function AdminMercados() {
     if (!query) return markets;
     return markets.filter(
       (market) =>
-        String(market.name || "")
+        String(market.name || '')
           .toLowerCase()
           .includes(query) ||
-        String(market.slug || "")
+        String(market.slug || '')
           .toLowerCase()
           .includes(query),
     );
@@ -103,20 +102,24 @@ export default function AdminMercados() {
   const updateForm = (key, value) => {
     setForm((previous) => {
       const next = { ...previous, [key]: value };
-      if (key === "name" && !slugTouched) next.slug = slugify(value);
+      if (key === 'name' && !slugTouched) next.slug = slugify(value);
       return next;
     });
   };
 
   const create = async (event) => {
     event.preventDefault();
+    const selectedPlan = plans.find(
+      (plan) => plan.id === form.plan_id && plan.active,
+    );
     const payload = {
       ...form,
       name: form.name.trim(),
       slug: slugify(form.slug),
       admin_name: form.admin_name.trim(),
       admin_email: form.admin_email.trim().toLowerCase(),
-      enabled_modules: MODULES.map(([key]) => key),
+      enabled_modules: selectedPlan?.enabled_modules || MARKET_MODULE_KEYS,
+      enabled_features: selectedPlan?.enabled_features || MARKET_FEATURE_KEYS,
     };
     if (
       !payload.name ||
@@ -124,7 +127,7 @@ export default function AdminMercados() {
       !/^\S+@\S+\.\S+$/.test(payload.admin_email) ||
       payload.admin_password.length < 8
     ) {
-      toast.error("Revise nome, identificador, e-mail e senha inicial.");
+      toast.error('Revise nome, identificador, e-mail e senha inicial.');
       return;
     }
     setSaving(true);
@@ -134,9 +137,9 @@ export default function AdminMercados() {
       setSlugTouched(false);
       setOpen(false);
       await load();
-      toast.success("Mercado e administrador criados.");
+      toast.success('Mercado e administrador criados.');
     } catch (error) {
-      toast.error(error.message || "Não foi possível criar o mercado.");
+      toast.error(error.message || 'Não foi possível criar o mercado.');
     } finally {
       setSaving(false);
     }
@@ -158,10 +161,10 @@ export default function AdminMercados() {
           item.id === market.id ? { ...item, ...updated } : item,
         ),
       );
-      toast.success("Mercado atualizado.");
+      toast.success('Mercado atualizado.');
     } catch (error) {
       setMarkets(previousMarkets);
-      toast.error(error.message || "Não foi possível atualizar o mercado.");
+      toast.error(error.message || 'Não foi possível atualizar o mercado.');
     } finally {
       setUpdatingIds((current) => {
         const next = new Set(current);
@@ -173,16 +176,27 @@ export default function AdminMercados() {
   const openDetail = async (market) => {
     setDetail({ market });
     setDetailLoading(true);
-    try { setDetail(await nexoApi.markets.detail(market.id)); }
-    catch (error) { toast.error(error.message || "Não foi possível carregar os detalhes do mercadinho."); }
-    finally { setDetailLoading(false); }
+    try {
+      setDetail(await nexoApi.markets.detail(market.id));
+    } catch (error) {
+      toast.error(
+        error.message || 'Não foi possível carregar os detalhes do mercadinho.',
+      );
+    } finally {
+      setDetailLoading(false);
+    }
   };
-  const changeMarketStatus = async (market,status) => {
-    if (status === "cancelado") {
-      const accepted = await confirm({ title:"Encerrar mercadinho?",description:`O acesso de ${market.name} será bloqueado, a assinatura será cancelada e o histórico será preservado.`,confirmLabel:"Encerrar acesso",tone:"danger" });
+  const changeMarketStatus = async (market, status) => {
+    if (status === 'cancelado') {
+      const accepted = await confirm({
+        title: 'Encerrar mercadinho?',
+        description: `O acesso de ${market.name} será bloqueado, a assinatura será cancelada e o histórico será preservado.`,
+        confirmLabel: 'Encerrar acesso',
+        tone: 'danger',
+      });
       if (!accepted) return;
     }
-    await update(market,{ status });
+    await update(market, { status });
   };
 
   return (
@@ -250,13 +264,13 @@ export default function AdminMercados() {
             const updating = updatingIds.has(market.id);
             return (
               <article
-                className={`rounded-2xl border border-border bg-card p-5 shadow-sm transition ${updating ? "opacity-75" : "hover:-translate-y-0.5 hover:shadow-md"}`}
+                className={`rounded-2xl border border-border bg-card p-5 shadow-sm transition ${updating ? 'opacity-75' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
                 key={market.id}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-2xl"
-                    style={{ background: market.primary_color || "#16a06a" }}
+                    style={{ background: market.primary_color || '#16a06a' }}
                   >
                     {market.logo_url ? (
                       <img
@@ -279,11 +293,13 @@ export default function AdminMercados() {
                   </div>
                   <select
                     aria-label={`Status de ${market.name}`}
-                    disabled={updating || market.status === "cancelado"}
+                    disabled={updating || market.status === 'cancelado'}
                     value={
-                      market.status || (market.active ? "ativo" : "suspenso")
+                      market.status || (market.active ? 'ativo' : 'suspenso')
                     }
-                    onChange={(event) => changeMarketStatus(market,event.target.value)}
+                    onChange={(event) =>
+                      changeMarketStatus(market, event.target.value)
+                    }
                     className="h-10 rounded-xl border border-border bg-background px-2 text-xs font-bold disabled:opacity-50"
                   >
                     <option value="teste">Em teste</option>
@@ -297,39 +313,81 @@ export default function AdminMercados() {
                   <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-black">Módulos habilitados</h3>
                     <span className="text-xs text-muted-foreground">
-                      {(market.enabled_modules || []).length}/{MODULES.length}
+                      {(market.enabled_modules || []).length}/
+                      {MARKET_MODULES.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {MODULES.map(([key, label]) => {
+                  <div className="grid grid-cols-2 gap-2">
+                    {MARKET_MODULES.map((module) => {
                       const checked = (market.enabled_modules || []).includes(
-                        key,
+                        module.key,
                       );
                       return (
-                        <label
-                          key={key}
-                          className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border px-3 text-xs font-bold transition ${checked ? "border-accent/30 bg-accent/10 text-accent" : "border-border bg-muted/20 text-muted-foreground"} ${updating ? "pointer-events-none opacity-60" : ""}`}
-                        >
-                          <input
-                            className="h-4 w-4 accent-[var(--market-primary)]"
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              update(market, {
-                                enabled_modules: checked
-                                  ? market.enabled_modules.filter(
-                                      (module) => module !== key,
-                                    )
-                                  : [...(market.enabled_modules || []), key],
-                              })
-                            }
-                          />
-                          {label}
-                        </label>
+                        <ModuleSwitch
+                          key={module.key}
+                          module={module}
+                          compact
+                          checked={checked}
+                          disabled={updating}
+                          onChange={(nextChecked) =>
+                            update(market, {
+                              enabled_modules: nextChecked
+                                ? [
+                                    ...new Set([
+                                      ...(market.enabled_modules || []),
+                                      module.key,
+                                    ]),
+                                  ]
+                                : (market.enabled_modules || []).filter(
+                                    (key) => key !== module.key,
+                                  ),
+                            })
+                          }
+                        />
                       );
                     })}
                   </div>
                 </div>
+
+                <details className="mt-4 rounded-xl border border-border bg-muted/10 p-3">
+                  <summary className="cursor-pointer text-sm font-bold">
+                    Recursos específicos{' '}
+                    <span className="font-normal text-muted-foreground">
+                      ({(market.enabled_features || []).length}/
+                      {MARKET_FEATURES.length})
+                    </span>
+                  </summary>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {MARKET_FEATURES.map((feature) => {
+                      const checked = (market.enabled_features || []).includes(
+                        feature.key,
+                      );
+                      return (
+                        <ModuleSwitch
+                          key={feature.key}
+                          module={feature}
+                          compact
+                          checked={checked}
+                          disabled={updating}
+                          onChange={(nextChecked) =>
+                            update(market, {
+                              enabled_features: nextChecked
+                                ? [
+                                    ...new Set([
+                                      ...(market.enabled_features || []),
+                                      feature.key,
+                                    ]),
+                                  ]
+                                : (market.enabled_features || []).filter(
+                                    (key) => key !== feature.key,
+                                  ),
+                            })
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </details>
 
                 <div className="mt-5 border-t border-border pt-4">
                   <div className="mb-4 grid gap-3 sm:grid-cols-2">
@@ -337,8 +395,8 @@ export default function AdminMercados() {
                       Plano contratado
                       <select
                         className="field"
-                        value={market.plan_id || ""}
-                        disabled={updating || market.status === "cancelado"}
+                        value={market.plan_id || ''}
+                        disabled={updating || market.status === 'cancelado'}
                         onChange={(event) =>
                           update(market, {
                             plan_id: event.target.value || null,
@@ -347,8 +405,15 @@ export default function AdminMercados() {
                       >
                         <option value="">Sem plano</option>
                         {plans.map((plan) => (
-                          <option key={plan.id} value={plan.id}>
+                          <option
+                            key={plan.id}
+                            value={plan.id}
+                            disabled={
+                              !plan.active && plan.id !== market.plan_id
+                            }
+                          >
                             {plan.name}
+                            {!plan.active ? ' (inativo)' : ''}
                           </option>
                         ))}
                       </select>
@@ -362,13 +427,13 @@ export default function AdminMercados() {
                       </strong>
                       <span className="text-xs text-muted-foreground">
                         {market.subscription_due_date
-                          ? `Vence em ${new Date(`${market.subscription_due_date}T12:00:00`).toLocaleDateString("pt-BR")}`
-                          : "Sem vencimento definido"}
+                          ? `Vence em ${new Date(`${market.subscription_due_date}T12:00:00`).toLocaleDateString('pt-BR')}`
+                          : 'Sem vencimento definido'}
                       </span>
                     </div>
                   </div>
                   <label
-                    className={`mb-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3 ${updating ? "pointer-events-none opacity-60" : ""}`}
+                    className={`mb-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3 ${updating ? 'pointer-events-none opacity-60' : ''}`}
                   >
                     <span className="flex min-w-0 items-start gap-3">
                       <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
@@ -396,7 +461,7 @@ export default function AdminMercados() {
                     />
                   </label>
                   <ImageUploadField
-                    value={market.logo_url || ""}
+                    value={market.logo_url || ''}
                     onChange={(value) => update(market, { logo_url: value })}
                     kind="market"
                     scopeId={market.id}
@@ -404,7 +469,14 @@ export default function AdminMercados() {
                     name={market.name}
                     previewClassName="h-14 w-24 rounded-xl"
                   />
-                  <button type="button" onClick={()=>openDetail(market)} className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-bold hover:bg-muted"><Eye className="h-4 w-4" /> Ver limites, cobrança e histórico</button>
+                  <button
+                    type="button"
+                    onClick={() => openDetail(market)}
+                    className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-bold hover:bg-muted"
+                  >
+                    <Eye className="h-4 w-4" /> Ver limites, cobrança e
+                    histórico
+                  </button>
                 </div>
               </article>
             );
@@ -454,7 +526,7 @@ export default function AdminMercados() {
                 required
                 autoFocus
                 value={form.name}
-                onChange={(event) => updateForm("name", event.target.value)}
+                onChange={(event) => updateForm('name', event.target.value)}
                 className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </label>
@@ -465,7 +537,7 @@ export default function AdminMercados() {
                 value={form.slug}
                 onChange={(event) => {
                   setSlugTouched(true);
-                  updateForm("slug", event.target.value);
+                  updateForm('slug', event.target.value);
                 }}
                 className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="mercado-exemplo"
@@ -480,13 +552,13 @@ export default function AdminMercados() {
                 required
                 value={form.admin_name}
                 onChange={(event) =>
-                  updateForm("admin_name", event.target.value)
+                  updateForm('admin_name', event.target.value)
                 }
                 className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </label>
             <label className="text-sm font-semibold">
-              E-mail do administrador{" "}
+              E-mail do administrador{' '}
               <span className="text-destructive">*</span>
               <input
                 required
@@ -494,7 +566,7 @@ export default function AdminMercados() {
                 autoComplete="email"
                 value={form.admin_email}
                 onChange={(event) =>
-                  updateForm("admin_email", event.target.value)
+                  updateForm('admin_email', event.target.value)
                 }
                 className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
@@ -508,7 +580,7 @@ export default function AdminMercados() {
                 autoComplete="new-password"
                 value={form.admin_password}
                 onChange={(event) =>
-                  updateForm("admin_password", event.target.value)
+                  updateForm('admin_password', event.target.value)
                 }
                 className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
@@ -520,11 +592,11 @@ export default function AdminMercados() {
             <div className="rounded-xl border border-border bg-muted/25 p-3 sm:col-span-2">
               <ImageUploadField
                 value={form.logo_url}
-                onChange={(value) => updateForm("logo_url", value)}
+                onChange={(value) => updateForm('logo_url', value)}
                 kind="market"
                 scopeId={user?.market_id || user?.id}
                 label="Logo do mercado"
-                name={form.name || "mercado"}
+                name={form.name || 'mercado'}
                 previewClassName="h-16 w-28 rounded-xl"
               />
             </div>
@@ -532,12 +604,12 @@ export default function AdminMercados() {
             <ColorField
               label="Cor principal"
               value={form.primary_color}
-              onChange={(value) => updateForm("primary_color", value)}
+              onChange={(value) => updateForm('primary_color', value)}
             />
             <ColorField
               label="Cor secundária"
               value={form.secondary_color}
-              onChange={(value) => updateForm("secondary_color", value)}
+              onChange={(value) => updateForm('secondary_color', value)}
             />
 
             <label className="text-sm font-semibold">
@@ -545,14 +617,16 @@ export default function AdminMercados() {
               <select
                 className="field"
                 value={form.plan_id}
-                onChange={(event) => updateForm("plan_id", event.target.value)}
+                onChange={(event) => updateForm('plan_id', event.target.value)}
               >
                 <option value="">Sem plano</option>
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name}
-                  </option>
-                ))}
+                {plans
+                  .filter((plan) => plan.active)
+                  .map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
               </select>
             </label>
             <label className="text-sm font-semibold">
@@ -560,7 +634,7 @@ export default function AdminMercados() {
               <select
                 className="field"
                 value={form.status}
-                onChange={(event) => updateForm("status", event.target.value)}
+                onChange={(event) => updateForm('status', event.target.value)}
               >
                 <option value="teste">Em período de teste</option>
                 <option value="ativo">Ativo</option>
@@ -586,7 +660,7 @@ export default function AdminMercados() {
                 type="checkbox"
                 checked={Boolean(form.require_cash_register)}
                 onChange={(event) =>
-                  updateForm("require_cash_register", event.target.checked)
+                  updateForm('require_cash_register', event.target.checked)
                 }
                 className="h-5 w-5 flex-none accent-[var(--market-primary)]"
               />
@@ -606,26 +680,152 @@ export default function AdminMercados() {
                 disabled={saving}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
               >
-                <Save className="h-4 w-4" />{" "}
-                {saving ? "Criando..." : "Criar com todos os módulos"}
+                <Save className="h-4 w-4" />{' '}
+                {saving ? 'Criando...' : 'Criar com todos os módulos'}
               </button>
             </div>
           </form>
         </div>
       )}
-      {detail && <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-0 sm:p-4"><section ref={detailModalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="market-detail-title" className="flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"><header className="flex items-start justify-between border-b border-border p-5"><div><h2 id="market-detail-title" className="text-xl font-black">{detail.market?.name}</h2><p className="text-sm text-muted-foreground">Plano, limites, uso, cobranças e alterações administrativas.</p></div><button type="button" onClick={()=>setDetail(null)} aria-label="Fechar detalhes" className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"><X className="h-5 w-5" /></button></header><div className="flex-1 space-y-5 overflow-y-auto p-5">{detailLoading?<p className="py-12 text-center text-sm text-muted-foreground">Carregando dados completos...</p>:<><dl className="grid gap-3 sm:grid-cols-3"><DetailValue label="Usuários" value={detail.market?.user_count}/><DetailValue label="Produtos" value={detail.market?.product_count}/><DetailValue label="Vendas" value={detail.market?.sale_count}/></dl><section><h3 className="mb-2 font-black">Unidades</h3>{detail.units?.map(unit=><div key={unit.id} className="mb-2 rounded-xl border border-border p-3 text-sm"><strong>{unit.name}</strong><span className="ml-2 text-xs text-muted-foreground">{unit.code} · {unit.active?"ativa":"inativa"}</span></div>)}</section><section><h3 className="mb-2 font-black">Histórico de pagamentos</h3>{detail.payments?.length?detail.payments.map(payment=><div key={payment.id} className="mb-2 flex items-center justify-between rounded-xl border border-border p-3 text-sm"><div><strong className="block capitalize">{payment.status}</strong><span className="text-xs text-muted-foreground">Vencimento {new Date(`${payment.due_date}T12:00:00`).toLocaleDateString("pt-BR")}</span></div><strong>R$ {Number(payment.amount).toFixed(2).replace(".",",")}</strong></div>):<p className="text-sm text-muted-foreground">Nenhuma cobrança registrada.</p>}</section><section><h3 className="mb-2 font-black">Histórico de alterações</h3>{detail.history?.length?detail.history.map(item=><div key={item.id} className="mb-2 rounded-xl border border-border p-3 text-sm"><strong className="block capitalize">{String(item.action).replaceAll("_"," ")}</strong><span className="text-xs text-muted-foreground">{item.actor_name} · {new Date(item.created_date).toLocaleString("pt-BR")}</span></div>):<p className="text-sm text-muted-foreground">Nenhuma alteração administrativa registrada.</p>}</section></>}</div></section></div>}
+      {detail && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-0 sm:p-4">
+          <section
+            ref={detailModalRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="market-detail-title"
+            className="flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"
+          >
+            <header className="flex items-start justify-between border-b border-border p-5">
+              <div>
+                <h2 id="market-detail-title" className="text-xl font-black">
+                  {detail.market?.name}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Plano, limites, uso, cobranças e alterações administrativas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetail(null)}
+                aria-label="Fechar detalhes"
+                className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="flex-1 space-y-5 overflow-y-auto p-5">
+              {detailLoading ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  Carregando dados completos...
+                </p>
+              ) : (
+                <>
+                  <dl className="grid gap-3 sm:grid-cols-3">
+                    <DetailValue
+                      label="Usuários"
+                      value={detail.market?.user_count}
+                    />
+                    <DetailValue
+                      label="Produtos"
+                      value={detail.market?.product_count}
+                    />
+                    <DetailValue
+                      label="Vendas"
+                      value={detail.market?.sale_count}
+                    />
+                  </dl>
+                  <section>
+                    <h3 className="mb-2 font-black">Unidades</h3>
+                    {detail.units?.map((unit) => (
+                      <div
+                        key={unit.id}
+                        className="mb-2 rounded-xl border border-border p-3 text-sm"
+                      >
+                        <strong>{unit.name}</strong>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {unit.code} · {unit.active ? 'ativa' : 'inativa'}
+                        </span>
+                      </div>
+                    ))}
+                  </section>
+                  <section>
+                    <h3 className="mb-2 font-black">Histórico de pagamentos</h3>
+                    {detail.payments?.length ? (
+                      detail.payments.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="mb-2 flex items-center justify-between rounded-xl border border-border p-3 text-sm"
+                        >
+                          <div>
+                            <strong className="block capitalize">
+                              {payment.status}
+                            </strong>
+                            <span className="text-xs text-muted-foreground">
+                              Vencimento{' '}
+                              {new Date(
+                                `${payment.due_date}T12:00:00`,
+                              ).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          <strong>
+                            R${' '}
+                            {Number(payment.amount)
+                              .toFixed(2)
+                              .replace('.', ',')}
+                          </strong>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma cobrança registrada.
+                      </p>
+                    )}
+                  </section>
+                  <section>
+                    <h3 className="mb-2 font-black">Histórico de alterações</h3>
+                    {detail.history?.length ? (
+                      detail.history.map((item) => (
+                        <div
+                          key={item.id}
+                          className="mb-2 rounded-xl border border-border p-3 text-sm"
+                        >
+                          <strong className="block capitalize">
+                            {String(item.action).replaceAll('_', ' ')}
+                          </strong>
+                          <span className="text-xs text-muted-foreground">
+                            {item.actor_name} ·{' '}
+                            {new Date(item.created_date).toLocaleString(
+                              'pt-BR',
+                            )}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma alteração administrativa registrada.
+                      </p>
+                    )}
+                  </section>
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
 
 function slugify(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function ColorField({ label, value, onChange }) {
@@ -654,4 +854,11 @@ function ColorField({ label, value, onChange }) {
   );
 }
 
-function DetailValue({label,value}) { return <div className="rounded-xl border border-border bg-muted/20 p-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-xl font-black">{value || 0}</dd></div>; }
+function DetailValue({ label, value }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-3">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-xl font-black">{value || 0}</dd>
+    </div>
+  );
+}

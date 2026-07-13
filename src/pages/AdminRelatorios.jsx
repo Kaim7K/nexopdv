@@ -172,7 +172,23 @@ function ReportCard({ title, columns, rows }) {
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <h2 className="border-b border-border p-4 font-black">{title}</h2>
       {rows.length ? (
-        <div className="overflow-x-auto">
+        <>
+        <div className="grid gap-2 p-3 lg:hidden">
+          {rows.map((row, index) => (
+            <article key={index} className="rounded-xl border border-border bg-muted/15 p-3">
+              <strong className="block break-words text-sm">{row[0]}</strong>
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                {row.slice(1).map((value, cell) => (
+                  <div key={columns[cell + 1]} className="min-w-0">
+                    <dt className="text-muted-foreground">{columns[cell + 1]}</dt>
+                    <dd className="mt-1 break-words font-semibold tabular-nums">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[520px] text-sm">
             <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
               <tr>
@@ -199,6 +215,7 @@ function ReportCard({ title, columns, rows }) {
             </tbody>
           </table>
         </div>
+        </>
       ) : (
         <p className="p-8 text-center text-sm text-muted-foreground">
           Nenhum dado no período selecionado.

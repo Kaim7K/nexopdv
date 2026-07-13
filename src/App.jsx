@@ -12,7 +12,7 @@ import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Landing from '@/pages/Landing';
-const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),HistoricoCaixas=lazy(()=>import('@/pages/HistoricoCaixas')),AdminOverview=lazy(()=>import('@/pages/AdminOverview')),AdminMercados=lazy(()=>import('@/pages/AdminMercados')),AdminPlanos=lazy(()=>import('@/pages/AdminPlanos')),AdminRelatorios=lazy(()=>import('@/pages/AdminRelatorios')),AdminConfiguracoes=lazy(()=>import('@/pages/AdminConfiguracoes'));
+const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Financeiro=lazy(()=>import('@/pages/Financeiro')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),HistoricoCaixas=lazy(()=>import('@/pages/HistoricoCaixas')),AdminOverview=lazy(()=>import('@/pages/AdminOverview')),AdminMercados=lazy(()=>import('@/pages/AdminMercados')),AdminPlanos=lazy(()=>import('@/pages/AdminPlanos')),AdminRelatorios=lazy(()=>import('@/pages/AdminRelatorios')),AdminConfiguracoes=lazy(()=>import('@/pages/AdminConfiguracoes'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -38,6 +38,7 @@ const AuthenticatedApp = () => {
           <Route path="/caixas" element={<HistoricoCaixas />} />
           <Route path="/fiados" element={<Fiados />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/auditoria" element={<AuditoriaGeral />} />

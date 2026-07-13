@@ -10,11 +10,12 @@ export default function ImageUploadField({
   value,
   onChange,
   kind = 'product',
-  scopeId,
+  scopeId = null,
   label = 'Imagem',
   name = 'imagem',
   previewClassName = 'h-20 w-20 rounded-xl',
   objectFit = 'contain',
+  capture = undefined,
 }) {
   void scopeId;
   const inputRef = useRef(null);
@@ -70,7 +71,7 @@ export default function ImageUploadField({
               </button>
             )}
           </div>
-          <input ref={inputRef} hidden type="file" accept={ACCEPTED_TYPES.join(',')} onChange={handleUpload} />
+          <input ref={inputRef} hidden type="file" accept={ACCEPTED_TYPES.join(',')} capture={capture} onChange={handleUpload} />
           <input type="url" value={value?.startsWith('data:') ? '' : value || ''} onChange={event => onChange(event.target.value)} placeholder={value?.startsWith('data:') ? 'Imagem carregada do dispositivo' : 'ou cole uma URL https://'} disabled={uploading || value?.startsWith('data:')} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:text-muted-foreground" />
           <p className="text-[11px] leading-4 text-muted-foreground">JPG, PNG, WEBP ou AVIF até 8 MB. A imagem é otimizada automaticamente e não exige Vercel Blob.</p>
         </div>
