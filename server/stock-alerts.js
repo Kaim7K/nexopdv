@@ -71,26 +71,25 @@ export function buildStockAlertEmail({ marketName, products, generatedAt }) {
 export async function sendStockAlertEmail({ to, marketName, products, generatedAt = new Date().toISOString() }) {
   const from = String(process.env.EMAIL_FROM || '').trim();
   const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
-  const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
-  if ((!brevoApiKey && !resendApiKey) || !from) throw new AppError(503, 'EMAIL_NOT_CONFIGURED', 'Configure BREVO_API_KEY (ou RESEND_API_KEY) e EMAIL_FROM para enviar relatórios.');
+  if (!brevoApiKey) throw new AppError(503, 'BREVO_API_KEY_MISSING', 'BREVO_API_KEY não está configurada no ambiente Production da Vercel.');
+  if (!from) throw new AppError(503, 'EMAIL_FROM_MISSING', 'EMAIL_FROM não está configurado no ambiente Production da Vercel.');
+  if (!brevoApiKey.startsWith('xkeysib-')) throw new AppError(503, 'BREVO_API_KEY_INVALID', 'BREVO_API_KEY não possui o formato esperado do Brevo.');
   const recipients = [...new Set((Array.isArray(to) ? to : [to]).map(value => String(value || '').trim().toLowerCase()).filter(value => EMAIL_PATTERN.test(value)))];
   if (!recipients.length) throw new AppError(400, 'INVALID_RECIPIENT', 'Informe pelo menos um e-mail válido.');
   const content = buildStockAlertEmail({ marketName, products, generatedAt });
-
-  if (brevoApiKey) {
-    const match = /^(.*?)\s*<([^<>]+)>$/.exec(from);
-    const sender = { name:String(match?.[1] || 'Nexo PDV').trim(), email:String(match?.[2] || from).trim().toLowerCase() };
-    if (!EMAIL_PATTERN.test(sender.email)) throw new AppError(503, 'EMAIL_FROM_INVALID', 'EMAIL_FROM não contém um remetente válido.');
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', { method:'POST', headers:{ 'api-key':brevoApiKey, Accept:'application/json', 'Content-Type':'application/json' }, body:JSON.stringify({ sender, to:recipients.map(email => ({ email })), subject:content.subject, htmlContent:content.html }) });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new AppError(502, 'EMAIL_SEND_FAILED', result.message || 'O Brevo recusou o envio do e-mail.');
-    return { id:result.messageId || null, recipients, provider:'brevo' };
-  }
-
-  const response = await fetch('https://api.resend.com/emails', { method:'POST', headers:{ Authorization:`Bearer ${resendApiKey}`, 'Content-Type':'application/json' }, body:JSON.stringify({ from, to:recipients, subject:content.subject, html:content.html }) });
+  const match = /^(.*?)\s*<([^<>]+)>$/.exec(from);
+  const sender = { name:String(match?.[1] || 'Nexo PDV').trim(), email:String(match?.[2] || from).trim().toLowerCase() };
+  if (!EMAIL_PATTERN.test(sender.email)) throw new AppError(503, 'EMAIL_FROM_INVALID', 'EMAIL_FROM deve ser um e-mail ou usar o formato Nexo PDV <email@gmail.com>.');
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', { method:'POST', headers:{ 'api-key':brevoApiKey, Accept:'application/json', 'Content-Type':'application/json' }, body:JSON.stringify({ sender, to:recipients.map(email => ({ email })), subject:content.subject, htmlContent:content.html }) });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new AppError(502, 'EMAIL_SEND_FAILED', result.message || 'O provedor recusou o envio do e-mail.');
-  return { id:result.id || null, recipients, provider:'resend' };
+  if (!response.ok) throw new AppError(502, 'BREVO_SEND_FAILED', result.message || 'O Brevo recusou o envio. Confirme a chave e o remetente verificado.');
+  return { id:result.messageId || null, recipients, provider:'brevo' };
+}
+
+export function getStockEmailConfiguration() {
+  const apiKey = String(process.env.BREVO_API_KEY || '').trim();
+  const from = String(process.env.EMAIL_FROM || '').trim();
+  return { provider:'brevo', apiKeyConfigured:apiKey.startsWith('xkeysib-'), senderConfigured:Boolean(from), ready:apiKey.startsWith('xkeysib-') && Boolean(from) };
 }
 
 export function isValidAlertEmail(value) { return EMAIL_PATTERN.test(String(value || '').trim()); }

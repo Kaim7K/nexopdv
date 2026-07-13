@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
 
 export default function StockAlertSettings() {
-  const [data, setData] = useState({ enabled:true, time:'20:00', recipients:[], deliveries:[] });
+  const [data, setData] = useState({ enabled:true, time:'20:00', emailConfiguration:null, recipients:[], deliveries:[] });
   const [email, setEmail] = useState('');
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,8 @@ export default function StockAlertSettings() {
           <label className="flex items-center gap-2 text-sm font-semibold"><Clock3 className="h-4 w-4 text-muted-foreground" /> Horário<input type="time" value="20:00" disabled className="h-11 rounded-xl border border-border bg-muted px-3 opacity-70" title="No plano Hobby da Vercel, o agendamento gratuito pode executar apenas uma vez por dia." /></label>
         </div>
       </div>
+
+      {data.emailConfiguration && !data.emailConfiguration.ready && <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"><strong className="block">Brevo ainda não configurado</strong><span className="mt-1 block">{!data.emailConfiguration.apiKeyConfigured ? 'Adicione BREVO_API_KEY em Production na Vercel. ' : ''}{!data.emailConfiguration.senderConfigured ? 'Adicione EMAIL_FROM com o Gmail verificado no Brevo.' : ''}</span></div>}
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <label className="min-w-0 flex-1"><span className="sr-only">E-mail destinatário</span><input type="email" value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); saveRecipient(); } }} placeholder="responsavel@mercado.com" className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" /></label>

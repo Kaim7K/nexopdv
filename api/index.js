@@ -12,7 +12,7 @@ import { assertSameOriginRequest, handleError, methodNotAllowed, readJsonBody, s
 import { AppError } from '../server/errors.js';
 import { lookupBarcode } from '../server/product-catalog.js';
 import { searchProductImages } from '../server/product-images.js';
-import { isValidAlertEmail, loadStockAlertReport, sendStockAlertEmail } from '../server/stock-alerts.js';
+import { getStockEmailConfiguration, isValidAlertEmail, loadStockAlertReport, sendStockAlertEmail } from '../server/stock-alerts.js';
 
 const ENTITIES = {
   Product: 'products', Sale: 'sales', FiadoRecord: 'fiado_records', GeneralAudit: 'general_audits',
@@ -366,7 +366,7 @@ async function routeHandler(req, res) {
         sql`SELECT data FROM nexo.records WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=ANY(ARRAY['stock_alert_time','stock_alert_enabled'])`,
       ]);
       const config = Object.fromEntries(configRows.map(row => [row.data?.key, row.data?.value]));
-      return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
+      return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, emailConfiguration:getStockEmailConfiguration(), recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
     }
     if (path[1] === 'settings' && req.method === 'PATCH') {
       const time = '20:00';
