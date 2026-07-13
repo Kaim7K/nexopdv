@@ -17,7 +17,7 @@ export default function ProductSearch({ query, onQueryChange, inputRef, onFocus 
       />
       <div className="absolute right-3 flex items-center gap-1.5">
         {query && (
-          <button onClick={() => onQueryChange('')} className="text-muted-foreground hover:text-foreground p-0.5">
+          <button type="button" aria-label="Limpar busca" onClick={() => onQueryChange('')} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}

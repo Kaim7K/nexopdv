@@ -1,18 +1,18 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import { lazy, Suspense } from 'react';
 import { Toaster as HotToaster } from 'react-hot-toast';
+import { ConfirmProvider } from '@/components/common/ConfirmProvider';
+import { LoadingState } from '@/components/common/PageState';
+import AppErrorBoundary from '@/components/AppErrorBoundary';
 // Add page imports here
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Landing from '@/pages/Landing';
-const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),AdminMercados=lazy(()=>import('@/pages/AdminMercados'));
+const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),HistoricoCaixas=lazy(()=>import('@/pages/HistoricoCaixas')),AdminOverview=lazy(()=>import('@/pages/AdminOverview')),AdminMercados=lazy(()=>import('@/pages/AdminMercados')),AdminPlanos=lazy(()=>import('@/pages/AdminPlanos')),AdminRelatorios=lazy(()=>import('@/pages/AdminRelatorios')),AdminConfiguracoes=lazy(()=>import('@/pages/AdminConfiguracoes'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -21,11 +21,7 @@ const AuthenticatedApp = () => {
 
   // A landing e o login aparecem imediatamente; apenas rotas privadas aguardam a sessão.
   if (isLoadingAuth && !isPublicRoute) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingState fullScreen label="Preparando sua sessão..." />;
   }
 
   // Render the main app
@@ -39,12 +35,17 @@ const AuthenticatedApp = () => {
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/produto/:id" element={<ProdutoDetalhe />} />
           <Route path="/vendas" element={<Vendas />} />
+          <Route path="/caixas" element={<HistoricoCaixas />} />
           <Route path="/fiados" element={<Fiados />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/auditoria" element={<AuditoriaGeral />} />
+          <Route path="/admin" element={<AdminOverview />} />
           <Route path="/admin/mercados" element={<AdminMercados />} />
+          <Route path="/admin/planos" element={<AdminPlanos />} />
+          <Route path="/admin/relatorios" element={<AdminRelatorios />} />
+          <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -57,14 +58,20 @@ function App() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
+      <Router>
+        <ConfirmProvider>
           <ScrollToTop />
-          <Suspense fallback={<div className="fixed inset-0 grid place-items-center bg-background"><div className="w-8 h-8 border-4 border-secondary border-t-accent rounded-full animate-spin"/></div>}><AuthenticatedApp /></Suspense>
-        </Router>
-        <Toaster />
-        <HotToaster position="top-right" />
-      </QueryClientProvider>
+          <AppErrorBoundary>
+            <Suspense fallback={<LoadingState fullScreen label="Abrindo a página..." />}>
+              <AuthenticatedApp />
+            </Suspense>
+          </AppErrorBoundary>
+          <HotToaster
+            position="top-right"
+            toastOptions={{ duration: 4000, className: 'nexo-toast' }}
+          />
+        </ConfirmProvider>
+      </Router>
     </AuthProvider>
   )
 }

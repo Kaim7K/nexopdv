@@ -26,6 +26,7 @@ import {
   PAYMENT_METHODS,
 } from '@/lib/helpers';
 import { downloadDailySalesReportPdf, downloadSaleReceiptPdf } from '@/lib/sales-pdf';
+import { ErrorState } from '@/components/common/PageState';
 
 const PAGE_SIZE = 20;
 const todayKey = () => {
@@ -43,6 +44,7 @@ export default function Vendas() {
   const [pageCount, setPageCount] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [filterPayment, setFilterPayment] = useState('');
   const [filterSeller, setFilterSeller] = useState('');
@@ -71,6 +73,7 @@ export default function Vendas() {
   const loadSales = async ({ immediateSearch = search } = {}) => {
     const sequence = ++requestSequence.current;
     setLoading(true);
+    setLoadError('');
     try {
       const data = await nexoApi.sales.list({
         page,
@@ -88,7 +91,10 @@ export default function Vendas() {
       if (Array.isArray(data.sellers) && data.sellers.length) setSellers(data.sellers);
       if (page > Number(data.page_count || 1)) setPage(Math.max(1, Number(data.page_count || 1)));
     } catch (error) {
-      if (sequence === requestSequence.current) toast.error(error.message || 'Erro ao carregar vendas.');
+      if (sequence === requestSequence.current) {
+        setLoadError(error.message || 'Não foi possível carregar as vendas.');
+        toast.error(error.message || 'Erro ao carregar vendas.');
+      }
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
     }
@@ -216,7 +222,7 @@ export default function Vendas() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+    <div className="page-shell">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent"><History className="h-3.5 w-3.5" /> Histórico e acompanhamento</div>
@@ -270,6 +276,8 @@ export default function Vendas() {
 
       {loading ? (
         <LoadingState />
+      ) : loadError && !sales.length ? (
+        <ErrorState description={loadError} onRetry={() => loadSales()} />
       ) : sales.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center"><History className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhuma venda encontrada</h2><p className="mt-1 text-sm text-muted-foreground">Altere os filtros para procurar outros registros.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
       ) : (
@@ -341,7 +349,7 @@ function SaleStatus({ sale }) {
 }
 function SaleType({ sale }) { return <span className={`rounded-full px-2 py-1 text-xs font-bold ${sale.sale_type === 'fiado' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' : 'bg-muted text-muted-foreground'}`}>{sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}</span>; }
 function paymentNames(sale) { return (sale.payments || []).map(payment => getPaymentLabel(payment.method)).join(', ') || '—'; }
-function LoadingState() { return <div className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando vendas...</p></div>; }
+function LoadingState() { return <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando vendas...</p></div>; }
 
 function SaleDetailModal({ sale, loading, receiptLoading, onReceipt, onClose }) {
   if (loading || sale._loading) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="presentation"><div className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl"><Loader2 className="mx-auto h-7 w-7 animate-spin text-accent" /><p className="mt-3 text-sm font-semibold">Carregando detalhes...</p></div></div>;

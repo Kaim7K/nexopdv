@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, HandCoins, History, LogOut, Menu, Package, ScrollText, Settings, ShoppingCart, User as UserIcon, Users, X } from 'lucide-react';
+import { BarChart3, Banknote, Blocks, CreditCard, Gauge, HandCoins, History, LogOut, Menu, Package, ScrollText, Settings, ShoppingCart, Store, User as UserIcon, Users, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -11,12 +11,17 @@ const MENU_ITEMS = [
   { path: '/pdv', label: 'PDV', icon: ShoppingCart, roles: ['gerente', 'vendedor', 'admin'] },
   { path: '/estoque', label: 'Estoque', icon: Package, roles: ['gerente', 'vendedor', 'admin'] },
   { path: '/vendas', label: 'Vendas', icon: History, roles: ['gerente', 'vendedor', 'admin'] },
+  { path: '/caixas', label: 'Histórico de caixas', icon: Banknote, roles: ['gerente', 'vendedor', 'admin'], module: 'pdv' },
   { path: '/fiados', label: 'Fiados', icon: HandCoins, roles: ['gerente', 'vendedor', 'admin'] },
   { path: '/relatorios', label: 'Relatórios', icon: BarChart3, roles: ['gerente', 'admin'] },
   { path: '/auditoria', label: 'Auditoria', icon: ScrollText, roles: ['gerente', 'admin'] },
   { path: '/usuarios', label: 'Usuários', icon: Users, roles: ['gerente', 'admin'] },
   { path: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['gerente', 'admin'] },
-  { path: '/admin/mercados', label: 'Mercados', icon: Users, roles: ['super_admin'] },
+  { path: '/admin', label: 'Visão geral', icon: Gauge, roles: ['super_admin'], exact: true },
+  { path: '/admin/mercados', label: 'Mercadinhos', icon: Store, roles: ['super_admin'] },
+  { path: '/admin/planos', label: 'Planos e assinaturas', icon: CreditCard, roles: ['super_admin'] },
+  { path: '/admin/relatorios', label: 'Relatórios da plataforma', icon: BarChart3, roles: ['super_admin'] },
+  { path: '/admin/configuracoes', label: 'Configurações gerais', icon: Blocks, roles: ['super_admin'] },
 ];
 
 const ROUTE_ACCESS_ALIASES = { '/produto': '/estoque' };
@@ -26,12 +31,17 @@ const ROUTE_PREFETCHERS = {
   '/pdv': () => import('@/pages/PDV'),
   '/estoque': () => import('@/pages/Estoque'),
   '/vendas': () => import('@/pages/Vendas'),
+  '/caixas': () => import('@/pages/HistoricoCaixas'),
   '/fiados': () => import('@/pages/Fiados'),
   '/relatorios': () => import('@/pages/Relatorios'),
   '/auditoria': () => import('@/pages/AuditoriaGeral'),
   '/usuarios': () => import('@/pages/Usuarios'),
   '/configuracoes': () => import('@/pages/Configuracoes'),
+  '/admin': () => import('@/pages/AdminOverview'),
   '/admin/mercados': () => import('@/pages/AdminMercados'),
+  '/admin/planos': () => import('@/pages/AdminPlanos'),
+  '/admin/relatorios': () => import('@/pages/AdminRelatorios'),
+  '/admin/configuracoes': () => import('@/pages/AdminConfiguracoes'),
 };
 const CONFIG_CACHE_KEY = 'nexo:system-config';
 
@@ -71,12 +81,48 @@ export default function Layout() {
   const [config, setConfig] = useState(() => readCachedConfig());
   const [mobileMenu, setMobileMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const mobileNavRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     setMobileMenu(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileMenu) return undefined;
+    const nav = mobileNavRef.current;
+    const focusable = () => [...(nav?.querySelectorAll('button:not([disabled]), a[href]') || [])];
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    focusable()[0]?.focus();
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileMenu(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.body.style.overflow = previousOverflow;
+      mobileMenuButtonRef.current?.focus();
+    };
+  }, [mobileMenu]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -117,11 +163,11 @@ export default function Layout() {
   const filteredItems = useMemo(() => {
     if (!user) return [];
     const enabled = user.enabled_modules || [];
-    return MENU_ITEMS.filter(item => item.roles.includes(user.role) && (user.role === 'super_admin' || enabled.includes(item.path.split('/')[1])));
+    return MENU_ITEMS.filter(item => item.roles.includes(user.role) && (user.role === 'super_admin' || enabled.includes(item.module || item.path.split('/')[1])));
   }, [user]);
 
   const accessPath = Object.entries(ROUTE_ACCESS_ALIASES).find(([path]) => location.pathname.startsWith(path))?.[1] || location.pathname;
-  const currentItem = MENU_ITEMS.find(item => accessPath.startsWith(item.path));
+  const currentItem = [...MENU_ITEMS].sort((a,b)=>b.path.length-a.path.length).find(item => item.exact ? accessPath === item.path : accessPath.startsWith(item.path));
   const hasAccess = currentItem && filteredItems.some(item => item.path === currentItem.path);
 
   usePageMetadata({
@@ -155,7 +201,7 @@ export default function Layout() {
 
       {mobileMenu && <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm md:hidden" onClick={() => setMobileMenu(false)} />}
 
-      <aside aria-label="Menu principal" className={`fixed inset-y-0 left-0 z-50 flex w-[268px] flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-300 md:static md:w-60 md:translate-x-0 md:shadow-none ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside ref={mobileNavRef} id="main-navigation" aria-label="Menu principal" className={`fixed inset-y-0 left-0 z-50 flex w-[min(268px,calc(100vw-3rem))] flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:w-60 md:translate-x-0 md:shadow-none ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="relative flex min-h-[78px] items-center border-b border-sidebar-border px-5">
           <button type="button" aria-label="Fechar menu" onClick={() => setMobileMenu(false)} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground md:hidden"><X className="h-5 w-5" /></button>
           {config.logo_url || user.logo_url ? (
@@ -169,7 +215,7 @@ export default function Layout() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
           {filteredItems.map(item => {
-            const active = accessPath.startsWith(item.path);
+            const active = item.exact ? accessPath === item.path : accessPath.startsWith(item.path);
             return (
               <Link key={item.path} to={item.path} onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()} onFocus={() => ROUTE_PREFETCHERS[item.path]?.()} onTouchStart={() => ROUTE_PREFETCHERS[item.path]?.()} aria-current={active ? 'page' : undefined} className={`group flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}>
                 <item.icon className={`h-[18px] w-[18px] flex-none transition ${active ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'}`} />
@@ -196,11 +242,12 @@ export default function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 border-b border-border bg-card/95 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur md:hidden">
-          <button type="button" aria-label="Abrir menu" onClick={() => setMobileMenu(true)} className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"><Menu className="h-5 w-5" /></button>
+          <button ref={mobileMenuButtonRef} type="button" aria-label="Abrir menu" aria-controls="main-navigation" aria-expanded={mobileMenu} onClick={() => setMobileMenu(true)} className="grid h-11 w-11 place-items-center rounded-xl hover:bg-muted"><Menu className="h-5 w-5" /></button>
           <div className="min-w-0 flex-1"><div className="truncate text-sm font-black">{currentItem?.label}</div><div className="truncate text-[11px] text-muted-foreground">{brandName}</div></div>
           <ThemeToggle className="!text-foreground hover:!bg-muted hover:!text-foreground" />
         </header>
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overscroll-contain overflow-auto bg-muted/25 outline-none">
+          {user.platform_notice && <div role="status" className="border-b border-amber-300/50 bg-amber-50 px-4 py-2 text-center text-xs font-semibold text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">{user.platform_notice}</div>}
           <Outlet context={{ user, config }} />
         </main>
       </div>

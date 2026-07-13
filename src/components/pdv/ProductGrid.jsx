@@ -34,8 +34,8 @@ export default function ProductGrid({ products, onSelect, loading }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-secondary border-t-accent rounded-full animate-spin" />
+      <div role="status" aria-label="Carregando produtos" aria-live="polite" aria-busy="true" className="flex flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />
       </div>
     );
   }
@@ -65,6 +65,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
         {categories.length > 0 && (
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
+              type="button"
               onClick={() => setCategory('')}
               className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${!category ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
             >
@@ -72,6 +73,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
             </button>
             {categories.map(cat => (
               <button
+                type="button"
                 key={cat}
                 onClick={() => setCategory(cat)}
                 className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${category === cat ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
@@ -94,6 +96,7 @@ export default function ProductGrid({ products, onSelect, loading }) {
           <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-3 lg:grid-cols-4">
             {visibleProducts.map(product => (
               <button
+                type="button"
                 key={product.id}
                 onClick={() => onSelect(product)}
                 className="group flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 text-left transition active:scale-[0.98] sm:p-2.5 sm:hover:border-accent sm:hover:shadow-md"

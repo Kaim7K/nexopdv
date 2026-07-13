@@ -90,10 +90,13 @@ export const nexoApi = {
     list: () => request('/markets', { cacheTTL: 15_000 }),
     create: data => request('/markets', { method: 'POST', body: data }),
     update: (id, data) => request(`/markets/${id}`, { method: 'PATCH', body: data }),
+    detail: id => request(`/markets/${id}`, { cacheTTL: 5_000 }),
+    close: (id, reason) => request(`/markets/${id}`, { method: 'DELETE', body: { reason } }),
   },
   products: {
     catalog: (limit = 1000) => request(`/products/catalog?limit=${limit}`, { cacheTTL: 20_000 }),
     lookupBarcode: barcode => request(`/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`, { cacheTTL: 86_400_000 }),
+    quickCreate: (barcode, name) => request('/products/quick', { method:'POST', body:{ barcode,name }, timeout:60_000 }),
     deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
   },
   stock: { bulkUpdate: (products, existingMode = 'update') => request('/stock/import', { method: 'POST', body: { products, existing_mode: existingMode }, timeout: 60_000 }) },
@@ -114,6 +117,17 @@ export const nexoApi = {
     open: openingAmount => request('/cash/open', { method: 'POST', body: { opening_amount: openingAmount } }),
     close: closingAmount => request('/cash/close', { method: 'POST', body: { closing_amount: closingAmount } }),
     updateSettings: requireCashRegister => request('/cash/settings', { method: 'PATCH', body: { require_cash_register: requireCashRegister } }),
+    history: ({ page=1,pageSize=20,from='',to='',operatorId='',status='',unitId='' }={}) => {
+      const params = new URLSearchParams({ page:String(page),page_size:String(pageSize) });
+      if (from) params.set('from',from);
+      if (to) params.set('to',to);
+      if (operatorId) params.set('operator_id',operatorId);
+      if (status) params.set('status',status);
+      if (unitId) params.set('unit_id',unitId);
+      return request(`/cash/history?${params}`,{ cacheTTL:5_000 });
+    },
+    detail: id => request(`/cash/${id}`,{ cacheTTL:5_000 }),
+    addMovement: (id,data) => request(`/cash/${id}/movements`,{ method:'POST',body:data,timeout:60_000 }),
   },
   sales: {
     complete: data => request('/sales/complete', { method: 'POST', body: data }),
@@ -137,5 +151,30 @@ export const nexoApi = {
     },
     cancel: (id, reason) => request(`/sales/${id}/cancel`, { method: 'POST', body: { reason } }),
     delete: id => request(`/sales/${id}`, { method: 'DELETE' }),
+  },
+  admin: {
+    overview: () => request('/admin/overview',{ cacheTTL:15_000 }),
+    plans: {
+      list: () => request('/admin/plans',{ cacheTTL:15_000 }),
+      create: data => request('/admin/plans',{ method:'POST',body:data }),
+      update: (id,data) => request(`/admin/plans/${id}`,{ method:'PATCH',body:data }),
+    },
+    subscriptions: {
+      list: () => request('/admin/subscriptions',{ cacheTTL:10_000 }),
+      update: (id,data) => request(`/admin/subscriptions/${id}`,{ method:'PATCH',body:data }),
+    },
+    payments: {
+      list: subscriptionId => request(`/admin/payments${subscriptionId ? `?subscription_id=${encodeURIComponent(subscriptionId)}` : ''}`,{ cacheTTL:10_000 }),
+      create: data => request('/admin/payments',{ method:'POST',body:data }),
+    },
+    reports: filters => {
+      const params = new URLSearchParams(filters || {});
+      return request(`/admin/reports?${params}`,{ cacheTTL:15_000 });
+    },
+    logs: () => request('/admin/logs',{ cacheTTL:10_000 }),
+    settings: {
+      get: () => request('/admin/settings',{ cacheTTL:15_000 }),
+      update: data => request('/admin/settings',{ method:'PATCH',body:data }),
+    },
   },
 };

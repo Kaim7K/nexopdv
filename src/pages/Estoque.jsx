@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -25,6 +25,8 @@ import ProductForm from '@/components/stock/ProductForm';
 import { mergeProductCategories, parseProductCategories } from '@/lib/product-categories';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
+import { useConfirm } from '@/components/common/ConfirmProvider';
+import { ErrorState } from '@/components/common/PageState';
 
 const EDITABLE_COLUMNS = [
   ['name', 'Produto', 'text'],
@@ -95,6 +97,7 @@ const discardDuplicateProducts = items => {
 };
 
 export default function Estoque() {
+  const confirm = useConfirm();
   const { user, config } = /** @type {any} */ (useOutletContext());
   const fileRef = useRef(null);
   const tableRef = useRef(null);
@@ -102,6 +105,7 @@ export default function Estoque() {
   const lowStockThreshold = Math.max(1, Number.parseInt(config?.limite_estoque_baixo, 10) || 5);
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [category, setCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -113,6 +117,7 @@ export default function Estoque() {
   const [productModal, setProductModal] = useState(null);
   const [sort, setSort] = useState({ key: 'name', direction: 'asc' });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -121,10 +126,12 @@ export default function Estoque() {
 
   const load = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       setProducts(await nexoApi.products.catalog(2000));
       setDirty(new Set());
     } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar o estoque.');
       toast.error(error.message);
     } finally {
       setLoading(false);
@@ -156,7 +163,7 @@ export default function Estoque() {
   ), [products, config?.product_categories]);
 
   const filtered = useMemo(() => {
-    const searchText = search.toLowerCase();
+    const searchText = deferredSearch.toLowerCase();
     const min = minPrice === '' ? null : Number(minPrice);
     const max = maxPrice === '' ? null : Number(maxPrice);
     const visible = products.filter(product => (
@@ -184,7 +191,7 @@ export default function Estoque() {
       else result = collator.compare(String(first || ''), String(second || ''));
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [products, search, category, minPrice, maxPrice, stock, imageFilter, sort, lowStockThreshold]);
+  }, [products, deferredSearch, category, minPrice, maxPrice, stock, imageFilter, sort, lowStockThreshold]);
 
   const { page, setPage, pageCount, visibleItems: visibleProducts } = usePagination(filtered, pageSize);
 
@@ -292,11 +299,12 @@ export default function Estoque() {
       const preview = await nexoApi.stock.bulkUpdate(unique.products, 'preview');
       let existingMode = 'update';
       if (Number(preview.existing || 0) > 0) {
-        const updateExisting = window.confirm(
-          `${preview.existing} produto(s) da planilha já existem no estoque.\n\n` +
-          'OK: atualizar os produtos existentes com os valores da planilha.\n' +
-          'Cancelar: manter os valores atuais e importar somente produtos novos.'
-        );
+        const updateExisting = await confirm({
+          title: `${preview.existing} produto(s) já existem`,
+          description: 'Deseja atualizar esses produtos com os valores da planilha? Ao voltar, os dados atuais serão preservados e apenas produtos novos serão importados.',
+          confirmLabel: 'Atualizar existentes',
+          cancelLabel: 'Manter atuais',
+        });
         existingMode = updateExisting ? 'update' : 'keep';
       }
       const result = await nexoApi.stock.bulkUpdate(unique.products, existingMode);
@@ -351,7 +359,12 @@ export default function Estoque() {
 
   const handleDeleteProduct = async product => {
     if (!['admin', 'gerente'].includes(user.role) || deletingId) return;
-    const confirmed = window.confirm(`Excluir "${product.name}" do estoque? O produto será removido do cadastro, mas vendas antigas continuarão no histórico.`);
+    const confirmed = await confirm({
+      title: `Excluir “${product.name}”?`,
+      description: 'O produto será removido do cadastro. As vendas anteriores e seus registros de auditoria continuarão preservados.',
+      confirmLabel: 'Excluir produto',
+      tone: 'destructive',
+    });
     if (!confirmed) return;
 
     setDeletingId(product.id);
@@ -390,7 +403,12 @@ export default function Estoque() {
 
   const handleDeleteInactive = async () => {
     if (!['admin', 'gerente'].includes(user.role) || deletingInactive || !inactiveCandidates.length) return;
-    const confirmed = window.confirm(`Apagar ${inactiveCandidates.length} produto(s) sem venda há pelo menos 2 meses? Vendas antigas continuarão no histórico.`);
+    const confirmed = await confirm({
+      title: `Apagar ${inactiveCandidates.length} produto(s) inativo(s)?`,
+      description: 'Serão removidos produtos sem venda há pelo menos dois meses. As vendas antigas continuarão no histórico.',
+      confirmLabel: 'Apagar inativos',
+      tone: 'destructive',
+    });
     if (!confirmed) return;
     setDeletingInactive(true);
     try {
@@ -438,7 +456,7 @@ export default function Estoque() {
   }, [loading, pageCount, setPage]);
 
   return (
-    <div className="mx-auto max-w-[1700px] p-4 sm:p-6 lg:p-8">
+    <div className="page-shell !max-w-[1700px]">
       <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -527,7 +545,9 @@ export default function Estoque() {
 
       <div ref={tableRef} className="min-h-[360px] scroll-mt-4 overflow-visible rounded-2xl border border-border bg-card sm:max-h-[calc(100dvh-300px)] sm:overflow-auto">
         {loading ? (
-          <div className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
+          <div role="status" aria-live="polite" aria-busy="true" className="grid min-h-[360px] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando estoque...</div></div>
+        ) : loadError && !products.length ? (
+          <ErrorState className="min-h-[360px] rounded-none border-0" description={loadError} onRetry={load} />
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-2 gap-2 p-2 min-[390px]:grid-cols-3 sm:grid-cols-4 sm:p-2.5 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
             {visibleProducts.map(product => {
@@ -737,7 +757,7 @@ export default function Estoque() {
         <PaginationControls page={page} pageCount={pageCount} total={filtered.length} pageSize={pageSize} onPageChange={setPage} />
       )}
 
-      {productModal?.mode === 'loading' && <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"><div className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl"><div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="mt-3 text-sm font-bold">Carregando produto...</p></div></div>}
+      {productModal?.mode === 'loading' && <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"><div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl"><div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="mt-3 text-sm font-bold">Carregando produto...</p></div></div>}
       {productModal && productModal.mode !== 'loading' && <ProductForm product={productModal.mode === 'edit' ? productModal.product : null} duplicateSource={productModal.mode === 'duplicate' ? productModal.product : null} categories={categories} user={user} onClose={closeModal} onSave={handleModalSave} />}
     </div>
   );

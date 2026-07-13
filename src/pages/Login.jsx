@@ -31,14 +31,14 @@ export default function Login() {
   return (
     <AuthLayout title="Acesse sua conta" subtitle="Nexo PDV">
       {error && (
-        <div role="alert" aria-live="polite" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+        <div id="login-error" role="alert" aria-live="assertive" className="mb-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-medium text-destructive">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">E-mail</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -51,6 +51,8 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-11"
               required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
         </div>
@@ -70,10 +72,12 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 h-11"
               required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full font-bold" disabled={loading} aria-busy={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

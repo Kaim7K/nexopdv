@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -9,6 +10,8 @@ import {
   Layers,
   LockKeyhole,
   MapPin,
+  Mail,
+  Phone,
   PackageSearch,
   Paintbrush,
   Pencil,
@@ -21,6 +24,7 @@ import ImageUploadField from '@/components/ImageUploadField';
 import StockAlertSettings from '@/components/settings/StockAlertSettings';
 import { deriveSidebarPalette, normalizeHex } from '@/lib/color-contrast';
 import { DEFAULT_PRODUCT_CATEGORIES, categoriesToStorageValue, formatProductCategories, parseProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
+import { ErrorState, LoadingState } from '@/components/common/PageState';
 
 const RESET_OPTIONS = [
   { value: 'products', label: 'Estoque e produtos', description: 'Exclui todos os produtos e o histórico de alterações de produtos.' },
@@ -35,10 +39,12 @@ const DEFAULT_SIDEBAR_BACKGROUND = '#0f1b17';
 const DEFAULT_SIDEBAR_ACCENT = '#16a06a';
 
 export default function Configuracoes() {
+  const confirm = useConfirm();
   const { user, config: layoutConfig = {} } = /** @type {any} */ (useOutletContext());
   const [configs, setConfigs] = useState(/** @type {Record<string, any>} */ ({}));
   const [initialValues, setInitialValues] = useState(/** @type {Record<string, any>} */ ({}));
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [resetTarget, setResetTarget] = useState('');
   const [resetConfirmation, setResetConfirmation] = useState('');
@@ -51,6 +57,7 @@ export default function Configuracoes() {
 
   const loadConfigs = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const data = await nexoApi.entities.SystemConfig.list();
       const map = {};
@@ -64,6 +71,7 @@ export default function Configuracoes() {
         product_categories: categoriesToStorageValue(initialCategories),
       });
     } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar as configurações.');
       toast.error(error.message || 'Erro ao carregar configurações.');
     } finally {
       setLoading(false);
@@ -148,7 +156,12 @@ export default function Configuracoes() {
     const option = RESET_OPTIONS.find(item => item.value === resetTarget);
     if (!option) return toast.error('Selecione a área que deseja zerar.');
     if (resetConfirmation.trim().toUpperCase() !== 'ZERAR') return toast.error('Digite ZERAR para confirmar.');
-    const confirmed = window.confirm(`Zerar ${option.label.toLowerCase()}? Esta ação não pode ser desfeita.`);
+    const confirmed = await confirm({
+      title: `Zerar ${option.label.toLowerCase()}?`,
+      description: 'Esta ação é definitiva e removerá os registros selecionados. A confirmação digitada será validada novamente pelo servidor.',
+      confirmLabel: 'Zerar dados',
+      tone: 'destructive',
+    });
     if (!confirmed) return;
 
     setResetting(true);
@@ -166,7 +179,8 @@ export default function Configuracoes() {
     }
   };
 
-  if (loading) return <div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando configurações...</div></div>;
+  if (loading) return <LoadingState className="min-h-[50vh]" label="Carregando configurações..." />;
+  if (loadError && !Object.keys(configs).length) return <div className="page-shell"><ErrorState description={loadError} onRetry={loadConfigs} /></div>;
 
   const brandName = getValue('nome_mercado', user?.market_name || 'Mercado');
   const logoUrl = getValue('logo_url', user?.logo_url || '');
@@ -224,7 +238,7 @@ export default function Configuracoes() {
   };
 
   return (
-    <form onSubmit={handleSave} className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+    <form onSubmit={handleSave} className="page-shell">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent"><Store className="h-3.5 w-3.5" /> Identidade e operação</div>
@@ -246,6 +260,19 @@ export default function Configuracoes() {
             <label className="block text-sm font-semibold sm:col-span-2">
               Nome do mercado <span className="text-destructive">*</span>
               <input required value={brandName} onChange={event => handleChange('nome_mercado', event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder="Nome do estabelecimento" />
+            </label>
+            <label className="block text-sm font-semibold">
+              <span className="inline-flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-muted-foreground" /> E-mail de contato</span>
+              <input type="email" value={getValue('contact_email')} onChange={event => handleChange('contact_email', event.target.value)} maxLength={254} className="field" placeholder="contato@mercadinho.com.br" />
+            </label>
+            <label className="block text-sm font-semibold">
+              <span className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> Telefone de contato</span>
+              <input type="tel" value={getValue('contact_phone')} onChange={event => handleChange('contact_phone', event.target.value)} maxLength={80} className="field" placeholder="(00) 00000-0000" />
+            </label>
+            <label className="block text-sm font-semibold sm:col-span-2">
+              Rodapé dos e-mails
+              <textarea value={getValue('email_footer')} onChange={event => handleChange('email_footer', event.target.value)} rows={3} maxLength={500} className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder="Mensagem de atendimento, horários ou observações do estabelecimento" />
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">Logo, nome, cores e estes contatos serão aplicados automaticamente aos e-mails deste mercadinho.</span>
             </label>
             <label className="block text-sm font-semibold">
               <span className="inline-flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-muted-foreground" /> CNPJ</span>

@@ -3,9 +3,11 @@ import { FileText, Plus, Printer, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 import { downloadSaleReceiptPdf } from '@/lib/sales-pdf';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function ReceiptModal({ sale, config = /** @type {Record<string, any>} */ ({}), onClose, onNewSale, primaryLabel = 'Nova venda' }) {
   const receiptRef = useRef(null);
+  const modalRef = useModalBehavior({ onClose, closeOnEscape: false });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const subtotal = Number(sale.subtotal ?? (sale.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0));
   const discount = sale.discount_type === 'percentual'
@@ -54,9 +56,9 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-sm flex-col rounded-2xl border border-border bg-card shadow-2xl">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="flex max-h-[calc(100dvh-1rem)] w-full max-w-sm flex-col rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[90dvh]">
         <div className="flex items-center justify-between border-b border-border px-6 py-4 no-print">
-          <h2 className="text-lg font-bold">Recibo da venda</h2>
+          <h2 id="receipt-modal-title" className="text-lg font-bold">Recibo da venda</h2>
           <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Fechar recibo"><X className="h-5 w-5" /></button>
         </div>
 

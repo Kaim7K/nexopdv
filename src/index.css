@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,6 +85,7 @@
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
     -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -96,6 +95,20 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-wrap: break-word;
     overscroll-behavior-y: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   img,
@@ -132,6 +145,11 @@
     cursor: pointer;
   }
 
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
@@ -143,8 +161,12 @@
 }
 
 @layer components {
+  .field {
+    @apply mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
   .page-shell {
     @apply mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 
   .page-header {
@@ -160,7 +182,7 @@
   }
 
   .surface-card {
-    @apply rounded-2xl border border-border bg-card text-card-foreground;
+    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-sm;
   }
 
   .empty-state {
@@ -169,6 +191,11 @@
 
   .loading-state {
     @apply grid min-h-56 place-items-center rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground;
+  }
+
+  .nexo-toast {
+    @apply !rounded-xl !border !border-border !bg-popover !text-popover-foreground !shadow-xl;
+    max-width: min(26rem, calc(100vw - 1.5rem));
   }
 }
 
@@ -182,6 +209,10 @@
   [role='button'],
   a[role='button'] {
     touch-action: manipulation;
+  }
+
+  .page-header > :last-child:not(:first-child) {
+    width: 100%;
   }
 }
 

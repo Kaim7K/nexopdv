@@ -5,7 +5,7 @@ import { formatCurrency } from '@/lib/helpers';
 export default function SearchResults({ results, onSelect, loading }) {
   if (loading) {
     return (
-      <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-xl p-5 text-center text-muted-foreground">
+      <div role="status" aria-live="polite" aria-busy="true" className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-xl p-5 text-center text-muted-foreground">
         <div className="w-6 h-6 border-4 border-secondary border-t-accent rounded-full animate-spin mx-auto mb-2"></div>
         Buscando produtos...
       </div>
@@ -26,6 +26,7 @@ export default function SearchResults({ results, onSelect, loading }) {
     <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-xl max-h-[420px] overflow-y-auto overflow-x-hidden">
       {results.map((product, i) => (
         <button
+          type="button"
           key={product.id}
           onClick={() => onSelect(product)}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-secondary/50 transition-colors text-left border-b border-border last:border-0 last:rounded-b-xl first:rounded-t-xl"

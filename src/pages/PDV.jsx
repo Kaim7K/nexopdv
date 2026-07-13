@@ -13,6 +13,7 @@ import ReceiptModal from '@/components/pdv/ReceiptModal';
 import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
 import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
 import CashRegisterModal from '@/components/pdv/CashRegisterModal';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import { formatCurrency } from '@/lib/helpers';
 import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
 import {
@@ -32,6 +33,7 @@ const Kbd = ({ children }) => (
 );
 
 export default function PDV() {
+  const confirm = useConfirm();
   const { user, config } = /** @type {any} */ (useOutletContext());
   const navigate = useNavigate();
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
@@ -561,17 +563,29 @@ export default function PDV() {
     });
   };
 
-  const handleDiscardMinimized = index => {
+  const handleDiscardMinimized = async index => {
     const sale = minimizedSales[index];
     if (!sale) return;
-    if (!window.confirm(`Descartar a venda aberta #${sale.temporary_number || index + 1}?`)) return;
+    const accepted = await confirm({
+      title: `Descartar a venda #${sale.temporary_number || index + 1}?`,
+      description: 'Os itens desta venda aberta serão removidos e não poderão ser recuperados.',
+      confirmLabel: 'Descartar venda',
+      tone: 'destructive',
+    });
+    if (!accepted) return;
     setMinimizedSales(previous => previous.filter((_, currentIndex) => currentIndex !== index));
     toast.success('Venda aberta descartada.');
   };
 
-  const handleDiscard = () => {
+  const handleDiscard = async () => {
     if (!activeSale.items.length) return;
-    if (!window.confirm('Descartar a venda atual?')) return;
+    const accepted = await confirm({
+      title: 'Descartar a venda atual?',
+      description: 'Todos os itens, descontos e observações desta venda serão removidos.',
+      confirmLabel: 'Descartar venda',
+      tone: 'destructive',
+    });
+    if (!accepted) return;
     setActiveSale(createEmptySale());
     setSearchQuery('');
     toast.success('Venda descartada.');
@@ -613,7 +627,7 @@ export default function PDV() {
           <button type="button" onClick={openCashDialog} disabled={cashLoading} className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition disabled:opacity-50 ${cashState.session ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300' : 'border-border bg-card text-foreground hover:bg-muted'}`}>
             {cashState.session ? <Banknote className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />} <span className="hidden sm:inline">{cashState.session ? 'Caixa aberto' : 'Abrir caixa'}</span>
           </button>
-          <button onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length || !canUsePdv} aria-label="Corrigir valor de um produto da venda" className="flex min-h-10 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
+          <button type="button" onClick={() => setShowPriceCorrection(true)} disabled={!activeSale.items.length || !canUsePdv} aria-label="Corrigir valor de um produto da venda" className="flex min-h-11 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
             <Edit3 className="h-5 w-5" /> <span className="hidden sm:inline">Valor errado</span>
           </button>
         </div>
@@ -693,11 +707,13 @@ export default function PDV() {
         <QuickProductModal
           barcode={showQuickProduct.barcode}
           onSave={product => {
-            setProducts(previous => [...previous, product]);
+            setProducts(previous => previous.some(item => item.id === product.id) ? previous : [...previous, product]);
             addProductToSale(product);
             setShowQuickProduct(null);
+            setSearchQuery('');
+            window.requestAnimationFrame(() => inputRef.current?.focus());
           }}
-          onClose={() => setShowQuickProduct(null)}
+          onClose={() => { setShowQuickProduct(null); window.requestAnimationFrame(() => inputRef.current?.focus()); }}
         />
       )}
       {showReceipt && <ReceiptModal sale={showReceipt} config={receiptConfig} onClose={() => setShowReceipt(null)} onNewSale={() => setShowReceipt(null)} />}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -6,6 +6,8 @@ import { Ban, Check, Clock, HandCoins, Phone, Search, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { ErrorState } from '@/components/common/PageState';
 
 const SETTLEMENT_METHODS = [
   ['dinheiro', 'Dinheiro'],
@@ -19,19 +21,28 @@ export default function Fiados() {
   const isGerente = user.role === 'gerente' || user.role === 'admin';
   const [fiados, setFiados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filterStatus, setFilterStatus] = useState('');
   const [settleFiado, setSettleFiado] = useState(null);
   const [cancelFiado, setCancelFiado] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const debtModalRef = useModalBehavior({
+    active: Boolean(settleFiado || cancelFiado),
+    disabled: processing,
+    onClose: () => { setSettleFiado(null); setCancelFiado(null); },
+  });
 
   const loadFiados = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       let data = await nexoApi.entities.FiadoRecord.list('-created_date', 300);
       if (!isGerente) data = data.filter(item => item.seller_id === user.id);
       setFiados(data);
     } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar os fiados.');
       toast.error(error.message || 'Erro ao carregar fiados.');
     } finally {
       setLoading(false);
@@ -52,13 +63,13 @@ export default function Fiados() {
   }, [settleFiado, cancelFiado, processing]);
 
   const filtered = useMemo(() => fiados.filter(item => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     const matchSearch = !query
       || String(item.responsible_name || '').toLowerCase().includes(query)
       || String(item.phone || '').toLowerCase().includes(query)
       || String(item.sale_number || '').includes(query);
     return matchSearch && (!filterStatus || item.status === filterStatus);
-  }), [fiados, search, filterStatus]);
+  }), [fiados, deferredSearch, filterStatus]);
 
   const totals = useMemo(() => ({
     pending: filtered.filter(item => item.status === 'pendente').reduce((sum, item) => sum + Number(item.total_amount || 0), 0),
@@ -132,7 +143,7 @@ export default function Fiados() {
   const clearFilters = () => { setSearch(''); setFilterStatus(''); };
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+    <div className="page-shell !max-w-6xl">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-700 dark:text-orange-300">
           <HandCoins className="h-3.5 w-3.5" /> Contas a receber
@@ -165,7 +176,9 @@ export default function Fiados() {
       </section>
 
       {loading ? (
-        <div className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
+      ) : loadError && !fiados.length ? (
+        <ErrorState description={loadError} onRetry={loadFiados} />
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center"><HandCoins className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum fiado encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Não há registros para os filtros selecionados.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
       ) : (
@@ -215,7 +228,7 @@ export default function Fiados() {
 
       {settleFiado && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="settle-title">
+          <div ref={debtModalRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="settle-title">
             <ModalHeader id="settle-title" title="Quitar fiado" subtitle={`${settleFiado.responsible_name} · ${formatCurrency(settleFiado.total_amount)}`} onClose={() => setSettleFiado(null)} disabled={processing} />
             <p className="mt-5 text-sm font-semibold">Selecione a forma de recebimento:</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -227,7 +240,7 @@ export default function Fiados() {
 
       {cancelFiado && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
+          <div ref={debtModalRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
             <ModalHeader id="cancel-fiado-title" title="Cancelar fiado" subtitle={`${cancelFiado.responsible_name} · ${formatCurrency(cancelFiado.total_amount)}`} onClose={() => setCancelFiado(null)} disabled={processing} />
             <div className="mt-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">O registro deixará de aparecer como pendente. Esta ação ficará registrada na auditoria.</div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" disabled={processing} onClick={() => setCancelFiado(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button><button type="button" disabled={processing} onClick={handleCancel} className="min-h-11 rounded-xl bg-destructive px-5 text-sm font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">{processing ? 'Cancelando...' : 'Confirmar cancelamento'}</button></div>

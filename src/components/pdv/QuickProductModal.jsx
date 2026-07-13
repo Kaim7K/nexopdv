@@ -1,153 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { Check, ClipboardPaste, ExternalLink, Loader2, Trash2, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Barcode, Check, Loader2, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
-import { generateInternalCode } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
-import { openGoogleImages } from '@/lib/google-images';
-import { readClipboardImageUrl, watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
-import { standardizeProductName } from '@/lib/product-name';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [identifying, setIdentifying] = useState(false);
-  const clipboardCleanupRef = React.useRef(null);
+  const [name,setName] = useState('');
+  const [saving,setSaving] = useState(false);
+  const submittingRef = useRef(false);
+  const modalRef = useModalBehavior({ onClose,disabled:saving });
 
-  useEffect(() => {
-    if (!/^\d{6,14}$/.test(String(barcode || ''))) return;
-    let active = true;
-    setIdentifying(true);
-    nexoApi.products.lookupBarcode(barcode).then(result => {
-      if (!active || !result.found) return;
-      setName(standardizeProductName(result.product.name, result.product));
-      setImageUrl(result.product.image_url || '');
-      toast.success('Produto identificado pelo código de barras.');
-    }).catch(() => {}).finally(() => active && setIdentifying(false));
-    return () => { active = false; };
-  }, [barcode]);
-
-  useEffect(() => () => {
-    clipboardCleanupRef.current?.();
-    clipboardCleanupRef.current = null;
-  }, []);
-
-  const armClipboardPaste = () => {
-    clipboardCleanupRef.current?.();
-    clipboardCleanupRef.current = watchClipboardForImageUrl(url => {
-      setImageUrl(url);
-      toast.success('URL da imagem colada automaticamente.');
-    });
-  };
-
-  const pasteImageUrl = async () => {
-    try {
-      const url = await readClipboardImageUrl();
-      setImageUrl(url);
-      toast.success('URL da imagem colada.');
-    } catch (error) {
-      toast.error(error.message || 'Nao foi possivel colar a URL da imagem.');
-    }
-  };
-
-
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Nome do produto é obrigatório.');
+  const handleSave = async event => {
+    event?.preventDefault();
+    const cleanName = name.trim();
+    if (!cleanName) {
+      toast.error('Informe o nome do produto.');
       return;
     }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     try {
-      const product = await nexoApi.entities.Product.create({
-        name: name.trim(),
-        barcode: barcode || '',
-        internal_code: generateInternalCode(),
-        image_url: imageUrl || '',
-        sale_price: Number.parseFloat(price) || 0,
-        cost_price: null,
-        quantity: 0,
-        unit: 'unidade',
-        status: 'ativo',
-        category: '',
-      });
-      onSave(product);
+      const result = await nexoApi.products.quickCreate(barcode,cleanName);
+      toast.success(result.created ? 'Produto cadastrado e adicionado à venda.' : 'Produto já cadastrado. Item existente adicionado à venda.');
+      onSave(result.product,{ created:Boolean(result.created) });
     } catch (error) {
-      toast.error(error.message || 'Erro ao cadastrar produto.');
+      toast.error(error.message || 'Não foi possível cadastrar o produto. A venda foi preservada.');
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 backdrop-blur-sm sm:p-4" role="presentation">
+      <form ref={modalRef} onSubmit={handleSave} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="quick-product-title" aria-describedby="quick-product-description" className="flex h-dvh w-full max-w-md flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold">Cadastro rápido</h2>
-            <p className="text-xs text-muted-foreground">Pesquise no Google, copie o endereço da imagem e cole no cadastro.</p>
+            <h2 id="quick-product-title" className="text-lg font-black">Produto não encontrado</h2>
+            <p id="quick-product-description" className="mt-1 text-sm leading-5 text-muted-foreground">Cadastre somente o essencial e continue a venda sem sair do PDV.</p>
           </div>
-          <button aria-label="Fechar" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
+          <button type="button" aria-label="Fechar cadastro rápido" onClick={onClose} disabled={saving} className="grid h-10 w-10 flex-none place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="space-y-4 p-5">
-          {barcode && (
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Código de barras</label>
-              <input type="text" value={barcode} readOnly className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm" />
-            </div>
-          )}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Nome do produto *</label>
-            <input
-              type="text"
-              value={name}
-              onChange={event => setName(event.target.value)}
-              autoFocus
-              placeholder={identifying ? 'Identificando produto...' : 'Digite o nome do produto'}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              onKeyDown={event => event.key === 'Enter' && handleSave()}
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Preço de venda</label>
-            <input type="number" min="0" step="0.01" value={price} onChange={event => setPrice(event.target.value)} placeholder="0,00" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-          </div>
-
-          <section className="space-y-2 rounded-xl border border-border bg-muted/20 p-3">
-            <div className="flex items-center gap-3">
-              <div className="grid h-16 w-16 flex-none place-items-center overflow-hidden rounded-lg border border-border bg-white">
-                {imageUrl ? <img src={imageUrl} alt={name || 'Produto'} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[10px] text-muted-foreground">Sem imagem</span>}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button type="button" onClick={() => { try { openGoogleImages({ barcode, productName: name }); armClipboardPaste(); } catch (error) { toast.error(error.message); } }} disabled={!barcode && !name.trim()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-40">
-                    <ExternalLink className="h-4 w-4" /> Pesquisar no Google Imagens
-                  </button>
-                </div>
-                <p className="mt-1 text-[10px] leading-4 text-muted-foreground">A pesquisa abre em outra aba sem filtro de cor de fundo. Se você copiar a URL da imagem e voltar para cá, o campo tenta preencher sozinho.</p>
-              </div>
-              {imageUrl && <button type="button" aria-label="Remover imagem" onClick={() => setImageUrl('')} className="rounded-lg p-2 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>}
-            </div>
-            <label className="block text-xs font-medium text-muted-foreground">URL da imagem</label>
-            <div className="relative">
-              <input type="url" value={imageUrl} onChange={event => setImageUrl(event.target.value)} placeholder="Cole aqui o endereço https:// da imagem" className="w-full rounded-lg border border-border bg-background py-2.5 pl-3 pr-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-              <button type="button" onClick={pasteImageUrl} className="absolute right-1 top-1/2 inline-flex h-9 -translate-y-1/2 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700">
-                <ClipboardPaste className="h-4 w-4" /> Colar URL
-              </button>
-            </div>
-          </section>
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+          <label className="block text-sm font-semibold">Código de barras
+            <span className="relative mt-1.5 block">
+              <Barcode className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input value={barcode || ''} readOnly aria-readonly="true" className="h-11 w-full rounded-xl border border-border bg-muted pl-10 pr-3 font-mono text-sm text-muted-foreground" />
+            </span>
+          </label>
+          <label className="block text-sm font-semibold">Nome do produto <span className="text-destructive">*</span>
+            <input value={name} onChange={event => setName(event.target.value)} autoFocus required maxLength={180} autoComplete="off" placeholder="Ex.: Leite integral 1 L" disabled={saving} className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60" />
+          </label>
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-xs leading-5 text-muted-foreground">Preço, custo, categoria, estoque e imagem poderão ser preenchidos depois na tela completa do produto. Os padrões do mercadinho serão aplicados agora.</div>
         </div>
 
-        <div className="flex gap-2 border-t border-border px-5 py-4">
-          <button onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
-          <button onClick={handleSave} disabled={saving || !name.trim()} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground">
-            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />} Salvar e adicionar
+        <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row">
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Cancelar</button>
+          <button type="submit" disabled={saving || !name.trim()} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground">
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}{saving ? 'Salvando no estoque...' : 'Salvar e adicionar à venda'}
           </button>
         </div>
-      </div>
-
+      </form>
     </div>
   );
 }

@@ -1,10 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Mail, Pencil, Search, Shield, Trash2, User, UserPlus, Users, X } from 'lucide-react';
 import EditUserModal from '@/components/users/EditUserModal';
 import ImageUploadField from '@/components/ImageUploadField';
+import { useConfirm } from '@/components/common/ConfirmProvider';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { ErrorState } from '@/components/common/PageState';
 
 const EMPTY_FORM = {
   full_name: '',
@@ -21,21 +24,27 @@ const ROLE_LABELS = {
 };
 
 export default function Usuarios() {
+  const confirm = useConfirm();
   const { user } = /** @type {any} */ (useOutletContext());
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [edit, setEdit] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [form, setForm] = useState(EMPTY_FORM);
+  const createModalRef = useModalBehavior({ active: showCreate, disabled: saving, onClose: () => setShowCreate(false) });
 
   const load = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       setUsers(await nexoApi.entities.User.list());
     } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar os usuários.');
       toast.error(error.message || 'Erro ao carregar usuários.');
     } finally {
       setLoading(false);
@@ -52,18 +61,23 @@ export default function Usuarios() {
   }, [showCreate, saving]);
 
   const filteredUsers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     if (!query) return users;
     return users.filter(item => (
       String(item.full_name || '').toLowerCase().includes(query)
       || String(item.email || '').toLowerCase().includes(query)
       || String(ROLE_LABELS[item.role] || item.role).toLowerCase().includes(query)
     ));
-  }, [users, search]);
+  }, [users, deferredSearch]);
 
   const removeUser = async item => {
     if (item.id === user.id || deletingId) return;
-    const confirmed = window.confirm(`Excluir o usuário "${item.full_name || item.email}"? O acesso será removido e o histórico de vendas será preservado.`);
+    const confirmed = await confirm({
+      title: `Excluir “${item.full_name || item.email}”?`,
+      description: 'O acesso será revogado imediatamente. O histórico de vendas e a auditoria permanecerão preservados.',
+      confirmLabel: 'Excluir usuário',
+      tone: 'destructive',
+    });
     if (!confirmed) return;
 
     setDeletingId(item.id);
@@ -104,7 +118,7 @@ export default function Usuarios() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+    <div className="page-shell !max-w-6xl">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -139,10 +153,12 @@ export default function Usuarios() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />
           Carregando usuários...
         </div>
+      ) : loadError && !users.length ? (
+        <ErrorState description={loadError} onRetry={load} />
       ) : filteredUsers.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
           <Users className="mx-auto h-10 w-10 text-muted-foreground/30" />
@@ -230,6 +246,7 @@ export default function Usuarios() {
           role="presentation"
         >
           <form
+            ref={createModalRef}
             onSubmit={create}
             className="my-auto w-full max-w-lg rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6"
             role="dialog"
@@ -285,7 +302,7 @@ export default function Usuarios() {
 
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" disabled={saving} onClick={() => setShowCreate(false)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50">Cancelar</button>
-              <button disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="submit" disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
                 {saving ? 'Criando...' : 'Criar funcionário'}
               </button>
             </div>

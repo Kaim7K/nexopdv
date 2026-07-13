@@ -8,6 +8,7 @@ import { openGoogleImages } from '@/lib/google-images';
 import { readClipboardImageUrl, watchClipboardForImageUrl } from '@/lib/clipboard-image-url';
 import { categoriesToStorageValue, formatProductCategories, mergeProductCategories, removeProductCategory, upsertProductCategory } from '@/lib/product-categories';
 import { standardizeProductName } from '@/lib/product-name';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 const EMPTY_FORM = {
   name: '',
@@ -49,13 +50,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
     if (!saving) onClose();
   }, [onClose, saving]);
 
-  useEffect(() => {
-    const onKeyDown = event => {
-      if (event.key === 'Escape' && !saving) closeForm();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [closeForm, saving]);
+  const modalRef = useModalBehavior({ onClose: closeForm, disabled: saving });
 
   useEffect(() => {
     if (product) {
@@ -310,7 +305,7 @@ export default function ProductForm({ product = null, duplicateSource = null, ca
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 sm:p-4" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3.5 sm:px-6 sm:py-4">
           <div>
             <h2 id={titleId} className="text-lg font-bold">{isEditing ? 'Editar produto' : isDuplicating ? 'Duplicar produto' : 'Criar produto'}</h2>

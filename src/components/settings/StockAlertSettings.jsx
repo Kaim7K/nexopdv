@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Clock3, Mail, Pencil, Plus, Send, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 
 export default function StockAlertSettings() {
+  const confirm = useConfirm();
   const [data, setData] = useState({ enabled:true, frequency:'daily', time:'20:00', emailConfiguration:null, recipients:[], deliveries:[] });
   const [email, setEmail] = useState('');
   const [editingId, setEditingId] = useState('');
@@ -53,7 +55,13 @@ export default function StockAlertSettings() {
   };
 
   const removeRecipient = async recipient => {
-    if (!window.confirm(`Remover ${recipient.email} dos alertas?`)) return;
+    const accepted = await confirm({
+      title: 'Remover destinatário?',
+      description: `${recipient.email} deixará de receber os alertas automáticos de estoque.`,
+      confirmLabel: 'Remover e-mail',
+      tone: 'destructive',
+    });
+    if (!accepted) return;
     setBusy(recipient.id);
     try { await nexoApi.stockAlerts.removeRecipient(recipient.id); toast.success('Destinatário removido.'); await load(); }
     catch (error) { toast.error(error.message); }

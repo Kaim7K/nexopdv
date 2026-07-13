@@ -1,22 +1,26 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { FilterX, Search, ScrollText } from 'lucide-react';
 import { formatAuditDetails, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
+import { ErrorState } from '@/components/common/PageState';
 
 export default function AuditoriaGeral() {
   const [audits, setAudits] = useState([]);
   const [productAudits, setProductAudits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filterType, setFilterType] = useState('');
   const [filterUser, setFilterUser] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
 
   const loadAudits = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const [general, product] = await Promise.all([
         nexoApi.entities.GeneralAudit.list('-created_date', 400),
@@ -25,6 +29,7 @@ export default function AuditoriaGeral() {
       setAudits(general);
       setProductAudits(product);
     } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar a auditoria.');
       toast.error(error.message || 'Erro ao carregar auditoria.');
     } finally {
       setLoading(false);
@@ -58,7 +63,7 @@ export default function AuditoriaGeral() {
   const users = useMemo(() => [...new Set(allEntries.map(entry => entry.user).filter(Boolean))].sort(), [allEntries]);
 
   const filtered = useMemo(() => allEntries.filter(entry => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     const details = formatAuditDetails(entry.details).toLowerCase();
     const matchSearch = !query
       || String(entry.description || '').toLowerCase().includes(query)
@@ -68,7 +73,7 @@ export default function AuditoriaGeral() {
       && (!filterType || entry.type === filterType)
       && (!filterUser || entry.user === filterUser)
       && (!filterCategory || entry.category === filterCategory);
-  }), [allEntries, search, filterType, filterUser, filterCategory]);
+  }), [allEntries, deferredSearch, filterType, filterUser, filterCategory]);
 
   const clearFilters = () => {
     setSearch('');
@@ -89,7 +94,7 @@ export default function AuditoriaGeral() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+    <div className="page-shell !max-w-6xl">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <ScrollText className="h-3.5 w-3.5" /> Rastreabilidade
@@ -128,7 +133,9 @@ export default function AuditoriaGeral() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando auditoria...</p></div>
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando auditoria...</p></div>
+      ) : loadError && !allEntries.length ? (
+        <ErrorState description={loadError} onRetry={loadAudits} />
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center"><ScrollText className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
       ) : (

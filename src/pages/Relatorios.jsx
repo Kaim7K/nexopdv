@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { AlertTriangle, BarChart3, CalendarRange, DollarSign, Lightbulb, Receipt, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
+import { ErrorState, LoadingState } from '@/components/common/PageState';
 
 const PERIODS = [
   { key: 'week', label: 'Semanal' },
@@ -39,6 +40,7 @@ const TOOLTIP_STYLE = {
 export default function Relatorios() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -50,6 +52,8 @@ export default function Relatorios() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const [saleData, fiadoData] = await Promise.all([
         nexoApi.entities.Sale.list('-created_date', 1000),
@@ -57,7 +61,8 @@ export default function Relatorios() {
       ]);
       setSales(saleData);
       setFiados(fiadoData);
-    } catch {
+    } catch (error) {
+      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -100,8 +105,10 @@ export default function Relatorios() {
     return { startDate: start, endDate: end, prevStartDate: prevStart, prevEndDate: prevEnd };
   }, [period, customStart, customEnd]);
 
-  const periodSales = customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate) : [];
-  const prevPeriodSales = customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= prevStartDate && new Date(sale.created_date) <= prevEndDate) : [];
+  const { periodSales, prevPeriodSales } = useMemo(() => ({
+    periodSales: customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= startDate && new Date(sale.created_date) <= endDate) : [],
+    prevPeriodSales: customRangeValid ? sales.filter(sale => sale.status === 'concluida' && new Date(sale.created_date) >= prevStartDate && new Date(sale.created_date) <= prevEndDate) : [],
+  }), [sales, customRangeValid, startDate, endDate, prevStartDate, prevEndDate]);
 
   const stats = useMemo(() => {
     const totalRevenue = periodSales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
@@ -202,10 +209,11 @@ export default function Relatorios() {
     return list;
   }, [stats]);
 
-  if (loading) return <div className="grid min-h-[60vh] place-items-center text-sm text-muted-foreground"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />Carregando relatórios...</div></div>;
+  if (loading) return <LoadingState className="min-h-[60vh]" label="Carregando relatórios..." />;
+  if (loadError && !sales.length) return <div className="page-shell"><ErrorState description={loadError} onRetry={loadData} /></div>;
 
   return (
-    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+    <div className="page-shell">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent"><BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio</div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Relatórios gerenciais</h1>

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Power, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function EditUserModal({ user, isCurrentUser = false, actorRole = 'gerente', onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -14,12 +15,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
   const [saving, setSaving] = useState(false);
   const canChangeRole = actorRole === 'admin';
   const canChangeStatus = actorRole === 'admin' ? !isCurrentUser : user.role === 'vendedor' && !isCurrentUser;
-
-  useEffect(() => {
-    const closeOnEscape = event => { if (event.key === 'Escape' && !saving) onClose(); };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [onClose, saving]);
+  const modalRef = useModalBehavior({ onClose, disabled: saving });
 
   const save = async event => {
     event.preventDefault();
@@ -45,7 +41,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
-      <form onSubmit={save} className="my-auto w-full max-w-lg rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+      <form ref={modalRef} onSubmit={save} className="my-auto max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 id="edit-user-title" className="text-xl font-black">Editar usuário</h2>
@@ -85,7 +81,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
 
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" disabled={saving} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50">Cancelar</button>
-          <button disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="submit" disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
             {saving ? 'Salvando...' : 'Salvar alterações'}
           </button>
         </div>

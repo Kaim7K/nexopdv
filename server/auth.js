@@ -5,7 +5,6 @@ import { getRuntimeConfig } from './config.js';
 import { AppError } from './errors.js';
 
 const SESSION_COOKIE = 'nexo_session';
-const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 const ISSUER = 'nexo-pdv';
 const AUDIENCE = 'nexo-web';
 
@@ -38,6 +37,11 @@ export function publicUser(user) {
     secondary_color: user.secondary_color,
     enabled_modules: user.enabled_modules || [],
     require_cash_register: Boolean(user.require_cash_register),
+    unit_id: user.unit_id || null,
+    unit_name: user.unit_name || null,
+    platform_notice: user.platform_notice || '',
+    maintenance_mode: Boolean(user.maintenance_mode),
+    maintenance_message: user.maintenance_message || '',
   };
 }
 
@@ -49,10 +53,15 @@ export async function authenticateCredentials(sql, input) {
 
   const rows = await sql`
     SELECT
-      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id,
-      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register
+      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
+      unit.name AS unit_name,
+      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register,
+      COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
+      COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
+      COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice
     FROM nexo.users u
     LEFT JOIN nexo.markets m ON m.id = u.market_id
+    LEFT JOIN nexo.market_units unit ON unit.id = u.unit_id
     WHERE lower(u.email) = ${parsed.data.email}
       AND u.active = true
       AND (u.role = 'super_admin' OR m.active = true)
@@ -69,21 +78,22 @@ export async function authenticateCredentials(sql, input) {
   return user;
 }
 
-export async function createSession(user, res) {
+export async function createSession(user, res, sessionHours = 12) {
   const config = getRuntimeConfig();
+  const durationSeconds = Math.max(3600,Math.min(168 * 3600,Number(sessionHours || 12) * 3600));
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setSubject(String(user.id))
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
+    .setExpirationTime(`${durationSeconds}s`)
     .sign(secret());
 
   const secure = config.isProduction ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DURATION_SECONDS}${secure}`
+    `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${durationSeconds}${secure}`
   );
 }
 
@@ -102,10 +112,15 @@ export async function currentUser(req, sql) {
 
     const rows = await sql`
       SELECT
-        u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id,
-        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register
+        u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
+        unit.name AS unit_name,
+        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.require_cash_register,
+        COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
+        COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
+        COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice
       FROM nexo.users u
       LEFT JOIN nexo.markets m ON m.id = u.market_id
+      LEFT JOIN nexo.market_units unit ON unit.id = u.unit_id
       WHERE u.id = ${payload.sub}
         AND u.active = true
         AND (u.role = 'super_admin' OR m.active = true)

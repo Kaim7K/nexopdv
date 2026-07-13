@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { X, Check, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function PriceCorrectionModal({ items, onSave, onClose }) {
+  const modalRef = useModalBehavior({ onClose });
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [newPrice, setNewPrice] = useState('');
 
@@ -17,17 +19,17 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card text-card-foreground border border-border rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-bold">Produto com Valor Errado</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="price-correction-title" className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
+          <div><h2 id="price-correction-title" className="text-lg font-bold">Corrigir valor do produto</h2><p className="mt-0.5 text-xs text-muted-foreground">A alteração ficará registrada na auditoria.</p></div>
+          <button type="button" aria-label="Fechar" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="text-sm text-muted-foreground">Selecione o item com valor incorreto:</div>
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {items.map((item, i) => (
-              <button key={i} onClick={() => { setSelectedIndex(i); setNewPrice(''); }}
+              <button type="button" key={i} onClick={() => { setSelectedIndex(i); setNewPrice(''); }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-colors ${selectedIndex === i ? 'border-accent bg-accent/5' : 'border-border hover:bg-secondary'}`}>
                 <div>
                   <div className="text-sm font-medium">{item.product_name}</div>
@@ -54,8 +56,8 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
           )}
         </div>
         <div className="flex gap-2 px-6 py-4 border-t">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-secondary">Cancelar</button>
-          <button onClick={handleSave} disabled={selectedIndex === null || !newPrice}
+          <button type="button" onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Cancelar</button>
+          <button type="button" onClick={handleSave} disabled={selectedIndex === null || !newPrice}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-40 text-sm font-bold">
             <Check className="w-4 h-4" /> Salvar Alteração
           </button>

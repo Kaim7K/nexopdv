@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, Banknote, CheckCircle2, Clock3, Download, LockKeyhole, X } from 'lucide-react';
 import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function CashRegisterModal({ mode, cashState, processing, reporting = false, onClose, onContinue, onOpen, onCloseCash, onDownloadReport }) {
+  const modalRef = useModalBehavior({ onClose, disabled: processing || reporting });
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
   const summary = cashState?.summary || {};
@@ -22,7 +24,7 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
 
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => event.target === event.currentTarget && !processing && onClose?.()}>
-      <form onSubmit={submit} className="w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="cash-modal-title">
+      <form ref={modalRef} onSubmit={submit} className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl" role="dialog" aria-modal="true" aria-labelledby="cash-modal-title">
         <div className="flex items-start justify-between gap-4 border-b border-border p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-accent/10 text-accent">

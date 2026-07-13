@@ -67,18 +67,18 @@ export default function SaleSummary({
 
       <div className="space-y-2 p-3 sm:p-4">
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
+          <button type="button" onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
             <Trash2 className="h-5 w-5" />
             <span className="text-sm font-semibold">Descartar</span>
             <Kbd>F6</Kbd>
           </button>
-          <button onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
+          <button type="button" onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14">
             <Minimize2 className="h-5 w-5" />
             <span className="text-sm font-semibold">Minimizar</span>
             <Kbd>F7</Kbd>
           </button>
         </div>
-        <button onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-accent px-4 text-base font-black text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-16">
+        <button type="button" onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-accent px-4 text-base font-black text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-16">
           <CreditCard className="h-6 w-6" /> Pagamento <Kbd>F1</Kbd>
         </button>
       </div>

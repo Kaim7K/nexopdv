@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Banknote, Check, Clock, CreditCard, Minimize2, QrCode, Trash2, Wallet, X } from 'lucide-react';
 import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 const METHOD_ICONS = {
   dinheiro: Banknote,
@@ -20,6 +21,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   const [focusIndex, setFocusIndex] = useState(null);
   const [completing, setCompleting] = useState(false);
   const amountRefs = useRef([]);
+  const modalRef = useModalBehavior({ onClose, disabled: completing });
 
   const { subtotal, discount, total } = calculateSaleTotals(sale);
   const nonFiadoPayments = payments.filter(payment => payment.method !== 'fiado');
@@ -105,7 +107,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-0 backdrop-blur-sm sm:p-5" role="presentation">
-      <div className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[95dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <div ref={modalRef} tabIndex={-1} className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[95dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
         <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
           <div>
             <h2 id="payment-title" className="text-xl font-black">Forma de pagamento</h2>
