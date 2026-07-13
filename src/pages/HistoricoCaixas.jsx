@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Banknote,
   CalendarRange,
@@ -51,6 +57,7 @@ const PAYMENT_LABELS = {
 };
 
 export default function HistoricoCaixas() {
+  const requestSequence = useRef(0);
   const { user } = /** @type {any} */ (useOutletContext());
   const [filters, setFilters] = useState({
     from: monthStart(),
@@ -73,26 +80,30 @@ export default function HistoricoCaixas() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     setError("");
     try {
-      setData(
-        await nexoApi.cash.history({
-          page,
-          pageSize: 20,
-          from: toStart(filters.from),
-          to: toExclusiveEnd(filters.to),
-          operatorId: filters.operatorId,
-          status: filters.status,
-          unitId: filters.unitId,
-        }),
-      );
+      const result = await nexoApi.cash.history({
+        page,
+        pageSize: 20,
+        from: toStart(filters.from),
+        to: toExclusiveEnd(filters.to),
+        operatorId: filters.operatorId,
+        status: filters.status,
+        unitId: filters.unitId,
+      });
+      if (sequence === requestSequence.current) setData(result);
     } catch (cause) {
-      setError(
-        cause.message || "Não foi possível consultar o histórico de caixas.",
-      );
+      if (
+        sequence === requestSequence.current &&
+        cause.code !== "REQUEST_REPLACED"
+      )
+        setError(
+          cause.message || "Não foi possível consultar o histórico de caixas.",
+        );
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, [filters, page]);
 
@@ -225,7 +236,7 @@ export default function HistoricoCaixas() {
         </button>
       </section>
 
-      {!loading && !error && data.items.length > 0 && (
+      {data.items.length > 0 && (
         <section
           className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
           aria-label="Resumo do período exibido"
@@ -260,9 +271,26 @@ export default function HistoricoCaixas() {
         </section>
       )}
 
-      {loading ? (
+      {loading && data.items.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
+        >
+          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted border-t-accent" />{" "}
+          Atualizando histórico...
+        </div>
+      )}
+      {error && data.items.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {error}
+        </div>
+      )}
+      {loading && !data.items.length ? (
         <LoadingState label="Consultando caixas..." />
-      ) : error ? (
+      ) : error && !data.items.length ? (
         <ErrorState description={error} onRetry={load} />
       ) : !data.items.length ? (
         <EmptyState

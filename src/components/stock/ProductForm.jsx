@@ -426,6 +426,7 @@ export default function ProductForm({
                 <img
                   src={form.image_url}
                   alt={form.name || 'Produto'}
+                  decoding="async"
                   className="h-full w-full object-contain p-2"
                   referrerPolicy="no-referrer"
                 />

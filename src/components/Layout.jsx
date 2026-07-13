@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
@@ -29,6 +29,7 @@ import {
   deriveSidebarPalette,
 } from '@/lib/color-contrast';
 import { hasMarketFeature } from '@/lib/market-modules';
+import { PageSkeleton } from '@/components/common/PageState';
 
 const MENU_ITEMS = [
   {
@@ -397,6 +398,7 @@ export default function Layout() {
             <img
               src={config.logo_url || user.logo_url}
               alt={brandName}
+              decoding="async"
               className="max-h-12 w-auto max-w-[188px] object-contain object-left"
             />
           ) : (
@@ -423,7 +425,6 @@ export default function Layout() {
                 to={item.path}
                 onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()}
                 onFocus={() => ROUTE_PREFETCHERS[item.path]?.()}
-                onTouchStart={() => ROUTE_PREFETCHERS[item.path]?.()}
                 aria-current={active ? 'page' : undefined}
                 className={`group flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
               >
@@ -446,6 +447,8 @@ export default function Layout() {
                 <img
                   src={user.photo_url}
                   alt={`Foto de ${user.full_name || user.email}`}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -511,7 +514,9 @@ export default function Layout() {
               {user.platform_notice}
             </div>
           )}
-          <Outlet context={{ user, config }} />
+          <Suspense fallback={<PageSkeleton />}>
+            <Outlet context={{ user, config }} />
+          </Suspense>
         </main>
       </div>
     </div>

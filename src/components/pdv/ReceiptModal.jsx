@@ -64,7 +64,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
 
         <div className="flex-1 overflow-y-auto bg-white p-6 text-black" ref={receiptRef}>
           <div className="r-header text-center">
-            {config.logo_url && <img src={config.logo_url} alt={`Logo de ${config.nome_mercado || 'mercado'}`} className="mx-auto mb-2 h-14 object-contain" />}
+            {config.logo_url && <img src={config.logo_url} alt={`Logo de ${config.nome_mercado || 'mercado'}`} decoding="async" className="mx-auto mb-2 h-14 object-contain" />}
             <div className="r-store text-sm font-bold">{config.nome_mercado || config.market_name || 'Nexo PDV'}</div>
             {config.cnpj && <div className="r-info mt-0.5 text-[10px] text-gray-600">CNPJ: {config.cnpj}</div>}
             {config.endereco && <div className="r-info text-[10px] text-gray-600">{config.endereco}</div>}

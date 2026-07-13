@@ -367,7 +367,23 @@ export default function Vendas() {
         </div>
       </section>
 
-      {loading ? (
+      {loading && sales.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Atualizando vendas...
+        </div>
+      )}
+      {loadError && sales.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {loadError}
+        </div>
+      )}
+      {loading && !sales.length ? (
         <LoadingState />
       ) : loadError && !sales.length ? (
         <ErrorState description={loadError} onRetry={() => loadSales()} />

@@ -31,7 +31,7 @@ assert.equal(isPdvDraftExpired({ inactiveSince: now - PDV_DRAFT_INACTIVITY_MS },
 assert.match(api, /SET active=false,[\s\S]*email=\$\{deletedEmail\}/, 'Excluir usuário deve desativar a conta e liberar o e-mail.');
 assert.match(api, /password_hash=\$\{revokedPasswordHash\}/, 'A conta excluída deve perder a credencial anterior.');
 assert.match(api, /AND active=true ORDER BY/, 'Usuários excluídos não devem voltar à listagem.');
-assert.match(stock, /StockMetric label="Sem estoque"/, 'A falta de estoque deve ficar resumida no indicador.');
+assert.match(stock, /StockMetric\s+label="Sem estoque"/, 'A falta de estoque deve ficar resumida no indicador.');
 assert.doesNotMatch(stock, /produtos sem estoque[\s\S]{0,300}bg-red-600/i, 'O painel vermelho grande antigo não deve voltar.');
 assert.match(settings, /sidebar_background_color/, 'Configurações deve permitir alterar o fundo da sidebar.');
 assert.match(settings, /isAccentDistinct/, 'O sistema deve impedir combinações sem contraste.');

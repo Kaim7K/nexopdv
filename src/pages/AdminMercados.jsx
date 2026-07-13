@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
-import { Eye, LockKeyhole, Plus, Save, Search, Store, X } from 'lucide-react';
+import {
+  Eye,
+  Loader2,
+  LockKeyhole,
+  Plus,
+  Save,
+  Search,
+  Store,
+  X,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
@@ -238,7 +247,16 @@ export default function AdminMercados() {
         </span>
       </div>
 
-      {loading ? (
+      {loading && markets.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Atualizando
+          mercados...
+        </div>
+      )}
+      {loading && !markets.length ? (
         <div
           role="status"
           aria-live="polite"
@@ -278,6 +296,7 @@ export default function AdminMercados() {
                         alt={`Logo de ${market.name}`}
                         className="h-full w-full object-contain p-1"
                         loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <Store className="h-5 w-5 text-white" />

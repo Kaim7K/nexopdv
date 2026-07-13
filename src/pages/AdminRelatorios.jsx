@@ -112,12 +112,20 @@ export default function AdminRelatorios() {
           Atualizar
         </button>
       </section>
-      {loading ? (
+      {loading && !data ? (
         <LoadingState label="Processando indicadores..." />
-      ) : error ? (
+      ) : error && !data ? (
         <ErrorState description={error} onRetry={load} />
       ) : (
         <>
+          {error && (
+            <div
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              {error}
+            </div>
+          )}
           <section className="grid gap-4 lg:grid-cols-2">
             <ReportCard
               title="Novos mercadinhos por período"
@@ -173,48 +181,55 @@ function ReportCard({ title, columns, rows }) {
       <h2 className="border-b border-border p-4 font-black">{title}</h2>
       {rows.length ? (
         <>
-        <div className="grid gap-2 p-3 lg:hidden">
-          {rows.map((row, index) => (
-            <article key={index} className="rounded-xl border border-border bg-muted/15 p-3">
-              <strong className="block break-words text-sm">{row[0]}</strong>
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                {row.slice(1).map((value, cell) => (
-                  <div key={columns[cell + 1]} className="min-w-0">
-                    <dt className="text-muted-foreground">{columns[cell + 1]}</dt>
-                    <dd className="mt-1 break-words font-semibold tabular-nums">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </article>
-          ))}
-        </div>
-        <div className="hidden overflow-x-auto lg:block">
-          <table className="w-full min-w-[520px] text-sm">
-            <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-              <tr>
-                {columns.map((column) => (
-                  <th key={column} className="px-4 py-3">
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((row, index) => (
-                <tr key={index}>
-                  {row.map((value, cell) => (
-                    <td
-                      key={cell}
-                      className={`px-4 py-3 ${cell ? "font-semibold tabular-nums" : ""}`}
-                    >
-                      {value}
-                    </td>
+          <div className="grid gap-2 p-3 lg:hidden">
+            {rows.map((row, index) => (
+              <article
+                key={index}
+                className="rounded-xl border border-border bg-muted/15 p-3"
+              >
+                <strong className="block break-words text-sm">{row[0]}</strong>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                  {row.slice(1).map((value, cell) => (
+                    <div key={columns[cell + 1]} className="min-w-0">
+                      <dt className="text-muted-foreground">
+                        {columns[cell + 1]}
+                      </dt>
+                      <dd className="mt-1 break-words font-semibold tabular-nums">
+                        {value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column} className="px-4 py-3">
+                      {column}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((row, index) => (
+                  <tr key={index}>
+                    {row.map((value, cell) => (
+                      <td
+                        key={cell}
+                        className={`px-4 py-3 ${cell ? "font-semibold tabular-nums" : ""}`}
+                      >
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       ) : (
         <p className="p-8 text-center text-sm text-muted-foreground">

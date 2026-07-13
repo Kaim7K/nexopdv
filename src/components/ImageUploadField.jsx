@@ -54,7 +54,7 @@ export default function ImageUploadField({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className={`${previewClassName} grid flex-shrink-0 place-items-center overflow-hidden border border-border bg-white`}>
           {value ? (
-            <img src={value} alt={label} className={`h-full w-full ${objectFit === 'cover' ? 'object-cover' : 'object-contain p-1'}`} />
+            <img src={value} alt={label} decoding="async" className={`h-full w-full ${objectFit === 'cover' ? 'object-cover' : 'object-contain p-1'}`} />
           ) : (
             <ImageIcon className="h-7 w-7 text-muted-foreground/45" />
           )}

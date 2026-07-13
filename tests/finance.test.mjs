@@ -88,6 +88,26 @@ assert.match(
 );
 assert.match(app, /path="\/financeiro"/, "Rota financeira ausente.");
 assert.match(layout, /label: 'Financeiro'/, "Navegação financeira ausente.");
+assert.match(
+  page,
+  /PRIMARY_NAV_KEYS/,
+  "A navegação financeira deve priorizar as tarefas mais frequentes.",
+);
+assert.match(
+  page,
+  /Mais opções/,
+  "Recursos financeiros avançados devem usar divulgação progressiva.",
+);
+assert.match(
+  page,
+  /O que você quer fazer\?/,
+  "O resumo financeiro deve oferecer ações rápidas orientadas por tarefa.",
+);
+assert.match(
+  page,
+  /Ver análises detalhadas/,
+  "Indicadores avançados não devem sobrecarregar o resumo inicial.",
+);
 for (const label of [
   "Visão geral",
   "Movimentações",

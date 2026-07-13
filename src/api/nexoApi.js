@@ -1,46 +1,117 @@
 const responseCache = new Map();
 const inFlightRequests = new Map();
+const latestRequestControllers = new Map();
 
-function invalidateCache() {
-  responseCache.clear();
+function invalidateCache(path = '') {
+  if (!path || /^\/(auth|admin|markets|users|maintenance)(\/|$)/.test(path)) {
+    responseCache.clear();
+    return;
+  }
+  const scopes = path.startsWith('/finance')
+    ? ['/finance']
+    : /^\/(products|stock)(\/|$)/.test(path) ||
+        path.startsWith('/entities/Product')
+      ? ['/products', '/entities/Product', '/finance']
+      : path.startsWith('/sales') || path.startsWith('/entities/Sale')
+        ? ['/sales', '/entities/Sale', '/finance', '/cash']
+        : path.startsWith('/entities/FiadoRecord')
+          ? ['/entities/FiadoRecord', '/finance']
+        : path.startsWith('/cash')
+          ? ['/cash', '/finance']
+          : path.startsWith('/stock-alerts')
+            ? ['/stock-alerts']
+            : path.startsWith('/entities/SystemConfig')
+              ? ['/entities/SystemConfig', '/stock-alerts']
+              : [path.split('/').slice(0, 3).join('/')];
+  for (const key of responseCache.keys()) {
+    if (scopes.some((scope) => key.startsWith(`GET:${scope}`)))
+      responseCache.delete(key);
+  }
 }
 
 async function performRequest(path, options = {}) {
   let response;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeout || 30_000);
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(
+    () => timeoutController.abort(),
+    options.timeout || 30_000,
+  );
+  const signal = options.signal
+    ? typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([options.signal, timeoutController.signal])
+      : options.signal
+    : timeoutController.signal;
+  const {
+    cacheTTL: _cacheTTL,
+    timeout: _timeout,
+    latestKey: _latestKey,
+    signal: _externalSignal,
+    ...fetchOptions
+  } = options;
+  void _cacheTTL;
+  void _timeout;
+  void _latestKey;
+  void _externalSignal;
   try {
     response = await fetch(`/api${path}`, {
       credentials: 'include',
-      headers: options.body instanceof FormData
-        ? { Accept: 'application/json' }
-        : { Accept: 'application/json', 'Content-Type': 'application/json' },
-      ...options,
-      signal: options.signal || controller.signal,
-      body: options.body instanceof FormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
+      headers:
+        options.body instanceof FormData
+          ? { Accept: 'application/json' }
+          : { Accept: 'application/json', 'Content-Type': 'application/json' },
+      ...fetchOptions,
+      signal,
+      body:
+        options.body instanceof FormData
+          ? options.body
+          : options.body
+            ? JSON.stringify(options.body)
+            : undefined,
     });
   } catch (cause) {
-    const timedOut = cause?.name === 'AbortError';
-    throw Object.assign(new Error(timedOut ? 'O servidor demorou para responder. Tente novamente.' : 'Não foi possível conectar ao servidor.'), {
-      code: timedOut ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
-      cause,
-    });
+    const aborted = cause?.name === 'AbortError';
+    const timedOut = aborted && timeoutController.signal.aborted;
+    throw Object.assign(
+      new Error(
+        timedOut
+          ? 'O servidor demorou para responder. Tente novamente.'
+          : aborted
+            ? 'A busca anterior foi substituída.'
+            : 'Não foi possível conectar ao servidor.',
+      ),
+      {
+        code: timedOut
+          ? 'REQUEST_TIMEOUT'
+          : aborted
+            ? 'REQUEST_REPLACED'
+            : 'NETWORK_ERROR',
+        cause,
+      },
+    );
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timeoutId);
   }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && !path.startsWith('/auth/login') && !path.startsWith('/auth/me') && typeof window !== 'undefined') {
+    if (
+      response.status === 401 &&
+      !path.startsWith('/auth/login') &&
+      !path.startsWith('/auth/me') &&
+      typeof window !== 'undefined'
+    ) {
       responseCache.clear();
       window.dispatchEvent(new CustomEvent('nexo:session-expired'));
     }
-    throw Object.assign(new Error(data.message || 'Erro ao acessar o servidor.'), {
-      status: response.status,
-      code: data.code,
-      requestId: data.requestId,
-      data,
-    });
+    throw Object.assign(
+      new Error(data.message || 'Erro ao acessar o servidor.'),
+      {
+        status: response.status,
+        code: data.code,
+        requestId: data.requestId,
+        data,
+      },
+    );
   }
   return data;
 }
@@ -52,88 +123,227 @@ const request = (path, options = {}) => {
 
   if (cacheTTL > 0) {
     const cached = responseCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.data);
+    if (cached && cached.expiresAt > Date.now())
+      return Promise.resolve(cached.data);
     if (inFlightRequests.has(cacheKey)) return inFlightRequests.get(cacheKey);
   }
 
-  const promise = performRequest(path, options).then(data => {
-    if (method === 'GET' && cacheTTL > 0) responseCache.set(cacheKey, { data, expiresAt: Date.now() + cacheTTL });
-    if (method !== 'GET') invalidateCache();
-    return data;
-  }).finally(() => inFlightRequests.delete(cacheKey));
+  let latestController = null;
+  if (options.latestKey) {
+    latestRequestControllers.get(options.latestKey)?.abort();
+    latestController = new AbortController();
+    latestRequestControllers.set(options.latestKey, latestController);
+  }
+  const requestOptions = latestController
+    ? { ...options, signal: latestController.signal }
+    : options;
+
+  const promise = performRequest(path, requestOptions)
+    .then((data) => {
+      if (method === 'GET' && cacheTTL > 0)
+        responseCache.set(cacheKey, { data, expiresAt: Date.now() + cacheTTL });
+      if (method !== 'GET') invalidateCache(path);
+      return data;
+    })
+    .finally(() => {
+      inFlightRequests.delete(cacheKey);
+      if (
+        options.latestKey &&
+        latestRequestControllers.get(options.latestKey) === latestController
+      )
+        latestRequestControllers.delete(options.latestKey);
+    });
 
   if (cacheTTL > 0) inFlightRequests.set(cacheKey, promise);
   return promise;
 };
 
-const entity = name => ({
-  list: (sort = '-created_date', limit = 500) => request(`/entities/${name}?sort=${encodeURIComponent(sort)}&limit=${limit}`, { cacheTTL: name === 'SystemConfig' ? 45_000 : name === 'Product' ? 20_000 : 8_000 }),
-  filter: (filters, sort = '-created_date', limit = 500) => request(`/entities/${name}?filters=${encodeURIComponent(JSON.stringify(filters))}&sort=${encodeURIComponent(sort)}&limit=${limit}`, { cacheTTL: name === 'SystemConfig' ? 45_000 : 8_000 }),
-  get: id => request(`/entities/${name}/${id}`, { cacheTTL: 10_000 }),
-  create: data => request(`/entities/${name}`, { method: 'POST', body: data }),
-  update: (id, data) => request(`/entities/${name}/${id}`, { method: 'PATCH', body: data }),
-  delete: id => request(`/entities/${name}/${id}`, { method: 'DELETE' }),
+const entity = (name) => ({
+  list: (sort = '-created_date', limit = 500) =>
+    request(
+      `/entities/${name}?sort=${encodeURIComponent(sort)}&limit=${limit}`,
+      {
+        cacheTTL:
+          name === 'SystemConfig'
+            ? 45_000
+            : name === 'Product'
+              ? 20_000
+              : 8_000,
+      },
+    ),
+  filter: (filters, sort = '-created_date', limit = 500) =>
+    request(
+      `/entities/${name}?filters=${encodeURIComponent(JSON.stringify(filters))}&sort=${encodeURIComponent(sort)}&limit=${limit}`,
+      { cacheTTL: name === 'SystemConfig' ? 45_000 : 8_000 },
+    ),
+  get: (id) => request(`/entities/${name}/${id}`, { cacheTTL: 10_000 }),
+  create: (data) =>
+    request(`/entities/${name}`, { method: 'POST', body: data }),
+  update: (id, data) =>
+    request(`/entities/${name}/${id}`, { method: 'PATCH', body: data }),
+  delete: (id) => request(`/entities/${name}/${id}`, { method: 'DELETE' }),
 });
 
-const entityNames = ['Product', 'Sale', 'FiadoRecord', 'GeneralAudit', 'ProductAudit', 'SystemConfig', 'User', 'Market'];
+const entityNames = [
+  'Product',
+  'Sale',
+  'FiadoRecord',
+  'GeneralAudit',
+  'ProductAudit',
+  'SystemConfig',
+  'User',
+  'Market',
+];
 
 export const nexoApi = {
-  entities: Object.fromEntries(entityNames.map(name => [name, entity(name)])),
+  entities: Object.fromEntries(entityNames.map((name) => [name, entity(name)])),
   cache: { clear: invalidateCache },
   auth: {
     me: () => request('/auth/me', { cacheTTL: 15_000 }),
-    login: (email, password) => request('/auth/login', { method: 'POST', body: { email, password } }),
-    logout: async redirect => { await request('/auth/logout', { method: 'POST' }); if (redirect) window.location.href = redirect; },
+    login: (email, password) =>
+      request('/auth/login', { method: 'POST', body: { email, password } }),
+    logout: async (redirect) => {
+      await request('/auth/logout', { method: 'POST' });
+      if (redirect) window.location.href = redirect;
+    },
   },
-  users: { create: data => request('/users', { method: 'POST', body: data }) },
+  users: {
+    create: (data) => request('/users', { method: 'POST', body: data }),
+  },
   markets: {
     list: () => request('/markets', { cacheTTL: 15_000 }),
-    create: data => request('/markets', { method: 'POST', body: data }),
-    update: (id, data) => request(`/markets/${id}`, { method: 'PATCH', body: data }),
-    detail: id => request(`/markets/${id}`, { cacheTTL: 5_000 }),
-    close: (id, reason) => request(`/markets/${id}`, { method: 'DELETE', body: { reason } }),
+    create: (data) => request('/markets', { method: 'POST', body: data }),
+    update: (id, data) =>
+      request(`/markets/${id}`, { method: 'PATCH', body: data }),
+    detail: (id) => request(`/markets/${id}`, { cacheTTL: 5_000 }),
+    close: (id, reason) =>
+      request(`/markets/${id}`, { method: 'DELETE', body: { reason } }),
   },
   products: {
-    catalog: (limit = 1000) => request(`/products/catalog?limit=${limit}`, { cacheTTL: 20_000 }),
-    lookupBarcode: barcode => request(`/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`, { cacheTTL: 86_400_000 }),
-    quickCreate: (barcode, name) => request('/products/quick', { method:'POST', body:{ barcode,name }, timeout:60_000 }),
-    deleteInactive: () => request('/products/delete-inactive', { method: 'POST', body: { confirmation: 'APAGAR_INATIVOS' }, timeout: 60_000 }),
+    catalog: (limit = 1000) =>
+      request(`/products/catalog?limit=${limit}`, { cacheTTL: 20_000 }),
+    lookupBarcode: (barcode) =>
+      request(
+        `/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`,
+        { cacheTTL: 86_400_000 },
+      ),
+    quickCreate: (barcode, name) =>
+      request('/products/quick', {
+        method: 'POST',
+        body: { barcode, name },
+        timeout: 60_000,
+      }),
+    deleteInactive: () =>
+      request('/products/delete-inactive', {
+        method: 'POST',
+        body: { confirmation: 'APAGAR_INATIVOS' },
+        timeout: 60_000,
+      }),
   },
-  stock: { bulkUpdate: (products, existingMode = 'update') => request('/stock/import', { method: 'POST', body: { products, existing_mode: existingMode }, timeout: 60_000 }) },
+  stock: {
+    bulkUpdate: (products, existingMode = 'update') =>
+      request('/stock/import', {
+        method: 'POST',
+        body: { products, existing_mode: existingMode },
+        timeout: 60_000,
+      }),
+  },
   stockAlerts: {
     settings: () => request('/stock-alerts/settings', { cacheTTL: 10_000 }),
-    updateSettings: settings => request('/stock-alerts/settings', { method:'PATCH', body:settings }),
+    updateSettings: (settings) =>
+      request('/stock-alerts/settings', { method: 'PATCH', body: settings }),
     preview: () => request('/stock-alerts/preview'),
-    addRecipient: data => request('/stock-alerts/recipients', { method:'POST', body:data }),
-    updateRecipient: (id, data) => request(`/stock-alerts/recipients/${id}`, { method:'PATCH', body:data }),
-    removeRecipient: id => request(`/stock-alerts/recipients/${id}`, { method:'DELETE' }),
-    test: email => request('/stock-alerts/test', { method:'POST', body:{ email }, timeout:60_000 }),
+    addRecipient: (data) =>
+      request('/stock-alerts/recipients', { method: 'POST', body: data }),
+    updateRecipient: (id, data) =>
+      request(`/stock-alerts/recipients/${id}`, {
+        method: 'PATCH',
+        body: data,
+      }),
+    removeRecipient: (id) =>
+      request(`/stock-alerts/recipients/${id}`, { method: 'DELETE' }),
+    test: (email) =>
+      request('/stock-alerts/test', {
+        method: 'POST',
+        body: { email },
+        timeout: 60_000,
+      }),
   },
   maintenance: {
-    reset: (target, confirmation) => request('/maintenance/reset', { method: 'POST', body: { target, confirmation }, timeout: 60_000 }),
+    reset: (target, confirmation) =>
+      request('/maintenance/reset', {
+        method: 'POST',
+        body: { target, confirmation },
+        timeout: 60_000,
+      }),
   },
   cash: {
     current: () => request('/cash/current', { cacheTTL: 5_000 }),
-    open: openingAmount => request('/cash/open', { method: 'POST', body: { opening_amount: openingAmount } }),
-    close: closingAmount => request('/cash/close', { method: 'POST', body: { closing_amount: closingAmount } }),
-    updateSettings: requireCashRegister => request('/cash/settings', { method: 'PATCH', body: { require_cash_register: requireCashRegister } }),
-    history: ({ page=1,pageSize=20,from='',to='',operatorId='',status='',unitId='' }={}) => {
-      const params = new URLSearchParams({ page:String(page),page_size:String(pageSize) });
-      if (from) params.set('from',from);
-      if (to) params.set('to',to);
-      if (operatorId) params.set('operator_id',operatorId);
-      if (status) params.set('status',status);
-      if (unitId) params.set('unit_id',unitId);
-      return request(`/cash/history?${params}`,{ cacheTTL:5_000 });
+    open: (openingAmount) =>
+      request('/cash/open', {
+        method: 'POST',
+        body: { opening_amount: openingAmount },
+      }),
+    close: (closingAmount) =>
+      request('/cash/close', {
+        method: 'POST',
+        body: { closing_amount: closingAmount },
+      }),
+    updateSettings: (requireCashRegister) =>
+      request('/cash/settings', {
+        method: 'PATCH',
+        body: { require_cash_register: requireCashRegister },
+      }),
+    history: ({
+      page = 1,
+      pageSize = 20,
+      from = '',
+      to = '',
+      operatorId = '',
+      status = '',
+      unitId = '',
+    } = {}) => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+      });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (operatorId) params.set('operator_id', operatorId);
+      if (status) params.set('status', status);
+      if (unitId) params.set('unit_id', unitId);
+      return request(`/cash/history?${params}`, {
+        cacheTTL: 5_000,
+        latestKey: 'cash:history',
+      });
     },
-    detail: id => request(`/cash/${id}`,{ cacheTTL:5_000 }),
-    addMovement: (id,data) => request(`/cash/${id}/movements`,{ method:'POST',body:data,timeout:60_000 }),
+    detail: (id) => request(`/cash/${id}`, { cacheTTL: 5_000 }),
+    addMovement: (id, data) =>
+      request(`/cash/${id}/movements`, {
+        method: 'POST',
+        body: data,
+        timeout: 60_000,
+      }),
   },
   sales: {
-    complete: data => request('/sales/complete', { method: 'POST', body: data }),
+    complete: (data) =>
+      request('/sales/complete', { method: 'POST', body: data }),
     nextNumber: () => request('/sales/next', { cacheTTL: 3_000 }),
-    list: ({ page = 1, pageSize = 20, search = '', sellerId = '', payment = '', status = '', from = '', to = '', includeSellers = false } = {}) => {
-      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+    list: ({
+      page = 1,
+      pageSize = 20,
+      search = '',
+      sellerId = '',
+      payment = '',
+      status = '',
+      from = '',
+      to = '',
+      includeSellers = false,
+    } = {}) => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+      });
       if (search) params.set('search', search);
       if (sellerId) params.set('seller_id', sellerId);
       if (payment) params.set('payment', payment);
@@ -141,7 +351,10 @@ export const nexoApi = {
       if (from) params.set('from', from);
       if (to) params.set('to', to);
       if (includeSellers) params.set('include_sellers', '1');
-      return request(`/sales/list?${params.toString()}`, { cacheTTL: 5_000 });
+      return request(`/sales/list?${params.toString()}`, {
+        cacheTTL: 5_000,
+        latestKey: 'sales:list',
+      });
     },
     report: ({ from, to, sellerId = '', payment = '' }) => {
       const params = new URLSearchParams({ from, to });
@@ -149,82 +362,176 @@ export const nexoApi = {
       if (payment) params.set('payment', payment);
       return request(`/sales/report?${params.toString()}`, { cacheTTL: 5_000 });
     },
-    cancel: (id, reason) => request(`/sales/${id}/cancel`, { method: 'POST', body: { reason } }),
-    delete: id => request(`/sales/${id}`, { method: 'DELETE' }),
+    cancel: (id, reason) =>
+      request(`/sales/${id}/cancel`, { method: 'POST', body: { reason } }),
+    delete: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
   },
   finance: {
     bootstrap: () => request('/finance/bootstrap', { cacheTTL: 20_000 }),
-    dashboard: filters => request(`/finance/dashboard?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
-    ledger: filters => request(`/finance/ledger?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
-    receivables: filters => request(`/finance/receivables?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
-    reconciliation: filters => request(`/finance/reconciliation?${new URLSearchParams(filters || {})}`, { cacheTTL: 8_000 }),
-    history: limit => request(`/finance/history?limit=${limit || 100}`, { cacheTTL: 8_000 }),
+    products: () => request('/finance/products', { cacheTTL: 30_000 }),
+    dashboard: (filters) =>
+      request(`/finance/dashboard?${new URLSearchParams(filters || {})}`, {
+        cacheTTL: 8_000,
+      }),
+    ledger: (filters) =>
+      request(`/finance/ledger?${new URLSearchParams(filters || {})}`, {
+        cacheTTL: 8_000,
+        latestKey: 'finance:ledger',
+      }),
+    receivables: (filters) =>
+      request(`/finance/receivables?${new URLSearchParams(filters || {})}`, {
+        cacheTTL: 8_000,
+        latestKey: 'finance:receivables',
+      }),
+    reconciliation: (filters) =>
+      request(`/finance/reconciliation?${new URLSearchParams(filters || {})}`, {
+        cacheTTL: 8_000,
+        latestKey: 'finance:reconciliation',
+      }),
+    history: (limit) =>
+      request(`/finance/history?limit=${limit || 100}`, { cacheTTL: 8_000 }),
     transactions: {
-      list: filters => request(`/finance/transactions?${new URLSearchParams(filters || {})}`, { cacheTTL: 5_000 }),
-      detail: id => request(`/finance/transactions/${id}`, { cacheTTL: 5_000 }),
-      create: data => request('/finance/transactions', { method:'POST', body:data, timeout:60_000 }),
-      update: (id,data) => request(`/finance/transactions/${id}`, { method:'PATCH', body:data, timeout:60_000 }),
-      pay: (id,data) => request(`/finance/transactions/${id}/pay`, { method:'POST', body:data, timeout:60_000 }),
-      cancel: (id,reason) => request(`/finance/transactions/${id}/cancel`, { method:'POST', body:{reason}, timeout:60_000 }),
-      duplicate: id => request(`/finance/transactions/${id}/duplicate`, { method:'POST', timeout:60_000 }),
-      batch: data => request('/finance/transactions/batch', { method:'POST', body:data, timeout:60_000 }),
+      list: (filters) =>
+        request(`/finance/transactions?${new URLSearchParams(filters || {})}`, {
+          cacheTTL: 5_000,
+          latestKey: 'finance:transactions',
+        }),
+      detail: (id) =>
+        request(`/finance/transactions/${id}`, { cacheTTL: 5_000 }),
+      create: (data) =>
+        request('/finance/transactions', {
+          method: 'POST',
+          body: data,
+          timeout: 60_000,
+        }),
+      update: (id, data) =>
+        request(`/finance/transactions/${id}`, {
+          method: 'PATCH',
+          body: data,
+          timeout: 60_000,
+        }),
+      pay: (id, data) =>
+        request(`/finance/transactions/${id}/pay`, {
+          method: 'POST',
+          body: data,
+          timeout: 60_000,
+        }),
+      cancel: (id, reason) =>
+        request(`/finance/transactions/${id}/cancel`, {
+          method: 'POST',
+          body: { reason },
+          timeout: 60_000,
+        }),
+      duplicate: (id) =>
+        request(`/finance/transactions/${id}/duplicate`, {
+          method: 'POST',
+          timeout: 60_000,
+        }),
+      batch: (data) =>
+        request('/finance/transactions/batch', {
+          method: 'POST',
+          body: data,
+          timeout: 60_000,
+        }),
     },
     categories: {
-      create: data => request('/finance/categories', { method:'POST', body:data }),
-      update: (id,data) => request(`/finance/categories/${id}`, { method:'PATCH', body:data }),
-      remove: id => request(`/finance/categories/${id}`, { method:'DELETE' }),
+      create: (data) =>
+        request('/finance/categories', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/finance/categories/${id}`, { method: 'PATCH', body: data }),
+      remove: (id) =>
+        request(`/finance/categories/${id}`, { method: 'DELETE' }),
     },
     suppliers: {
-      create: data => request('/finance/suppliers', { method:'POST', body:data }),
-      update: (id,data) => request(`/finance/suppliers/${id}`, { method:'PATCH', body:data }),
-      remove: id => request(`/finance/suppliers/${id}`, { method:'DELETE' }),
+      create: (data) =>
+        request('/finance/suppliers', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/finance/suppliers/${id}`, { method: 'PATCH', body: data }),
+      remove: (id) => request(`/finance/suppliers/${id}`, { method: 'DELETE' }),
     },
     accounts: {
-      create: data => request('/finance/accounts', { method:'POST', body:data }),
-      update: (id,data) => request(`/finance/accounts/${id}`, { method:'PATCH', body:data }),
+      create: (data) =>
+        request('/finance/accounts', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/finance/accounts/${id}`, { method: 'PATCH', body: data }),
     },
     recurring: {
-      create: data => request('/finance/recurring', { method:'POST', body:data }),
-      update: (id,data) => request(`/finance/recurring/${id}`, { method:'PATCH', body:data }),
+      create: (data) =>
+        request('/finance/recurring', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/finance/recurring/${id}`, { method: 'PATCH', body: data }),
     },
     purchases: {
-      list: () => request('/finance/purchases', { cacheTTL:5_000 }),
-      create: data => request('/finance/purchases', { method:'POST', body:data, timeout:60_000 }),
-      confirm: id => request(`/finance/purchases/${id}/confirm`, { method:'POST', timeout:60_000 }),
-      cancel: (id,reason) => request(`/finance/purchases/${id}/cancel`, { method:'POST', body:{reason}, timeout:60_000 }),
+      list: () => request('/finance/purchases', { cacheTTL: 5_000 }),
+      create: (data) =>
+        request('/finance/purchases', {
+          method: 'POST',
+          body: data,
+          timeout: 60_000,
+        }),
+      confirm: (id) =>
+        request(`/finance/purchases/${id}/confirm`, {
+          method: 'POST',
+          timeout: 60_000,
+        }),
+      cancel: (id, reason) =>
+        request(`/finance/purchases/${id}/cancel`, {
+          method: 'POST',
+          body: { reason },
+          timeout: 60_000,
+        }),
     },
     goals: {
-      create: data => request('/finance/goals', { method:'POST', body:data }),
-      update: (id,data) => request(`/finance/goals/${id}`, { method:'PATCH', body:data }),
-      remove: id => request(`/finance/goals/${id}`, { method:'DELETE' }),
+      create: (data) =>
+        request('/finance/goals', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/finance/goals/${id}`, { method: 'PATCH', body: data }),
+      remove: (id) => request(`/finance/goals/${id}`, { method: 'DELETE' }),
     },
-    settings: { update: data => request('/finance/settings', { method:'PATCH', body:data }) },
-    permissions: { update: (userId,data) => request(`/finance/permissions/${userId}`, { method:'PATCH', body:data }) },
+    settings: {
+      update: (data) =>
+        request('/finance/settings', { method: 'PATCH', body: data }),
+    },
+    permissions: {
+      update: (userId, data) =>
+        request(`/finance/permissions/${userId}`, {
+          method: 'PATCH',
+          body: data,
+        }),
+    },
   },
   admin: {
-    overview: () => request('/admin/overview',{ cacheTTL:15_000 }),
+    overview: () => request('/admin/overview', { cacheTTL: 15_000 }),
     plans: {
-      list: () => request('/admin/plans',{ cacheTTL:15_000 }),
-      create: data => request('/admin/plans',{ method:'POST',body:data }),
-      update: (id,data) => request(`/admin/plans/${id}`,{ method:'PATCH',body:data }),
-      delete: id => request(`/admin/plans/${id}`,{ method:'DELETE' }),
+      list: () => request('/admin/plans', { cacheTTL: 15_000 }),
+      create: (data) => request('/admin/plans', { method: 'POST', body: data }),
+      update: (id, data) =>
+        request(`/admin/plans/${id}`, { method: 'PATCH', body: data }),
+      delete: (id) => request(`/admin/plans/${id}`, { method: 'DELETE' }),
     },
     subscriptions: {
-      list: () => request('/admin/subscriptions',{ cacheTTL:10_000 }),
-      update: (id,data) => request(`/admin/subscriptions/${id}`,{ method:'PATCH',body:data }),
+      list: () => request('/admin/subscriptions', { cacheTTL: 10_000 }),
+      update: (id, data) =>
+        request(`/admin/subscriptions/${id}`, { method: 'PATCH', body: data }),
     },
     payments: {
-      list: subscriptionId => request(`/admin/payments${subscriptionId ? `?subscription_id=${encodeURIComponent(subscriptionId)}` : ''}`,{ cacheTTL:10_000 }),
-      create: data => request('/admin/payments',{ method:'POST',body:data }),
+      list: (subscriptionId) =>
+        request(
+          `/admin/payments${subscriptionId ? `?subscription_id=${encodeURIComponent(subscriptionId)}` : ''}`,
+          { cacheTTL: 10_000 },
+        ),
+      create: (data) =>
+        request('/admin/payments', { method: 'POST', body: data }),
     },
-    reports: filters => {
+    reports: (filters) => {
       const params = new URLSearchParams(filters || {});
-      return request(`/admin/reports?${params}`,{ cacheTTL:15_000 });
+      return request(`/admin/reports?${params}`, { cacheTTL: 15_000 });
     },
-    logs: () => request('/admin/logs',{ cacheTTL:10_000 }),
+    logs: () => request('/admin/logs', { cacheTTL: 10_000 }),
     settings: {
-      get: () => request('/admin/settings',{ cacheTTL:15_000 }),
-      update: data => request('/admin/settings',{ method:'PATCH',body:data }),
+      get: () => request('/admin/settings', { cacheTTL: 15_000 }),
+      update: (data) =>
+        request('/admin/settings', { method: 'PATCH', body: data }),
     },
   },
 };

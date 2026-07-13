@@ -28,7 +28,7 @@ assert.match(moduleCatalog,/Histórico de caixas/,'O catálogo do Super Admin de
 assert.match(plansPage,/Excluir plano/);
 assert.match(plansPage,/Desativar plano/);
 assert.match(api,/PLAN_IN_USE/,'A exclusão de planos em uso deve ser bloqueada para preservar o histórico.');
-assert.match(client,/method:'DELETE'/,'O cliente deve oferecer exclusão de planos ao Super Admin.');
+assert.match(client,/method:\s*'DELETE'/,'O cliente deve oferecer exclusão de planos ao Super Admin.');
 assert.match(email,/loadMarketEmailBrand/);
 assert.match(email,/brand\.primaryColor/);
 console.log('Teste de administração, caixas, e-mails e cadastro rápido aprovado.');

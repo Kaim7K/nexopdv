@@ -64,6 +64,8 @@ const PERMISSION_KEYS = [
   "manage_settings",
   "manage_permissions",
 ];
+const FINANCE_MAINTENANCE_TTL = 15_000;
+const financeMaintenance = new Map();
 
 const round = (value) =>
   Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
@@ -271,6 +273,33 @@ async function generateRecurringTransactions(sql, marketId) {
     await sql`UPDATE nexo.finance_recurring_rules SET next_due_date=${due},active=${active},updated_date=now() WHERE id=${rule.id} AND market_id=${marketId}`;
   }
   await sql`UPDATE nexo.finance_transactions SET status='overdue',updated_date=now() WHERE market_id=${marketId} AND status IN ('pending','partial') AND due_date<current_date`;
+}
+
+async function ensureFinanceMaintenance(sql, user) {
+  const marketId = user.market_id;
+  const current = financeMaintenance.get(marketId);
+  if (current?.promise) return current.promise;
+  if (current?.completedAt > Date.now() - FINANCE_MAINTENANCE_TTL) return;
+
+  const promise = (async () => {
+    await ensureFinanceSetup(sql, user);
+    await generateRecurringTransactions(sql, marketId);
+  })();
+  financeMaintenance.set(marketId, { promise, completedAt: 0 });
+  try {
+    await promise;
+    financeMaintenance.set(marketId, {
+      promise: null,
+      completedAt: Date.now(),
+    });
+  } catch (error) {
+    financeMaintenance.delete(marketId);
+    throw error;
+  }
+}
+
+function invalidateFinanceMaintenance(marketId) {
+  financeMaintenance.delete(marketId);
 }
 
 function saleMetrics(sales, productsById, settings) {
@@ -1779,7 +1808,6 @@ async function loadBootstrap(sql, user, permissions) {
     users,
     permissionRows,
     units,
-    products,
   ] = await Promise.all([
     referenceList(sql, "finance_categories", user.market_id),
     referenceList(sql, "finance_accounts", user.market_id),
@@ -1789,7 +1817,6 @@ async function loadBootstrap(sql, user, permissions) {
     sql`SELECT id,COALESCE(full_name,email) AS name,role FROM nexo.users WHERE market_id=${user.market_id} AND active ORDER BY COALESCE(full_name,email)`,
     sql`SELECT user_id,permissions FROM nexo.finance_user_permissions WHERE market_id=${user.market_id}`,
     sql`SELECT id,name,code,active FROM nexo.market_units WHERE market_id=${user.market_id} ORDER BY active DESC,name`,
-    sql`SELECT id,data->>'name' AS name,data->>'internal_code' AS internal_code,data->>'barcode' AS barcode,COALESCE(NULLIF(data->>'quantity','')::numeric,0) AS quantity,NULLIF(data->>'cost_price','')::numeric AS cost_price,data->>'unit' AS unit FROM nexo.records WHERE market_id=${user.market_id} AND entity='products' AND COALESCE(data->>'status','ativo')<>'inativo' ORDER BY data->>'name' LIMIT 3000`,
   ]);
   const permissionMap = new Map(
     permissionRows.map((row) => [row.user_id, row.permissions]),
@@ -1826,13 +1853,31 @@ async function loadBootstrap(sql, user, permissions) {
       },
     })),
     units,
-    products: products.map((row) => ({
-      ...row,
-      quantity: Number(row.quantity),
-      cost_price: row.cost_price === null ? null : Number(row.cost_price),
-    })),
     permission_keys: PERMISSION_KEYS,
   };
+}
+
+async function loadPurchaseProducts(sql, marketId) {
+  const rows = await sql`
+    SELECT id,
+      data->>'name' AS name,
+      data->>'internal_code' AS internal_code,
+      data->>'barcode' AS barcode,
+      COALESCE(NULLIF(data->>'quantity','')::numeric,0) AS quantity,
+      NULLIF(data->>'cost_price','')::numeric AS cost_price,
+      data->>'unit' AS unit
+    FROM nexo.records
+    WHERE market_id=${marketId}
+      AND entity='products'
+      AND COALESCE(data->>'status','ativo')<>'inativo'
+    ORDER BY data->>'name'
+    LIMIT 3000
+  `;
+  return rows.map((row) => ({
+    ...row,
+    quantity: Number(row.quantity),
+    cost_price: row.cost_price === null ? null : Number(row.cost_price),
+  }));
 }
 
 async function loadLedger(sql, marketId, query) {
@@ -2050,13 +2095,12 @@ async function loadHistory(sql, marketId, query) {
 export async function handleFinanceRequest({ req, res, sql, user, path }) {
   if (!user.market_id)
     return send(res, 400, { message: "Usuário sem mercadinho vinculado." });
-  await ensureFinanceSetup(sql, user);
-  const permissions = await financePermissions(sql, user);
-  requirePermission(permissions, "view");
-  await generateRecurringTransactions(sql, user.market_id);
   const section = path[1] || "dashboard",
     id = path[2],
     action = path[3];
+  await ensureFinanceMaintenance(sql, user);
+  const permissions = await financePermissions(sql, user);
+  requirePermission(permissions, "view");
 
   if (section === "bootstrap" && req.method === "GET")
     return send(res, 200, await loadBootstrap(sql, user, permissions));
@@ -2100,6 +2144,16 @@ export async function handleFinanceRequest({ req, res, sql, user, path }) {
     );
   if (section === "history" && req.method === "GET")
     return send(res, 200, await loadHistory(sql, user.market_id, req.query));
+  if (section === "products" && req.method === "GET") {
+    if (!(user.enabled_features || []).includes("integrated_purchases"))
+      throw new AppError(
+        403,
+        "FEATURE_NOT_AVAILABLE",
+        "Compras integradas ao estoque não estão incluídas neste plano.",
+      );
+    requirePermission(permissions, "manage_purchases");
+    return send(res, 200, await loadPurchaseProducts(sql, user.market_id));
+  }
 
   if (section === "transactions") {
     if (!id && req.method === "GET")
@@ -2279,14 +2333,16 @@ export async function handleFinanceRequest({ req, res, sql, user, path }) {
       );
     }
     requirePermission(permissions, "create");
-    if (!id && req.method === "POST")
-      return send(
-        res,
-        201,
-        await saveRecurring(sql, user, null, req.body || {}),
-      );
-    if (id && req.method === "PATCH")
-      return send(res, 200, await saveRecurring(sql, user, id, req.body || {}));
+    if (!id && req.method === "POST") {
+      const row = await saveRecurring(sql, user, null, req.body || {});
+      invalidateFinanceMaintenance(user.market_id);
+      return send(res, 201, row);
+    }
+    if (id && req.method === "PATCH") {
+      const row = await saveRecurring(sql, user, id, req.body || {});
+      invalidateFinanceMaintenance(user.market_id);
+      return send(res, 200, row);
+    }
   }
   if (section === "purchases") {
     if (!(user.enabled_features || []).includes("integrated_purchases"))

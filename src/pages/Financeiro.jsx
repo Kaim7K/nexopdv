@@ -1,11 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   AlertTriangle,
   ArrowDownCircle,
   ArrowRightLeft,
   ArrowUpCircle,
   BarChart3,
+  CalendarRange,
   Check,
+  ChevronDown,
   ChevronRight,
   CircleDollarSign,
   ClipboardList,
@@ -26,21 +36,6 @@ import {
   WalletCards,
   X,
 } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
 import {
@@ -51,6 +46,7 @@ import {
 import PaginationControls from '@/components/common/PaginationControls';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useConfirm } from '@/components/common/ConfirmProvider';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
   formatCurrency,
   formatDate,
@@ -58,32 +54,61 @@ import {
   getPaymentLabel,
 } from '@/lib/helpers';
 
-/** @type {Array<[string, string, React.ElementType]>} */
-const NAV_ITEMS = [
-  ['overview', 'Visão geral', BarChart3],
-  ['movements', 'Movimentações', ArrowRightLeft],
-  ['expenses', 'Despesas', ArrowDownCircle],
-  ['revenue', 'Receitas', ArrowUpCircle],
-  ['payables', 'Contas a pagar', Receipt],
-  ['receivables', 'Contas a receber', CircleDollarSign],
-  ['cashflow', 'Fluxo de caixa', TrendingUp],
-  ['results', 'Resultados', FileBarChart],
-  ['purchases', 'Compras', PackagePlus],
-  ['suppliers', 'Fornecedores', Store],
-  ['accounts', 'Contas financeiras', Landmark],
-  ['reconciliation', 'Conciliação', Check],
-  ['goals', 'Metas', Target],
-  ['reports', 'Relatórios', Download],
-  ['settings', 'Configurações', Settings],
+/** @type {Array<{label: string, items: Array<[string, string, React.ElementType]>}>} */
+const NAV_GROUPS = [
+  {
+    label: 'Dia a dia',
+    items: [
+      ['overview', 'Visão geral', BarChart3],
+      ['expenses', 'Despesas', ArrowDownCircle],
+      ['payables', 'Contas a pagar', Receipt],
+      ['receivables', 'Contas a receber', CircleDollarSign],
+    ],
+  },
+  {
+    label: 'Movimentação',
+    items: [
+      ['movements', 'Movimentações', ArrowRightLeft],
+      ['revenue', 'Receitas', ArrowUpCircle],
+      ['cashflow', 'Fluxo de caixa', TrendingUp],
+      ['accounts', 'Contas financeiras', Landmark],
+    ],
+  },
+  {
+    label: 'Gestão e análise',
+    items: [
+      ['results', 'Resultados', FileBarChart],
+      ['purchases', 'Compras', PackagePlus],
+      ['suppliers', 'Fornecedores', Store],
+      ['reconciliation', 'Conciliação', Check],
+      ['goals', 'Metas', Target],
+      ['reports', 'Relatórios', Download],
+      ['settings', 'Configurações', Settings],
+    ],
+  },
 ];
-const COLORS = [
-  '#16a06a',
-  '#0ea5e9',
-  '#8b5cf6',
-  '#f59e0b',
-  '#ef4444',
-  '#64748b',
-];
+const NAV_ITEMS = NAV_GROUPS.flatMap((group) => group.items);
+const PRIMARY_NAV_KEYS = new Set([
+  'overview',
+  'expenses',
+  'payables',
+  'cashflow',
+]);
+const FinanceTrendChart = lazy(() =>
+  import('@/components/finance/FinanceCharts').then((module) => ({
+    default: module.FinanceTrendChart,
+  })),
+);
+const ExpenseCategoryChart = lazy(() =>
+  import('@/components/finance/FinanceCharts').then((module) => ({
+    default: module.ExpenseCategoryChart,
+  })),
+);
+const CashFlowChart = lazy(() =>
+  import('@/components/finance/FinanceCharts').then((module) => ({
+    default: module.CashFlowChart,
+  })),
+);
 const STATUS_LABEL = {
   pending: 'Pendente',
   partial: 'Parcial',
@@ -138,7 +163,7 @@ export default function Financeiro() {
   const [range, setRange] = useState(rangePreset('month')),
     [loading, setLoading] = useState(true),
     [error, setError] = useState('');
-  const [expenseOpen, setExpenseOpen] = useState(false),
+  const [transactionType, setTransactionType] = useState(null),
     [revision, setRevision] = useState(0);
   const load = useCallback(async () => {
     setLoading(true);
@@ -160,7 +185,7 @@ export default function Financeiro() {
     load();
   }, [load]);
   const refresh = () => {
-    nexoApi.cache.clear();
+    nexoApi.cache.clear('/finance');
     setRevision((value) => value + 1);
   };
   const availableNav = NAV_ITEMS.filter(
@@ -168,8 +193,18 @@ export default function Financeiro() {
       key !== 'purchases' ||
       (bootstrap?.enabled_features || []).includes('integrated_purchases'),
   );
+  const primaryNav = availableNav.filter(([key]) => PRIMARY_NAV_KEYS.has(key));
+  const secondaryGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      ([key]) =>
+        !PRIMARY_NAV_KEYS.has(key) &&
+        availableNav.some(([availableKey]) => availableKey === key),
+    ),
+  })).filter((group) => group.items.length);
   const nav =
     availableNav.find((item) => item[0] === active) || availableNav[0];
+  const secondaryActive = !PRIMARY_NAV_KEYS.has(active);
   if (loading && !bootstrap)
     return <LoadingState label="Organizando as informações financeiras..." />;
   if (error && !bootstrap)
@@ -192,14 +227,14 @@ export default function Financeiro() {
         </div>
         <button
           type="button"
-          onClick={() => setExpenseOpen(true)}
+          onClick={() => setTransactionType('expense')}
           disabled={!bootstrap?.permissions?.create}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm hover:bg-accent/90 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> Adicionar despesa
         </button>
       </header>
-      <section className="surface-card p-3 no-print">
+      <section className="surface-card p-2 no-print">
         <label className="sr-only" htmlFor="finance-section">
           Área financeira
         </label>
@@ -209,29 +244,73 @@ export default function Financeiro() {
           value={active}
           onChange={(event) => setActive(event.target.value)}
         >
-          {availableNav.map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
+          {NAV_GROUPS.map((group) => {
+            const items = group.items.filter(([key]) =>
+              availableNav.some(([availableKey]) => availableKey === key),
+            );
+            return items.length ? (
+              <optgroup key={group.label} label={group.label}>
+                {items.map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null;
+          })}
         </select>
-        <nav
-          aria-label="Seções financeiras"
-          className="hidden gap-1 lg:flex lg:flex-wrap"
-        >
-          {availableNav.map(([key, label, Icon]) => (
-            <button
-              type="button"
-              key={key}
-              onClick={() => setActive(key)}
-              aria-current={active === key ? 'page' : undefined}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${active === key ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+        <div className="hidden items-center justify-between gap-3 lg:flex">
+          <nav aria-label="Áreas financeiras principais" className="flex gap-1">
+            {primaryNav.map(([key, label, Icon]) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => setActive(key)}
+                aria-current={active === key ? 'page' : undefined}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${active === key ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </nav>
+          <details className="group relative">
+            <summary
+              className={`flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-3 text-xs font-bold transition marker:hidden ${secondaryActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
             >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
+              {secondaryActive ? nav[1] : 'Mais opções'}
+              <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+            </summary>
+            <div className="absolute right-0 z-30 mt-2 grid w-[min(680px,calc(100vw-3rem))] grid-cols-3 gap-4 rounded-2xl border border-border bg-card p-4 shadow-xl">
+              {secondaryGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <div className="space-y-1">
+                    {group.items.map(([key, label, Icon]) => (
+                      <button
+                        type="button"
+                        key={key}
+                        onClick={(event) => {
+                          setActive(key);
+                          event.currentTarget
+                            .closest('details')
+                            ?.removeAttribute('open');
+                        }}
+                        aria-current={active === key ? 'page' : undefined}
+                        className={`flex min-h-10 w-full items-center gap-2 rounded-xl px-2.5 text-left text-xs font-semibold transition ${active === key ? 'bg-accent/10 text-accent' : 'hover:bg-muted'}`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
+        </div>
       </section>
       <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
@@ -261,14 +340,16 @@ export default function Financeiro() {
         bootstrap={bootstrap}
         range={range}
         refresh={refresh}
+        onNavigate={setActive}
+        onAddTransaction={setTransactionType}
       />
       <TransactionModal
-        open={expenseOpen}
-        onClose={() => setExpenseOpen(false)}
+        open={Boolean(transactionType)}
+        onClose={() => setTransactionType(null)}
         bootstrap={bootstrap}
-        initialType="expense"
+        initialType={transactionType || 'expense'}
         onSaved={() => {
-          setExpenseOpen(false);
+          setTransactionType(null);
           refresh();
         }}
       />
@@ -277,42 +358,70 @@ export default function Financeiro() {
 }
 
 function PeriodFilter({ range, setRange, loading, onRefresh }) {
+  const [preset, setPreset] = useState('month');
   return (
-    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+    <div className="flex flex-wrap items-center gap-2">
       <select
-        className="field col-span-2 mt-0 min-w-40 sm:w-auto"
+        className="field mt-0 min-w-40 flex-1 sm:w-auto sm:flex-none"
         aria-label="Período rápido"
-        onChange={(event) =>
-          event.target.value && setRange(rangePreset(event.target.value))
-        }
-        defaultValue="month"
+        value={preset}
+        onChange={(event) => {
+          const value = event.target.value;
+          setPreset(value);
+          if (value !== 'custom') setRange(rangePreset(value));
+        }}
       >
         <option value="today">Hoje</option>
         <option value="yesterday">Ontem</option>
         <option value="7days">Últimos 7 dias</option>
         <option value="month">Este mês</option>
         <option value="previous">Mês anterior</option>
+        <option value="custom">Período personalizado</option>
       </select>
-      <input
-        type="date"
-        aria-label="Data inicial"
-        className="field mt-0 sm:w-auto"
-        value={range.from}
-        max={range.to}
-        onChange={(event) =>
-          setRange((value) => ({ ...value, from: event.target.value }))
-        }
-      />
-      <input
-        type="date"
-        aria-label="Data final"
-        className="field mt-0 sm:w-auto"
-        value={range.to}
-        min={range.from}
-        onChange={(event) =>
-          setRange((value) => ({ ...value, to: event.target.value }))
-        }
-      />
+      <details className="group relative">
+        <summary className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold marker:hidden hover:bg-muted">
+          <CalendarRange className="h-4 w-4" />
+          <span className="hidden sm:inline">Escolher datas</span>
+          <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+        </summary>
+        <div className="absolute right-0 z-20 mt-2 w-[min(330px,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-4 shadow-xl">
+          <p className="text-xs font-bold">Período personalizado</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              De
+              <input
+                type="date"
+                className="field mt-1"
+                value={range.from}
+                max={range.to}
+                onChange={(event) => {
+                  setPreset('custom');
+                  setRange((value) => ({
+                    ...value,
+                    from: event.target.value,
+                  }));
+                }}
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Até
+              <input
+                type="date"
+                className="field mt-1"
+                value={range.to}
+                min={range.from}
+                onChange={(event) => {
+                  setPreset('custom');
+                  setRange((value) => ({
+                    ...value,
+                    to: event.target.value,
+                  }));
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </details>
       <button
         type="button"
         onClick={onRefresh}
@@ -326,8 +435,24 @@ function PeriodFilter({ range, setRange, loading, onRefresh }) {
   );
 }
 
-function FinanceSection({ active, dashboard, bootstrap, range, refresh }) {
-  if (active === 'overview') return <Overview data={dashboard} />;
+function FinanceSection({
+  active,
+  dashboard,
+  bootstrap,
+  range,
+  refresh,
+  onNavigate,
+  onAddTransaction,
+}) {
+  if (active === 'overview')
+    return (
+      <Overview
+        data={dashboard}
+        onNavigate={onNavigate}
+        onAddTransaction={onAddTransaction}
+        canCreate={bootstrap.permissions.create}
+      />
+    );
   if (active === 'movements') return <LedgerPanel range={range} />;
   if (['expenses', 'revenue', 'payables'].includes(active))
     return (
@@ -372,183 +497,329 @@ function FinanceSection({ active, dashboard, bootstrap, range, refresh }) {
   return <FinanceSettings bootstrap={bootstrap} refreshAll={refresh} />;
 }
 
-function Overview({ data }) {
+function Overview({ data, onNavigate, onAddTransaction, canCreate }) {
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const summary = data?.summary || {};
   const cards = [
-    [
-      'Faturamento bruto',
-      summary.gross_revenue,
-      'Valor total vendido antes de descontos',
-    ],
-    [
-      'Receita líquida',
-      summary.net_revenue,
-      'Vendas líquidas e outras receitas',
-    ],
-    ['Total de despesas', summary.expenses, 'Despesas e perdas do período'],
-    [
-      'Lucro estimado',
-      summary.estimated_profit,
-      'Receitas menos custos, taxas e despesas',
-    ],
-    [
-      'Margem de lucro',
-      `${Number(summary.margin || 0).toLocaleString('pt-BR')}%`,
-      'Percentual estimado sobre a receita',
-    ],
-    ['Contas a pagar', summary.payable, 'Saldo ainda pendente'],
-    ['Contas a receber', summary.receivable, 'Inclui vendas fiadas pendentes'],
-    [
-      'Saldo financeiro',
-      summary.financial_balance,
-      'Soma das contas financeiras',
-    ],
-    [
-      'Disponível em caixa',
-      summary.cash_available,
-      'Caixa físico, carteira e cofre',
-    ],
+    {
+      label: 'Receita líquida',
+      value: summary.net_revenue,
+      help: 'O que entrou após descontos e cancelamentos',
+      change: data?.comparison?.revenue,
+      icon: ArrowUpCircle,
+      tone: 'positive',
+    },
+    {
+      label: 'Despesas',
+      value: summary.expenses,
+      help: 'Tudo o que saiu para manter o mercado',
+      icon: ArrowDownCircle,
+      tone: 'negative',
+    },
+    {
+      label: 'Lucro estimado',
+      value: summary.estimated_profit,
+      help: 'O que restou após custos, taxas e despesas',
+      icon: TrendingUp,
+      tone: 'info',
+    },
+    {
+      label: 'Saldo disponível',
+      value: summary.financial_balance,
+      help: 'Total atual das contas financeiras',
+      icon: WalletCards,
+      tone: 'neutral',
+    },
+  ];
+  const quickActions = [
+    {
+      label: 'Adicionar despesa',
+      description: 'Registre uma conta ou gasto',
+      icon: ArrowDownCircle,
+      action: () => onAddTransaction('expense'),
+      disabled: !canCreate,
+    },
+    {
+      label: 'Adicionar receita',
+      description: 'Registre uma entrada externa',
+      icon: ArrowUpCircle,
+      action: () => onAddTransaction('revenue'),
+      disabled: !canCreate,
+    },
+    {
+      label: 'Ver contas a pagar',
+      description: 'Confira vencimentos e atrasos',
+      icon: Receipt,
+      action: () => onNavigate('payables'),
+    },
+    {
+      label: 'Ver fluxo de caixa',
+      description: 'Acompanhe entradas e saídas',
+      icon: TrendingUp,
+      action: () => onNavigate('cashflow'),
+    },
   ];
   return (
     <div className="space-y-5">
+      <section aria-labelledby="financial-summary-title">
+        <div className="mb-3">
+          <h3 id="financial-summary-title" className="text-base font-bold">
+            Como está o seu financeiro
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Os quatro números mais importantes do período selecionado.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map((card) => (
+            <MetricCard
+              key={card.label}
+              {...card}
+              value={formatCurrency(card.value)}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section
+        className="surface-card p-4"
+        aria-labelledby="quick-actions-title"
+      >
+        <h3 id="quick-actions-title" className="text-sm font-bold">
+          O que você quer fazer?
+        </h3>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map((item) => (
+            <button
+              type="button"
+              key={item.label}
+              onClick={item.action}
+              disabled={item.disabled}
+              className="group flex min-h-16 items-center gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground transition group-hover:bg-accent/10 group-hover:text-accent">
+                <item.icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="block text-xs">{item.label}</strong>
+                <span className="mt-0.5 block text-[10px] leading-4 text-muted-foreground">
+                  {item.description}
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      </section>
+
       {data?.alerts?.length > 0 && (
         <section
-          aria-label="Alertas financeiros"
-          className="grid gap-3 md:grid-cols-2"
+          aria-labelledby="financial-alerts-title"
+          className="surface-card overflow-hidden"
         >
-          {data.alerts.map((alert) => (
-            <article
-              key={alert.type}
-              className={`rounded-2xl border p-4 ${alert.severity === 'critical' ? 'border-destructive/30 bg-destructive/5' : 'border-amber-500/30 bg-amber-500/5'}`}
-            >
-              <div className="flex gap-3">
-                <AlertTriangle
-                  className={`mt-0.5 h-5 w-5 shrink-0 ${alert.severity === 'critical' ? 'text-destructive' : 'text-amber-600'}`}
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 id="financial-alerts-title" className="text-sm font-bold">
+                Pontos que precisam de atenção
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                {data.alerts.length}{' '}
+                {data.alerts.length === 1
+                  ? 'aviso encontrado'
+                  : 'avisos encontrados'}
+              </p>
+            </div>
+          </div>
+          <div className="divide-y divide-border">
+            {data.alerts.slice(0, 3).map((alert) => (
+              <div key={alert.type} className="flex gap-3 px-4 py-3">
+                <span
+                  className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === 'critical' ? 'bg-destructive' : 'bg-amber-500'}`}
+                  aria-hidden="true"
                 />
                 <div>
-                  <h3 className="text-sm font-bold">{alert.title}</h3>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <h4 className="text-xs font-bold">{alert.title}</h4>
+                  <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
                     {alert.description}
                   </p>
                 </div>
               </div>
-            </article>
-          ))}
+            ))}
+          </div>
         </section>
       )}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, value, help], index) => (
-          <MetricCard
-            key={label}
-            label={label}
-            value={typeof value === 'string' ? value : formatCurrency(value)}
-            help={help}
-            change={
-              index < 3
-                ? data?.comparison?.[
-                    index === 0
-                      ? 'revenue'
-                      : index === 1
-                        ? 'revenue'
-                        : 'expenses'
-                  ]
-                : null
-            }
-          />
-        ))}
-      </section>
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-        <ChartCard title="Receitas, despesas e lucro">
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={data?.series || []}>
-              <defs>
-                <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a06a" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#16a06a" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(value) => value.slice(5)}
-                fontSize={11}
-              />
-              <YAxis tickFormatter={compactMoney} fontSize={11} />
-              <Tooltip
-                formatter={(value) => formatCurrency(value)}
-                labelFormatter={formatDate}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                name="Receitas"
-                stroke="#16a06a"
-                fill="url(#rev)"
-              />
-              <Area
-                type="monotone"
-                dataKey="expense"
-                name="Despesas"
-                stroke="#ef4444"
-                fill="transparent"
-              />
-              <Area
-                type="monotone"
-                dataKey="profit"
-                name="Lucro"
-                stroke="#0ea5e9"
-                fill="transparent"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
+        <ChartCard title="Entradas, saídas e lucro">
+          <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
+            Acompanhe a evolução diária sem confundir faturamento com saldo.
+          </p>
+          <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
+            <FinanceTrendChart data={data?.series || []} />
+          </Suspense>
         </ChartCard>
-        <ChartCard title="Despesas por categoria">
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data?.expenses_by_category || []}
-                dataKey="value"
-                nameKey="label"
-                innerRadius={58}
-                outerRadius={92}
-                paddingAngle={2}
-              >
-                {(data?.expenses_by_category || []).map((item, index) => (
-                  <Cell key={item.label} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={formatCurrency} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        <section className="surface-card p-4">
+          <h3 className="text-sm font-bold">Próximos compromissos</h3>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Valores pendentes que afetam seu saldo.
+          </p>
+          <div className="mt-4 space-y-3">
+            <FinancialPositionRow
+              label="Contas a pagar"
+              value={summary.payable}
+              help="Ainda precisam ser pagas"
+              tone="negative"
+              onClick={() => onNavigate('payables')}
+            />
+            <FinancialPositionRow
+              label="Contas a receber"
+              value={summary.receivable}
+              help="Inclui fiados pendentes"
+              tone="positive"
+              onClick={() => onNavigate('receivables')}
+            />
+            <FinancialPositionRow
+              label="Dinheiro em caixa"
+              value={summary.cash_available}
+              help="Caixa físico, carteira e cofre"
+              onClick={() => onNavigate('accounts')}
+            />
+          </div>
+        </section>
       </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <SimpleRanking
-          title="Formas de pagamento"
-          items={Object.entries(data?.payments || {}).map(([label, value]) => ({
-            label: getPaymentLabel(label),
-            value,
-          }))}
-        />
-        <SimpleRanking
-          title="Produtos que mais geraram receita"
-          items={data?.top_products || []}
-        />
-      </section>
+
+      <details
+        className="surface-card group overflow-hidden"
+        onToggle={(event) => setAnalyticsOpen(event.currentTarget.open)}
+      >
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden hover:bg-muted/40">
+          <span>
+            <strong className="block text-sm">Ver análises detalhadas</strong>
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              Margem, faturamento bruto, categorias, pagamentos e produtos.
+            </span>
+          </span>
+          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+        </summary>
+        {analyticsOpen && (
+          <div className="space-y-4 border-t border-border p-4">
+            <section className="grid gap-3 sm:grid-cols-3">
+              <MetricCard
+                label="Faturamento bruto"
+                value={formatCurrency(summary.gross_revenue)}
+                help="Total vendido antes dos descontos"
+              />
+              <MetricCard
+                label="Margem de lucro"
+                value={`${Number(summary.margin || 0).toLocaleString('pt-BR')}%`}
+                help="Quanto do faturamento virou lucro"
+              />
+              <MetricCard
+                label="Disponível em caixa"
+                value={formatCurrency(summary.cash_available)}
+                help="Dinheiro com disponibilidade imediata"
+              />
+            </section>
+            <section className="grid gap-4 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
+              <ChartCard title="Despesas por categoria">
+                <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
+                  <ExpenseCategoryChart
+                    data={data?.expenses_by_category || []}
+                  />
+                </Suspense>
+              </ChartCard>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SimpleRanking
+                  title="Formas de pagamento"
+                  items={Object.entries(data?.payments || {}).map(
+                    ([label, value]) => ({
+                      label: getPaymentLabel(label),
+                      value,
+                    }),
+                  )}
+                />
+                <SimpleRanking
+                  title="Produtos que mais geraram receita"
+                  items={data?.top_products || []}
+                />
+              </div>
+            </section>
+          </div>
+        )}
+      </details>
     </div>
   );
 }
 
-function MetricCard({ label, value, help, change = null }) {
+function FinancialPositionRow({
+  label,
+  value,
+  help,
+  tone = 'neutral',
+  onClick,
+}) {
+  const toneClass =
+    tone === 'negative'
+      ? 'text-destructive'
+      : tone === 'positive'
+        ? 'text-emerald-700 dark:text-emerald-300'
+        : 'text-foreground';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5"
+    >
+      <span className="min-w-0">
+        <strong className="block text-xs">{label}</strong>
+        <span className="mt-0.5 block text-[10px] text-muted-foreground">
+          {help}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1.5">
+        <strong className={`text-sm tabular-nums ${toneClass}`}>
+          {formatCurrency(value)}
+        </strong>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </span>
+    </button>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  help,
+  change = null,
+  icon: Icon = null,
+  tone = 'neutral',
+}) {
+  const iconTone = {
+    positive: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    negative: 'bg-destructive/10 text-destructive',
+    info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+    neutral: 'bg-muted text-muted-foreground',
+  }[tone];
   return (
     <article className="surface-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          {Icon && (
+            <span
+              className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${iconTone}`}
+            >
+              <Icon className="h-4 w-4" />
+            </span>
+          )}
+          <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+        </div>
         {change !== null && change !== undefined && (
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${change >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 text-destructive'}`}
+            title="Comparação com o período anterior"
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${change >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 text-destructive'}`}
           >
             {change > 0 ? '+' : ''}
             {change}%
@@ -568,6 +839,15 @@ function ChartCard({ title, children }) {
       <h3 className="mb-4 text-sm font-bold">{title}</h3>
       {children}
     </section>
+  );
+}
+function ChartSkeleton({ height = 'h-[260px]' }) {
+  return (
+    <div
+      role="status"
+      aria-label="Carregando gráfico"
+      className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
+    />
   );
 }
 function SimpleRanking({ title, items }) {
@@ -598,11 +878,9 @@ function SimpleRanking({ title, items }) {
     </section>
   );
 }
-const compactMoney = (value) =>
-  `R$ ${Number(value || 0) >= 1000 ? `${(Number(value) / 1000).toFixed(0)} mil` : Number(value || 0).toFixed(0)}`;
-
 function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
   const confirm = useConfirm();
+  const requestSequence = useRef(0);
   const [data, setData] = useState(null),
     [loading, setLoading] = useState(true),
     [search, setSearch] = useState(''),
@@ -611,26 +889,33 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
     [editing, setEditing] = useState(null),
     [paying, setPaying] = useState(null),
     [selected, setSelected] = useState([]);
+  const debouncedSearch = useDebouncedValue(search, 280);
   const filters = useMemo(
     () => ({
       from: range.from,
       to: range.to,
       page,
       page_size: 25,
-      search,
+      search: debouncedSearch,
       type: mode === 'revenue' ? 'revenue' : 'expense',
       status: mode === 'payables' ? 'open' : '',
     }),
-    [range, page, search, mode],
+    [range, page, debouncedSearch, mode],
   );
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     try {
-      setData(await nexoApi.finance.transactions.list(filters));
+      const result = await nexoApi.finance.transactions.list(filters);
+      if (sequence === requestSequence.current) setData(result);
     } catch (cause) {
-      toast.error(cause.message);
+      if (
+        sequence === requestSequence.current &&
+        cause.code !== 'REQUEST_REPLACED'
+      )
+        toast.error(cause.message);
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, [filters]);
   useEffect(() => {
@@ -719,38 +1004,49 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
           </button>
         </div>
       )}
-      {loading ? (
+      {loading && data && (
+        <div
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Atualizando
+          lançamentos...
+        </div>
+      )}
+      {loading && !data ? (
         <LoadingState label="Carregando lançamentos..." />
       ) : (
-        <TransactionList
-          items={data?.items || []}
-          selectable={mode === 'payables'}
-          selected={selected}
-          setSelected={setSelected}
-          onPay={bootstrap.permissions.pay ? setPaying : null}
-          onEdit={
-            bootstrap.permissions.edit
-              ? (item) => {
-                  setEditing(item);
-                  setModal(true);
-                }
-              : null
-          }
-          onCancel={bootstrap.permissions.cancel ? cancel : null}
-          onDuplicate={
-            bootstrap.permissions.create
-              ? async (item) => {
-                  try {
-                    await nexoApi.finance.transactions.duplicate(item.id);
-                    toast.success('Lançamento duplicado.');
-                    load();
-                  } catch (cause) {
-                    toast.error(cause.message);
+        <div aria-busy={loading} className={loading ? 'opacity-70' : ''}>
+          <TransactionList
+            items={data?.items || []}
+            selectable={mode === 'payables'}
+            selected={selected}
+            setSelected={setSelected}
+            onPay={bootstrap.permissions.pay ? setPaying : null}
+            onEdit={
+              bootstrap.permissions.edit
+                ? (item) => {
+                    setEditing(item);
+                    setModal(true);
                   }
-                }
-              : null
-          }
-        />
+                : null
+            }
+            onCancel={bootstrap.permissions.cancel ? cancel : null}
+            onDuplicate={
+              bootstrap.permissions.create
+                ? async (item) => {
+                    try {
+                      await nexoApi.finance.transactions.duplicate(item.id);
+                      toast.success('Lançamento duplicado.');
+                      load();
+                    } catch (cause) {
+                      toast.error(cause.message);
+                    }
+                  }
+                : null
+            }
+          />
+        </div>
       )}
       <PaginationControls
         page={data?.page || 1}
@@ -1551,31 +1847,9 @@ function CashFlow({ data }) {
         />
       </section>
       <ChartCard title="Evolução diária">
-        <ResponsiveContainer width="100%" height={340}>
-          <BarChart data={series}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
-            <XAxis
-              dataKey="date"
-              tickFormatter={(v) => v.slice(5)}
-              fontSize={11}
-            />
-            <YAxis tickFormatter={compactMoney} fontSize={11} />
-            <Tooltip formatter={formatCurrency} />
-            <Legend />
-            <Bar
-              dataKey="revenue"
-              name="Entradas"
-              fill="#16a06a"
-              radius={[5, 5, 0, 0]}
-            />
-            <Bar
-              dataKey="expense"
-              name="Saídas"
-              fill="#ef4444"
-              radius={[5, 5, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<ChartSkeleton height="h-[340px]" />}>
+          <CashFlowChart data={series} />
+        </Suspense>
       </ChartCard>
     </div>
   );
@@ -1847,7 +2121,9 @@ function Purchases({ bootstrap, refreshAll }) {
   const confirm = useConfirm();
   const [items, setItems] = useState([]),
     [loading, setLoading] = useState(true),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(false),
+    [products, setProducts] = useState([]),
+    [productsLoading, setProductsLoading] = useState(false);
   const load = () => {
     setLoading(true);
     nexoApi.finance.purchases
@@ -1857,6 +2133,19 @@ function Purchases({ bootstrap, refreshAll }) {
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
+  const openPurchase = async () => {
+    setOpen(true);
+    if (products.length || productsLoading) return;
+    setProductsLoading(true);
+    try {
+      setProducts(await nexoApi.finance.products());
+    } catch (cause) {
+      setOpen(false);
+      toast.error(cause.message || 'Não foi possível carregar os produtos.');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
   const confirmPurchase = async (item) => {
     if (
       !(await confirm({
@@ -1881,7 +2170,7 @@ function Purchases({ bootstrap, refreshAll }) {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={openPurchase}
           className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
         >
           <Plus className="h-4 w-4" /> Registrar compra
@@ -1935,6 +2224,8 @@ function Purchases({ bootstrap, refreshAll }) {
         open={open}
         onClose={() => setOpen(false)}
         bootstrap={bootstrap}
+        products={products}
+        productsLoading={productsLoading}
         onSaved={() => {
           setOpen(false);
           load();
@@ -1945,7 +2236,14 @@ function Purchases({ bootstrap, refreshAll }) {
   );
 }
 
-function PurchaseModal({ open, onClose, bootstrap, onSaved }) {
+function PurchaseModal({
+  open,
+  onClose,
+  bootstrap,
+  products,
+  productsLoading,
+  onSaved,
+}) {
   const defaultForm = () => ({
     supplier_id: '',
     account_id:
@@ -1966,6 +2264,15 @@ function PurchaseModal({ open, onClose, bootstrap, onSaved }) {
     if (open) setForm(defaultForm());
   }, [open]);
   if (!open) return null;
+  if (productsLoading)
+    return (
+      <FinanceModal title="Registrar compra" onClose={onClose} wide>
+        <LoadingState
+          className="min-h-48"
+          label="Carregando produtos para a compra..."
+        />
+      </FinanceModal>
+    );
   const total =
     form.items.reduce(
       (s, i) => s + Number(i.quantity || 0) * Number(i.unit_cost || 0),
@@ -2095,7 +2402,7 @@ function PurchaseModal({ open, onClose, bootstrap, onSaved }) {
                 }
               >
                 <option value="">Produto</option>
-                {bootstrap.products.map((p) => (
+                {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} ({p.internal_code || p.barcode || 'sem código'})
                   </option>

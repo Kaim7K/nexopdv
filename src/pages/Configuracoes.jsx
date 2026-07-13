@@ -629,6 +629,7 @@ export default function Configuracoes() {
                     <img
                       src={logoUrl}
                       alt="Prévia da logo"
+                      decoding="async"
                       className="max-h-10 max-w-40 object-contain object-left"
                     />
                   ) : (

@@ -253,9 +253,18 @@ export default function AdminPlanos() {
           <Plus className="h-4 w-4" /> Novo plano
         </button>
       </header>
-      {loading ? (
+      {loading && plans.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Atualizando
+          contratos...
+        </div>
+      )}
+      {loading && !plans.length ? (
         <LoadingState label="Carregando contratos..." />
-      ) : error ? (
+      ) : error && !plans.length ? (
         <ErrorState description={error} onRetry={load} />
       ) : (
         <>

@@ -1,4 +1,10 @@
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -10,14 +16,30 @@ import AppErrorBoundary from '@/components/AppErrorBoundary';
 // Add page imports here
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Login from '@/pages/Login';
-import Landing from '@/pages/Landing';
-const PDV=lazy(()=>import('@/pages/PDV')),Estoque=lazy(()=>import('@/pages/Estoque')),Vendas=lazy(()=>import('@/pages/Vendas')),Fiados=lazy(()=>import('@/pages/Fiados')),Relatorios=lazy(()=>import('@/pages/Relatorios')),Financeiro=lazy(()=>import('@/pages/Financeiro')),Usuarios=lazy(()=>import('@/pages/Usuarios')),Configuracoes=lazy(()=>import('@/pages/Configuracoes')),AuditoriaGeral=lazy(()=>import('@/pages/AuditoriaGeral')),ProdutoDetalhe=lazy(()=>import('@/pages/ProdutoDetalhe')),HistoricoCaixas=lazy(()=>import('@/pages/HistoricoCaixas')),AdminOverview=lazy(()=>import('@/pages/AdminOverview')),AdminMercados=lazy(()=>import('@/pages/AdminMercados')),AdminPlanos=lazy(()=>import('@/pages/AdminPlanos')),AdminRelatorios=lazy(()=>import('@/pages/AdminRelatorios')),AdminConfiguracoes=lazy(()=>import('@/pages/AdminConfiguracoes'));
+const Login = lazy(() => import('@/pages/Login')),
+  Landing = lazy(() => import('@/pages/Landing')),
+  PDV = lazy(() => import('@/pages/PDV')),
+  Estoque = lazy(() => import('@/pages/Estoque')),
+  Vendas = lazy(() => import('@/pages/Vendas')),
+  Fiados = lazy(() => import('@/pages/Fiados')),
+  Relatorios = lazy(() => import('@/pages/Relatorios')),
+  Financeiro = lazy(() => import('@/pages/Financeiro')),
+  Usuarios = lazy(() => import('@/pages/Usuarios')),
+  Configuracoes = lazy(() => import('@/pages/Configuracoes')),
+  AuditoriaGeral = lazy(() => import('@/pages/AuditoriaGeral')),
+  ProdutoDetalhe = lazy(() => import('@/pages/ProdutoDetalhe')),
+  HistoricoCaixas = lazy(() => import('@/pages/HistoricoCaixas')),
+  AdminOverview = lazy(() => import('@/pages/AdminOverview')),
+  AdminMercados = lazy(() => import('@/pages/AdminMercados')),
+  AdminPlanos = lazy(() => import('@/pages/AdminPlanos')),
+  AdminRelatorios = lazy(() => import('@/pages/AdminRelatorios')),
+  AdminConfiguracoes = lazy(() => import('@/pages/AdminConfiguracoes'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
   const location = useLocation();
-  const isPublicRoute = location.pathname === '/' || location.pathname === '/login';
+  const isPublicRoute =
+    location.pathname === '/' || location.pathname === '/login';
 
   // A landing e o login aparecem imediatamente; apenas rotas privadas aguardam a sessão.
   if (isLoadingAuth && !isPublicRoute) {
@@ -27,9 +49,35 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      <Route
+        path="/"
+        element={
+          <Suspense
+            fallback={
+              <LoadingState fullScreen label="Preparando conteúdo..." />
+            }
+          >
+            <Landing />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <Suspense
+            fallback={<LoadingState fullScreen label="Preparando acesso..." />}
+          >
+            <Login />
+          </Suspense>
+        }
+      />
+      <Route
+        element={
+          <ProtectedRoute
+            unauthenticatedElement={<Navigate to="/login" replace />}
+          />
+        }
+      >
         <Route element={<Layout />}>
           <Route path="/pdv" element={<PDV />} />
           <Route path="/estoque" element={<Estoque />} />
@@ -54,18 +102,14 @@ const AuthenticatedApp = () => {
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <Router>
         <ConfirmProvider>
           <ScrollToTop />
           <AppErrorBoundary>
-            <Suspense fallback={<LoadingState fullScreen label="Abrindo a página..." />}>
-              <AuthenticatedApp />
-            </Suspense>
+            <AuthenticatedApp />
           </AppErrorBoundary>
           <HotToaster
             position="top-right"
@@ -74,7 +118,7 @@ function App() {
         </ConfirmProvider>
       </Router>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;
