@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
 
 export default function StockAlertSettings() {
-  const [data, setData] = useState({ enabled:true, time:'20:00', emailConfiguration:null, recipients:[], deliveries:[] });
+  const [data, setData] = useState({ enabled:true, frequency:'daily', time:'20:00', emailConfiguration:null, recipients:[], deliveries:[] });
   const [email, setEmail] = useState('');
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,10 +19,16 @@ export default function StockAlertSettings() {
 
   const saveSettings = async next => {
     const previous = data;
-    const settings = { enabled:next.enabled, time:next.time };
+    const settings = { enabled:next.enabled, frequency:next.frequency, time:next.time };
     setData(current => ({ ...current, ...settings }));
     setBusy('settings');
-    try { await nexoApi.stockAlerts.updateSettings(settings); toast.success(next.enabled === previous.enabled ? 'Horário do relatório atualizado.' : next.enabled ? 'Envio automático ativado.' : 'Envio automático desativado.'); }
+    try {
+      await nexoApi.stockAlerts.updateSettings(settings);
+      const message = next.enabled !== previous.enabled
+        ? (next.enabled ? 'Envio automático ativado.' : 'Envio automático desativado.')
+        : next.frequency !== previous.frequency ? 'Período de envio atualizado.' : 'Configuração do relatório atualizada.';
+      toast.success(message);
+    }
     catch (error) { toast.error(error.message); await load(); }
     finally { setBusy(''); }
   };
@@ -68,6 +74,7 @@ export default function StockAlertSettings() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-3 text-sm font-semibold"><span>Ativar envio automático</span><input type="checkbox" checked={data.enabled !== false} disabled={busy === 'settings'} onChange={event => saveSettings({ ...data, enabled:event.target.checked })} className="h-5 w-5 accent-[var(--market-primary)]" /></label>
           <label className="flex items-center gap-2 text-sm font-semibold"><Clock3 className="h-4 w-4 text-muted-foreground" /> Horário<input type="time" value="20:00" disabled className="h-11 rounded-xl border border-border bg-muted px-3 opacity-70" title="No plano Hobby da Vercel, o agendamento gratuito pode executar apenas uma vez por dia." /></label>
+          <label className="flex items-center gap-2 text-sm font-semibold">Período<select value={data.frequency || 'daily'} disabled={busy === 'settings' || data.enabled === false} onChange={event => saveSettings({ ...data, frequency:event.target.value })} className="h-11 rounded-xl border border-border bg-background px-3 disabled:bg-muted disabled:opacity-60"><option value="daily">Diário</option><option value="weekly">Semanal</option><option value="fortnightly">Quinzenal</option><option value="monthly">Mensal</option></select></label>
         </div>
       </div>
 

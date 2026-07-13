@@ -26,6 +26,7 @@ const PRODUCT_FIELDS = ['name','category','barcode','internal_code','image_url',
 const PRODUCT_UNITS = new Set(['unidade','peso','pacote']);
 const PRODUCT_STATUSES = new Set(['ativo','inativo']);
 const STOCK_ALERT_TIMEZONE = 'America/Bahia';
+const STOCK_ALERT_FREQUENCIES = { daily:1, weekly:7, fortnightly:15, monthly:30 };
 
 const text = (value, max = 500) => String(value ?? '').trim().slice(0, max);
 const productNameKey = value => text(value, 180).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
@@ -95,7 +96,9 @@ async function processScheduledStockAlerts(sql, now = new Date()) {
   const markets = await sql`
     SELECT market.id, market.name,
       COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_time' LIMIT 1), '20:00') AS alert_time,
-      COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_enabled' LIMIT 1), 'true') AS alert_enabled
+      COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_enabled' LIMIT 1), 'true') AS alert_enabled,
+      COALESCE((SELECT config.data->>'value' FROM nexo.records config WHERE config.market_id=market.id AND config.entity='system_configs' AND config.data->>'key'='stock_alert_frequency' LIMIT 1), 'daily') AS alert_frequency,
+      (SELECT MAX(delivery.created_date) FROM nexo.records delivery WHERE delivery.market_id=market.id AND delivery.entity='stock_alert_deliveries' AND delivery.data->>'status'='enviado') AS last_sent_at
     FROM nexo.markets market
     WHERE market.active=true
       AND EXISTS (SELECT 1 FROM nexo.records recipient WHERE recipient.market_id=market.id AND recipient.entity='stock_alert_recipients' AND recipient.data->>'active'='true')
@@ -103,6 +106,8 @@ async function processScheduledStockAlerts(sql, now = new Date()) {
   const results = [];
   for (const market of markets) {
     if (market.alert_enabled !== 'true') continue;
+    const intervalDays = STOCK_ALERT_FREQUENCIES[market.alert_frequency] || 1;
+    if (market.last_sent_at && now.getTime() - new Date(market.last_sent_at).getTime() < intervalDays * 86_400_000) continue;
     const scheduledHour = Math.max(0, Math.min(23, Number(String(market.alert_time || '20:00').split(':')[0]) || 20));
     if (clock.hour < scheduledHour) continue;
     const deliveryKey = `${market.id}:${clock.date}`;
@@ -363,18 +368,20 @@ async function routeHandler(req, res) {
       const [recipients, deliveries, configRows] = await Promise.all([
         sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='stock_alert_recipients' ORDER BY created_date`,
         sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='stock_alert_deliveries' ORDER BY created_date DESC LIMIT 20`,
-        sql`SELECT data FROM nexo.records WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=ANY(ARRAY['stock_alert_time','stock_alert_enabled'])`,
+        sql`SELECT data FROM nexo.records WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=ANY(ARRAY['stock_alert_time','stock_alert_enabled','stock_alert_frequency'])`,
       ]);
       const config = Object.fromEntries(configRows.map(row => [row.data?.key, row.data?.value]));
-      return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, emailConfiguration:getStockEmailConfiguration(), recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
+      return send(res, 200, { enabled:config.stock_alert_enabled !== 'false', frequency:STOCK_ALERT_FREQUENCIES[config.stock_alert_frequency] ? config.stock_alert_frequency : 'daily', time:config.stock_alert_time || '20:00', timezone:STOCK_ALERT_TIMEZONE, emailConfiguration:getStockEmailConfiguration(), recipients:recipients.map(recordFromRow), deliveries:deliveries.map(recordFromRow) });
     }
     if (path[1] === 'settings' && req.method === 'PATCH') {
       const time = '20:00';
       const enabled = req.body.enabled !== false;
+      const frequency = STOCK_ALERT_FREQUENCIES[req.body.frequency] ? req.body.frequency : 'daily';
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return send(res, 400, { message:'Informe um horário válido.' });
       const entries = [
         { key:'stock_alert_time', value:time, label:'Horário do alerta de estoque' },
         { key:'stock_alert_enabled', value:String(enabled), label:'Envio automático do alerta de estoque' },
+        { key:'stock_alert_frequency', value:frequency, label:'Frequência do alerta de estoque' },
       ];
       for (const payload of entries) {
         await sql`
@@ -385,7 +392,7 @@ async function routeHandler(req, res) {
           INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'system_configs',${JSON.stringify(payload)}::jsonb WHERE NOT EXISTS(SELECT 1 FROM updated)
         `;
       }
-      return send(res, 200, { enabled, time, timezone:STOCK_ALERT_TIMEZONE });
+      return send(res, 200, { enabled, frequency, time, timezone:STOCK_ALERT_TIMEZONE });
     }
     if (path[1] === 'preview' && req.method === 'GET') {
       const products = await loadStockAlertReport(sql, user.market_id);
