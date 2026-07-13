@@ -51,14 +51,22 @@ export async function migrateDatabase() {
       .map(statement => statement.trim())
       .filter(Boolean);
 
-    await sql.transaction(tx => [
-      ...statements.map(statement => tx.query(statement)),
-      tx`
-        INSERT INTO nexo.schema_migrations(version, name)
-        VALUES (${version}, ${filename})
-        ON CONFLICT (version) DO NOTHING
-      `,
-    ]);
+    try {
+      await sql.transaction(tx => [
+        ...statements.map(statement => tx.query(statement)),
+        tx`
+          INSERT INTO nexo.schema_migrations(version, name)
+          VALUES (${version}, ${filename})
+          ON CONFLICT (version) DO NOTHING
+        `,
+      ]);
+    } catch (cause) {
+      const databaseMessage = cause?.message || 'erro desconhecido do banco';
+      throw new Error(
+        `Falha na migração ${filename} (${statements.length} instruções): ${databaseMessage}`,
+        { cause },
+      );
+    }
     console.log(`Migração ${filename} aplicada.`);
   }
 
