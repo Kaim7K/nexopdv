@@ -8,6 +8,8 @@ const [api,client,migration,cashPage,quickModal,app,layout,email] = await Promis
 ]);
 
 assert.match(migration,/nexo_products_market_barcode_uidx/,'O banco deve impedir códigos de barras duplicados.');
+assert.doesNotMatch(migration,/UPDATE\s+nexo\.users\s+current_user/i,'A migração não pode usar current_user como alias, pois é palavra reservada do PostgreSQL.');
+assert.match(migration,/UPDATE\s+nexo\.users\s+AS\s+user_record/i,'A associação da unidade padrão deve usar um alias SQL seguro.');
 assert.match(migration,/CREATE TABLE IF NOT EXISTS nexo\.plans/);
 assert.match(migration,/CREATE TABLE IF NOT EXISTS nexo\.subscriptions/);
 assert.match(migration,/CREATE TABLE IF NOT EXISTS nexo\.market_units/);

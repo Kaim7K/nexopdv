@@ -51,9 +51,9 @@ ON CONFLICT DO NOTHING;
 -- statement-breakpoint
 ALTER TABLE nexo.users ADD COLUMN IF NOT EXISTS unit_id uuid REFERENCES nexo.market_units(id) ON DELETE SET NULL;
 -- statement-breakpoint
-UPDATE nexo.users current_user SET unit_id=unit.id
+UPDATE nexo.users AS user_record SET unit_id=unit.id
 FROM nexo.market_units unit
-WHERE current_user.market_id=unit.market_id AND current_user.unit_id IS NULL AND lower(unit.code)='principal';
+WHERE user_record.market_id=unit.market_id AND user_record.unit_id IS NULL AND lower(unit.code)='principal';
 -- statement-breakpoint
 CREATE INDEX IF NOT EXISTS nexo_users_market_unit_idx ON nexo.users(market_id,unit_id) WHERE market_id IS NOT NULL;
 -- statement-breakpoint
