@@ -90,9 +90,8 @@ const NAV_GROUPS = [
 const NAV_ITEMS = NAV_GROUPS.flatMap((group) => group.items);
 const PRIMARY_NAV_KEYS = new Set([
   'overview',
-  'expenses',
+  'movements',
   'payables',
-  'cashflow',
 ]);
 const FinanceTrendChart = lazy(() =>
   import('@/components/finance/FinanceCharts').then((module) => ({
@@ -281,7 +280,7 @@ export default function Financeiro() {
               {secondaryActive ? nav[1] : 'Mais opções'}
               <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
             </summary>
-            <div className="absolute right-0 z-30 mt-2 grid w-[min(680px,calc(100vw-3rem))] grid-cols-3 gap-4 rounded-2xl border border-border bg-card p-4 shadow-xl">
+            <div className="absolute right-0 z-30 mt-2 grid w-[min(620px,calc(100vw-3rem))] grid-cols-3 gap-4 rounded-2xl border border-border bg-card p-4 shadow-xl">
               {secondaryGroups.map((group) => (
                 <div key={group.label}>
                   <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -531,34 +530,6 @@ function Overview({ data, onNavigate, onAddTransaction, canCreate }) {
       tone: 'neutral',
     },
   ];
-  const quickActions = [
-    {
-      label: 'Adicionar despesa',
-      description: 'Registre uma conta ou gasto',
-      icon: ArrowDownCircle,
-      action: () => onAddTransaction('expense'),
-      disabled: !canCreate,
-    },
-    {
-      label: 'Adicionar receita',
-      description: 'Registre uma entrada externa',
-      icon: ArrowUpCircle,
-      action: () => onAddTransaction('revenue'),
-      disabled: !canCreate,
-    },
-    {
-      label: 'Ver contas a pagar',
-      description: 'Confira vencimentos e atrasos',
-      icon: Receipt,
-      action: () => onNavigate('payables'),
-    },
-    {
-      label: 'Ver fluxo de caixa',
-      description: 'Acompanhe entradas e saídas',
-      icon: TrendingUp,
-      action: () => onNavigate('cashflow'),
-    },
-  ];
   return (
     <div className="space-y-5">
       <section aria-labelledby="financial-summary-title">
@@ -581,36 +552,25 @@ function Overview({ data, onNavigate, onAddTransaction, canCreate }) {
         </div>
       </section>
 
-      <section
-        className="surface-card p-4"
-        aria-labelledby="quick-actions-title"
-      >
-        <h3 id="quick-actions-title" className="text-sm font-bold">
-          O que você quer fazer?
-        </h3>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {quickActions.map((item) => (
-            <button
-              type="button"
-              key={item.label}
-              onClick={item.action}
-              disabled={item.disabled}
-              className="group flex min-h-16 items-center gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground transition group-hover:bg-accent/10 group-hover:text-accent">
-                <item.icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <strong className="block text-xs">{item.label}</strong>
-                <span className="mt-0.5 block text-[10px] leading-4 text-muted-foreground">
-                  {item.description}
-                </span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-        </div>
-      </section>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs no-print">
+        <h3 className="sr-only">O que você quer fazer?</h3>
+        <span className="font-semibold text-muted-foreground">Acesso rápido:</span>
+        <button
+          type="button"
+          onClick={() => onAddTransaction('revenue')}
+          disabled={!canCreate}
+          className="font-bold text-accent hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Registrar entrada
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate('cashflow')}
+          className="font-bold text-accent hover:underline"
+        >
+          Consultar fluxo de caixa
+        </button>
+      </div>
 
       {data?.alerts?.length > 0 && (
         <section
