@@ -301,23 +301,25 @@
     return out;
   }
 
+  async function fetchScreen(route, viewport, reason = 'modo fetch') {
+    const url = `${route}${route.includes('?') ? '&' : '?'}stress=${encodeURIComponent(RUN_ID)}&vp=${viewport}`;
+    const response = await fetch(url, {
+      credentials: 'include',
+      headers: { Accept: 'text/html' },
+    });
+    const html = await response.text();
+    const hasRoot = /<div[^>]+id=["']root["']/i.test(html);
+    const hasBundle = /<script[^>]+type=["']module["'][^>]+src=["'][^"']+\/assets\//i.test(html);
+    return {
+      route,
+      viewport,
+      ok: response.ok && hasRoot && hasBundle,
+      detail: `HTTP ${response.status}, html ${html.length}, root ${hasRoot}, bundle ${hasBundle}, ${reason}`,
+    };
+  }
+
   async function loadScreen(route, viewport) {
-    if (STRESS.screenMode !== 'popup') {
-      const url = `${route}${route.includes('?') ? '&' : '?'}stress=${encodeURIComponent(RUN_ID)}&vp=${viewport}`;
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: { Accept: 'text/html' },
-      });
-      const html = await response.text();
-      const hasRoot = /<div[^>]+id=["']root["']/i.test(html);
-      const hasBundle = /<script[^>]+type=["']module["'][^>]+src=["'][^"']+\/assets\//i.test(html);
-      return {
-        route,
-        viewport,
-        ok: response.ok && hasRoot && hasBundle,
-        detail: `HTTP ${response.status}, html ${html.length}, root ${hasRoot}, bundle ${hasBundle}, modo fetch`,
-      };
-    }
+    if (STRESS.screenMode !== 'popup') return fetchScreen(route, viewport);
 
     return new Promise((resolve) => {
       const width = viewport === 'mobile' ? 390 : 1366;
@@ -328,7 +330,11 @@
         `popup=yes,width=${width},height=${height},left=40,top=40`,
       );
       if (!popup) {
-        resolve({ route, viewport, ok: false, detail: 'popup bloqueado pelo navegador' });
+        fetchScreen(route, viewport, 'popup bloqueado; fallback fetch')
+          .then(resolve)
+          .catch((error) =>
+            resolve({ route, viewport, ok: false, detail: `popup bloqueado e fallback falhou: ${error.message}` }),
+          );
         return;
       }
       const started = Date.now();
@@ -355,7 +361,11 @@
           try {
             popup.close();
           } catch {}
-          resolve({ route, viewport, ok: false, detail: error.message });
+          fetchScreen(route, viewport, `popup falhou (${error.message}); fallback fetch`)
+            .then(resolve)
+            .catch((fallbackError) =>
+              resolve({ route, viewport, ok: false, detail: `${error.message}; fallback falhou: ${fallbackError.message}` }),
+            );
         }
       };
       setTimeout(inspect, 1000);

@@ -37,6 +37,11 @@ assert.match(
 );
 assert.match(
   stress,
+  /popup bloqueado; fallback fetch/,
+  'O stress test deve cair para fetch quando o navegador bloquear popups.',
+);
+assert.match(
+  stress,
   /roleTests: true/,
   'O stress test deve incluir testes de usuarios com perfis diferentes.',
 );
