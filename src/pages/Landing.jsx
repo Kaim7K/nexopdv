@@ -129,10 +129,28 @@ const FAQS = [
 ];
 
 const TRUST_ITEMS = [
-  [ScanBarcode, 'Leitor de código'],
-  [Upload, 'Importação'],
-  [ReceiptText, 'Recibos'],
-  [LockKeyhole, 'Permissões'],
+  { Icon: ScanBarcode, label: 'Leitor de código' },
+  { Icon: Upload, label: 'Importação' },
+  { Icon: ReceiptText, label: 'Recibos' },
+  { Icon: LockKeyhole, label: 'Permissões' },
+];
+
+const TEAM_ROLES = [
+  {
+    title: 'Vendedor',
+    text: 'PDV e rotinas de atendimento',
+    Icon: ShoppingCart,
+  },
+  {
+    title: 'Gerente',
+    text: 'Estoque, fiados e relatórios',
+    Icon: UsersRound,
+  },
+  {
+    title: 'Administrador',
+    text: 'Usuários, permissões e configurações',
+    Icon: ShieldCheck,
+  },
 ];
 
 function Logo({ light = false }) {
@@ -508,7 +526,7 @@ export default function Landing() {
             </div>
 
             <div className="mt-8 grid max-w-xl gap-2 sm:grid-cols-4">
-              {TRUST_ITEMS.map(([Icon, label]) => (
+              {TRUST_ITEMS.map(({ Icon, label }) => (
                 <div
                   key={label}
                   className="flex min-h-11 items-center gap-2 rounded-lg border border-white/14 bg-white/10 px-3 text-emerald-50 backdrop-blur"
@@ -554,11 +572,7 @@ export default function Landing() {
             />
 
             <div className="mt-10 grid gap-4 lg:grid-cols-3">
-              {[
-                ['Vendedor', 'PDV e rotinas de atendimento', ShoppingCart],
-                ['Gerente', 'Estoque, fiados e relatórios', UsersRound],
-                ['Administrador', 'Usuários, permissões e configurações', ShieldCheck],
-              ].map(([title, text, Icon]) => (
+              {TEAM_ROLES.map(({ title, text, Icon }) => (
                 <article
                   key={title}
                   className="rounded-lg border border-white/12 bg-white/8 p-5"
