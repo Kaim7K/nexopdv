@@ -2,6 +2,33 @@ const responseCache = new Map();
 const inFlightRequests = new Map();
 const latestRequestControllers = new Map();
 
+const STATUS_MESSAGES = {
+  400: 'Revise os dados informados e tente novamente.',
+  401: 'Sua sessão expirou. Faça login novamente.',
+  403: 'Seu usuário não tem permissão para esta ação.',
+  404: 'A informação solicitada não foi encontrada.',
+  409: 'Não foi possível concluir porque há dados conflitantes.',
+  413: 'O arquivo ou solicitação ultrapassa o tamanho permitido.',
+  429: 'Há muitas tentativas em sequência. Aguarde um instante.',
+  500: 'O servidor encontrou um problema. Tente novamente em instantes.',
+  503: 'O sistema está temporariamente indisponível. Tente novamente em instantes.',
+};
+
+function buildApiError({ response, data, path }) {
+  const message =
+    data?.message ||
+    STATUS_MESSAGES[response.status] ||
+    'Erro ao acessar o servidor.';
+  return Object.assign(new Error(message), {
+    status: response.status,
+    code: data?.code || `HTTP_${response.status}`,
+    requestId: data?.requestId,
+    data,
+    path,
+    retryable: response.status >= 500 || response.status === 429,
+  });
+}
+
 function invalidateCache(path = '') {
   if (!path || /^\/(auth|admin|markets|users|maintenance)(\/|$)/.test(path)) {
     responseCache.clear();
@@ -92,7 +119,10 @@ async function performRequest(path, options = {}) {
     clearTimeout(timeoutId);
   }
 
-  const data = await response.json().catch(() => ({}));
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await response.json().catch(() => ({}))
+    : {};
   if (!response.ok) {
     if (
       response.status === 401 &&
@@ -103,15 +133,7 @@ async function performRequest(path, options = {}) {
       responseCache.clear();
       window.dispatchEvent(new CustomEvent('nexo:session-expired'));
     }
-    throw Object.assign(
-      new Error(data.message || 'Erro ao acessar o servidor.'),
-      {
-        status: response.status,
-        code: data.code,
-        requestId: data.requestId,
-        data,
-      },
-    );
+    throw buildApiError({ response, data, path });
   }
   return data;
 }

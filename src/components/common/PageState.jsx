@@ -2,6 +2,18 @@ import React from 'react';
 import { AlertCircle, LoaderCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+function normalizeError(value) {
+  if (!value) return { message: '', requestId: '' };
+  if (typeof value === 'string') return { message: value, requestId: '' };
+  return {
+    message:
+      value.message ||
+      value.data?.message ||
+      'Algo saiu do esperado. Tente novamente em instantes.',
+    requestId: value.requestId || value.data?.requestId || '',
+  };
+}
+
 export function Spinner({ className = '', label = 'Carregando' }) {
   return (
     <span
@@ -99,6 +111,7 @@ export function ErrorState({
   onRetry = null,
   className = '',
 }) {
+  const error = normalizeError(description);
   return (
     <div
       role="alert"
@@ -110,9 +123,14 @@ export function ErrorState({
           aria-hidden="true"
         />
         <h2 className="mt-3 text-base font-bold">{title}</h2>
-        {description && (
+        {error.message && (
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {description}
+            {error.message}
+          </p>
+        )}
+        {error.requestId && (
+          <p className="mt-2 text-xs font-semibold text-muted-foreground">
+            Código de suporte: {error.requestId}
           </p>
         )}
         {onRetry && (
