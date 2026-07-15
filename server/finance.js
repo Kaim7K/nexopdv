@@ -1192,7 +1192,7 @@ async function payTransaction(sql, user, id, source) {
       WHERE id=${id} AND market_id=${user.market_id} RETURNING *
     ),event AS (
       INSERT INTO nexo.finance_transaction_events(market_id,transaction_id,action,previous_data,new_data,actor_id,actor_name)
-      SELECT market_id,id,'payment_registered',${JSON.stringify(current)}::jsonb,to_jsonb(updated)||jsonb_build_object('payment_amount',${amount}),${user.id},${user.full_name || user.email} FROM updated
+      SELECT market_id,id,'payment_registered',${JSON.stringify(current)}::jsonb,to_jsonb(updated)||jsonb_build_object('payment_amount',${amount}::numeric),${user.id}::uuid,${user.full_name || user.email}::text FROM updated
     ) SELECT * FROM updated
   `;
   return {

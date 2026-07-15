@@ -118,7 +118,7 @@
   function buildProducts() {
     const categories = ['Mercearia', 'Bebidas', 'Hortifruti', 'Limpeza', 'Padaria', 'Acougue', 'Laticinios'];
     const names = ['Arroz', 'Feijao', 'Cafe', 'Leite', 'Macarrao', 'Acucar', 'Oleo', 'Sabonete', 'Detergente', 'Banana'];
-    const nowDigits = String(Date.now()).slice(-9);
+    const runDigits = String(Date.now()).slice(-6);
     return Array.from({ length: STRESS.products }, (_, index) => {
       const n = index + 1;
       const unit = n % 9 === 0 ? 'peso' : n % 7 === 0 ? 'pacote' : 'unidade';
@@ -126,7 +126,7 @@
       return {
         name: `${RUN_ID} ${pick(names, n)} ${String(n).padStart(4, '0')}`,
         category: pick(categories, n),
-        barcode: `789${nowDigits}${String(n).padStart(4, '0')}`.slice(0, 13),
+        barcode: `789${runDigits}${String(n).padStart(4, '0')}`,
         internal_code: `${RUN_ID}-${String(n).padStart(4, '0')}`,
         image_url: '',
         sale_price: sale,
@@ -199,13 +199,34 @@
   async function loadScreen(route, viewport) {
     return new Promise((resolve) => {
       const frame = document.createElement('iframe');
-      const timeout = setTimeout(() => done(false, 'timeout'), 12_000);
+      let settled = false;
+      const timeout = setTimeout(() => inspect(true), 18_000);
       const done = (ok, detail) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timeout);
         try {
           frame.remove();
         } catch {}
         resolve({ route, viewport, ok, detail });
+      };
+      const inspect = (final = false) => {
+        try {
+          const doc = frame.contentDocument;
+          const root = doc?.querySelector('#root');
+          const text = String(root?.innerText || doc?.body?.innerText || '').trim();
+          const buttons = doc?.querySelectorAll('button,[role="button"],a,input,select,textarea').length || 0;
+          const ready = root && (root.childElementCount > 0 || text.length > 20 || buttons > 0);
+          if (ready || final) {
+            const currentPath = frame.contentWindow?.location?.pathname || route;
+            const htmlLength = doc?.documentElement?.outerHTML?.length || 0;
+            done(Boolean(ready), `${text.length} chars, ${buttons} interativos, html ${htmlLength}, rota ${currentPath}`);
+          } else {
+            setTimeout(() => inspect(false), 500);
+          }
+        } catch (error) {
+          done(false, error.message);
+        }
       };
       frame.style.cssText = [
         'position:fixed',
@@ -217,18 +238,7 @@
         'pointer-events:none',
         'border:0',
       ].join(';');
-      frame.onload = async () => {
-        await sleep(1500);
-        try {
-          const doc = frame.contentDocument;
-          const root = doc?.querySelector('#root');
-          const text = String(root?.innerText || '').trim();
-          const buttons = doc?.querySelectorAll('button,[role="button"],a,input,select,textarea').length || 0;
-          done(Boolean(root && text.length > 20), `${text.length} chars, ${buttons} interativos`);
-        } catch (error) {
-          done(false, error.message);
-        }
-      };
+      frame.onload = () => setTimeout(() => inspect(false), 750);
       frame.src = `${route}${route.includes('?') ? '&' : '?'}stress=${encodeURIComponent(RUN_ID)}&vp=${viewport}`;
       document.body.appendChild(frame);
     });

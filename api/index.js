@@ -1219,7 +1219,7 @@ async function routeHandler(req, res) {
         created_at: new Date().toISOString(),
       };
       const [movement] =
-        await sql`WITH movement AS (INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'cash_movements',${JSON.stringify(payload)}::jsonb) RETURNING id,data,created_date,updated_date),audit AS (INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','movimentacao_caixa','entity_type','cash_session','entity_id',${path[1]}::uuid,'user_id',${user.id},'user_name',${user.full_name || user.email},'description',${type === 'entrada' ? 'Entrada registrada no caixa' : 'Retirada registrada no caixa'},'details',${JSON.stringify({ type, amount, note })}::jsonb) FROM movement) SELECT * FROM movement`;
+        await sql`WITH movement AS (INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'cash_movements',${JSON.stringify(payload)}::jsonb) RETURNING id,data,created_date,updated_date),audit AS (INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','movimentacao_caixa','entity_type','cash_session','entity_id',${path[1]}::uuid,'user_id',${user.id}::uuid,'user_name',${user.full_name || user.email}::text,'description',${type === 'entrada' ? 'Entrada registrada no caixa' : 'Retirada registrada no caixa'}::text,'details',${JSON.stringify({ type, amount, note })}::jsonb) FROM movement) SELECT * FROM movement`;
       const session = recordFromRow(sessionRow);
       return send(res, 201, {
         movement: recordFromRow(movement),
