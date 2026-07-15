@@ -1534,6 +1534,21 @@ async function routeHandler(req, res) {
     if (user.role !== 'super_admin')
       return send(res, 403, { message: 'Acesso restrito ao Super Admin.' });
 
+    if (path[1] === 'logs' && req.method === 'GET') {
+      const rows = await sql`
+        SELECT log.id,log.action,log.details,log.created_date,market.name AS market_name,COALESCE(actor.full_name,actor.email,'Sistema') AS actor_name,'administração' AS source
+        FROM nexo.market_change_log log
+        JOIN nexo.markets market ON market.id=log.market_id
+        LEFT JOIN nexo.users actor ON actor.id=log.actor_id
+        UNION ALL
+        SELECT audit.id,COALESCE(audit.data->>'action_type','evento'),audit.data->'details',audit.created_date,market.name,COALESCE(audit.data->>'user_name','Sistema'),'mercadinho'
+        FROM nexo.records audit JOIN nexo.markets market ON market.id=audit.market_id
+        WHERE audit.entity='general_audits'
+        ORDER BY created_date DESC LIMIT 200
+      `;
+      return send(res, 200, rows);
+    }
+
     if (path[1] === 'overview' && req.method === 'GET') {
       const [metrics, marketGrowth] = await Promise.all([
         sql`SELECT
@@ -1910,8 +1925,28 @@ async function routeHandler(req, res) {
       const requestedStatus = ['ativo', 'teste'].includes(req.body.status)
         ? req.body.status
         : 'teste';
-      const [market] =
-        await sql`WITH selected_plan AS (SELECT * FROM nexo.plans WHERE id=${requestedPlanId}::uuid AND active),market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules,enabled_features,require_cash_register,status,plan_id,trial_ends_at,user_limit,product_limit,unit_limit) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb,${JSON.stringify(features)}::jsonb,${Boolean(req.body.require_cash_register)},${requestedStatus},${requestedPlanId}::uuid,CASE WHEN ${requestedStatus}='teste' THEN now() + make_interval(days=>COALESCE((SELECT trial_days FROM selected_plan),14)) ELSE NULL END,COALESCE((SELECT user_limit FROM selected_plan),${req.body.user_limit || null}),COALESCE((SELECT product_limit FROM selected_plan),${req.body.product_limit || null}),COALESCE((SELECT unit_limit FROM selected_plan),${req.body.unit_limit || null})) RETURNING *),unit AS (INSERT INTO nexo.market_units(market_id,name,code) SELECT id,'Unidade principal','principal' FROM market RETURNING id,market_id),admin AS (INSERT INTO nexo.users(market_id,unit_id,email,password_hash,full_name,role) SELECT market.id,unit.id,${String(req.body.admin_email).trim().toLowerCase()},${hash},${String(req.body.admin_name || 'Administrador').trim() || 'Administrador'},'admin' FROM market JOIN unit ON unit.market_id=market.id),subscription AS (INSERT INTO nexo.subscriptions(market_id,plan_id,status,monthly_price,trial_ends_at,current_period_ends_at) SELECT market.id,selected_plan.id,CASE WHEN ${requestedStatus}='teste' THEN 'teste' ELSE 'ativa' END,selected_plan.monthly_price,CASE WHEN ${requestedStatus}='teste' THEN now()+make_interval(days=>selected_plan.trial_days) ELSE NULL END,now()+interval '1 month' FROM market JOIN selected_plan ON true),log AS (INSERT INTO nexo.market_change_log(market_id,actor_id,action,details) SELECT id,${user.id},'mercado_criado',jsonb_build_object('status',${requestedStatus},'plan_id',${requestedPlanId}::uuid) FROM market) SELECT * FROM market`;
+      const adminEmail = String(req.body.admin_email).trim().toLowerCase();
+      const adminName =
+        String(req.body.admin_name || 'Administrador').trim() ||
+        'Administrador';
+      const [duplicate] = await sql`
+        SELECT
+          EXISTS(SELECT 1 FROM nexo.markets WHERE lower(slug)=lower(${marketSlug})) AS slug,
+          EXISTS(SELECT 1 FROM nexo.users WHERE lower(email)=lower(${adminEmail})) AS email
+      `;
+      if (duplicate?.slug)
+        return send(res, 409, {
+          code: 'DUPLICATE_MARKET_SLUG',
+          message: 'Já existe um mercado com este identificador.',
+        });
+      if (duplicate?.email)
+        return send(res, 409, {
+          code: 'DUPLICATE_ADMIN_EMAIL',
+          message: 'Já existe um usuário com este e-mail.',
+        });
+      const [market] = selectedPlan
+        ? await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules,enabled_features,require_cash_register,status,plan_id,trial_ends_at,user_limit,product_limit,unit_limit) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb,${JSON.stringify(features)}::jsonb,${Boolean(req.body.require_cash_register)},${requestedStatus},${selectedPlan.id},CASE WHEN ${requestedStatus}='teste' THEN now()+make_interval(days=>${selectedPlan.trial_days}) ELSE NULL END,${selectedPlan.user_limit},${selectedPlan.product_limit},${selectedPlan.unit_limit}) RETURNING *),unit AS (INSERT INTO nexo.market_units(market_id,name,code) SELECT id,'Unidade principal','principal' FROM market RETURNING id,market_id),admin AS (INSERT INTO nexo.users(market_id,unit_id,email,password_hash,full_name,role) SELECT market.id,unit.id,${adminEmail},${hash},${adminName},'admin' FROM market JOIN unit ON unit.market_id=market.id),subscription AS (INSERT INTO nexo.subscriptions(market_id,plan_id,status,monthly_price,trial_ends_at,current_period_ends_at) SELECT market.id,${selectedPlan.id},CASE WHEN ${requestedStatus}='teste' THEN 'teste' ELSE 'ativa' END,${selectedPlan.monthly_price},CASE WHEN ${requestedStatus}='teste' THEN now()+make_interval(days=>${selectedPlan.trial_days}) ELSE NULL END,now()+interval '1 month' FROM market),log AS (INSERT INTO nexo.market_change_log(market_id,actor_id,action,details) SELECT id,${user.id},'mercado_criado',jsonb_build_object('status',${requestedStatus},'plan_id',${selectedPlan.id}) FROM market) SELECT * FROM market`
+        : await sql`WITH market AS (INSERT INTO nexo.markets(name,slug,logo_url,primary_color,secondary_color,enabled_modules,enabled_features,require_cash_register,status,trial_ends_at,user_limit,product_limit,unit_limit) VALUES(${marketName},${marketSlug},${logoUrl},${req.body.primary_color || '#16a06a'},${req.body.secondary_color || '#0f5132'},${JSON.stringify(modules)}::jsonb,${JSON.stringify(features)}::jsonb,${Boolean(req.body.require_cash_register)},${requestedStatus},CASE WHEN ${requestedStatus}='teste' THEN now()+interval '14 days' ELSE NULL END,${req.body.user_limit || null},${req.body.product_limit || null},${req.body.unit_limit || null}) RETURNING *),unit AS (INSERT INTO nexo.market_units(market_id,name,code) SELECT id,'Unidade principal','principal' FROM market RETURNING id,market_id),admin AS (INSERT INTO nexo.users(market_id,unit_id,email,password_hash,full_name,role) SELECT market.id,unit.id,${adminEmail},${hash},${adminName},'admin' FROM market JOIN unit ON unit.market_id=market.id),log AS (INSERT INTO nexo.market_change_log(market_id,actor_id,action,details) SELECT id,${user.id},'mercado_criado',jsonb_build_object('status',${requestedStatus}) FROM market) SELECT * FROM market`;
       return send(res, 201, market);
     }
     if (req.method === 'PATCH') {
