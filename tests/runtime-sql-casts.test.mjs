@@ -30,10 +30,50 @@ assert.match(
   /barcode: `789\$\{runDigits\}\$\{String\(n\)\.padStart\(4, '0'\)\}`,/,
   'O stress test deve gerar codigo de barras unico por produto.',
 );
+assert.match(
+  stress,
+  /screenMode: 'fetch'/,
+  'O stress test deve validar rotas por fetch por padrao para respeitar frame-ancestors none.',
+);
+assert.match(
+  stress,
+  /roleTests: true/,
+  'O stress test deve incluir testes de usuarios com perfis diferentes.',
+);
+assert.match(
+  stress,
+  /async function runRolePermissionTests\(products\)/,
+  'O stress test deve executar vendas e permissoes como vendedor, gerente e admin.',
+);
+assert.match(
+  stress,
+  /async function runPlanTests\(currentUser\)/,
+  'O stress test deve validar planos quando houver perfil de super admin ou bloqueio esperado.',
+);
+assert.match(
+  stress,
+  /async function runPdvPrintAndSaveTests\(currentUser, products, sampleSale\)/,
+  'O stress test deve validar salvamento local, impressao e download do PDV.',
+);
+assert.match(
+  stress,
+  /method, amount: money\(total \+ 1\)/,
+  'O stress test deve pagar vendas normais com margem para evitar falso negativo por arredondamento.',
+);
+assert.match(
+  stress,
+  /sum \+ money\(qty \* item\.unit_price\)/,
+  'O stress test deve arredondar subtotal por item como o backend.',
+);
 assert.doesNotMatch(
   stress,
   /barcode: .*\.slice\(0, 13\)/,
   'O stress test nao pode truncar o contador do codigo de barras e gerar duplicados.',
+);
+assert.doesNotMatch(
+  stress,
+  /frame\.src = `\$\{route\}/,
+  'O stress test nao deve carregar rotas do app em iframe, pois a CSP frame-ancestors none bloqueia esse modo em producao.',
 );
 
 console.log('Teste de casts runtime e stress aprovado.');
