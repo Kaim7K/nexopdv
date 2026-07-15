@@ -282,14 +282,9 @@ function Bullet({ children, light = false }) {
   );
 }
 
-function Showcase({ item, index }) {
-  const reverse = index % 2 === 1;
+function Showcase({ item }) {
   return (
-    <article
-      className={`grid items-center gap-8 lg:grid-cols-2 ${
-        reverse ? 'lg:[&>div:first-child]:order-2' : ''
-      }`}
-    >
+    <article className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-12">
       <div>
         <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase text-[#0f6b4a]">
           <item.Icon className="h-3.5 w-3.5" />
@@ -450,7 +445,7 @@ export default function Landing() {
       <main>
         <section
           id="inicio"
-          className="relative isolate min-h-[calc(100svh-92px)] overflow-hidden bg-[#0b241c] text-white"
+          className="relative isolate overflow-hidden bg-[#0b241c] text-white"
         >
           <img
             src={APP_IMAGES.pdv}
@@ -460,23 +455,23 @@ export default function Landing() {
             height="980"
             loading="eager"
             fetchPriority="high"
-            className="absolute inset-0 -z-20 h-full w-full object-cover object-top opacity-55"
+            className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_top] opacity-80"
           />
-          <div className="absolute inset-0 -z-10 bg-[#071c16]/72" />
-          <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-[#f3faf6]" />
+          <div className="absolute inset-0 -z-10 bg-[#071c16]/58" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#061f18] via-[#061f18]/88 to-[#061f18]/32" />
 
-          <div className="mx-auto flex min-h-[calc(100svh-92px)] max-w-7xl flex-col justify-center px-4 py-14 sm:px-6 lg:px-8">
-            <div className="max-w-3xl pb-10">
+          <div className="mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:min-h-[680px] lg:px-8">
+            <div className="max-w-2xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase text-emerald-100 backdrop-blur">
                 <Store className="h-3.5 w-3.5" />
                 PDV web para mercados de bairro
               </span>
 
-              <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-6xl lg:text-7xl">
+              <h1 className="mt-5 text-4xl font-bold leading-[1.04] sm:text-5xl lg:text-6xl">
                 Caixa, estoque e gestão em uma tela simples de operar.
               </h1>
 
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-emerald-50/86">
+              <p className="mt-5 max-w-xl text-base leading-7 text-emerald-50/86 sm:text-lg sm:leading-8">
                 O Nexo PDV ajuda mercadinhos a vender rápido, controlar produtos,
                 organizar fiados e enxergar resultados sem complicação.
               </p>
@@ -495,7 +490,7 @@ export default function Landing() {
                 </Link>
               </div>
 
-              <div className="mt-8 grid gap-2 sm:grid-cols-3">
+              <div className="mt-8 grid max-w-xl gap-2 sm:grid-cols-3">
                 {QUICK_STATS.map(([label, text]) => (
                   <div
                     key={label}
@@ -512,14 +507,14 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="relative z-10 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 text-slate-950 shadow-xl shadow-slate-950/15 sm:grid-cols-4">
+            <div className="mt-8 grid max-w-xl gap-2 sm:grid-cols-4">
               {TRUST_ITEMS.map(([Icon, label]) => (
                 <div
                   key={label}
-                  className="flex min-h-12 items-center gap-3 rounded-md bg-slate-50 px-3"
+                  className="flex min-h-11 items-center gap-2 rounded-lg border border-white/14 bg-white/10 px-3 text-emerald-50 backdrop-blur"
                 >
-                  <Icon className="h-4 w-4 text-[#16a06a]" />
-                  <span className="text-sm font-bold">{label}</span>
+                  <Icon className="h-4 w-4 flex-none text-[#6dd4aa]" />
+                  <span className="text-xs font-bold">{label}</span>
                 </div>
               ))}
             </div>
@@ -543,8 +538,8 @@ export default function Landing() {
 
         <section id="produto" className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl space-y-16 px-4 sm:px-6 lg:px-8">
-            {SHOWCASES.map((item, index) => (
-              <Showcase key={item.title} item={item} index={index} />
+            {SHOWCASES.map((item) => (
+              <Showcase key={item.title} item={item} />
             ))}
           </div>
         </section>
