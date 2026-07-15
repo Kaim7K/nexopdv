@@ -37,6 +37,11 @@ assert.match(
 );
 assert.match(
   stress,
+  /hasBuiltAsset/,
+  'O stress test deve reconhecer assets do Vite em variacoes validas do HTML final.',
+);
+assert.match(
+  stress,
   /popup bloqueado; fallback fetch/,
   'O stress test deve cair para fetch quando o navegador bloquear popups.',
 );

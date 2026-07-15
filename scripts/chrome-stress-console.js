@@ -309,12 +309,17 @@
     });
     const html = await response.text();
     const hasRoot = /<div[^>]+id=["']root["']/i.test(html);
-    const hasBundle = /<script[^>]+type=["']module["'][^>]+src=["'][^"']+\/assets\//i.test(html);
+    const hasBundle =
+      /<script\b[^>]*\btype=["']module["'][^>]*>/i.test(html) &&
+      /<script\b[^>]*\bsrc=["'][^"']*(?:\/assets\/|\/src\/)[^"']+\.js(?:\?[^"']*)?["'][^>]*>/i.test(html);
+    const hasBuiltAsset =
+      hasBundle ||
+      /<link\b[^>]*\bhref=["'][^"']*\/assets\/[^"']+\.(?:js|css)(?:\?[^"']*)?["'][^>]*>/i.test(html);
     return {
       route,
       viewport,
-      ok: response.ok && hasRoot && hasBundle,
-      detail: `HTTP ${response.status}, html ${html.length}, root ${hasRoot}, bundle ${hasBundle}, ${reason}`,
+      ok: response.ok && hasRoot && hasBuiltAsset,
+      detail: `HTTP ${response.status}, html ${html.length}, root ${hasRoot}, bundle ${hasBuiltAsset}, ${reason}`,
     };
   }
 
