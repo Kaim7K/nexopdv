@@ -476,6 +476,22 @@ function matchesFilter(record, key, expected) {
   return actual === expected;
 }
 
+function parseFiltersQuery(value) {
+  if (!value) return null;
+  try {
+    const filters = JSON.parse(String(value));
+    if (!filters || typeof filters !== 'object' || Array.isArray(filters))
+      throw new Error('filters must be an object');
+    return filters;
+  } catch {
+    throw new AppError(
+      400,
+      'INVALID_FILTERS',
+      'Os filtros informados não são válidos.',
+    );
+  }
+}
+
 function validateProductPayload(data, partial = false) {
   if (!partial || data.name !== undefined) {
     if (!String(data.name || '').trim())
@@ -576,6 +592,12 @@ async function routeHandler(req, res) {
     });
   }
 
+  if (path[0] === 'auth' && path[1] === 'logout') {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    clearSession(res);
+    return send(res, 200, { ok: true });
+  }
+
   await assertDatabaseReady(sql);
 
   if (path[0] === 'cron' && path[1] === 'stock-alerts') {
@@ -603,12 +625,6 @@ async function routeHandler(req, res) {
     await createSession(authenticated, res, Number(sessionPolicy?.hours || 12));
     return send(res, 200, { ok: true, user: publicUser(authenticated) });
   }
-  if (path[0] === 'auth' && path[1] === 'logout') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-    clearSession(res);
-    return send(res, 200, { ok: true });
-  }
-
   const user = await currentUser(req, sql);
   if (!user)
     return send(res, 401, {
@@ -3016,8 +3032,8 @@ async function routeHandler(req, res) {
         ['sales', 'fiado_records'].includes(table)
       )
         out = out.filter((record) => record.seller_id === user.id);
-      if (req.query.filters) {
-        const f = JSON.parse(req.query.filters);
+      const f = parseFiltersQuery(req.query.filters);
+      if (f) {
         out = out.filter((r) =>
           Object.entries(f).every(([k, v]) => matchesFilter(r, k, v)),
         );

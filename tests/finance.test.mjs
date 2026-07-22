@@ -10,6 +10,7 @@ const client = read("src/api/nexoApi.js");
 const page = read("src/pages/Financeiro.jsx");
 const app = read("src/App.jsx");
 const layout = read("src/components/Layout.jsx");
+const navigation = read("src/config/navigation.jsx");
 
 for (const table of [
   "finance_categories",
@@ -86,8 +87,10 @@ assert.match(
   /finance:\s*\{/,
   "Cliente precisa expor a API financeira integrada.",
 );
-assert.match(app, /path="\/financeiro"/, "Rota financeira ausente.");
-assert.match(layout, /label: 'Financeiro'/, "Navegação financeira ausente.");
+assert.match(app, /PRIVATE_ROUTES/, "Rotas privadas devem vir do mapa compartilhado.");
+assert.match(navigation, /path: '\/financeiro'/, "Rota financeira ausente.");
+assert.match(layout, /MENU_ITEMS/, "Layout deve consumir o menu compartilhado.");
+assert.match(navigation, /label: 'Financeiro'/, "Navegacao financeira ausente.");
 assert.match(
   page,
   /PRIMARY_NAV_KEYS/,

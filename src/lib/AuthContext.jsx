@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 const USER_CACHE_KEY = 'nexo:session-user';
 const USER_CACHE_TTL = 60_000;
 

@@ -6,31 +6,31 @@
   :root {
     color-scheme: light;
     --market-primary: #16a06a;
-    --background: 150 20% 99%;
-    --foreground: 160 30% 10%;
+    --background: 150 18% 98%;
+    --foreground: 164 24% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 160 30% 10%;
+    --card-foreground: 164 24% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 10%;
+    --popover-foreground: 164 24% 10%;
     --primary: 162 70% 16%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 25% 96%;
+    --secondary: 152 18% 95%;
     --secondary-foreground: 162 70% 16%;
-    --muted: 150 16% 96%;
-    --muted-foreground: 155 8% 45%;
+    --muted: 150 14% 94%;
+    --muted-foreground: 155 9% 42%;
     --accent: 158 64% 40%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 152 15% 91%;
-    --input: 152 15% 91%;
+    --border: 152 13% 88%;
+    --input: 152 13% 86%;
     --ring: 158 64% 40%;
     --chart-1: 158 64% 40%;
-    --chart-2: 160 50% 25%;
-    --chart-3: 45 90% 55%;
-    --chart-4: 0 70% 55%;
-    --chart-5: 200 60% 50%;
-    --radius: 0.75rem;
+    --chart-2: 210 70% 46%;
+    --chart-3: 43 86% 54%;
+    --chart-4: 345 70% 54%;
+    --chart-5: 265 52% 58%;
+    --radius: 0.5rem;
     --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
@@ -50,22 +50,22 @@
     /* O tema escuro usa grafite neutro. O verde permanece apenas nos destaques. */
     --background: 220 8% 8%;
     --foreground: 0 0% 96%;
-    --card: 220 7% 12%;
+    --card: 220 7% 11.5%;
     --card-foreground: 0 0% 96%;
     --popover: 220 7% 13%;
     --popover-foreground: 0 0% 96%;
     --primary: 156 76% 48%;
     --primary-foreground: 220 12% 7%;
-    --secondary: 220 6% 17%;
+    --secondary: 220 6% 16%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 220 6% 16%;
+    --muted: 220 6% 15%;
     --muted-foreground: 220 5% 72%;
     --accent: 156 76% 48%;
     --accent-foreground: 220 12% 7%;
     --destructive: 0 76% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 6% 24%;
-    --input: 220 6% 24%;
+    --border: 220 6% 22%;
+    --input: 220 6% 25%;
     --ring: 156 76% 52%;
     --sidebar-background: 220 10% 9%;
     --sidebar-foreground: 0 0% 92%;
@@ -90,6 +90,8 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    background:
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.45) 100%);
     min-width: 320px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -105,6 +107,7 @@
   h2,
   h3 {
     text-wrap: balance;
+    letter-spacing: 0;
   }
 
   p {
@@ -162,7 +165,7 @@
 
 @layer components {
   .field {
-    @apply mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60;
   }
   .page-shell {
     @apply mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
@@ -174,28 +177,46 @@
   }
 
   .page-title {
-    @apply text-2xl font-bold tracking-tight sm:text-3xl;
+    @apply text-2xl font-bold tracking-tight text-foreground sm:text-3xl;
   }
 
   .page-subtitle {
-    @apply mt-1 text-sm leading-6 text-muted-foreground;
+    @apply mt-1 max-w-3xl text-sm leading-6 text-muted-foreground;
   }
 
   .surface-card {
-    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-sm;
+    @apply rounded-lg border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.03] transition-colors;
   }
 
   .empty-state {
-    @apply grid min-h-56 place-items-center rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center;
+    @apply grid min-h-56 place-items-center rounded-lg border border-dashed border-border bg-card px-5 py-10 text-center shadow-sm shadow-black/[0.02];
   }
 
   .loading-state {
-    @apply grid min-h-56 place-items-center rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground;
+    @apply grid min-h-56 place-items-center rounded-lg border border-border/80 bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02];
   }
 
   .nexo-toast {
-    @apply !rounded-xl !border !border-border !bg-popover !text-popover-foreground !shadow-xl;
+    @apply !rounded-lg !border !border-border !bg-popover !text-popover-foreground !shadow-xl;
     max-width: min(26rem, calc(100vw - 1.5rem));
+  }
+
+  .page-shell table thead {
+    @apply bg-muted/55 text-xs uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .page-shell table tbody tr {
+    @apply transition-colors;
+  }
+
+  .page-shell table tbody tr:hover {
+    @apply bg-muted/30;
+  }
+
+  .page-shell input:not([type='checkbox']):not([type='radio']),
+  .page-shell select,
+  .page-shell textarea {
+    @apply shadow-sm transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30;
   }
 }
 

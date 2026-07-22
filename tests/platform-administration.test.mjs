@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`,import.meta.url),'utf8');
-const [api,client,migration,moduleMigration,cashPage,quickModal,app,layout,email,plansPage,moduleCatalog] = await Promise.all([
+const [api,client,migration,moduleMigration,cashPage,quickModal,app,layout,navigation,email,plansPage,moduleCatalog] = await Promise.all([
   read('api/index.js'),read('src/api/nexoApi.js'),read('database/migrations/011_platform_administration.sql'),
-  read('database/migrations/012_cash_history_module.sql'),read('src/pages/HistoricoCaixas.jsx'),read('src/components/pdv/QuickProductModal.jsx'),read('src/App.jsx'),read('src/components/Layout.jsx'),read('server/stock-alerts.js'),read('src/pages/AdminPlanos.jsx'),read('src/lib/market-modules.js'),
+  read('database/migrations/012_cash_history_module.sql'),read('src/pages/HistoricoCaixas.jsx'),read('src/components/pdv/QuickProductModal.jsx'),read('src/App.jsx'),read('src/components/Layout.jsx'),read('src/config/navigation.jsx'),read('server/stock-alerts.js'),read('src/pages/AdminPlanos.jsx'),read('src/lib/market-modules.js'),
 ]);
 
 assert.match(migration,/nexo_products_market_barcode_uidx/,'O banco deve impedir códigos de barras duplicados.');
@@ -21,9 +21,11 @@ assert.match(client,/quickCreate/);
 assert.match(cashPage,/operatorId[\s\S]*status[\s\S]*unitId/,'A tela deve filtrar por operador, status e unidade.');
 assert.match(quickModal,/autoFocus/);
 assert.doesNotMatch(quickModal,/sale_price|image_url|cost_price/);
-assert.match(app,/AdminOverview/);
-assert.match(layout,/Planos e assinaturas/);
-assert.match(layout,/module: 'caixas'/,'Histórico de caixas deve possuir controle de acesso independente.');
+assert.match(app,/PRIVATE_ROUTES/);
+assert.match(navigation,/AdminOverview/);
+assert.match(navigation,/Planos e assinaturas/);
+assert.match(navigation,/module: 'caixas'/,'Hist?rico de caixas deve possuir controle de acesso independente.');
+assert.match(layout,/ROUTE_PREFETCHERS/);
 assert.match(moduleCatalog,/Histórico de caixas/,'O catálogo do Super Admin deve listar todas as funcionalidades principais.');
 assert.match(plansPage,/Excluir plano/);
 assert.match(plansPage,/Desativar plano/);

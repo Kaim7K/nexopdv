@@ -46,7 +46,7 @@ export function ConfirmProvider({ children }) {
         <AlertDialogContent>
           <AlertDialogHeader className="text-left">
             <div className={cn(
-              'mb-1 grid h-11 w-11 place-items-center rounded-xl',
+              'mb-1 grid h-11 w-11 place-items-center rounded-lg',
               request?.tone === 'destructive'
                 ? 'bg-destructive/10 text-destructive'
                 : 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
@@ -62,7 +62,10 @@ export function ConfirmProvider({ children }) {
             <AlertDialogCancel onClick={() => settle(false)}>{request?.cancelLabel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => settle(true)}
-              className={cn(request?.tone === 'destructive' && 'bg-destructive text-destructive-foreground hover:bg-destructive/90')}
+              className={cn(
+                request?.tone === 'destructive' &&
+                  'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+              )}
             >
               {request?.confirmLabel}
             </AlertDialogAction>

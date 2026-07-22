@@ -28,7 +28,7 @@ export function assertSameOriginRequest(req) {
 }
 
 export const send = (res, status, data) => {
-  res.setHeader('Cache-Control', 'no-store');
+  if (!res.getHeader('Cache-Control')) res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -40,6 +40,10 @@ export async function readJsonBody(req) {
 
   let raw = typeof req.body === 'string' ? req.body : '';
   if (!raw && !['GET', 'HEAD'].includes(req.method)) {
+    const contentLength = Number(req.headers['content-length'] || 0);
+    if (contentLength > 2 * 1024 * 1024) {
+      throw new AppError(413, 'REQUEST_TOO_LARGE', 'A requisição ultrapassa o tamanho permitido.');
+    }
     const chunks = [];
     for await (const chunk of req) chunks.push(Buffer.from(chunk));
     raw = Buffer.concat(chunks).toString('utf8');

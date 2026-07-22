@@ -32,6 +32,8 @@ assert.match(api, /DUPLICATE_BARCODE/, 'O backend deve rejeitar códigos de barr
 assert.match(api, /PRODUCT_PRICE_CHANGED/, 'O backend deve rejeitar uma venda com preço desatualizado ou manipulado.');
 assert.match(api, /assertSameOriginRequest\(req\)/, 'A API deve validar a origem das operações de escrita.');
 assert.match(http, /REQUEST_TOO_LARGE/, 'A API deve limitar o tamanho do corpo JSON.');
+assert.match(http, /content-length/, 'A API deve rejeitar corpos grandes antes de acumular em memoria.');
+assert.match(http, /!res\.getHeader\('Cache-Control'\)/, 'Rotas com cache explicito nao devem ser sobrescritas pelo helper JSON.');
 assert.match(media, /isPrivateAddress/, 'A importação remota de imagens deve bloquear endereços privados.');
 assert.match(media, /lookup\(parsed\.hostname/, 'O host remoto deve ter seus endereços DNS validados.');
 assert.match(media, /redirect: 'manual'/, 'Redirecionamentos de imagens remotas devem ser validados manualmente.');
@@ -56,6 +58,9 @@ assert.match(api, /CASH_REGISTER_REQUIRED/, 'O backend deve impedir venda obriga
 assert.match(api, /deletionAudit[\s\S]*target AS MATERIALIZED[\s\S]*FROM target[\s\S]*EXISTS \(SELECT 1 FROM audit\)/, 'A exclusão definitiva deve bloquear a venda e registrar auditoria atomicamente antes de removê-la.');
 assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve oferecer relatório diário de vendas.');
 assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');
+assert.match(api, /parseFiltersQuery/, 'Filtros JSON invalidos devem retornar erro controlado.');
+assert.match(api, /INVALID_FILTERS/, 'Filtros invalidos da API generica devem retornar 400 em vez de erro interno.');
+assert.match(api, /path\[0\] === 'auth' && path\[1\] === 'logout'[\s\S]*await assertDatabaseReady/, 'Logout deve limpar a sessao mesmo quando o banco nao estiver disponivel.');
 assert.match(stock, /Última venda/, 'O estoque deve mostrar a última venda de cada produto.');
 assert.match(stock, /Apagar inativos/, 'O estoque deve permitir apagar produtos sem venda há dois meses.');
 assert.match(receiptPdf, /Vendas do período/, 'O relatório deve detalhar as vendas do período.');
