@@ -1,6 +1,7 @@
 const responseCache = new Map();
 const inFlightRequests = new Map();
 const latestRequestControllers = new Map();
+const MAX_CACHE_ENTRIES = 160;
 
 const STATUS_MESSAGES = {
   400: 'Revise os dados informados e tente novamente.',
@@ -53,6 +54,16 @@ function invalidateCache(path = '') {
   for (const key of responseCache.keys()) {
     if (scopes.some((scope) => key.startsWith(`GET:${scope}`)))
       responseCache.delete(key);
+  }
+}
+
+function pruneResponseCache() {
+  const now = Date.now();
+  for (const [key, cached] of responseCache) {
+    if (!cached || cached.expiresAt <= now) responseCache.delete(key);
+  }
+  while (responseCache.size > MAX_CACHE_ENTRIES) {
+    responseCache.delete(responseCache.keys().next().value);
   }
 }
 
@@ -144,6 +155,7 @@ const request = (path, options = {}) => {
   const cacheKey = `${method}:${path}`;
 
   if (cacheTTL > 0) {
+    pruneResponseCache();
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now())
       return Promise.resolve(cached.data);

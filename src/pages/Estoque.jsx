@@ -1,4 +1,6 @@
 import React, {
+  lazy,
+  Suspense,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -27,7 +29,6 @@ import {
   Upload,
   Trash2,
 } from 'lucide-react';
-import ProductForm from '@/components/stock/ProductForm';
 import {
   mergeProductCategories,
   parseProductCategories,
@@ -36,6 +37,8 @@ import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ErrorState } from '@/components/common/PageState';
+
+const ProductForm = lazy(() => import('@/components/stock/ProductForm'));
 
 const EDITABLE_COLUMNS = [
   ['name', 'Produto', 'text'],
@@ -1466,16 +1469,36 @@ export default function Estoque() {
         </div>
       )}
       {productModal && productModal.mode !== 'loading' && (
-        <ProductForm
-          product={productModal.mode === 'edit' ? productModal.product : null}
-          duplicateSource={
-            productModal.mode === 'duplicate' ? productModal.product : null
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+              <div
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+                className="rounded-lg border border-border bg-card px-8 py-7 text-center shadow-2xl"
+              >
+                <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" />
+                <p className="mt-3 text-sm font-bold">
+                  Abrindo formulário...
+                </p>
+              </div>
+            </div>
           }
-          categories={categories}
-          user={user}
-          onClose={closeModal}
-          onSave={handleModalSave}
-        />
+        >
+          <ProductForm
+            product={
+              productModal.mode === 'edit' ? productModal.product : null
+            }
+            duplicateSource={
+              productModal.mode === 'duplicate' ? productModal.product : null
+            }
+            categories={categories}
+            user={user}
+            onClose={closeModal}
+            onSave={handleModalSave}
+          />
+        </Suspense>
       )}
     </div>
   );

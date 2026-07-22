@@ -30,9 +30,9 @@ const APP_IMAGES = {
 };
 
 const QUICK_STATS = [
-  ['PDV', 'Venda, desconto, pagamento e recibo'],
-  ['Estoque', 'Produtos, preços, importação e alertas'],
-  ['Gestão', 'Fiados, usuários, auditoria e relatórios'],
+  ['4 rotinas', 'PDV, estoque, fiados e relatórios no mesmo lugar'],
+  ['Web', 'Acesse pelo navegador, sem instalação pesada'],
+  ['Perfis', 'Equipe com permissões e histórico de ações'],
 ];
 
 const BENEFITS = [
@@ -40,21 +40,25 @@ const BENEFITS = [
     title: 'Caixa rápido',
     description: 'Atenda com busca, leitor, desconto e pagamento misto.',
     Icon: Zap,
+    tone: 'emerald',
   },
   {
     title: 'Estoque controlado',
     description: 'Atualize preços, quantidades e cadastros em massa.',
     Icon: Boxes,
+    tone: 'blue',
   },
   {
     title: 'Fiados organizados',
     description: 'Acompanhe clientes, vencimentos e recebimentos.',
     Icon: WalletCards,
+    tone: 'amber',
   },
   {
     title: 'Equipe segura',
     description: 'Permissões por perfil e histórico de alterações.',
     Icon: ShieldCheck,
+    tone: 'rose',
   },
 ];
 
@@ -65,7 +69,11 @@ const SHOWCASES = [
     description: 'Produtos, carrinho e pagamento ficam na mesma rotina.',
     image: APP_IMAGES.pdv,
     alt: 'Tela do PDV do Nexo com produtos, venda atual e atalhos de caixa',
-    bullets: ['Leitor de código de barras', 'Vendas simultâneas', 'Recibo ao finalizar'],
+    bullets: [
+      'Leitor de código de barras',
+      'Vendas simultâneas',
+      'Recibo ao finalizar',
+    ],
     Icon: ShoppingCart,
   },
   {
@@ -74,8 +82,13 @@ const SHOWCASES = [
     description: 'Tabela rápida para editar, filtrar, importar e corrigir.',
     image: APP_IMAGES.stock,
     alt: 'Tela de estoque do Nexo em modo de tabela com produtos cadastrados',
-    bullets: ['Importação por planilha', 'Preço e quantidade em linha', 'Status de produto'],
+    bullets: [
+      'Importação por planilha',
+      'Preço e quantidade em linha',
+      'Status de produto',
+    ],
     Icon: FileSpreadsheet,
+    reverse: true,
   },
   {
     eyebrow: 'Relatórios',
@@ -83,7 +96,11 @@ const SHOWCASES = [
     description: 'Acompanhe vendas, pagamentos, produtos e desempenho.',
     image: APP_IMAGES.reports,
     alt: 'Tela de relatórios do Nexo com cartões de indicadores e gráficos',
-    bullets: ['Faturamento e ticket médio', 'Produtos mais vendidos', 'Formas de pagamento'],
+    bullets: [
+      'Faturamento e ticket médio',
+      'Produtos mais vendidos',
+      'Formas de pagamento',
+    ],
     Icon: BarChart3,
   },
 ];
@@ -94,14 +111,24 @@ const PLANS = [
     price: 'R$ 79',
     caption: 'para começar',
     description: 'PDV, estoque e vendas para mercados pequenos.',
-    features: ['1 unidade', 'Até 2 usuários', 'Cadastro de produtos', 'Relatórios básicos'],
+    features: [
+      '1 unidade',
+      'Até 2 usuários',
+      'Cadastro de produtos',
+      'Relatórios básicos',
+    ],
   },
   {
     name: 'Profissional',
     price: 'R$ 129',
     caption: 'mais escolhido',
     description: 'Gestão completa para operação diária com equipe.',
-    features: ['Até 5 usuários', 'Fiados e auditoria', 'Importação de estoque', 'Alertas e relatórios'],
+    features: [
+      'Até 5 usuários',
+      'Fiados e auditoria',
+      'Importação de estoque',
+      'Alertas e relatórios',
+    ],
     featured: true,
   },
   {
@@ -109,22 +136,30 @@ const PLANS = [
     price: 'Sob consulta',
     caption: 'para crescer',
     description: 'Mais unidades, suporte e controle avançado.',
-    features: ['Usuários ampliados', 'Múltiplas unidades', 'Financeiro integrado', 'Apoio na implantação'],
+    features: [
+      'Usuários ampliados',
+      'Múltiplas unidades',
+      'Financeiro integrado',
+      'Apoio na implantação',
+    ],
   },
 ];
 
 const FAQS = [
   {
     question: 'Funciona pelo navegador?',
-    answer: 'Sim. O Nexo PDV roda na web e pode ser usado em computadores compatíveis.',
+    answer:
+      'Sim. O Nexo PDV roda na web e pode ser usado em computadores compatíveis.',
   },
   {
     question: 'Consigo importar produtos?',
-    answer: 'Sim. A tela de estoque aceita importação por planilha e edição rápida.',
+    answer:
+      'Sim. A tela de estoque aceita importação por planilha e edição rápida.',
   },
   {
     question: 'O acesso da equipe é controlado?',
-    answer: 'Sim. O sistema separa permissões por perfil e registra atividades importantes.',
+    answer:
+      'Sim. O sistema separa permissões por perfil e registra atividades importantes.',
   },
 ];
 
@@ -152,6 +187,13 @@ const TEAM_ROLES = [
     Icon: ShieldCheck,
   },
 ];
+
+const TONE_CLASSES = {
+  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+  rose: 'bg-rose-50 text-rose-700 ring-rose-100',
+};
 
 function Logo({ light = false }) {
   return (
@@ -191,19 +233,24 @@ function ExternalAnchor({ href, className, children, ...props }) {
 
 function ButtonLink({ href, children, variant = 'primary', className = '' }) {
   const base =
-    'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+    'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition duration-200 ease-out hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-0';
   const variants = {
     primary:
-      'bg-[#16a06a] text-white shadow-lg shadow-emerald-900/15 hover:bg-[#12835a] focus-visible:outline-[#16a06a]',
+      'bg-[#16a06a] text-white shadow-lg shadow-emerald-950/20 hover:bg-[#12835a] focus-visible:outline-[#16a06a]',
     light:
-      'bg-white text-[#0e3b2c] shadow-lg shadow-black/10 hover:bg-emerald-50 focus-visible:outline-white',
+      'bg-white text-[#0b3528] shadow-lg shadow-black/15 hover:bg-emerald-50 focus-visible:outline-white',
     outline:
-      'border border-white/35 bg-white/10 text-white hover:bg-white/15 focus-visible:outline-white',
+      'border border-white/30 bg-white/10 text-white hover:bg-white/15 focus-visible:outline-white',
     muted:
-      'border border-slate-200 bg-white text-slate-900 hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-[#16a06a]',
+      'border border-slate-200 bg-white text-slate-950 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-[#16a06a]',
+    dark:
+      'bg-slate-950 text-white shadow-lg shadow-slate-950/20 hover:bg-slate-800 focus-visible:outline-slate-950',
   };
   return (
-    <ExternalAnchor href={href} className={`${base} ${variants[variant]} ${className}`}>
+    <ExternalAnchor
+      href={href}
+      className={`${base} ${variants[variant]} ${className}`}
+    >
       {children}
     </ExternalAnchor>
   );
@@ -213,10 +260,10 @@ function SectionHeader({ eyebrow, title, description, light = false }) {
   return (
     <div className="mx-auto max-w-3xl text-center">
       <span
-        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase ${
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase ${
           light
-            ? 'bg-white/10 text-emerald-100'
-            : 'bg-emerald-100 text-[#0f6b4a]'
+            ? 'border-white/15 bg-white/10 text-emerald-100'
+            : 'border-emerald-200 bg-emerald-50 text-[#0f6b4a]'
         }`}
       >
         <Sparkles className="h-3.5 w-3.5" />
@@ -242,14 +289,14 @@ function SectionHeader({ eyebrow, title, description, light = false }) {
   );
 }
 
-function ScreenshotFrame({ src, alt, priority = false }) {
+function ScreenshotFrame({ src, alt, priority = false, compact = false }) {
   return (
-    <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10">
-      <div className="flex h-6 items-center gap-1.5 border-b border-slate-100 px-2">
+    <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-950/10">
+      <div className="flex h-7 items-center gap-1.5 border-b border-slate-100 px-2">
         <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
         <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-        <span className="ml-2 h-2 w-24 rounded bg-slate-100" />
+        <span className="ml-2 h-2 w-28 rounded bg-slate-100" />
       </div>
       <img
         src={src}
@@ -257,26 +304,27 @@ function ScreenshotFrame({ src, alt, priority = false }) {
         width="1700"
         height="980"
         loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
         decoding={priority ? 'sync' : 'async'}
-        className="mt-2 block aspect-[16/9] w-full rounded-md object-cover object-top"
+        className={`mt-2 block w-full rounded-md object-cover object-top ${
+          compact ? 'aspect-[4/3]' : 'aspect-[16/9]'
+        }`}
       />
     </figure>
   );
 }
 
-function FeatureCard({ title, description, Icon }) {
+function FeatureCard({ title, description, Icon, tone }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="grid h-11 w-11 flex-none place-items-center rounded-lg bg-emerald-100 text-[#12835a]">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-950">{title}</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
-        </div>
+    <article className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-950/10">
+      <div
+        className={`grid h-11 w-11 place-items-center rounded-lg ring-1 ${
+          TONE_CLASSES[tone]
+        }`}
+      >
+        <Icon className="h-5 w-5" />
       </div>
+      <h3 className="mt-5 font-bold text-slate-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
     </article>
   );
 }
@@ -302,9 +350,13 @@ function Bullet({ children, light = false }) {
 
 function Showcase({ item }) {
   return (
-    <article className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-12">
+    <article
+      className={`grid items-center gap-8 lg:grid-cols-2 lg:gap-14 ${
+        item.reverse ? 'lg:[&>figure]:order-first' : ''
+      }`}
+    >
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase text-[#0f6b4a]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-[#0f6b4a]">
           <item.Icon className="h-3.5 w-3.5" />
           {item.eyebrow}
         </div>
@@ -328,10 +380,10 @@ function Showcase({ item }) {
 function PlanCard({ plan, contactHref }) {
   return (
     <article
-      className={`relative rounded-lg border p-6 shadow-sm ${
+      className={`relative flex h-full flex-col rounded-lg border p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-2xl ${
         plan.featured
-          ? 'border-[#16a06a] bg-[#0e3b2c] text-white shadow-emerald-950/20'
-          : 'border-slate-200 bg-white text-slate-950'
+          ? 'border-[#16a06a] bg-[#0b3528] text-white shadow-emerald-950/25'
+          : 'border-slate-200 bg-white text-slate-950 shadow-slate-950/5'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -346,7 +398,7 @@ function PlanCard({ plan, contactHref }) {
           <h3 className="mt-2 text-2xl font-bold">{plan.name}</h3>
         </div>
         {plan.featured && (
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0e3b2c]">
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0b3528]">
             Popular
           </span>
         )}
@@ -423,24 +475,24 @@ export default function Landing() {
   const contactHref = getWhatsAppHref();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f3faf6] text-slate-950 selection:bg-emerald-200">
-      <header className="sticky top-0 z-50 border-b border-white/70 bg-[#f3faf6]/92 backdrop-blur-xl">
-        <div className="mx-auto flex h-[70px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950 selection:bg-emerald-200">
+      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
             <Logo />
           </a>
 
           <nav
-            className="hidden items-center gap-7 text-sm font-bold text-slate-600 lg:flex"
+            className="hidden items-center gap-8 text-sm font-bold text-slate-600 lg:flex"
             aria-label="Navegação principal"
           >
-            <a className="hover:text-[#12835a]" href="#produto">
+            <a className="transition hover:text-[#12835a]" href="#produto">
               Produto
             </a>
-            <a className="hover:text-[#12835a]" href="#planos">
+            <a className="transition hover:text-[#12835a]" href="#planos">
               Planos
             </a>
-            <a className="hover:text-[#12835a]" href="#duvidas">
+            <a className="transition hover:text-[#12835a]" href="#duvidas">
               Dúvidas
             </a>
           </nav>
@@ -448,7 +500,7 @@ export default function Landing() {
           <div className="flex min-w-0 items-center gap-2">
             <Link
               to="/login"
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#16a06a] bg-white px-4 text-sm font-bold text-[#0f6b4a] transition hover:bg-emerald-50"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-[#0f6b4a]"
             >
               Login
             </Link>
@@ -463,7 +515,7 @@ export default function Landing() {
       <main>
         <section
           id="inicio"
-          className="relative isolate overflow-hidden bg-[#0b241c] text-white"
+          className="relative isolate min-h-[calc(100dvh-72px)] overflow-hidden bg-[#071f18] text-white"
         >
           <img
             src={APP_IMAGES.pdv}
@@ -472,26 +524,26 @@ export default function Landing() {
             width="1700"
             height="980"
             loading="eager"
-            fetchPriority="high"
-            className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_top] opacity-80"
+            className="absolute inset-0 -z-30 h-full w-full object-cover object-[58%_top] opacity-85"
           />
-          <div className="absolute inset-0 -z-10 bg-[#071c16]/58" />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#061f18] via-[#061f18]/88 to-[#061f18]/32" />
+          <div className="absolute inset-0 -z-20 bg-[#061b15]/50" />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#061b15_0%,rgba(6,27,21,0.92)_38%,rgba(6,27,21,0.58)_68%,rgba(6,27,21,0.18)_100%)]" />
 
-          <div className="mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:min-h-[680px] lg:px-8">
-            <div className="max-w-2xl">
+          <div className="mx-auto grid min-h-[calc(100dvh-72px)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:px-8">
+            <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase text-emerald-100 backdrop-blur">
                 <Store className="h-3.5 w-3.5" />
                 PDV web para mercados de bairro
               </span>
 
-              <h1 className="mt-5 text-4xl font-bold leading-[1.04] sm:text-5xl lg:text-6xl">
+              <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.02] sm:text-6xl lg:text-7xl">
                 Caixa, estoque e gestão em uma tela simples de operar.
               </h1>
 
-              <p className="mt-5 max-w-xl text-base leading-7 text-emerald-50/86 sm:text-lg sm:leading-8">
-                O Nexo PDV ajuda mercadinhos a vender rápido, controlar produtos,
-                organizar fiados e enxergar resultados sem complicação.
+              <p className="mt-6 max-w-2xl text-base leading-7 text-emerald-50/90 sm:text-lg sm:leading-8">
+                O Nexo PDV ajuda mercadinhos a vender rápido, controlar
+                produtos, organizar fiados e enxergar resultados sem
+                complicação.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -501,45 +553,62 @@ export default function Landing() {
                 </ButtonLink>
                 <Link
                   to="/login"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 text-sm font-bold text-white transition hover:-translate-y-px hover:bg-white/15 active:translate-y-0"
                 >
                   Entrar no sistema
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-
-              <div className="mt-8 grid max-w-xl gap-2 sm:grid-cols-3">
-                {QUICK_STATS.map(([label, text]) => (
-                  <div
-                    key={label}
-                    className="rounded-lg border border-white/16 bg-white/10 p-3 backdrop-blur"
-                  >
-                    <strong className="block text-sm font-bold text-white">
-                      {label}
-                    </strong>
-                    <span className="mt-1 block text-xs leading-5 text-emerald-50/76">
-                      {text}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="mt-8 grid max-w-xl gap-2 sm:grid-cols-4">
-              {TRUST_ITEMS.map(({ Icon, label }) => (
-                <div
-                  key={label}
-                  className="flex min-h-11 items-center gap-2 rounded-lg border border-white/14 bg-white/10 px-3 text-emerald-50 backdrop-blur"
-                >
-                  <Icon className="h-4 w-4 flex-none text-[#6dd4aa]" />
-                  <span className="text-xs font-bold">{label}</span>
+            <aside className="hidden rounded-lg border border-white/15 bg-white/10 p-4 shadow-2xl shadow-black/25 backdrop-blur-md lg:block">
+              <ScreenshotFrame
+                src={APP_IMAGES.reports}
+                alt="Tela de relatórios do Nexo PDV"
+                priority
+                compact
+              />
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                  <span className="text-xs font-bold uppercase text-emerald-100">
+                    Venda atual
+                  </span>
+                  <strong className="mt-2 block text-3xl font-bold">
+                    R$ 92,77
+                  </strong>
                 </div>
-              ))}
-            </div>
+                <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                  <span className="text-xs font-bold uppercase text-emerald-100">
+                    Itens ativos
+                  </span>
+                  <strong className="mt-2 block text-3xl font-bold">
+                    1.284
+                  </strong>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
-        <section className="bg-[#f3faf6] py-16 sm:py-20">
+        <section className="relative z-10 -mt-8 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/10 lg:grid-cols-3">
+            {QUICK_STATS.map(([label, text]) => (
+              <div
+                key={label}
+                className="border-b border-slate-200 p-6 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
+              >
+                <strong className="block text-lg font-bold text-slate-950">
+                  {label}
+                </strong>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">
+                  {text}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[#f4f8f6] py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader
               eyebrow="Operação completa"
@@ -551,18 +620,43 @@ export default function Landing() {
                 <FeatureCard key={item.title} {...item} />
               ))}
             </div>
+
+            <div className="mt-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-4">
+              {TRUST_ITEMS.map(({ Icon, label }) => (
+                <div
+                  key={label}
+                  className="flex min-h-12 items-center gap-3 rounded-lg bg-slate-50 px-3 text-slate-700"
+                >
+                  <Icon className="h-4 w-4 flex-none text-[#16a06a]" />
+                  <span className="text-sm font-bold">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         <section id="produto" className="bg-white py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-7xl space-y-16 px-4 sm:px-6 lg:px-8">
-            {SHOWCASES.map((item) => (
-              <Showcase key={item.title} item={item} />
-            ))}
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-end gap-6 lg:grid-cols-[0.82fr_1fr]">
+              <SectionHeader
+                eyebrow="Produto"
+                title="Fluxos importantes ficam óbvios desde o primeiro dia"
+                description="O visual do sistema foi pensado para operação: telas diretas, dados fáceis de comparar e ações sempre por perto."
+              />
+              <p className="hidden text-right text-sm font-semibold leading-6 text-slate-500 lg:block">
+                Caixa, estoque e relatórios trabalham juntos para reduzir
+                retrabalho e deixar o atendimento mais previsível.
+              </p>
+            </div>
+            <div className="mt-14 space-y-20">
+              {SHOWCASES.map((item) => (
+                <Showcase key={item.title} item={item} />
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="bg-[#0e3b2c] py-16 text-white sm:py-20">
+        <section className="bg-[#0b3528] py-16 text-white sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader
               eyebrow="Para a equipe"
@@ -575,13 +669,13 @@ export default function Landing() {
               {TEAM_ROLES.map(({ title, text, Icon }) => (
                 <article
                   key={title}
-                  className="rounded-lg border border-white/12 bg-white/8 p-5"
+                  className="rounded-lg border border-white/10 bg-white/10 p-6 transition hover:bg-white/15"
                 >
-                  <div className="grid h-11 w-11 place-items-center rounded-lg bg-white/12 text-emerald-100">
+                  <div className="grid h-11 w-11 place-items-center rounded-lg bg-white/10 text-emerald-100">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 font-bold">{title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-emerald-50/76">
+                  <h3 className="mt-5 font-bold">{title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-emerald-50/75">
                     {text}
                   </p>
                 </article>
@@ -598,9 +692,13 @@ export default function Landing() {
               description="Comece simples e evolua quando o mercado precisar."
             />
 
-            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            <div className="mt-10 grid items-stretch gap-4 lg:grid-cols-3">
               {PLANS.map((plan) => (
-                <PlanCard key={plan.name} plan={plan} contactHref={contactHref} />
+                <PlanCard
+                  key={plan.name}
+                  plan={plan}
+                  contactHref={contactHref}
+                />
               ))}
             </div>
 
@@ -613,7 +711,7 @@ export default function Landing() {
               </div>
               <Link
                 to="/login"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 sm:w-auto"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:-translate-y-px hover:bg-slate-800 active:translate-y-0 sm:w-auto"
               >
                 Fazer login
                 <ArrowRight className="h-4 w-4" />
@@ -633,7 +731,7 @@ export default function Landing() {
               {FAQS.map((item) => (
                 <details
                   key={item.question}
-                  className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm open:border-emerald-300"
+                  className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition open:border-emerald-300 open:shadow-lg"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950">
                     <span>{item.question}</span>
@@ -648,14 +746,14 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="bg-[#f3faf6] px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-lg bg-[#0b241c] p-6 text-white shadow-xl shadow-slate-950/15 sm:p-8 lg:grid-cols-[1fr_auto]">
+        <section className="bg-[#f4f8f6] px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-lg bg-[#071f18] p-6 text-white shadow-2xl shadow-slate-950/20 sm:p-8 lg:grid-cols-[1fr_auto]">
             <div>
               <Logo light />
               <h2 className="mt-5 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
                 Um PDV moderno para o mercado vender melhor hoje.
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/78 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:text-base">
                 Converse pelo WhatsApp e veja o melhor plano para sua operação.
               </p>
             </div>
@@ -673,10 +771,13 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="bg-[#0b241c] text-white">
+      <footer className="bg-[#071f18] text-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-7 text-center text-sm text-emerald-50/75 sm:px-6 md:flex-row md:text-left lg:px-8">
           <Logo light />
-          <p>© {new Date().getFullYear()} Nexo PDV. Sistema de gestão para mercados de bairro.</p>
+          <p>
+            © {new Date().getFullYear()} Nexo PDV. Sistema de gestão para
+            mercados de bairro.
+          </p>
         </div>
       </footer>
     </div>

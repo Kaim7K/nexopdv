@@ -1,4 +1,13 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import { useLocation } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 
 const AuthContext = createContext(null);
@@ -22,31 +31,49 @@ function cacheUser(user) {
 }
 
 export const AuthProvider = ({ children }) => {
+  const location = useLocation();
   const [user, setUser] = useState(() => readCachedUser());
   const initialUserRef = useRef(user);
-  const [isLoadingAuth, setLoading] = useState(!user);
+  const validationRef = useRef(false);
+  const authRequestRef = useRef(null);
+  const isPrivateRoute =
+    location.pathname !== '/' && location.pathname !== '/login';
+  const [isLoadingAuth, setLoading] = useState(() =>
+    isPrivateRoute ? !user : false,
+  );
   const [authChecked, setChecked] = useState(Boolean(user));
 
   const checkUserAuth = useCallback(async ({ silent = false } = {}) => {
+    if (authRequestRef.current) return authRequestRef.current;
     if (!silent) setLoading(true);
-    try {
-      const authenticated = await nexoApi.auth.me();
-      setUser(authenticated);
-      cacheUser(authenticated);
-      return authenticated;
-    } catch {
-      setUser(null);
-      cacheUser(null);
-      return null;
-    } finally {
-      setLoading(false);
-      setChecked(true);
-    }
+    authRequestRef.current = nexoApi.auth
+      .me()
+      .then((authenticated) => {
+        setUser(authenticated);
+        cacheUser(authenticated);
+        return authenticated;
+      })
+      .catch(() => {
+        setUser(null);
+        cacheUser(null);
+        return null;
+      })
+      .finally(() => {
+        setLoading(false);
+        setChecked(true);
+        authRequestRef.current = null;
+      });
+    return authRequestRef.current;
   }, []);
 
   useEffect(() => {
+    if (!isPrivateRoute || validationRef.current) {
+      if (!isPrivateRoute) setLoading(false);
+      return;
+    }
+    validationRef.current = true;
     checkUserAuth({ silent: Boolean(initialUserRef.current) });
-  }, [checkUserAuth]);
+  }, [checkUserAuth, isPrivateRoute]);
 
   useEffect(() => {
     const expireSession = () => {
@@ -59,15 +86,39 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('nexo:session-expired', expireSession);
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try { await nexoApi.auth.logout(); } finally {
       setUser(null);
       cacheUser(null);
       window.location.href = '/';
     }
-  };
+  }, []);
 
-  return <AuthContext.Provider value={{ user, isAuthenticated: Boolean(user), isLoadingAuth, authChecked, checkUserAuth, logout, navigateToLogin: () => { window.location.href = '/login'; } }}>{children}</AuthContext.Provider>;
+  const navigateToLogin = useCallback(() => {
+    window.location.href = '/login';
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isLoadingAuth,
+      authChecked,
+      checkUserAuth,
+      logout,
+      navigateToLogin,
+    }),
+    [
+      user,
+      isLoadingAuth,
+      authChecked,
+      checkUserAuth,
+      logout,
+      navigateToLogin,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

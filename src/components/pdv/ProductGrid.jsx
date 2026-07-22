@@ -2,7 +2,7 @@ import React, { useDeferredValue, useMemo, useState } from 'react';
 import { AlertTriangle, Package, Search, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
-export default function ProductGrid({ products, onSelect, loading }) {
+function ProductGrid({ products, onSelect, loading }) {
   const [category, setCategory] = useState('');
   const [localSearch, setLocalSearch] = useState('');
   const [sortMode, setSortMode] = useState('sold_desc');
@@ -132,3 +132,5 @@ export default function ProductGrid({ products, onSelect, loading }) {
     </div>
   );
 }
+
+export default React.memo(ProductGrid);

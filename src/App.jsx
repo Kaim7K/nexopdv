@@ -64,8 +64,8 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <ConfirmProvider>
           <NetworkStatus />
           <ScrollToTop />
@@ -77,8 +77,8 @@ function App() {
             toastOptions={{ duration: 4000, className: 'nexo-toast' }}
           />
         </ConfirmProvider>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

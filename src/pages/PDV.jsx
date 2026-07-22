@@ -1,5 +1,8 @@
 import React, {
+  lazy,
+  Suspense,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -19,12 +22,6 @@ import ProductSearch from '@/components/pdv/ProductSearch';
 import SearchResults from '@/components/pdv/SearchResults';
 import SaleSummary from '@/components/pdv/SaleSummary';
 import ProductGrid from '@/components/pdv/ProductGrid';
-import PaymentModal from '@/components/pdv/PaymentModal';
-import QuickProductModal from '@/components/pdv/QuickProductModal';
-import ReceiptModal from '@/components/pdv/ReceiptModal';
-import PriceCorrectionModal from '@/components/pdv/PriceCorrectionModal';
-import MinimizedSalesBar from '@/components/pdv/MinimizedSalesBar';
-import CashRegisterModal from '@/components/pdv/CashRegisterModal';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { formatCurrency } from '@/lib/helpers';
 import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
@@ -41,10 +38,32 @@ import {
   updateSaleItemWeight,
 } from '@/lib/pdv';
 
+const PaymentModal = lazy(() => import('@/components/pdv/PaymentModal'));
+const QuickProductModal = lazy(() => import('@/components/pdv/QuickProductModal'));
+const ReceiptModal = lazy(() => import('@/components/pdv/ReceiptModal'));
+const PriceCorrectionModal = lazy(() =>
+  import('@/components/pdv/PriceCorrectionModal'),
+);
+const MinimizedSalesBar = lazy(() => import('@/components/pdv/MinimizedSalesBar'));
+const CashRegisterModal = lazy(() => import('@/components/pdv/CashRegisterModal'));
+
 const Kbd = ({ children }) => (
   <kbd className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs font-bold leading-none">
     {children}
   </kbd>
+);
+
+const modalFallback = (
+  <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="rounded-lg border border-border bg-card px-6 py-5 text-center text-sm font-bold shadow-2xl"
+    >
+      Abrindo...
+    </div>
+  </div>
 );
 
 export default function PDV() {
@@ -75,7 +94,6 @@ export default function PDV() {
   const inactivityTimerRef = useRef(null);
   const discardedWhileAwayRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showQuickProduct, setShowQuickProduct] = useState(null);
@@ -104,6 +122,26 @@ export default function PDV() {
     showReceipt ||
     showPriceCorrection ||
     cashModal;
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const searchResults = useMemo(() => {
+    if (!deferredSearchQuery) return [];
+    const query = deferredSearchQuery.toLowerCase();
+    return products
+      .filter(
+        (product) =>
+          String(product.name || '')
+            .toLowerCase()
+            .includes(query) ||
+          String(product.category || '')
+            .toLowerCase()
+            .includes(query) ||
+          String(product.barcode || '').includes(query) ||
+          String(product.internal_code || '')
+            .toLowerCase()
+            .includes(query),
+      )
+      .slice(0, 10);
+  }, [deferredSearchQuery, products]);
 
   const writeLocalDraft = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -373,30 +411,8 @@ export default function PDV() {
   }, []);
 
   useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults([]);
-      return;
-    }
-    const query = searchQuery.toLowerCase();
-    setSearchResults(
-      products
-        .filter(
-          (product) =>
-            String(product.name || '')
-              .toLowerCase()
-              .includes(query) ||
-            String(product.category || '')
-              .toLowerCase()
-              .includes(query) ||
-            String(product.barcode || '').includes(query) ||
-            String(product.internal_code || '')
-              .toLowerCase()
-              .includes(query),
-        )
-        .slice(0, 10),
-    );
-    setShowResults(true);
-  }, [searchQuery, products]);
+    if (searchQuery) setShowResults(true);
+  }, [searchQuery]);
 
   const loadCash = async () => {
     setCashLoading(true);
@@ -623,7 +639,7 @@ export default function PDV() {
     }
   };
 
-  const addProductToSale = (product) => {
+  const addProductToSale = useCallback((product) => {
     if (product.status === 'inativo') {
       toast.error('Produto inativo.');
       return;
@@ -634,31 +650,31 @@ export default function PDV() {
     }));
     if (Number(product.quantity || 0) <= 0)
       toast(`⚠️ Estoque baixo: ${product.name}`);
-  };
+  }, []);
 
-  const updateQuantity = (index, quantity) =>
+  const updateQuantity = useCallback((index, quantity) =>
     setActiveSale((previous) => ({
       ...previous,
       items: updateSaleItemQuantity(previous.items, index, quantity),
-    }));
+    })), []);
 
-  const updateWeight = (index, weight) =>
+  const updateWeight = useCallback((index, weight) =>
     setActiveSale((previous) => ({
       ...previous,
       items: updateSaleItemWeight(previous.items, index, weight),
-    }));
+    })), []);
 
-  const updatePrice = (index, price) =>
+  const updatePrice = useCallback((index, price) =>
     setActiveSale((previous) => ({
       ...previous,
       items: updateSaleItemPrice(previous.items, index, price),
-    }));
+    })), []);
 
-  const removeItem = (index) =>
+  const removeItem = useCallback((index) =>
     setActiveSale((previous) => ({
       ...previous,
       items: removeSaleItem(previous.items, index),
-    }));
+    })), []);
 
   const handlePriceCorrection = async (index, newPrice) => {
     const item = activeSale.items[index];
@@ -965,92 +981,94 @@ export default function PDV() {
         </div>
       )}
 
-      {showPayment && canUsePdv && (
-        <PaymentModal
-          sale={activeSale}
-          onClose={() => setShowPayment(false)}
-          onComplete={completeSale}
-          onMinimize={(draft) => {
-            setShowPayment(false);
-            handleMinimize(draft);
-          }}
-          onDiscard={() => {
-            setShowPayment(false);
-            handleDiscard();
-          }}
-        />
-      )}
-      {showQuickProduct && (
-        <QuickProductModal
-          barcode={showQuickProduct.barcode}
-          onSave={(product) => {
-            setProducts((previous) =>
-              previous.some((item) => item.id === product.id)
-                ? previous
-                : [...previous, product],
-            );
-            addProductToSale(product);
-            setShowQuickProduct(null);
-            setSearchQuery('');
-            window.requestAnimationFrame(() => inputRef.current?.focus());
-          }}
-          onClose={() => {
-            setShowQuickProduct(null);
-            window.requestAnimationFrame(() => inputRef.current?.focus());
-          }}
-        />
-      )}
-      {showReceipt && (
-        <ReceiptModal
-          sale={showReceipt}
-          config={receiptConfig}
-          onClose={() => setShowReceipt(null)}
-          onNewSale={() => setShowReceipt(null)}
-        />
-      )}
-      {showPriceCorrection && (
-        <PriceCorrectionModal
-          items={activeSale.items}
-          onSave={handlePriceCorrection}
-          onClose={() => setShowPriceCorrection(false)}
-        />
-      )}
-      {cashModal && (
-        <CashRegisterModal
-          mode={cashModal}
-          cashState={cashModal === 'closed' ? closedCashReport : cashState}
-          processing={cashProcessing}
-          reporting={cashReporting}
-          onClose={
-            cashState.required && !cashState.session && cashModal === 'open'
-              ? undefined
-              : () => {
-                  setCashModal(null);
-                  if (cashModal === 'closed') setClosedCashReport(null);
-                }
-          }
-          onOpen={handleOpenCash}
-          onContinue={
-            cashModal === 'open' && !cashState.session
-              ? continueWithoutCash
-              : undefined
-          }
-          onCloseCash={handleCloseCash}
-          onDownloadReport={
-            cashModal === 'close' || cashModal === 'closed'
-              ? downloadCashReport
-              : undefined
-          }
-        />
-      )}
-      {canUsePdv && (
-        <MinimizedSalesBar
-          sales={minimizedSales}
-          onRestore={handleRestore}
-          onDiscard={handleDiscardMinimized}
-          onReorder={handleReorderMinimized}
-        />
-      )}
+      <Suspense fallback={modalFallback}>
+        {showPayment && canUsePdv && (
+          <PaymentModal
+            sale={activeSale}
+            onClose={() => setShowPayment(false)}
+            onComplete={completeSale}
+            onMinimize={(draft) => {
+              setShowPayment(false);
+              handleMinimize(draft);
+            }}
+            onDiscard={() => {
+              setShowPayment(false);
+              handleDiscard();
+            }}
+          />
+        )}
+        {showQuickProduct && (
+          <QuickProductModal
+            barcode={showQuickProduct.barcode}
+            onSave={(product) => {
+              setProducts((previous) =>
+                previous.some((item) => item.id === product.id)
+                  ? previous
+                  : [...previous, product],
+              );
+              addProductToSale(product);
+              setShowQuickProduct(null);
+              setSearchQuery('');
+              window.requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+            onClose={() => {
+              setShowQuickProduct(null);
+              window.requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+          />
+        )}
+        {showReceipt && (
+          <ReceiptModal
+            sale={showReceipt}
+            config={receiptConfig}
+            onClose={() => setShowReceipt(null)}
+            onNewSale={() => setShowReceipt(null)}
+          />
+        )}
+        {showPriceCorrection && (
+          <PriceCorrectionModal
+            items={activeSale.items}
+            onSave={handlePriceCorrection}
+            onClose={() => setShowPriceCorrection(false)}
+          />
+        )}
+        {cashModal && (
+          <CashRegisterModal
+            mode={cashModal}
+            cashState={cashModal === 'closed' ? closedCashReport : cashState}
+            processing={cashProcessing}
+            reporting={cashReporting}
+            onClose={
+              cashState.required && !cashState.session && cashModal === 'open'
+                ? undefined
+                : () => {
+                    setCashModal(null);
+                    if (cashModal === 'closed') setClosedCashReport(null);
+                  }
+            }
+            onOpen={handleOpenCash}
+            onContinue={
+              cashModal === 'open' && !cashState.session
+                ? continueWithoutCash
+                : undefined
+            }
+            onCloseCash={handleCloseCash}
+            onDownloadReport={
+              cashModal === 'close' || cashModal === 'closed'
+                ? downloadCashReport
+                : undefined
+            }
+          />
+        )}
+        {canUsePdv && minimizedSales.length > 0 && (
+          <MinimizedSalesBar
+            sales={minimizedSales}
+            onRestore={handleRestore}
+            onDiscard={handleDiscardMinimized}
+            onReorder={handleReorderMinimized}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
