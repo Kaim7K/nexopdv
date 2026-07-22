@@ -64,7 +64,9 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
+    >
       <AuthProvider>
         <ConfirmProvider>
           <NetworkStatus />

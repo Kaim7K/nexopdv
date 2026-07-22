@@ -5,14 +5,19 @@ import {
   AlertTriangle,
   BarChart3,
   CalendarRange,
+  ChartNoAxesColumnIncreasing,
   DollarSign,
   Lightbulb,
+  PackageCheck,
+  Percent,
   Receipt,
   ShoppingCart,
   TrendingDown,
   TrendingUp,
+  Trophy,
+  Users,
 } from 'lucide-react';
-import { formatCurrency, PAYMENT_METHODS } from '@/lib/helpers';
+import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 
 const PERIODS = [
@@ -68,7 +73,7 @@ export default function Relatorios() {
     setLoadError('');
     try {
       const [saleData, fiadoData] = await Promise.all([
-        nexoApi.entities.Sale.list('-created_date', 1000),
+        nexoApi.entities.Sale.list('-created_date', 5000),
         nexoApi.entities.FiadoRecord.list('-created_date', 500),
       ]);
       setSales(saleData);
@@ -149,6 +154,14 @@ export default function Relatorios() {
       (sum, sale) => sum + Number(sale.total || 0),
       0,
     );
+    const grossRevenue = periodSales.reduce(
+      (sum, sale) => sum + Number(sale.subtotal || sale.total || 0),
+      0,
+    );
+    const totalDiscount = periodSales.reduce(
+      (sum, sale) => sum + Number(sale.discount_value || 0),
+      0,
+    );
     const prevRevenue = prevPeriodSales.reduce(
       (sum, sale) => sum + Number(sale.total || 0),
       0,
@@ -157,6 +170,18 @@ export default function Relatorios() {
       prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
     const totalSales = periodSales.length;
     const avgTicket = totalSales ? totalRevenue / totalSales : 0;
+    const totalItems = periodSales.reduce(
+      (sum, sale) =>
+        sum +
+        (sale.items || []).reduce(
+          (itemSum, item) =>
+            itemSum +
+            (Number(item.unit === 'peso' ? item.weight : item.quantity) || 0),
+          0,
+        ),
+      0,
+    );
+    const itemsPerSale = totalSales ? totalItems / totalSales : 0;
     const cancelled = sales.filter(
       (sale) =>
         sale.status === 'cancelada' &&
@@ -165,18 +190,28 @@ export default function Relatorios() {
     ).length;
 
     const productMap = {};
+    const categoryMap = {};
     for (const sale of periodSales) {
       for (const item of sale.items || []) {
         if (!productMap[item.product_name])
-          productMap[item.product_name] = { qty: 0, revenue: 0 };
-        productMap[item.product_name].qty +=
+          productMap[item.product_name] = { qty: 0, revenue: 0, sales: 0 };
+        const quantity =
           Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
+        productMap[item.product_name].qty += quantity;
         productMap[item.product_name].revenue += Number(item.subtotal || 0);
+        productMap[item.product_name].sales += 1;
+        const category = item.category || item.product_category || 'Sem categoria';
+        if (!categoryMap[category]) categoryMap[category] = { qty: 0, revenue: 0 };
+        categoryMap[category].qty += quantity;
+        categoryMap[category].revenue += Number(item.subtotal || 0);
       }
     }
     const topProducts = Object.entries(productMap)
       .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 5);
+      .slice(0, 8);
+    const topCategories = Object.entries(categoryMap)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .slice(0, 6);
 
     const paymentMap = {};
     for (const sale of periodSales) {
@@ -184,11 +219,14 @@ export default function Relatorios() {
         paymentMap[payment.method] =
           Number(paymentMap[payment.method] || 0) + Number(payment.amount || 0);
     }
-    const paymentData = Object.entries(paymentMap).map(([method, value]) => ({
-      name:
-        PAYMENT_METHODS.find((item) => item.method === method)?.label || method,
-      value,
-    }));
+    const paymentData = Object.entries(paymentMap)
+      .map(([method, value]) => ({
+        method,
+        name: getPaymentLabel(method),
+        value,
+        percentage: totalRevenue > 0 ? (value / totalRevenue) * 100 : 0,
+      }))
+      .sort((a, b) => b.value - a.value);
 
     const sellerMap = {};
     for (const sale of periodSales) {
@@ -197,9 +235,16 @@ export default function Relatorios() {
       sellerMap[seller].count += 1;
       sellerMap[seller].revenue += Number(sale.total || 0);
     }
-    const sellerData = Object.entries(sellerMap).sort(
-      (a, b) => b[1].revenue - a[1].revenue,
-    );
+    const sellerData = Object.entries(sellerMap)
+      .map(([name, data]) => [
+        name,
+        {
+          ...data,
+          average: data.count ? data.revenue / data.count : 0,
+          share: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0,
+        },
+      ])
+      .sort((a, b) => b[1].revenue - a[1].revenue);
 
     const periodFiados = fiados.filter(
       (fiado) =>
@@ -270,19 +315,32 @@ export default function Relatorios() {
         ...item,
         average: item.sales ? item.revenue / item.sales : 0,
       }));
+    const bestBreakdown = [...breakdownData].sort(
+      (first, second) => second.revenue - first.revenue,
+    )[0];
+    const bestDay = [...dailyData].sort(
+      (first, second) => second.value - first.value,
+    )[0];
 
     return {
       totalRevenue,
+      grossRevenue,
+      totalDiscount,
       revenueChange,
       totalSales,
       avgTicket,
+      totalItems,
+      itemsPerSale,
       cancelled,
       topProducts,
+      topCategories,
       paymentData,
       sellerData,
       pendingFiado,
       dailyData,
       breakdownData,
+      bestBreakdown,
+      bestDay,
     };
   }, [
     periodSales,
@@ -317,18 +375,22 @@ export default function Relatorios() {
           .replace(/\.000$/, '')} vendidos.`,
       });
     if (stats.paymentData.length) {
-      const topPayment = [...stats.paymentData].sort(
-        (a, b) => b.value - a.value,
-      )[0];
-      const percentage =
-        stats.totalRevenue > 0
-          ? (topPayment.value / stats.totalRevenue) * 100
-          : 0;
+      const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${percentage.toFixed(0)}% do faturamento do período.`,
+        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do período.`,
       });
     }
+    if (stats.bestBreakdown)
+      list.push({
+        type: 'info',
+        text: `O melhor recorte foi ${stats.bestBreakdown.label}, com ${formatCurrency(stats.bestBreakdown.revenue)} em ${stats.bestBreakdown.sales} venda(s).`,
+      });
+    if (stats.itemsPerSale > 0)
+      list.push({
+        type: 'info',
+        text: `Cada venda teve em média ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
+      });
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
@@ -432,6 +494,43 @@ export default function Relatorios() {
           alert={stats.cancelled > 0}
         />
       </div>
+
+      <section className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground lg:grid-cols-4">
+        <MiniMetric
+          icon={ChartNoAxesColumnIncreasing}
+          label="Bruto vendido"
+          value={formatCurrency(stats.grossRevenue)}
+          hint="Antes dos descontos"
+        />
+        <MiniMetric
+          icon={Percent}
+          label="Descontos"
+          value={formatCurrency(stats.totalDiscount)}
+          hint={
+            stats.grossRevenue > 0
+              ? `${((stats.totalDiscount / stats.grossRevenue) * 100).toFixed(1)}% do bruto`
+              : 'Sem descontos'
+          }
+        />
+        <MiniMetric
+          icon={PackageCheck}
+          label="Itens vendidos"
+          value={Number(stats.totalItems).toLocaleString('pt-BR', {
+            maximumFractionDigits: 3,
+          })}
+          hint={`${stats.itemsPerSale.toFixed(1).replace('.', ',')} por venda`}
+        />
+        <MiniMetric
+          icon={Trophy}
+          label="Melhor recorte"
+          value={stats.bestBreakdown?.label || '-'}
+          hint={
+            stats.bestBreakdown
+              ? formatCurrency(stats.bestBreakdown.revenue)
+              : 'Sem vendas'
+          }
+        />
+      </section>
 
       <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
         <div className="border-b border-border p-4">
@@ -537,9 +636,12 @@ export default function Relatorios() {
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
           <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
           {stats.paymentData.length ? (
-            <Suspense fallback={<ChartLoading />}>
-              <PaymentChart data={stats.paymentData} />
-            </Suspense>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
+              <Suspense fallback={<ChartLoading />}>
+                <PaymentChart data={stats.paymentData} />
+              </Suspense>
+              <PaymentLegend rows={stats.paymentData} />
+            </div>
           ) : (
             <ChartEmpty text="Sem pagamentos no período selecionado." />
           )}
@@ -548,23 +650,46 @@ export default function Relatorios() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Ranking
-          title="Top 5 produtos"
+          title="Ranking de produtos"
           rows={stats.topProducts.map(([name, data]) => ({
             name,
             value: formatCurrency(data.revenue),
             detail: `${Number(data.qty)
               .toFixed(3)
               .replace(/\.000$/, '')} vendidos`,
+            percent:
+              stats.totalRevenue > 0
+                ? (data.revenue / stats.totalRevenue) * 100
+                : 0,
           }))}
         />
         <Ranking
-          title="Vendedores"
+          title="Desempenho por vendedor"
           rows={stats.sellerData.map(([name, data]) => ({
             name,
             value: formatCurrency(data.revenue),
-            detail: `${data.count} vendas`,
+            detail: `${data.count} vendas · ${formatCurrency(data.average)} ticket`,
+            percent: data.share,
           }))}
         />
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Ranking
+          title="Categorias com maior receita"
+          rows={stats.topCategories.map(([name, data]) => ({
+            name,
+            value: formatCurrency(data.revenue),
+            detail: `${Number(data.qty)
+              .toFixed(3)
+              .replace(/\.000$/, '')} itens`,
+            percent:
+              stats.totalRevenue > 0
+                ? (data.revenue / stats.totalRevenue) * 100
+                : 0,
+          }))}
+        />
+        <ExecutiveSummary stats={stats} />
       </div>
 
       <section className="rounded-xl border border-accent/25 bg-accent/5 p-4">
@@ -659,6 +784,84 @@ function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
   );
 }
 
+function MiniMetric({ icon: Icon, label, value, hint }) {
+  return (
+    <article className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+      <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-accent/10 text-accent">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+        <strong className="mt-0.5 block truncate text-base font-black">
+          {value}
+        </strong>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {hint}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function PaymentLegend({ rows }) {
+  return (
+    <div className="space-y-2">
+      {rows.map((row) => (
+        <article
+          key={row.method}
+          className="rounded-xl border border-border bg-muted/15 p-3"
+        >
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="font-bold">{row.name}</span>
+            <strong className="tabular-nums">{formatCurrency(row.value)}</strong>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-accent"
+              style={{ width: `${Math.min(100, row.percentage)}%` }}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {row.percentage.toFixed(1).replace('.', ',')}% do faturamento
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function ExecutiveSummary({ stats }) {
+  const rows = [
+    ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
+    ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
+    ['Produtos no ranking', stats.topProducts.length, 'Itens com faturamento'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
+  ];
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+        <Users className="h-4 w-4 text-accent" /> Resumo executivo
+      </h3>
+      <div className="grid gap-2">
+        {rows.map(([label, value, detail]) => (
+          <div
+            key={label}
+            className="flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-muted/15 px-3 py-2.5 text-sm"
+          >
+            <span className="min-w-0">
+              <span className="block font-semibold">{label}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {detail}
+              </span>
+            </span>
+            <strong className="flex-none text-right tabular-nums">{value}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Ranking({ title, rows }) {
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
@@ -667,7 +870,7 @@ function Ranking({ title, rows }) {
         {rows.map((row, index) => (
           <div
             key={`${row.name}-${index}`}
-            className="flex items-center justify-between gap-4 rounded-lg px-1 py-1.5 text-sm"
+            className="relative flex items-center justify-between gap-4 overflow-hidden rounded-lg px-1 py-1.5 text-sm"
           >
             <span className="flex min-w-0 items-center gap-2">
               <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-black text-accent">
@@ -681,6 +884,15 @@ function Ranking({ title, rows }) {
                 ({row.detail})
               </span>
             </span>
+            <div className="sr-only">
+              Participação: {Number(row.percent || 0).toFixed(1)}%
+            </div>
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
+              <div
+                className="h-full bg-accent"
+                style={{ width: `${Math.min(100, Number(row.percent || 0))}%` }}
+              />
+            </div>
           </div>
         ))}
         {!rows.length && (

@@ -4,6 +4,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -60,6 +61,7 @@ export function BreakdownChart({ data }) {
           dot={{ r: 4, fill: 'hsl(var(--chart-1))' }}
           activeDot={{ r: 6 }}
         />
+        <Legend />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -92,6 +94,7 @@ export function DailyRevenueChart({ data }) {
           labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
         />
         <Bar dataKey="value" fill="hsl(var(--chart-1))" radius={[5, 5, 0, 0]} />
+        <Legend />
       </BarChart>
     </ResponsiveContainer>
   );

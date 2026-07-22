@@ -291,6 +291,7 @@ export default function Financeiro() {
                       <button
                         type="button"
                         key={key}
+                        aria-label={`Abrir ${label}`}
                         onClick={(event) => {
                           setActive(key);
                           event.currentTarget

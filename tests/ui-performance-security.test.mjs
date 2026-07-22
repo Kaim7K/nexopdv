@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { bestTextColor, contrastRatio, deriveSidebarPalette } from '../src/lib/color-contrast.js';
-import { isPdvDraftExpired, PDV_DRAFT_INACTIVITY_MS } from '../src/lib/pdv.js';
+import {
+  isPdvDraftExpired,
+  PDV_DRAFT_INACTIVITY_MS,
+  searchProducts,
+} from '../src/lib/pdv.js';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const [api, stock, settings, auth, layout, googleImages, pdv, css] = await Promise.all([
@@ -27,6 +31,16 @@ const now = 1_000_000;
 assert.equal(isPdvDraftExpired({ lastActiveAt: now - PDV_DRAFT_INACTIVITY_MS - 1 }, now), true);
 assert.equal(isPdvDraftExpired({ lastActiveAt: now - 60_000 }, now), false);
 assert.equal(isPdvDraftExpired({ inactiveSince: now - PDV_DRAFT_INACTIVITY_MS }, now), true);
+
+const searchableProducts = [
+  { id: '1', name: 'Café Tradicional', category: 'Bebidas', barcode: '789100' },
+  { id: '2', name: 'Arroz Tipo 1 5kg', category: 'Mercearia', barcode: '789200' },
+  { id: '3', name: 'Leite Integral', category: 'Laticínios', barcode: '789300' },
+];
+assert.equal(searchProducts(searchableProducts, 'cafe tradiconal')[0]?.id, '1');
+assert.equal(searchProducts(searchableProducts, 'aroz')[0]?.id, '2');
+assert.equal(searchProducts(searchableProducts, 'laticinio')[0]?.id, '3');
+assert.equal(searchProducts(searchableProducts, '7892')[0]?.id, '2');
 
 assert.match(api, /SET active=false,[\s\S]*email=\$\{deletedEmail\}/, 'Excluir usuário deve desativar a conta e liberar o e-mail.');
 assert.match(api, /password_hash=\$\{revokedPasswordHash\}/, 'A conta excluída deve perder a credencial anterior.');

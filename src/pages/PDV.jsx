@@ -33,6 +33,7 @@ import {
   findProductByCapture,
   readSavedPdvDraft,
   removeSaleItem,
+  searchProducts,
   updateSaleItemPrice,
   updateSaleItemQuantity,
   updateSaleItemWeight,
@@ -124,23 +125,7 @@ export default function PDV() {
     cashModal;
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const searchResults = useMemo(() => {
-    if (!deferredSearchQuery) return [];
-    const query = deferredSearchQuery.toLowerCase();
-    return products
-      .filter(
-        (product) =>
-          String(product.name || '')
-            .toLowerCase()
-            .includes(query) ||
-          String(product.category || '')
-            .toLowerCase()
-            .includes(query) ||
-          String(product.barcode || '').includes(query) ||
-          String(product.internal_code || '')
-            .toLowerCase()
-            .includes(query),
-      )
-      .slice(0, 10);
+    return searchProducts(products, deferredSearchQuery, { limit: 10 });
   }, [deferredSearchQuery, products]);
 
   const writeLocalDraft = useCallback(() => {
@@ -866,6 +851,7 @@ export default function PDV() {
             type="button"
             onClick={openCashDialog}
             disabled={cashLoading}
+            aria-label={cashState.session ? 'Caixa aberto' : 'Abrir caixa'}
             className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition disabled:opacity-50 ${cashState.session ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300' : 'border-border bg-card text-foreground hover:bg-muted'}`}
           >
             {cashState.session ? (

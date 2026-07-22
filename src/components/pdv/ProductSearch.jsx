@@ -11,7 +11,7 @@ export default function ProductSearch({ query, onQueryChange, inputRef, onFocus 
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         onFocus={onFocus}
-        placeholder="Buscar produto por nome, código de barras ou código interno..."
+        placeholder="Buscar por nome, similares, código de barras ou código interno..."
         className="w-full pl-11 pr-24 py-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
         autoComplete="off"
       />

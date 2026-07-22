@@ -1,6 +1,7 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { AlertTriangle, Package, Search, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
+import { searchProducts } from '@/lib/pdv';
 
 function ProductGrid({ products, onSelect, loading }) {
   const [category, setCategory] = useState('');
@@ -14,15 +15,16 @@ function ProductGrid({ products, onSelect, loading }) {
   }, [products]);
 
   const visibleProducts = useMemo(() => {
-    const q = deferredSearch.toLowerCase();
-    const filtered = products.filter(p => {
+    const searchedProducts = deferredSearch
+      ? searchProducts(products, deferredSearch, { limit: 300 })
+      : products;
+    const filtered = searchedProducts.filter(p => {
       const matchCat = !category || p.category === category;
-      const matchSearch = !q || String(p.name || '').toLowerCase().includes(q) || String(p.barcode || '').includes(q);
-      return matchCat && matchSearch;
+      return matchCat;
     });
 
     const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = deferredSearch ? filtered : [...filtered].sort((a, b) => {
       if (sortMode === 'sold_desc') return Number(b.sales_count || 0) - Number(a.sales_count || 0) || collator.compare(String(a.name || ''), String(b.name || ''));
       if (sortMode === 'name_asc') return collator.compare(String(a.name || ''), String(b.name || ''));
       if (sortMode === 'name_desc') return collator.compare(String(b.name || ''), String(a.name || ''));

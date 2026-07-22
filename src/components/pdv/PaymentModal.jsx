@@ -1,16 +1,54 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Banknote, Check, Clock, CreditCard, Minimize2, QrCode, Trash2, Wallet, X } from 'lucide-react';
+import {
+  Banknote,
+  CalendarClock,
+  Check,
+  CreditCard,
+  Minimize2,
+  QrCode,
+  Trash2,
+  Wallet,
+  X,
+} from 'lucide-react';
 import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
+const DebitCardIcon = ({ className, ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+    {...props}
+  >
+    <rect x="2.5" y="5" width="19" height="14" rx="3" />
+    <path d="M6.5 10.5h4" />
+    <path d="M6.5 13.5h2.5" />
+    <path d="m14.5 13.2 1.8 1.8 3.2-4" />
+  </svg>
+);
+
 const METHOD_ICONS = {
   dinheiro: Banknote,
-  debito: CreditCard,
+  debito: DebitCardIcon,
   credito: CreditCard,
   pix: QrCode,
   outros: Wallet,
-  fiado: Clock,
+  fiado: CalendarClock,
+};
+
+const METHOD_STYLES = {
+  dinheiro: 'border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900 dark:text-emerald-300',
+  debito: 'border-sky-200 bg-sky-500/10 text-sky-700 dark:border-sky-900 dark:text-sky-300',
+  credito: 'border-violet-200 bg-violet-500/10 text-violet-700 dark:border-violet-900 dark:text-violet-300',
+  pix: 'border-teal-200 bg-teal-500/10 text-teal-700 dark:border-teal-900 dark:text-teal-300',
+  outros: 'border-slate-200 bg-slate-500/10 text-slate-700 dark:border-slate-800 dark:text-slate-300',
+  fiado: 'border-orange-200 bg-orange-500/10 text-orange-700 dark:border-orange-900 dark:text-orange-300',
 };
 
 export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard }) {
@@ -168,9 +206,19 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                     const Icon = METHOD_ICONS[method.method];
                     const disabled = method.method !== 'fiado' && remaining <= 0;
                     return (
-                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border-2 border-border p-3 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35">
-                        <Icon className="h-8 w-8 text-accent" />
+                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border-2 p-3 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
+                        <Icon className="h-8 w-8" />
                         <span className="text-sm font-bold">{method.label}</span>
+                        {method.method === 'debito' && (
+                          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700 dark:bg-black/20 dark:text-sky-200">
+                            Débito
+                          </span>
+                        )}
+                        {method.method === 'credito' && (
+                          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-700 dark:bg-black/20 dark:text-violet-200">
+                            Crédito
+                          </span>
+                        )}
                       </button>
                     );
                   })}

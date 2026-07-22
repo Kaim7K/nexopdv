@@ -3018,7 +3018,11 @@ async function routeHandler(req, res) {
       );
     }
     if (req.method === 'GET') {
-      const limit = Math.max(1, Math.min(Number(req.query.limit) || 500, 1000));
+      const maxLimit = table === 'sales' ? 5000 : 1000;
+      const limit = Math.max(
+        1,
+        Math.min(Number(req.query.limit) || 500, maxLimit),
+      );
       const rows =
         await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity=${table} ORDER BY updated_date DESC LIMIT ${limit}`;
       let out = rows.map((r) => ({
