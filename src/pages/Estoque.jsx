@@ -154,6 +154,7 @@ export default function Estoque() {
   const fileRef = useRef(null);
   const tableRef = useRef(null);
   const pendingViewRef = useRef(null);
+  const autosaveTimerRef = useRef(null);
   const lowStockThreshold = Math.max(
     1,
     Number.parseInt(config?.limite_estoque_baixo, 10) || 5,
@@ -218,6 +219,15 @@ export default function Estoque() {
     window.addEventListener('beforeunload', warnBeforeLeave);
     return () => window.removeEventListener('beforeunload', warnBeforeLeave);
   }, [dirty]);
+
+  useEffect(() => {
+    if (!dirty.size || loading || saving || importing) return undefined;
+    window.clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = window.setTimeout(() => {
+      if (dirty.size) void saveInline();
+    }, 900);
+    return () => window.clearTimeout(autosaveTimerRef.current);
+  }, [dirty, loading, saving, importing, products]);
 
   const categories = useMemo(
     () =>

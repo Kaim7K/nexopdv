@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Ban, Check, Clock, HandCoins, Phone, Search, X } from 'lucide-react';
+import { Ban, Check, Clock, HandCoins, Phone, Search, Trash2, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
@@ -138,6 +138,24 @@ export default function Fiados() {
     }
   };
 
+  const handleDelete = async (item) => {
+    if (!isGerente || processing) return;
+    const confirmed = window.confirm(
+      `Excluir definitivamente o fiado #${item.sale_number} de ${item.responsible_name}?`,
+    );
+    if (!confirmed) return;
+    setProcessing(true);
+    try {
+      await nexoApi.entities.FiadoRecord.delete(item.id);
+      toast.success('Fiado excluído.');
+      await loadFiados();
+    } catch (error) {
+      toast.error(error.message || 'Erro ao excluir fiado.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const hasFilters = Boolean(search || filterStatus);
   const clearFilters = () => { setSearch(''); setFilterStatus(''); };
 
@@ -207,12 +225,20 @@ export default function Fiados() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
                     <strong className="text-xl font-black tabular-nums">{formatCurrency(item.total_amount)}</strong>
-                    {pending && canManage(item) && (
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => setSettleFiado(item)} className="min-h-10 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700">Quitar</button>
-                        <button type="button" onClick={() => setCancelFiado(item)} className="grid h-10 w-10 place-items-center rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-4 w-4" /></button>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      {pending && canManage(item) && (
+                        <>
+                          <button type="button" onClick={() => setSettleFiado(item)} className="min-h-10 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700">Quitar</button>
+                          <button type="button" onClick={() => setCancelFiado(item)} className="grid h-10 w-10 place-items-center rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-4 w-4" /></button>
+                        </>
+                      )}
+                      {settled && isGerente && (
+                        <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50" aria-label={`Excluir fiado de ${item.responsible_name}`}>
+                          <Trash2 className="h-4 w-4" />
+                          Excluir
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>

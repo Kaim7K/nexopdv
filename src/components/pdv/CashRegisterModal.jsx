@@ -1,41 +1,112 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Banknote, CheckCircle2, Clock3, Download, LockKeyhole, X } from 'lucide-react';
-import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
+import {
+  ArrowRight,
+  Banknote,
+  CheckCircle2,
+  Clock3,
+  Download,
+  LockKeyhole,
+  ReceiptText,
+  X,
+} from 'lucide-react';
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  getPaymentLabel,
+  parseCurrencyDigits,
+} from '@/lib/helpers';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
-export default function CashRegisterModal({ mode, cashState, processing, reporting = false, onClose, onContinue, onOpen, onCloseCash, onDownloadReport }) {
+export default function CashRegisterModal({
+  mode,
+  cashState,
+  processing,
+  reporting = false,
+  onClose,
+  onContinue,
+  onOpen,
+  onCloseCash,
+  onDownloadReport,
+}) {
   const modalRef = useModalBehavior({ onClose, disabled: processing || reporting });
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
+  const [closingExpense, setClosingExpense] = useState('');
   const summary = cashState?.summary || {};
-  const paymentEntries = useMemo(() => Object.entries(summary.payments || {}), [summary.payments]);
+  const paymentEntries = useMemo(
+    () => Object.entries(summary.payments || {}),
+    [summary.payments],
+  );
   const isOpenMode = mode === 'open';
   const isClosedMode = mode === 'closed';
 
-  const submit = event => {
+  const submit = (event) => {
     event.preventDefault();
     if (isClosedMode) {
       onClose?.();
       return;
     }
-    if (isOpenMode) onOpen(openingAmount);
-    else onCloseCash(closingAmount);
+    if (isOpenMode) onOpen(parseCurrencyDigits(openingAmount));
+    else
+      onCloseCash({
+        closingAmount: parseCurrencyDigits(closingAmount),
+        closingExpense: parseCurrencyDigits(closingExpense),
+      });
   };
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={event => event.target === event.currentTarget && !processing && onClose?.()}>
-      <form ref={modalRef} onSubmit={submit} className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl" role="dialog" aria-modal="true" aria-labelledby="cash-modal-title">
+    <div
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) =>
+        event.target === event.currentTarget && !processing && onClose?.()
+      }
+    >
+      <form
+        ref={modalRef}
+        onSubmit={submit}
+        className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cash-modal-title"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-border p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-accent/10 text-accent">
-              {isOpenMode ? <LockKeyhole className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
+              {isOpenMode ? (
+                <LockKeyhole className="h-5 w-5" />
+              ) : (
+                <Banknote className="h-5 w-5" />
+              )}
             </div>
             <div>
-              <h2 id="cash-modal-title" className="text-xl font-black">{isOpenMode ? 'Abrir caixa' : isClosedMode ? 'Caixa fechado' : 'Fechar caixa'}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{isOpenMode ? 'Informe o valor disponível antes da primeira venda.' : isClosedMode ? 'O período foi encerrado. O relatório completo está pronto para download.' : 'Confira o resumo antes de encerrar o turno.'}</p>
+              <h2 id="cash-modal-title" className="text-xl font-black">
+                {isOpenMode
+                  ? 'Abrir caixa'
+                  : isClosedMode
+                    ? 'Caixa fechado'
+                    : 'Fechar caixa'}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {isOpenMode
+                  ? 'Informe o valor disponível antes da primeira venda.'
+                  : isClosedMode
+                    ? 'O período foi encerrado. O relatório completo está pronto para download.'
+                    : 'Confira o resumo antes de encerrar o turno.'}
+              </p>
             </div>
           </div>
-          {onClose && <button type="button" disabled={processing} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label="Fechar"><X className="h-5 w-5" /></button>}
+          {onClose && (
+            <button
+              type="button"
+              disabled={processing}
+              onClick={onClose}
+              className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         <div className="p-5 sm:p-6">
@@ -43,10 +114,26 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
             <label className="block text-sm font-bold">
               Valor inicial do caixa
               <div className="relative mt-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                <input autoFocus required type="number" min="0" step="0.01" value={openingAmount} onChange={event => setOpeningAmount(event.target.value)} className="h-12 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-lg font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder="0,00" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                  R$
+                </span>
+                <input
+                  autoFocus
+                  required
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={formatCurrencyInput(openingAmount)}
+                  onChange={(event) =>
+                    setOpeningAmount(event.target.value.replace(/\D/g, ''))
+                  }
+                  className="h-12 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-lg font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  placeholder="0,00"
+                />
               </div>
-              <span className="mt-2 block text-xs font-normal text-muted-foreground">Use o valor real em dinheiro disponível para troco.</span>
+              <span className="mt-2 block text-xs font-normal text-muted-foreground">
+                Use o valor real em dinheiro disponível para troco.
+              </span>
             </label>
           ) : (
             <div className="space-y-4">
@@ -59,32 +146,99 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
 
               <div className="rounded-2xl border border-accent/25 bg-accent/5 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dinheiro esperado no caixa</p><strong className="mt-1 block text-2xl font-black text-accent">{formatCurrency(summary.expected_cash)}</strong></div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Dinheiro esperado no caixa
+                    </p>
+                    <strong className="mt-1 block text-2xl font-black text-accent">
+                      {formatCurrency(summary.expected_cash)}
+                    </strong>
+                  </div>
                   <CheckCircle2 className="h-8 w-8 text-accent" />
                 </div>
               </div>
 
               <div className="rounded-2xl border border-border p-4">
-                <h3 className="flex items-center gap-2 text-sm font-black"><Clock3 className="h-4 w-4 text-accent" /> Resumo por pagamento</h3>
+                <h3 className="flex items-center gap-2 text-sm font-black">
+                  <Clock3 className="h-4 w-4 text-accent" /> Resumo por pagamento
+                </h3>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {paymentEntries.length ? paymentEntries.map(([method, amount]) => (
-                    <div key={method} className="flex items-center justify-between rounded-xl bg-muted/35 px-3 py-2 text-sm"><span>{getPaymentLabel(method)}</span><strong>{formatCurrency(amount)}</strong></div>
-                  )) : <p className="text-sm text-muted-foreground">Nenhuma venda registrada neste caixa.</p>}
+                  {paymentEntries.length ? (
+                    paymentEntries.map(([method, amount]) => (
+                      <div
+                        key={method}
+                        className="flex items-center justify-between rounded-xl bg-muted/35 px-3 py-2 text-sm"
+                      >
+                        <span>{getPaymentLabel(method)}</span>
+                        <strong>{formatCurrency(amount)}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma venda registrada neste caixa.
+                    </p>
+                  )}
                 </div>
               </div>
 
               {!isClosedMode && (
-                <label className="block text-sm font-bold">
-                  Dinheiro contado no fechamento <span className="font-normal text-muted-foreground">(opcional)</span>
-                  <div className="relative mt-2">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                    <input type="number" min="0" step="0.01" value={closingAmount} onChange={event => setClosingAmount(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" placeholder={Number(summary.expected_cash || 0).toFixed(2)} />
-                  </div>
-                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm font-bold sm:col-span-2">
+                    Despesa no fechamento{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (opcional)
+                    </span>
+                    <div className="relative mt-2">
+                      <ReceiptText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formatCurrencyInput(closingExpense)}
+                        onChange={(event) =>
+                          setClosingExpense(
+                            event.target.value.replace(/\D/g, ''),
+                          )
+                        }
+                        className="h-11 w-full rounded-xl border border-border bg-background pl-16 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <span className="mt-1.5 block text-xs font-normal text-muted-foreground">
+                      Esse valor será lançado no financeiro como despesa.
+                    </span>
+                  </label>
+                  <label className="block text-sm font-bold sm:col-span-2">
+                    Dinheiro contado no fechamento{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (opcional)
+                    </span>
+                    <div className="relative mt-2">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formatCurrencyInput(closingAmount)}
+                        onChange={(event) =>
+                          setClosingAmount(event.target.value.replace(/\D/g, ''))
+                        }
+                        className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                        placeholder={Number(summary.expected_cash || 0).toFixed(2)}
+                      />
+                    </div>
+                  </label>
+                </div>
               )}
               {isClosedMode && (
                 <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
-                  Fechamento concluído. O relatório inclui cada venda, produtos, formas de pagamento e totais deste caixa.
+                  Fechamento concluído. O relatório inclui cada venda, produtos,
+                  formas de pagamento e totais deste caixa.
                 </div>
               )}
             </div>
@@ -92,15 +246,49 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border p-5 sm:flex-row sm:justify-end sm:p-6">
-          {onClose && <button type="button" disabled={processing || reporting} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button>}
-          {isOpenMode && onContinue && <button type="button" disabled={processing || reporting} onClick={onContinue} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Continuar sem caixa <ArrowRight className="h-4 w-4" /></button>}
-          {!isOpenMode && onDownloadReport && (
-            <button type="button" disabled={processing || reporting} onClick={onDownloadReport} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50">
-              <Download className="h-4 w-4" /> {reporting ? 'Gerando relatório...' : 'Baixar relatório do caixa'}
+          {onClose && (
+            <button
+              type="button"
+              disabled={processing || reporting}
+              onClick={onClose}
+              className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+            >
+              Voltar
             </button>
           )}
-          <button type="submit" disabled={processing || reporting || (isOpenMode && openingAmount === '')} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
-            {processing ? 'Processando...' : isOpenMode ? 'Abrir caixa e começar' : isClosedMode ? 'Concluir' : 'Confirmar fechamento'}
+          {isOpenMode && onContinue && (
+            <button
+              type="button"
+              disabled={processing || reporting}
+              onClick={onContinue}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+            >
+              Continuar sem caixa <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+          {!isOpenMode && onDownloadReport && (
+            <button
+              type="button"
+              disabled={processing || reporting}
+              onClick={onDownloadReport}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />{' '}
+              {reporting ? 'Gerando relatório...' : 'Baixar relatório do caixa'}
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={processing || reporting || (isOpenMode && openingAmount === '')}
+            className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {processing
+              ? 'Processando...'
+              : isOpenMode
+                ? 'Abrir caixa e começar'
+                : isClosedMode
+                  ? 'Concluir'
+                  : 'Confirmar fechamento'}
           </button>
         </div>
       </form>
@@ -109,5 +297,14 @@ export default function CashRegisterModal({ mode, cashState, processing, reporti
 }
 
 function Metric({ label, value }) {
-  return <div className="rounded-2xl border border-border bg-muted/20 p-3"><span className="block text-[11px] font-bold text-muted-foreground">{label}</span><strong className="mt-1 block text-base font-black tabular-nums">{value}</strong></div>;
+  return (
+    <div className="rounded-2xl border border-border bg-muted/20 p-3">
+      <span className="block text-[11px] font-bold text-muted-foreground">
+        {label}
+      </span>
+      <strong className="mt-1 block text-base font-black tabular-nums">
+        {value}
+      </strong>
+    </div>
+  );
 }

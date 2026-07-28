@@ -1448,6 +1448,12 @@ async function routeHandler(req, res) {
         req.body.closing_amount === null
           ? null
           : roundMoney(Number(req.body.closing_amount));
+      const closingExpense =
+        req.body.closing_expense === '' ||
+        req.body.closing_expense === undefined ||
+        req.body.closing_expense === null
+          ? 0
+          : roundMoney(Number(req.body.closing_expense));
       if (
         closingAmount !== null &&
         (!Number.isFinite(closingAmount) ||
@@ -1457,22 +1463,53 @@ async function routeHandler(req, res) {
         return send(res, 400, {
           message: 'Informe um valor de fechamento válido.',
         });
+      if (
+        !Number.isFinite(closingExpense) ||
+        closingExpense < 0 ||
+        closingExpense > 10_000_000
+      )
+        return send(res, 400, {
+          message: 'Informe uma despesa de fechamento válida.',
+        });
       const closedAt = new Date().toISOString();
+      const [defaultAccount] = await sql`
+        SELECT id
+        FROM nexo.finance_accounts
+        WHERE market_id=${user.market_id} AND active
+        ORDER BY is_default DESC, created_date
+        LIMIT 1
+      `;
+      const [expenseCategory] = await sql`
+        SELECT id
+        FROM nexo.finance_categories
+        WHERE market_id=${user.market_id} AND active
+          AND type IN ('expense', 'both')
+        ORDER BY CASE WHEN system_key='other_expense' THEN 0 ELSE 1 END, created_date
+        LIMIT 1
+      `;
       const {
         sales: cashSalesDetail,
         movements: cashMovementsDetail,
         filters: cashFilters,
         ...summarySnapshot
       } = summary;
+      const adjustedExpectedCash = roundMoney(
+        Number(summary.expected_cash || 0) - closingExpense,
+      );
       const update = {
         status: 'fechado',
         closed_at: closedAt,
         closing_amount: closingAmount,
+        closing_expense: closingExpense || null,
         difference:
           closingAmount === null
             ? null
-            : roundMoney(closingAmount - Number(summary.expected_cash || 0)),
-        summary: summarySnapshot,
+            : roundMoney(closingAmount - adjustedExpectedCash),
+        summary: {
+          ...summarySnapshot,
+          closing_expense: closingExpense || 0,
+          expected_cash: adjustedExpectedCash,
+        },
       };
       const [row] = await sql`
         UPDATE nexo.records
@@ -1484,6 +1521,55 @@ async function routeHandler(req, res) {
         return send(res, 409, {
           message: 'O caixa já foi fechado em outra tela.',
         });
+      if (closingExpense > 0 && defaultAccount?.id) {
+        const description = 'Despesa registrada no fechamento do caixa';
+        const notes = `Caixa ${session.id}`;
+        const [expense] = await sql`
+          WITH transaction AS (
+            INSERT INTO nexo.finance_transactions(
+              market_id,unit_id,account_id,category_id,supplier_id,type,description,
+              amount,paid_amount,issue_date,due_date,settled_at,payment_method,
+              status,origin,origin_id,notes,created_by
+            )
+            VALUES(
+              ${user.market_id},
+              ${session.unit_id || user.unit_id || null},
+              ${defaultAccount.id},
+              ${expenseCategory?.id || null},
+              NULL,
+              'expense',
+              ${description},
+              ${closingExpense},
+              ${closingExpense},
+              ${closedAt.slice(0, 10)},
+              ${closedAt.slice(0, 10)},
+              ${closedAt},
+              'dinheiro',
+              'paid',
+              'cash_close',
+              ${session.id},
+              ${notes},
+              ${user.id}
+            )
+            RETURNING *
+          ), payment AS (
+            INSERT INTO nexo.finance_payments(
+              market_id,transaction_id,account_id,amount,paid_at,payment_method,created_by
+            )
+            SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,created_by
+            FROM transaction
+          ), event AS (
+            INSERT INTO nexo.finance_transaction_events(
+              market_id,transaction_id,action,new_data,actor_id,actor_name
+            )
+            SELECT market_id,id,'created',to_jsonb(transaction),${user.id},${user.full_name || user.email}
+            FROM transaction
+          ) SELECT * FROM transaction
+        `;
+        if (!expense) {
+          console.warn('Despesa do fechamento não foi lançada no financeiro.');
+        }
+      }
       await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
         ${user.market_id},'general_audits',${JSON.stringify({
           action_type: 'caixa_fechado',
@@ -1495,6 +1581,7 @@ async function routeHandler(req, res) {
           details: {
             ...summarySnapshot,
             closing_amount: closingAmount,
+            closing_expense: closingExpense || 0,
             difference: update.difference,
           },
         })}::jsonb
@@ -3058,10 +3145,62 @@ async function routeHandler(req, res) {
       return send(res, 405, {
         message: 'Fiados são criados automaticamente ao concluir uma venda.',
       });
-    if (table === 'fiado_records' && req.method === 'DELETE')
-      return send(res, 405, {
-        message: 'Fiados devem ser quitados ou cancelados, não excluídos.',
-      });
+    if (table === 'fiado_records' && req.method === 'DELETE') {
+      if (!['admin', 'gerente'].includes(user.role))
+        return send(res, 403, {
+          message:
+            'Apenas administradores e gerentes podem excluir fiados quitados.',
+        });
+      if (!isUuid(id))
+        return send(res, 400, { message: 'Identificador inválido.' });
+      const [current] = await sql`
+        SELECT id,data
+        FROM nexo.records
+        WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records'
+      `;
+      if (!current)
+        return send(res, 404, {
+          message: 'Fiado não encontrado ou já excluído.',
+        });
+      if (!['quitado', 'cancelado'].includes(current.data.status))
+        return send(res, 409, {
+          message: 'Só é possível excluir fiados já quitados ou cancelados.',
+        });
+      const [removed] = await sql`
+        DELETE FROM nexo.records
+        WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records'
+        RETURNING id,data
+      `;
+      if (!removed)
+        return send(res, 404, {
+          message: 'Fiado não encontrado ou já excluído.',
+        });
+      try {
+        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+          ${user.market_id},
+          'general_audits',
+          ${JSON.stringify({
+            action_type: 'fiado_excluido',
+            entity_type: 'fiado',
+            entity_id: removed.id,
+            user_id: user.id,
+            user_name: user.full_name || user.email,
+            description: `Fiado #${text(removed.data?.sale_number, 50) || 'sem número'} excluído`,
+            details: {
+              responsible_name: text(removed.data?.responsible_name, 180),
+              status: removed.data?.status || null,
+              total_amount: Number(removed.data?.total_amount || 0),
+            },
+          })}::jsonb
+        )`;
+      } catch (auditError) {
+        console.error(
+          'Falha ao auditar exclusão de fiado:',
+          auditError?.message,
+        );
+      }
+      return send(res, 200, { ok: true });
+    }
     if (
       table === 'products' &&
       req.method === 'DELETE' &&

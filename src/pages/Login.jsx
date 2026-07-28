@@ -3,14 +3,19 @@ import { nexoApi } from "@/api/nexoApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { usePageMetadata } from "@/hooks/use-page-metadata";
 
 export default function Login() {
-  usePageMetadata({ title: 'Entrar | Nexo PDV', description: 'Acesso restrito ao Nexo PDV.', robots: 'noindex, nofollow, noarchive' });
+  usePageMetadata({
+    title: 'Entrar | Nexo PDV',
+    description: 'Acesso restrito ao Nexo PDV.',
+    robots: 'noindex, nofollow, noarchive',
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,8 +24,12 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const { user } = await nexoApi.auth.login(email.trim().toLowerCase(), password);
-      window.location.href = user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
+      const { user } = await nexoApi.auth.login(
+        email.trim().toLowerCase(),
+        password,
+      );
+      window.location.href =
+        user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");
     } finally {
@@ -31,7 +40,12 @@ export default function Login() {
   return (
     <AuthLayout title="Acesse sua conta" subtitle="Nexo PDV">
       {error && (
-        <div id="login-error" role="alert" aria-live="assertive" className="mb-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-medium text-destructive">
+        <div
+          id="login-error"
+          role="alert"
+          aria-live="assertive"
+          className="mb-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+        >
           {error}
         </div>
       )}
@@ -40,7 +54,10 @@ export default function Login() {
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Mail
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="email"
               type="email"
@@ -49,42 +66,67 @@ export default function Login() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-11"
+              className="h-11 pl-10"
               required
               aria-invalid={Boolean(error)}
               aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
         </div>
+
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Senha</Label>
-            <span className="text-xs text-muted-foreground">Contate o administrador para redefinir</span>
+            <span className="text-xs text-muted-foreground">
+              Contate o administrador para redefinir
+            </span>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-11"
+              className="h-11 pl-10 pr-11"
               required
               aria-invalid={Boolean(error)}
               aria-describedby={error ? 'login-error' : undefined}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
           </div>
         </div>
-        <Button type="submit" className="w-full font-bold" disabled={loading} aria-busy={loading}>
+
+        <Button
+          type="submit"
+          className="w-full font-bold"
+          disabled={loading}
+          aria-busy={loading}
+        >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Entrando...
             </>
           ) : (
-            "Entrar"
+            'Entrar'
           )}
         </Button>
       </form>

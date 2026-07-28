@@ -78,18 +78,33 @@ export default function Vendas() {
     [config, user.logo_url, user.market_name],
   );
 
+  const reportRange = useMemo(() => {
+    const from = new Date(`${reportDate}T${reportStart || '00:00'}:00`);
+    const to = new Date(`${reportDate}T${reportEnd || '23:59'}:00`);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()))
+      return { from: '', to: '' };
+    to.setMinutes(to.getMinutes() + 1);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, [reportDate, reportStart, reportEnd]);
+
   const loadSales = async ({ immediateSearch = search } = {}) => {
     const sequence = ++requestSequence.current;
     setLoading(true);
     setLoadError('');
     try {
+      const effectiveSeller = canSeeTeam
+        ? reportSeller || filterSeller
+        : '';
+      const effectivePayment = reportPayment || filterPayment;
       const data = await nexoApi.sales.list({
         page,
         pageSize: PAGE_SIZE,
         search: immediateSearch.trim(),
-        sellerId: canSeeTeam ? filterSeller : '',
-        payment: filterPayment,
+        sellerId: effectiveSeller,
+        payment: effectivePayment,
         status: filterStatus,
+        from: reportRange.from,
+        to: reportRange.to,
         includeSellers: sellers.length === 0,
       });
       if (sequence !== requestSequence.current) return;
@@ -113,7 +128,17 @@ export default function Vendas() {
   useEffect(() => {
     const timeout = window.setTimeout(() => loadSales(), search ? 280 : 0);
     return () => window.clearTimeout(timeout);
-  }, [page, search, filterPayment, filterSeller, filterStatus]);
+  }, [
+    page,
+    search,
+    filterPayment,
+    filterSeller,
+    filterStatus,
+    reportRange.from,
+    reportRange.to,
+    reportSeller,
+    reportPayment,
+  ]);
 
   useEffect(() => {
     if (!pendingAction && !detailSale) return undefined;
@@ -279,11 +304,26 @@ export default function Vendas() {
           seller={reportSeller}
           payment={reportPayment}
           reporting={reporting}
-          onDate={setReportDate}
-          onStart={setReportStart}
-          onEnd={setReportEnd}
-          onSeller={setReportSeller}
-          onPayment={setReportPayment}
+          onDate={(value) => {
+            setReportDate(value);
+            setPage(1);
+          }}
+          onStart={(value) => {
+            setReportStart(value);
+            setPage(1);
+          }}
+          onEnd={(value) => {
+            setReportEnd(value);
+            setPage(1);
+          }}
+          onSeller={(value) => {
+            setReportSeller(value);
+            setPage(1);
+          }}
+          onPayment={(value) => {
+            setReportPayment(value);
+            setPage(1);
+          }}
           onDownload={downloadReport}
         />
       )}

@@ -322,10 +322,13 @@ export const nexoApi = {
         method: 'POST',
         body: { opening_amount: openingAmount },
       }),
-    close: (closingAmount) =>
+    close: (closingAmount, closingExpense = null) =>
       request('/cash/close', {
         method: 'POST',
-        body: { closing_amount: closingAmount },
+        body: {
+          closing_amount: closingAmount,
+          closing_expense: closingExpense,
+        },
       }),
     updateSettings: (requireCashRegister) =>
       request('/cash/settings', {

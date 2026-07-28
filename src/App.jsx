@@ -6,7 +6,7 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
-import { Toaster as HotToaster } from 'react-hot-toast';
+import { ToastBar, Toaster as HotToaster, toast as hotToast } from 'react-hot-toast';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import { ConfirmProvider } from '@/components/common/ConfirmProvider';
 import { LoadingState } from '@/components/common/PageState';
@@ -76,8 +76,29 @@ function App() {
           </AppErrorBoundary>
           <HotToaster
             position="top-right"
-            toastOptions={{ duration: 4000, className: 'nexo-toast' }}
-          />
+            toastOptions={{ duration: 3000, className: 'nexo-toast' }}
+          >
+            {(t) => (
+              <ToastBar toast={t}>
+                {({ icon, message }) => (
+                  <div className="flex w-full items-start gap-3 pr-1">
+                    <div className="mt-0.5 flex-none">{icon}</div>
+                    <div className="min-w-0 flex-1 text-sm leading-5">
+                      {message}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => hotToast.dismiss(t.id)}
+                      className="grid h-7 w-7 flex-none place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      aria-label="Fechar notificação"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                )}
+              </ToastBar>
+            )}
+          </HotToaster>
         </ConfirmProvider>
       </AuthProvider>
     </Router>
