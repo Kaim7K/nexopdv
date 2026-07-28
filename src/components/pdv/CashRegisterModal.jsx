@@ -122,7 +122,6 @@ export default function CashRegisterModal({
                   required
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9]*"
                   value={formatCurrencyInput(openingAmount)}
                   onChange={(event) =>
                     setOpeningAmount(event.target.value.replace(/\D/g, ''))
@@ -196,7 +195,6 @@ export default function CashRegisterModal({
                       <input
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
                         value={formatCurrencyInput(closingExpense)}
                         onChange={(event) =>
                           setClosingExpense(
@@ -223,7 +221,6 @@ export default function CashRegisterModal({
                       <input
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
                         value={formatCurrencyInput(closingAmount)}
                         onChange={(event) =>
                           setClosingAmount(event.target.value.replace(/\D/g, ''))
