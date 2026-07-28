@@ -27,6 +27,9 @@ export default function Fiados() {
   const [filterStatus, setFilterStatus] = useState('');
   const [settleFiado, setSettleFiado] = useState(null);
   const [cancelFiado, setCancelFiado] = useState(null);
+  const [settlementSale, setSettlementSale] = useState(null);
+  const [settlementSaleLoading, setSettlementSaleLoading] = useState(false);
+  const [settlementSaleError, setSettlementSaleError] = useState('');
   const [processing, setProcessing] = useState(false);
   const debtModalRef = useModalBehavior({
     active: Boolean(settleFiado || cancelFiado),
@@ -60,6 +63,34 @@ export default function Fiados() {
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [settleFiado, cancelFiado, processing]);
+
+  useEffect(() => {
+    if (!settleFiado?.sale_id) {
+      setSettlementSale(null);
+      setSettlementSaleError('');
+      setSettlementSaleLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setSettlementSale(null);
+    setSettlementSaleError('');
+    setSettlementSaleLoading(true);
+    nexoApi.entities.Sale.get(settleFiado.sale_id)
+      .then((sale) => {
+        if (!active) return;
+        setSettlementSale(sale);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSettlementSaleError(error.message || 'Não foi possível carregar os itens da venda.');
+      })
+      .finally(() => {
+        if (active) setSettlementSaleLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [settleFiado]);
 
   const filtered = useMemo(() => fiados.filter(item => {
     const query = deferredSearch.trim().toLowerCase();
@@ -290,6 +321,50 @@ export default function Fiados() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
           <div ref={debtModalRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="settle-title">
             <ModalHeader id="settle-title" title="Quitar fiado" subtitle={`${settleFiado.responsible_name} · ${formatCurrency(settleFiado.total_amount)}`} onClose={() => setSettleFiado(null)} disabled={processing} />
+            <section className="mt-4 rounded-2xl border border-border bg-background p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-black">Itens da venda</h3>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {settlementSale?.items?.length ?? 0} itens
+                </span>
+              </div>
+              {settlementSaleLoading ? (
+                <div className="mt-3 rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                  Carregando itens da venda...
+                </div>
+              ) : settlementSaleError ? (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  {settlementSaleError}
+                </div>
+              ) : (settlementSale?.items || []).length ? (
+                <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                  {settlementSale.items.map((item, index) => (
+                    <div key={`${item.product_id || item.product_name || index}-${index}`} className="grid grid-cols-[auto_1fr_auto] gap-2 rounded-xl border border-border px-3 py-2.5 text-sm">
+                      <span className="font-bold tabular-nums text-muted-foreground">
+                        {item.unit === 'peso'
+                          ? `${Number(item.weight || 0).toFixed(3)}kg`
+                          : `${Number(item.quantity || 0)}x`}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{item.product_name || 'Produto sem nome'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.unit === 'peso'
+                            ? 'Venda por peso'
+                            : 'Venda por unidade'}
+                        </p>
+                      </div>
+                      <span className="whitespace-nowrap font-bold tabular-nums">
+                        {formatCurrency(item.subtotal || 0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                  Nenhum item encontrado para esta venda.
+                </div>
+              )}
+            </section>
             <p className="mt-5 text-sm font-semibold">Selecione a forma de recebimento:</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {SETTLEMENT_METHODS.map(([method, label]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className="min-h-12 rounded-xl border border-border bg-background text-sm font-bold transition hover:border-accent hover:bg-accent/5 disabled:opacity-50">{label}</button>)}
