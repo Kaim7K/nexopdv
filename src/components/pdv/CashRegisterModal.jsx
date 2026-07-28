@@ -39,6 +39,14 @@ export default function CashRegisterModal({
   );
   const isOpenMode = mode === 'open';
   const isClosedMode = mode === 'closed';
+  const isClosingMode = !isOpenMode && !isClosedMode;
+  const expectedCash = useMemo(
+    () =>
+      isClosingMode
+        ? Number(summary.expected_cash || 0) - parseCurrencyDigits(closingExpense)
+        : Number(summary.expected_cash || 0),
+    [summary.expected_cash, closingExpense, isClosingMode],
+  );
 
   const submit = (event) => {
     event.preventDefault();
@@ -150,7 +158,7 @@ export default function CashRegisterModal({
                       Dinheiro esperado no caixa
                     </p>
                     <strong className="mt-1 block text-2xl font-black text-accent">
-                      {formatCurrency(summary.expected_cash)}
+                      {formatCurrency(expectedCash)}
                     </strong>
                   </div>
                   <CheckCircle2 className="h-8 w-8 text-accent" />
@@ -226,7 +234,7 @@ export default function CashRegisterModal({
                           setClosingAmount(event.target.value.replace(/\D/g, ''))
                         }
                         className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                        placeholder={Number(summary.expected_cash || 0).toFixed(2)}
+                        placeholder={formatCurrency(expectedCash)}
                       />
                     </div>
                   </label>

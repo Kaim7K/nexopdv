@@ -27,7 +27,11 @@ import {
 import PaginationControls from "@/components/common/PaginationControls";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
 import { useConfirm } from "@/components/common/ConfirmProvider";
-import { formatCurrency } from "@/lib/helpers";
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  parseCurrencyDigits,
+} from "@/lib/helpers";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => {
@@ -59,7 +63,6 @@ const PAYMENT_LABELS = {
 };
 
 export default function HistoricoCaixas() {
-  const confirm = useConfirm();
   const requestSequence = useRef(0);
   const { user } = /** @type {any} */ (useOutletContext());
   const [filters, setFilters] = useState({
@@ -434,18 +437,55 @@ export default function HistoricoCaixas() {
 function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const { session, summary = {} } = data;
   const [movementOpen, setMovementOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [movement, setMovement] = useState({
     type: "entrada",
     amount: "",
     note: "",
   });
+  const [editForm, setEditForm] = useState({
+    opening_amount: "",
+    closing_amount: "",
+    closing_expense: "",
+  });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const confirm = useConfirm();
+  const [editingCash, setEditingCash] = useState(false);
+  const confirmDialog = useConfirm();
   const modalRef = useModalBehavior({ onClose, disabled: saving || deleting });
   const canMove =
     session.status === "aberto" && session.seller_id === currentUser.id;
   const canDelete = currentUser.role === "admin" && session.status === "fechado";
+  const canManageClosed = currentUser.role === "admin" && session.status === "fechado";
+
+  useEffect(() => {
+    setEditing(false);
+    setEditForm({
+      opening_amount: formatCurrencyInput(
+        String(Math.round(Number(session.opening_amount || 0) * 100)),
+      ),
+      closing_amount: formatCurrencyInput(
+        String(
+          Math.round(
+            Number(session.closing_amount ?? summary.expected_cash ?? 0) * 100,
+          ),
+        ),
+      ),
+      closing_expense: formatCurrencyInput(
+        String(
+          Math.round(Number(session.closing_expense || summary.closing_expense || 0) * 100),
+        ),
+      ),
+    });
+  }, [
+    session.id,
+    session.opening_amount,
+    session.closing_amount,
+    session.closing_expense,
+    session.status,
+    summary.expected_cash,
+    summary.closing_expense,
+  ]);
   const saveMovement = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -469,7 +509,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     }
   };
   const deleteSession = async () => {
-    const confirmed = await confirm({
+    const confirmed = await confirmDialog({
       title: "Excluir este caixa?",
       description:
         "Esta ação remove somente esta sessão do histórico, junto com as movimentações ligadas a ela. Caixas em aberto não podem ser excluídos.",
@@ -488,6 +528,46 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
       toast.error(cause.message || "Não foi possível excluir o caixa.");
     } finally {
       setDeleting(false);
+    }
+  };
+  const reopenSession = async () => {
+    const confirmed = await confirmDialog({
+      title: "Reabrir este caixa?",
+      description:
+        "O caixa ficará em aberto novamente para permitir ajustes e continuidade do turno.",
+      confirmLabel: "Reabrir caixa",
+      tone: "primary",
+    });
+    if (!confirmed || editingCash) return;
+    setEditingCash(true);
+    try {
+      await nexoApi.cash.reopen(session.id);
+      toast.success("Caixa reaberto.");
+      await onChanged();
+    } catch (cause) {
+      toast.error(cause.message || "Não foi possível reabrir o caixa.");
+    } finally {
+      setEditingCash(false);
+    }
+  };
+  const saveEdit = async (event) => {
+    event.preventDefault();
+    if (editingCash) return;
+    setEditingCash(true);
+    try {
+      await nexoApi.cash.update(session.id, {
+        status: "fechado",
+        opening_amount: parseCurrencyDigits(editForm.opening_amount),
+        closing_amount: parseCurrencyDigits(editForm.closing_amount),
+        closing_expense: parseCurrencyDigits(editForm.closing_expense),
+      });
+      toast.success("Caixa atualizado.");
+      setEditing(false);
+      await onChanged();
+    } catch (cause) {
+      toast.error(cause.message || "Não foi possível salvar as alterações.");
+    } finally {
+      setEditingCash(false);
     }
   };
   return (
@@ -517,6 +597,28 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {canManageClosed && !editing && (
+              <>
+                <button
+                  type="button"
+                  onClick={reopenSession}
+                  disabled={editingCash}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-500/5 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-300"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  {editingCash ? "Reabrindo..." : "Reabrir"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  disabled={editingCash}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-muted disabled:opacity-50"
+                >
+                  <ReceiptText className="h-4 w-4" />
+                  Editar caixa
+                </button>
+              </>
+            )}
             {canDelete && (
               <button
                 type="button"
@@ -605,6 +707,78 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   )}
                 </div>
               </section>
+              {editing && canManageClosed && (
+                <form
+                  onSubmit={saveEdit}
+                  className="grid gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 sm:grid-cols-3"
+                >
+                  <Filter label="Valor inicial">
+                    <input
+                      className="field"
+                      required
+                      type="text"
+                      inputMode="numeric"
+                      value={editForm.opening_amount}
+                      onChange={(e) =>
+                        setEditForm((current) => ({
+                          ...current,
+                          opening_amount: formatCurrencyInput(
+                            e.target.value.replace(/\D/g, ""),
+                          ),
+                        }))
+                      }
+                    />
+                  </Filter>
+                  <Filter label="Valor final">
+                    <input
+                      className="field"
+                      type="text"
+                      inputMode="numeric"
+                      value={editForm.closing_amount}
+                      onChange={(e) =>
+                        setEditForm((current) => ({
+                          ...current,
+                          closing_amount: formatCurrencyInput(
+                            e.target.value.replace(/\D/g, ""),
+                          ),
+                        }))
+                      }
+                    />
+                  </Filter>
+                  <Filter label="Despesa">
+                    <input
+                      className="field"
+                      type="text"
+                      inputMode="numeric"
+                      value={editForm.closing_expense}
+                      onChange={(e) =>
+                        setEditForm((current) => ({
+                          ...current,
+                          closing_expense: formatCurrencyInput(
+                            e.target.value.replace(/\D/g, ""),
+                          ),
+                        }))
+                      }
+                    />
+                  </Filter>
+                  <div className="flex gap-2 sm:col-span-3 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(false)}
+                      className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editingCash}
+                      className="min-h-11 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50"
+                    >
+                      {editingCash ? "Salvando..." : "Salvar alterações"}
+                    </button>
+                  </div>
+                </form>
+              )}
               {movementOpen && (
                 <form
                   onSubmit={saveMovement}

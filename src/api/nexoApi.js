@@ -322,6 +322,16 @@ export const nexoApi = {
         method: 'POST',
         body: { opening_amount: openingAmount },
       }),
+    update: (id, data) =>
+      request(`/cash/${id}`, {
+        method: 'PATCH',
+        body: data,
+      }),
+    reopen: (id) =>
+      request(`/cash/${id}`, {
+        method: 'PATCH',
+        body: { status: 'aberto' },
+      }),
     close: (closingAmount, closingExpense = null) =>
       request('/cash/close', {
         method: 'POST',

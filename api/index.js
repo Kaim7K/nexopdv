@@ -1217,6 +1217,156 @@ async function routeHandler(req, res) {
       });
     }
 
+    if (isUuid(path[1]) && !path[2] && req.method === 'PATCH') {
+      if (user.role !== 'admin')
+        return send(res, 403, {
+          message: 'Apenas administradores podem editar ou reabrir um caixa.',
+        });
+      const allowedFields = new Set([
+        'status',
+        'opening_amount',
+        'closing_amount',
+        'closing_expense',
+      ]);
+      const invalidFields = Object.keys(req.body || {}).filter(
+        (key) => !allowedFields.has(key),
+      );
+      if (invalidFields.length)
+        return send(res, 400, {
+          message: 'A edição contém campos não permitidos.',
+        });
+      const [row] =
+        await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions'`;
+      if (!row)
+        return send(res, 404, {
+          message: 'Caixa não encontrado.',
+        });
+      const current = recordFromRow(row);
+      if (current.status !== 'fechado')
+        return send(res, 409, {
+          message: 'Somente caixas fechados podem ser reabertos ou editados.',
+        });
+
+      const nextStatus = text(req.body.status, 20) || current.status;
+      if (!['aberto', 'fechado'].includes(nextStatus))
+        return send(res, 400, { message: 'Status de caixa inválido.' });
+
+      const openingAmount =
+        req.body.opening_amount === undefined
+          ? roundMoney(Number(current.opening_amount || 0))
+          : roundMoney(Number(req.body.opening_amount));
+      if (
+        !Number.isFinite(openingAmount) ||
+        openingAmount < 0 ||
+        openingAmount > 10_000_000
+      )
+        return send(res, 400, {
+          message: 'Informe um valor inicial válido.',
+        });
+
+      const summary = await getCashSessionSummary(sql, user.market_id, {
+        ...current,
+        opening_amount: openingAmount,
+      });
+
+      const closingAmount =
+        nextStatus === 'aberto'
+          ? null
+          : req.body.closing_amount === undefined
+            ? (current.closing_amount === null || current.closing_amount === undefined
+                ? null
+                : roundMoney(Number(current.closing_amount)))
+            : roundMoney(Number(req.body.closing_amount));
+      const closingExpense =
+        nextStatus === 'aberto'
+          ? 0
+          : req.body.closing_expense === undefined
+            ? roundMoney(Number(current.closing_expense || 0))
+            : roundMoney(Number(req.body.closing_expense));
+      if (
+        closingAmount !== null &&
+        (!Number.isFinite(closingAmount) ||
+          closingAmount < 0 ||
+          closingAmount > 10_000_000)
+      )
+        return send(res, 400, {
+          message: 'Informe um valor de fechamento válido.',
+        });
+      if (
+        !Number.isFinite(closingExpense) ||
+        closingExpense < 0 ||
+        closingExpense > 10_000_000
+      )
+        return send(res, 400, {
+          message: 'Informe uma despesa de fechamento válida.',
+        });
+
+      const baseExpectedCash = roundMoney(Number(summary.expected_cash || 0));
+      const adjustedExpectedCash = roundMoney(
+        baseExpectedCash - (nextStatus === 'aberto' ? 0 : closingExpense),
+      );
+      const update =
+        nextStatus === 'aberto'
+          ? {
+              status: 'aberto',
+              opening_amount: openingAmount,
+              closed_at: null,
+              closing_amount: null,
+              closing_expense: null,
+              difference: null,
+            }
+          : {
+              status: 'fechado',
+              opening_amount: openingAmount,
+              closed_at: current.closed_at || new Date().toISOString(),
+              closing_amount: closingAmount,
+              closing_expense: closingExpense || null,
+              difference:
+                closingAmount === null
+                  ? null
+                  : roundMoney(closingAmount - adjustedExpectedCash),
+              summary: {
+                ...summary,
+                closing_expense: closingExpense || 0,
+                expected_cash: adjustedExpectedCash,
+              },
+            };
+
+      const [updated] =
+        await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(update)}::jsonb,updated_date=now() WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions' RETURNING id,data,created_date,updated_date`;
+      try {
+        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+          ${user.market_id},
+          'general_audits',
+          ${JSON.stringify({
+            action_type: nextStatus === 'aberto' ? 'caixa_reaberto' : 'caixa_editado',
+            entity_type: 'cash_session',
+            entity_id: path[1],
+            user_id: user.id,
+            user_name: user.full_name || user.email,
+            description:
+              nextStatus === 'aberto'
+                ? `Caixa de ${current.seller_name} reaberto`
+                : `Caixa de ${current.seller_name} editado`,
+            details: {
+              previous_status: current.status,
+              next_status: nextStatus,
+              opening_amount: openingAmount,
+              closing_amount: closingAmount,
+              closing_expense: nextStatus === 'aberto' ? 0 : closingExpense || 0,
+            },
+          })}::jsonb
+        )`;
+      } catch (auditError) {
+        console.error('Falha ao auditar edição de caixa:', auditError?.message);
+      }
+      const session = recordFromRow(updated);
+      return send(res, 200, {
+        session,
+        summary: await getCashSessionSummary(sql, user.market_id, session),
+      });
+    }
+
     if (isUuid(path[1]) && !path[2] && req.method === 'DELETE') {
       if (user.role !== 'admin')
         return send(res, 403, {
