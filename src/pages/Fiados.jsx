@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Ban, Check, Clock, HandCoins, Phone, Search, Trash2, X } from 'lucide-react';
+import { Ban, Check, Clock, HandCoins, Phone, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
@@ -138,6 +138,35 @@ export default function Fiados() {
     }
   };
 
+  const handleReopen = async (item) => {
+    if (!isGerente || processing) return;
+    const confirmed = window.confirm(
+      `Desfazer a quitação do fiado #${item.sale_number} de ${item.responsible_name}?`,
+    );
+    if (!confirmed) return;
+    setProcessing(true);
+    try {
+      await nexoApi.entities.FiadoRecord.update(item.id, {
+        status: 'pendente',
+      });
+      await nexoApi.entities.GeneralAudit.create({
+        action_type: 'fiado_quitacao_desfeita',
+        entity_type: 'fiado',
+        entity_id: item.id,
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Quitação do fiado #${item.sale_number} (${item.responsible_name}) desfeita`,
+        details: '',
+      });
+      toast.success('Quitação desfeita.');
+      await loadFiados();
+    } catch (error) {
+      toast.error(error.message || 'Erro ao desfazer quitação.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDelete = async (item) => {
     if (!isGerente || processing) return;
     const confirmed = window.confirm(
@@ -233,10 +262,16 @@ export default function Fiados() {
                         </>
                       )}
                       {settled && isGerente && (
-                        <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50" aria-label={`Excluir fiado de ${item.responsible_name}`}>
-                          <Trash2 className="h-4 w-4" />
-                          Excluir
-                        </button>
+                        <>
+                          <button type="button" disabled={processing} onClick={() => handleReopen(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-accent/30 px-3 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50" aria-label={`Desfazer quitação de ${item.responsible_name}`}>
+                            <RotateCcw className="h-4 w-4" />
+                            Desfazer quitação
+                          </button>
+                          <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50" aria-label={`Excluir fiado de ${item.responsible_name}`}>
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

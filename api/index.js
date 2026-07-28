@@ -3359,9 +3359,9 @@ async function routeHandler(req, res) {
         return send(res, 400, {
           message: 'A alteração contém campos não permitidos.',
         });
-      if (!['quitado', 'cancelado'].includes(req.body.status))
+      if (!['pendente', 'quitado', 'cancelado'].includes(req.body.status))
         return send(res, 400, {
-          message: 'O fiado só pode ser quitado ou cancelado.',
+          message: 'O fiado só pode ser quitado, cancelado ou reaberto.',
         });
       if (
         req.body.status === 'quitado' &&
@@ -3377,23 +3377,66 @@ async function routeHandler(req, res) {
         return send(res, 404, {
           message: 'Fiado não encontrado ou sem permissão.',
         });
-      if (current.data.status !== 'pendente')
+      const isReopening = req.body.status === 'pendente';
+      if (isReopening) {
+        if (current.data.status !== 'quitado')
+          return send(res, 409, {
+            message: 'Somente fiados quitados podem ser reabertos.',
+          });
+      } else if (current.data.status !== 'pendente') {
         return send(res, 409, {
           message: 'Somente fiados pendentes podem ser quitados ou cancelados.',
         });
-      const fiadoUpdate = {
-        status: req.body.status,
-        settled_by_id: user.id,
-        settled_by_name: user.full_name || user.email,
-        ...(req.body.status === 'quitado'
-          ? {
-              settlement_date: new Date().toISOString(),
-              settlement_method: req.body.settlement_method,
-            }
-          : { cancellation_reason: text(req.body.cancellation_reason, 500) }),
-      };
+      }
+      const fiadoUpdate = isReopening
+        ? {
+            status: 'pendente',
+            settlement_date: null,
+            settlement_method: null,
+            settled_by_id: null,
+            settled_by_name: null,
+            cancellation_reason: null,
+          }
+        : {
+            status: req.body.status,
+            settled_by_id: user.id,
+            settled_by_name: user.full_name || user.email,
+            ...(req.body.status === 'quitado'
+              ? {
+                  settlement_date: new Date().toISOString(),
+                  settlement_method: req.body.settlement_method,
+                }
+              : { cancellation_reason: text(req.body.cancellation_reason, 500) }),
+          };
       const [r] =
         await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(fiadoUpdate)}::jsonb,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records' RETURNING id,data,created_date,updated_date`;
+      try {
+        if (isReopening) {
+          await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
+            ${user.market_id},
+            'general_audits',
+            ${JSON.stringify({
+              action_type: 'fiado_quitacao_desfeita',
+              entity_type: 'fiado',
+              entity_id: r.id,
+              user_id: user.id,
+              user_name: user.full_name || user.email,
+              description: `Quitação do fiado #${text(r.data?.sale_number, 50) || 'sem número'} desfeita`,
+              details: {
+                responsible_name: text(r.data?.responsible_name, 180),
+                previous_status: current.data.status || null,
+                status: 'pendente',
+                total_amount: Number(r.data?.total_amount || 0),
+              },
+            })}::jsonb
+          )`;
+        }
+      } catch (auditError) {
+        console.error(
+          'Falha ao auditar reversão de quitação de fiado:',
+          auditError?.message,
+        );
+      }
       return send(res, 200, {
         id: r.id,
         ...r.data,

@@ -1,7 +1,7 @@
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
 
-const pdfCurrency = value => formatCurrency(value).replace(/[\u00a0\u202f]/g, ' ');
-const safeFilePart = value => String(value || '')
+const pdfCurrency = (value) => formatCurrency(value).replace(/[\u00a0\u202f]/g, ' ');
+const safeFilePart = (value) => String(value || '')
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/gi, '-')
@@ -25,8 +25,6 @@ async function loadLogoForPdf(source) {
   try {
     let image;
     if (/^(data:image\/|blob:)/i.test(source)) {
-      // Data URLs não devem passar por fetch: alguns navegadores bloqueiam
-      // esse acesso pelo connect-src da CSP, mesmo sendo uma imagem válida.
       image = await loadImageElement(source);
     } else {
       const response = await fetch(source, { signal: controller.signal, credentials: 'include' });
@@ -64,66 +62,173 @@ function calculateSaleTotals(sale) {
 /** @param {any} sale @param {Record<string, any>} config @param {{onLogoError?: (error: unknown) => void}} options */
 export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } = {}) {
   const { jsPDF } = await import('jspdf');
-  const estimatedHeight = Math.max(200, 112 + (sale.items?.length || 0) * 14 + (sale.payments?.length || 0) * 7);
-  const doc = new jsPDF({ unit: 'mm', format: [80, estimatedHeight] });
   const totals = calculateSaleTotals(sale);
+  const items = Array.isArray(sale.items) ? sale.items : [];
+  const payments = Array.isArray(sale.payments) ? sale.payments : [];
+  const estimatedHeight = Math.max(220, 132 + items.length * 14 + payments.length * 8);
+  const doc = new jsPDF({ unit: 'mm', format: [80, estimatedHeight] });
+  const marginX = 6;
+  const width = 68;
   let y = 8;
+
+  const setText = (size = 9, bold = false) => {
+    doc.setFontSize(size);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+  };
+
+  const divider = (space = 4.5) => {
+    doc.setDrawColor(205);
+    doc.line(marginX, y, 74, y);
+    y += space;
+  };
+
+  const centerText = (value, size = 9, bold = false, gap = 4) => {
+    const lines = doc.splitTextToSize(String(value ?? ''), width);
+    setText(size, bold);
+    doc.text(lines, 40, y, { align: 'center' });
+    y += Math.max(gap, lines.length * (size >= 11 ? 4.2 : 3.8));
+  };
+
+  const rightValue = (label, value, bold = false) => {
+    setText(8.4, false);
+    doc.text(label, marginX, y);
+    setText(bold ? 9.4 : 8.8, bold);
+    doc.text(String(value ?? ''), 72, y, { align: 'right' });
+    y += 4.8;
+  };
 
   if (config.logo_url) {
     try {
       const logo = await loadLogoForPdf(config.logo_url);
       if (logo) {
-        const ratio = Math.min(28 / logo.width, 15 / logo.height);
-        const width = logo.width * ratio;
-        const height = logo.height * ratio;
-        doc.addImage(logo.dataUrl, 'PNG', 40 - width / 2, y, width, height, undefined, 'FAST');
-        y += height + 3;
+        const ratio = Math.min(26 / logo.width, 14 / logo.height);
+        const logoWidth = logo.width * ratio;
+        const logoHeight = logo.height * ratio;
+        doc.addImage(logo.dataUrl, 'PNG', 40 - logoWidth / 2, y, logoWidth, logoHeight, undefined, 'FAST');
+        y += logoHeight + 3;
       }
     } catch (error) {
       onLogoError?.(error);
     }
   }
 
-  const line = (value, { bold = false, center = false, size = 9, gap = 5 } = {}) => {
-    doc.setFontSize(size);
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    const lines = doc.splitTextToSize(String(value ?? ''), center ? 70 : 72);
-    doc.text(lines, center ? 40 : 4, y, { align: center ? 'center' : 'left' });
-    y += Math.max(gap, lines.length * 4);
-  };
+  doc.setFillColor(240, 248, 242);
+  doc.setDrawColor(224, 234, 227);
+  doc.roundedRect(marginX, y, width, 8, 2, 2, 'FD');
+  setText(8.2, true);
+  doc.setTextColor(46, 109, 74);
+  doc.text('RECIBO', 40, y + 5.2, { align: 'center' });
+  doc.setTextColor(17, 17, 17);
+  y += 11;
 
-  line(config.nome_mercado || config.market_name || 'Nexo PDV', { bold: true, center: true, size: 11 });
-  if (config.cnpj) line(`CNPJ: ${config.cnpj}`, { center: true, gap: 4 });
-  if (config.endereco) line(config.endereco, { center: true, gap: 4 });
-  line('--------------------------------', { center: true, gap: 4 });
-  line(formatDateTime(sale.created_date || new Date()), { center: true, gap: 4 });
-  line(`Venda #${sale.sale_number}`, { center: true, gap: 4 });
-  line(`Atendente: ${sale.seller_name || 'Não informado'}`, { center: true, gap: 4 });
-  line('--------------------------------', { center: true, gap: 4 });
+  centerText(config.nome_mercado || config.market_name || 'Nexo PDV', 12, true, 4.6);
+  if (config.cnpj) centerText(`CNPJ: ${config.cnpj}`, 8.2, false, 3.7);
+  if (config.endereco) centerText(config.endereco, 8.2, false, 4);
 
-  for (const item of sale.items || []) {
-    const amount = item.unit === 'peso'
-      ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
-      : `${Number(item.quantity || 0)}x`;
-    line(`${amount} ${item.product_name}`, { gap: 4 });
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, 8, y);
-    doc.text(`Total: ${pdfCurrency(item.subtotal)}`, 76, y, { align: 'right' });
-    y += 4.5;
+  divider(5);
+  rightValue('Data', formatDateTime(sale.created_date || new Date()));
+  rightValue('Venda', `#${sale.sale_number}`, true);
+  rightValue('Atendente', sale.seller_name || 'Não informado');
+  rightValue('Tipo', sale.sale_type === 'fiado' ? 'Fiado' : 'Normal');
+  divider(5);
+
+  setText(9.2, true);
+  doc.setTextColor(46, 109, 74);
+  doc.text('PRODUTOS', marginX, y);
+  doc.setTextColor(17, 17, 17);
+  y += 4.8;
+
+  if (!items.length) {
+    setText(8.4, false);
+    doc.text('Nenhum item nesta venda.', marginX, y);
+    y += 5;
+  } else {
+    for (const item of items) {
+      const amount = item.unit === 'peso'
+        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+        : `${Number(item.quantity || 0)}x`;
+      const nameLines = doc.splitTextToSize(String(item.product_name || 'Produto'), 34);
+      const blockHeight = Math.max(12, nameLines.length * 4 + 3);
+      doc.setDrawColor(232);
+      doc.roundedRect(marginX, y, width, blockHeight, 2, 2, 'S');
+      doc.setFillColor(239, 246, 241);
+      doc.roundedRect(marginX + 1.5, y + 2.1, 10, 7, 2, 2, 'F');
+      setText(8, true);
+      doc.setTextColor(46, 109, 74);
+      doc.text(amount, marginX + 6.5, y + 6.7, { align: 'center' });
+      doc.setTextColor(17, 17, 17);
+      setText(8.7, true);
+      doc.text(nameLines, marginX + 13, y + 5.1);
+      setText(7.5, false);
+      doc.setTextColor(95, 107, 102);
+      doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, 72, y + 4.7, { align: 'right' });
+      setText(8.8, true);
+      doc.setTextColor(17, 17, 17);
+      doc.text(pdfCurrency(item.subtotal), 72, y + 9, { align: 'right' });
+      doc.setTextColor(17, 17, 17);
+      y += blockHeight + 2;
+    }
   }
 
-  line('--------------------------------', { center: true, gap: 4 });
-  line(`Subtotal: ${pdfCurrency(totals.subtotal)}`, { gap: 4 });
-  if (totals.discount > 0) line(`Desconto: ${pdfCurrency(totals.discount)}`, { gap: 4 });
-  line(`TOTAL: ${pdfCurrency(totals.total)}`, { bold: true, size: 11, gap: 6 });
-  line('--------------------------------', { center: true, gap: 4 });
-  for (const payment of sale.payments || []) line(`${getPaymentLabel(payment.method)}: ${pdfCurrency(payment.amount)}`, { gap: 4 });
-  if (Number(sale.change_amount || 0) > 0) line(`Troco: ${pdfCurrency(sale.change_amount)}`, { gap: 4 });
-  if (sale.observation) line(`Observação: ${sale.observation}`, { gap: 4 });
-  line('', { gap: 3 });
-  line('Obrigado pela preferência!', { center: true, gap: 4 });
-  line('Volte sempre!', { center: true, gap: 4 });
+  divider(5);
+  setText(9.2, true);
+  doc.setTextColor(46, 109, 74);
+  doc.text('RESUMO', marginX, y);
+  doc.setTextColor(17, 17, 17);
+  y += 4.8;
+  rightValue('Subtotal', pdfCurrency(totals.subtotal));
+  if (totals.discount > 0) rightValue('Desconto', pdfCurrency(totals.discount));
+  doc.setFillColor(240, 248, 242);
+  doc.setDrawColor(208, 228, 216);
+  doc.roundedRect(marginX, y + 0.5, width, 10, 2, 2, 'FD');
+  setText(9.3, true);
+  doc.text('TOTAL', marginX + 2.5, y + 6.9);
+  setText(12, true);
+  doc.text(pdfCurrency(totals.total), 72 - 2.5, y + 6.9, { align: 'right' });
+  y += 14;
+
+  divider(5);
+  setText(9.2, true);
+  doc.setTextColor(46, 109, 74);
+  doc.text('PAGAMENTOS', marginX, y);
+  doc.setTextColor(17, 17, 17);
+  y += 4.8;
+
+  if (!payments.length) {
+    setText(8.4, false);
+    doc.text('Sem pagamento informado.', marginX, y);
+    y += 5;
+  } else {
+    for (const payment of payments) {
+      doc.setDrawColor(236);
+      doc.line(marginX, y + 4.5, 74, y + 4.5);
+      setText(8.7, true);
+      doc.text(getPaymentLabel(payment.method), marginX, y + 3.2);
+      setText(8.7, false);
+      doc.text(pdfCurrency(payment.amount), 72, y + 3.2, { align: 'right' });
+      y += 6.1;
+    }
+  }
+
+  if (Number(sale.change_amount || 0) > 0) {
+    rightValue('Troco', pdfCurrency(sale.change_amount));
+  }
+  if (sale.observation) {
+    setText(8.1, false);
+    doc.setTextColor(95, 107, 102);
+    const observationLines = doc.splitTextToSize(`Observação: ${sale.observation}`, width);
+    doc.text(observationLines, marginX, y);
+    y += Math.max(5, observationLines.length * 3.8);
+    doc.setTextColor(17, 17, 17);
+  }
+
+  divider(4);
+  setText(8.6, true);
+  doc.setTextColor(95, 107, 102);
+  doc.text('Obrigado pela preferência!', 40, y, { align: 'center' });
+  y += 4.2;
+  doc.text('Volte sempre!', 40, y, { align: 'center' });
+
   const marketPart = safeFilePart(config.nome_mercado || config.market_name || 'nexo-pdv');
   doc.save(`recibo-${marketPart}-venda-${sale.sale_number}.pdf`);
 }
@@ -143,7 +248,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
   const contentWidth = pageWidth - margin * 2;
   let y = 14;
 
-  const ensureSpace = height => {
+  const ensureSpace = (height) => {
     if (y + height <= pageHeight - 14) return;
     doc.addPage();
     y = 14;
@@ -277,7 +382,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.text(nameLines, margin + 4, y);
-        doc.text(`Unit. ${pdfCurrency(item.unit_price)}`, pageWidth - margin - 44, y, { align: 'right' });
+        doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, pageWidth - margin - 44, y, { align: 'right' });
         doc.setFont('helvetica', 'bold');
         doc.text(`Total ${pdfCurrency(item.subtotal)}`, pageWidth - margin - 3, y, { align: 'right' });
         y += Math.max(6, nameLines.length * 4);
@@ -297,7 +402,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
     y += 6;
 
     doc.setFont('helvetica', 'normal');
-    const paymentText = (sale.payments || []).map(payment => `${getPaymentLabel(payment.method)} ${pdfCurrency(payment.amount)}`).join(' · ') || 'Sem pagamento informado';
+    const paymentText = (sale.payments || []).map((payment) => `${getPaymentLabel(payment.method)} ${pdfCurrency(payment.amount)}`).join(' · ') || 'Sem pagamento informado';
     const paymentLines = doc.splitTextToSize(`Pagamento: ${paymentText}`, contentWidth - 8);
     doc.text(paymentLines, margin + 4, y);
     y += Math.max(6, paymentLines.length * 4);
