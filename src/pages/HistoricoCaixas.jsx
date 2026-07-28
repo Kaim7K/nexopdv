@@ -130,25 +130,6 @@ export default function HistoricoCaixas() {
       setDetailLoading(false);
     }
   };
-  const clearCashHistory = async () => {
-    const confirmed = await confirm({
-      title: "Apagar histórico de caixas?",
-      description:
-        "Esta ação remove as aberturas, fechamentos e movimentações já registradas. O caixa em aberto precisa estar fechado antes.",
-      confirmLabel: "Apagar histórico",
-      tone: "destructive",
-    });
-    if (!confirmed) return;
-    try {
-      await nexoApi.maintenance.reset("cash", "ZERAR");
-      toast.success("Histórico de caixas apagado.");
-      load();
-    } catch (cause) {
-      toast.error(
-        cause.message || "Não foi possível apagar o histórico de caixas.",
-      );
-    }
-  };
   const totals = useMemo(
     () =>
       data.items.reduce(
@@ -178,15 +159,6 @@ export default function HistoricoCaixas() {
             operador.
           </p>
         </div>
-        {user.role === "admin" && (
-          <button
-            type="button"
-            onClick={clearCashHistory}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 text-sm font-bold text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" /> Apagar histórico
-          </button>
-        )}
       </header>
 
       <section
@@ -449,8 +421,8 @@ export default function HistoricoCaixas() {
           loading={detailLoading}
           currentUser={user}
           onClose={() => setSelected(null)}
-          onChanged={async () => {
-            await openDetail(selected.session);
+          onChanged={async ({ refetchDetail = true } = {}) => {
+            if (refetchDetail) await openDetail(selected.session);
             await load();
           }}
         />
@@ -468,9 +440,12 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     note: "",
   });
   const [saving, setSaving] = useState(false);
-  const modalRef = useModalBehavior({ onClose, disabled: saving });
+  const [deleting, setDeleting] = useState(false);
+  const confirm = useConfirm();
+  const modalRef = useModalBehavior({ onClose, disabled: saving || deleting });
   const canMove =
     session.status === "aberto" && session.seller_id === currentUser.id;
+  const canDelete = currentUser.role === "admin" && session.status === "fechado";
   const saveMovement = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -491,6 +466,28 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
       );
     } finally {
       setSaving(false);
+    }
+  };
+  const deleteSession = async () => {
+    const confirmed = await confirm({
+      title: "Excluir este caixa?",
+      description:
+        "Esta ação remove somente esta sessão do histórico, junto com as movimentações ligadas a ela. Caixas em aberto não podem ser excluídos.",
+      confirmLabel: "Excluir caixa",
+      tone: "destructive",
+    });
+    if (!confirmed) return;
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await nexoApi.cash.remove(session.id);
+      toast.success("Caixa excluído do histórico.");
+      await onChanged({ refetchDetail: false });
+      onClose();
+    } catch (cause) {
+      toast.error(cause.message || "Não foi possível excluir o caixa.");
+    } finally {
+      setDeleting(false);
     }
   };
   return (
@@ -519,14 +516,27 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
               {formatDate(session.opened_at)}
             </p>
           </div>
-          <button
-            type="button"
-            aria-label="Fechar detalhes"
-            onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <button
+                type="button"
+                onClick={deleteSession}
+                disabled={deleting}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleting ? "Excluindo..." : "Excluir"}
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label="Fechar detalhes"
+              onClick={onClose}
+              className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </header>
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           {loading ? (

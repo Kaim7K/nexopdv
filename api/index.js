@@ -1217,6 +1217,78 @@ async function routeHandler(req, res) {
       });
     }
 
+    if (isUuid(path[1]) && !path[2] && req.method === 'DELETE') {
+      if (user.role !== 'admin')
+        return send(res, 403, {
+          message:
+            'Apenas administradores podem excluir um caixa individualmente.',
+        });
+      const [row] =
+        await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions'`;
+      if (!row)
+        return send(res, 404, {
+          message: 'Caixa não encontrado.',
+        });
+      const session = recordFromRow(row);
+      if (session.status === 'aberto')
+        return send(res, 409, {
+          message: 'Feche o caixa antes de excluí-lo.',
+        });
+
+      const deletedAt = new Date().toISOString();
+      const deletedRows = await sql.transaction((tx) => [
+        tx`
+          DELETE FROM nexo.records
+          WHERE market_id=${user.market_id}
+            AND entity='cash_movements'
+            AND data->>'cash_session_id'=${session.id}
+        `,
+        tx`
+          DELETE FROM nexo.records
+          WHERE market_id=${user.market_id}
+            AND entity='general_audits'
+            AND data->>'entity_type'='cash_session'
+            AND data->>'entity_id'=${session.id}
+        `,
+        tx`
+          DELETE FROM nexo.records
+          WHERE id=${session.id}
+            AND market_id=${user.market_id}
+            AND entity='cash_sessions'
+        `,
+        tx`
+          INSERT INTO nexo.records(market_id,entity,data)
+          VALUES(
+            ${user.market_id},
+            'general_audits',
+            ${JSON.stringify({
+              action_type: 'caixa_excluido',
+              entity_type: 'cash_session',
+              entity_id: session.id,
+              user_id: user.id,
+              user_name: user.full_name || user.email,
+              description: `Caixa de ${session.seller_name} excluído`,
+              details: {
+                status: session.status,
+                opened_at: session.opened_at || session.created_date,
+                closed_at: session.closed_at || null,
+                deleted_at: deletedAt,
+              },
+            })}::jsonb
+          )
+        `,
+      ]);
+
+      return send(res, 200, {
+        ok: true,
+        deleted: {
+          cash_sessions: Number(deletedRows?.[2]?.length || 0),
+          cash_movements: Number(deletedRows?.[0]?.length || 0),
+          general_audits: Number(deletedRows?.[1]?.length || 0),
+        },
+      });
+    }
+
     if (isUuid(path[1]) && path[2] === 'movements') {
       if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
       const type = text(req.body.type, 20);

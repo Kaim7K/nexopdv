@@ -356,6 +356,10 @@ export const nexoApi = {
       });
     },
     detail: (id) => request(`/cash/${id}`, { cacheTTL: 5_000 }),
+    remove: (id) =>
+      request(`/cash/${id}`, {
+        method: 'DELETE',
+      }),
     addMovement: (id, data) =>
       request(`/cash/${id}/movements`, {
         method: 'POST',
