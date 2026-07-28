@@ -13,6 +13,7 @@ import {
   FileText,
   History,
   Loader2,
+  Printer,
   ReceiptText,
   Search,
   Trash2,
@@ -29,6 +30,7 @@ import {
 import {
   downloadDailySalesReportPdf,
   downloadSaleReceiptPdf,
+  printSaleReceipt,
 } from '@/lib/sales-pdf';
 import { ErrorState } from '@/components/common/PageState';
 
@@ -57,6 +59,7 @@ export default function Vendas() {
   const [detailSale, setDetailSale] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [receiptLoadingId, setReceiptLoadingId] = useState(null);
+  const [printingSaleId, setPrintingSaleId] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -195,6 +198,21 @@ export default function Vendas() {
       toast.error(error.message || 'Não foi possível baixar o recibo.');
     } finally {
       setReceiptLoadingId(null);
+    }
+  };
+
+  const printReceipt = async (sale) => {
+    setPrintingSaleId(sale.id);
+    try {
+      const fullSale = sale.items
+        ? sale
+        : await nexoApi.entities.Sale.get(sale.id);
+      await printSaleReceipt(fullSale, receiptConfig);
+      toast.success(`Impressão da venda #${fullSale.sale_number} enviada.`);
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível imprimir a venda.');
+    } finally {
+      setPrintingSaleId(null);
     }
   };
 
@@ -455,8 +473,10 @@ export default function Vendas() {
                 canCancel={canCancel(sale)}
                 canDelete={sale.status === 'cancelada' && user.role === 'admin'}
                 receiptLoading={receiptLoadingId === sale.id}
+                printing={printingSaleId === sale.id}
                 onDetails={() => openDetails(sale)}
                 onReceipt={() => downloadReceipt(sale)}
+                onPrint={() => printReceipt(sale)}
                 onCancel={() => requestCancel(sale)}
                 onDelete={() => requestDelete(sale)}
               />
@@ -509,12 +529,14 @@ export default function Vendas() {
                         <SaleActions
                           sale={sale}
                           receiptLoading={receiptLoadingId === sale.id}
+                          printing={printingSaleId === sale.id}
                           canCancel={canCancel(sale)}
                           canDelete={
                             sale.status === 'cancelada' && user.role === 'admin'
                           }
                           onDetails={() => openDetails(sale)}
                           onReceipt={() => downloadReceipt(sale)}
+                          onPrint={() => printReceipt(sale)}
                           onCancel={() => requestCancel(sale)}
                           onDelete={() => requestDelete(sale)}
                         />
@@ -540,7 +562,9 @@ export default function Vendas() {
           sale={detailSale}
           loading={detailLoading}
           receiptLoading={receiptLoadingId === detailSale.id}
+          printing={printingSaleId === detailSale.id}
           onReceipt={() => downloadReceipt(detailSale)}
+          onPrint={() => printReceipt(detailSale)}
           onClose={() => setDetailSale(null)}
         />
       )}
@@ -676,8 +700,10 @@ function SaleCard({
   canCancel,
   canDelete,
   receiptLoading,
+  printing,
   onDetails,
   onReceipt,
+  onPrint,
   onCancel,
   onDelete,
 }) {
@@ -725,9 +751,11 @@ function SaleCard({
         canDelete={canDelete}
         onDetails={onDetails}
         onReceipt={onReceipt}
+        onPrint={onPrint}
         onCancel={onCancel}
         onDelete={onDelete}
         mobile
+        printing={printing}
       />
     </article>
   );
@@ -740,8 +768,10 @@ function SaleActions({
   canDelete,
   onDetails,
   onReceipt,
+  onPrint,
   onCancel,
   onDelete,
+  printing = false,
   mobile = false,
 }) {
   return (
@@ -778,6 +808,24 @@ function SaleActions({
           <ReceiptText className="h-4 w-4" />
         )}
         {mobile && 'Recibo PDF'}
+      </button>
+      <button
+        type="button"
+        disabled={printing}
+        onClick={onPrint}
+        className={
+          mobile
+            ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted disabled:opacity-50'
+            : 'grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50'
+        }
+        title="Imprimir recibo"
+      >
+        {printing ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Printer className="h-4 w-4" />
+        )}
+        {mobile && 'Imprimir'}
       </button>
       {sale.status === 'concluida' && canCancel && (
         <button
@@ -856,7 +904,9 @@ function SaleDetailModal({
   sale,
   loading,
   receiptLoading,
+  printing,
   onReceipt,
+  onPrint,
   onClose,
 }) {
   if (loading || sale._loading)
@@ -911,6 +961,19 @@ function SaleDetailModal({
                 <Download className="h-4 w-4" />
               )}{' '}
               Recibo
+            </button>
+            <button
+              type="button"
+              disabled={printing}
+              onClick={onPrint}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {printing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}{' '}
+              Imprimir
             </button>
             <button
               type="button"

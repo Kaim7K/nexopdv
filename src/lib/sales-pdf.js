@@ -59,6 +59,13 @@ function calculateSaleTotals(sale) {
   return { subtotal, discount, total: Number(sale.total ?? Math.max(0, subtotal - discount)) };
 }
 
+const escapeHtml = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;');
+
 /** @param {any} sale @param {Record<string, any>} config @param {{onLogoError?: (error: unknown) => void}} options */
 export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } = {}) {
   const { jsPDF } = await import('jspdf');
@@ -231,6 +238,164 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
 
   const marketPart = safeFilePart(config.nome_mercado || config.market_name || 'nexo-pdv');
   doc.save(`recibo-${marketPart}-venda-${sale.sale_number}.pdf`);
+}
+
+const receiptPrintStyles = `
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #000 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+  html, body { background: #fff !important; color: #000 !important; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding: 10px; width: 320px; color: #000 !important; }
+  .receipt { display: flex; flex-direction: column; gap: 10px; }
+  .r-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+  .r-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 999px; border: 1px solid #000; background: #fff; color: #000; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .r-logo { display: flex; align-items: center; justify-content: center; min-height: 54px; }
+  .r-logo img { max-height: 54px; max-width: 180px; object-fit: contain; display: block; }
+  .r-store { font-weight: 900; font-size: 15px; line-height: 1.1; }
+  .r-subtitle { font-size: 9px; line-height: 1.4; color: #000 !important; }
+  .r-card { border: 1px solid #000; border-radius: 12px; padding: 10px 11px; background: #fff; }
+  .r-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  .r-meta { display: flex; flex-direction: column; gap: 2px; }
+  .r-label { font-size: 9px; color: #000 !important; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
+  .r-value { font-size: 11px; font-weight: 800; line-height: 1.35; color: #000 !important; }
+  .r-section-title { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #000; margin-bottom: 8px; }
+  .r-icon { display: inline-flex; width: 16px; height: 16px; border-radius: 999px; align-items: center; justify-content: center; background: #fff; color: #000; font-size: 10px; font-weight: 900; border: 1px solid #000; }
+  .r-item { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #000; }
+  .r-item:last-child { border-bottom: 0; padding-bottom: 0; }
+  .r-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 7px; border-radius: 999px; background: #fff; color: #000 !important; font-size: 9px; font-weight: 900; border: 1px solid #000; }
+  .r-name { font-size: 11px; font-weight: 800; line-height: 1.3; color: #000 !important; }
+  .r-prices { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; white-space: nowrap; }
+  .r-prices span:first-child { font-size: 9px; color: #000 !important; }
+  .r-prices span:last-child { font-size: 11px; font-weight: 900; color: #000 !important; }
+  .r-summary { display: flex; flex-direction: column; gap: 6px; }
+  .r-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; line-height: 1.35; }
+  .r-row span:first-child { color: #000 !important; font-weight: 700; }
+  .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 6px; border-top: 1px solid #000; font-size: 14px; font-weight: 900; }
+  .r-total span:last-child { font-size: 16px; color: #000 !important; }
+  .r-payment { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid #000; }
+  .r-payment:last-child { border-bottom: 0; padding-bottom: 0; }
+  .r-payment strong { font-size: 11px; font-weight: 800; color: #000 !important; }
+  .r-footer { text-align: center; margin-top: 2px; font-size: 10px; line-height: 1.45; color: #000 !important; }
+  .r-footer, .r-footer * { color: #000 !important; }
+`;
+
+function buildSaleReceiptHtml(sale, config = {}) {
+  const items = Array.isArray(sale.items) ? sale.items : [];
+  const payments = Array.isArray(sale.payments) ? sale.payments : [];
+  const totals = calculateSaleTotals(sale);
+  const itemHtml = items.length
+    ? items.map((item) => {
+      const quantityLabel = item.unit === 'peso'
+        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+        : `${Number(item.quantity || 0).toLocaleString('pt-BR')} un`;
+      return `
+        <div class="r-item">
+          <span class="r-qty">${escapeHtml(quantityLabel)}</span>
+          <div class="min-w-0">
+            <div class="r-name">${escapeHtml(item.product_name || 'Produto')}</div>
+          </div>
+          <div class="r-prices">
+            <span>Unitário ${escapeHtml(pdfCurrency(item.unit_price))}</span>
+            <span>${escapeHtml(pdfCurrency(item.subtotal))}</span>
+          </div>
+        </div>
+      `;
+    }).join('')
+    : '<p class="text-sm text-muted-foreground">Nenhum item nesta venda.</p>';
+
+  const paymentHtml = payments.length
+    ? payments.map((payment) => `
+        <div class="r-payment">
+          <strong>${escapeHtml(getPaymentLabel(payment.method))}</strong>
+          <span>${escapeHtml(pdfCurrency(payment.amount))}</span>
+        </div>
+      `).join('')
+    : '<p class="text-sm text-muted-foreground">Sem pagamento informado.</p>';
+
+  return `
+    <div class="receipt mx-auto w-full max-w-[420px]">
+      <div class="r-header">
+        <div class="r-badge">Mercado</div>
+        <div class="r-logo">
+          ${config.logo_url ? `<img src="${escapeHtml(config.logo_url)}" alt="Logo de ${escapeHtml(config.nome_mercado || 'mercado')}" />` : ''}
+        </div>
+        <div>
+          <div class="r-store">${escapeHtml(config.nome_mercado || config.market_name || 'Nexo PDV')}</div>
+          ${config.cnpj ? `<div class="r-subtitle">CNPJ: ${escapeHtml(config.cnpj)}</div>` : ''}
+          ${config.endereco ? `<div class="r-subtitle">${escapeHtml(config.endereco)}</div>` : ''}
+        </div>
+      </div>
+
+      <div class="r-card">
+        <div class="r-grid">
+          <div class="r-meta"><span class="r-label">Data</span><span class="r-value">${escapeHtml(formatDateTime(sale.created_date || new Date()))}</span></div>
+          <div class="r-meta"><span class="r-label">Venda</span><span class="r-value">#${escapeHtml(sale.sale_number)}</span></div>
+          <div class="r-meta"><span class="r-label">Atendente</span><span class="r-value">${escapeHtml(sale.seller_name || 'Não informado')}</span></div>
+          <div class="r-meta"><span class="r-label">Tipo</span><span class="r-value">${escapeHtml(sale.sale_type === 'fiado' ? 'Fiado' : 'Normal')}</span></div>
+        </div>
+      </div>
+
+      <div class="r-card">
+        <div class="r-section-title"><span class="r-icon">1</span>Produtos</div>
+        <div class="space-y-1">${itemHtml}</div>
+      </div>
+
+      <div class="r-card">
+        <div class="r-section-title"><span class="r-icon">2</span>Resumo</div>
+        <div class="r-summary">
+          <div class="r-row"><span>Subtotal</span><strong>${escapeHtml(pdfCurrency(totals.subtotal))}</strong></div>
+          ${totals.discount > 0 ? `<div class="r-row"><span>Desconto</span><strong>${escapeHtml(pdfCurrency(totals.discount))}</strong></div>` : ''}
+          <div class="r-total"><span>TOTAL</span><span>${escapeHtml(pdfCurrency(totals.total))}</span></div>
+        </div>
+      </div>
+
+      <div class="r-card">
+        <div class="r-section-title"><span class="r-icon">3</span>Pagamentos</div>
+        <div class="space-y-1">${paymentHtml}</div>
+        ${Number(sale.change_amount || 0) > 0 ? `<div class="r-payment"><strong>Troco</strong><span>${escapeHtml(pdfCurrency(sale.change_amount))}</span></div>` : ''}
+        ${sale.observation ? `<p class="pt-1 text-xs text-muted-foreground">Obs: ${escapeHtml(sale.observation)}</p>` : ''}
+      </div>
+
+      <div class="r-footer">
+        <p>Obrigado pela preferência!</p>
+        <p>Volte sempre!</p>
+      </div>
+    </div>
+  `;
+}
+
+/** @param {any} sale @param {Record<string, any>} config */
+export async function printSaleReceipt(sale, config = {}) {
+  const html = buildSaleReceiptHtml(sale, config);
+  const win = window.open('', '', 'width=380,height=650');
+  if (!win) throw new Error('O navegador bloqueou a janela de impressão.');
+  const closePrintWindow = () => {
+    try {
+      if (!win.closed) win.close();
+    } catch {
+      // janela já pode ter sido fechada
+    }
+  };
+  win.addEventListener('afterprint', closePrintWindow, { once: true });
+  win.document.write(`<html><head><title>Recibo #${sale.sale_number}</title><style>${receiptPrintStyles}</style></head><body>${html}</body></html>`);
+  win.document.close();
+  win.focus();
+  window.setTimeout(() => {
+    try {
+      win.print();
+    } finally {
+      window.setTimeout(closePrintWindow, 1200);
+    }
+  }, 120);
 }
 
 function safeDate(value, fallback = new Date()) {

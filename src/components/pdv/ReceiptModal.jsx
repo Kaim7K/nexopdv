@@ -6,42 +6,60 @@ import { downloadSaleReceiptPdf } from '@/lib/sales-pdf';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 const printStyles = `
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html, body { background: #fff !important; color: #111 !important; opacity: 1 !important; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding: 10px; width: 320px; color: #111 !important; }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #000 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    padding: 10px;
+    width: 320px;
+    color: #000 !important;
+  }
   .receipt { display: flex; flex-direction: column; gap: 10px; }
   .r-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
-  .r-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 999px; border: 1px solid #d9e3dd; background: #f5faf7; color: #2e6d4a; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .r-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 999px; border: 1px solid #000; background: #fff; color: #000; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
   .r-logo { display: flex; align-items: center; justify-content: center; min-height: 54px; }
   .r-logo img { max-height: 54px; max-width: 180px; object-fit: contain; display: block; }
-  .r-store { font-weight: 800; font-size: 15px; line-height: 1.1; }
-  .r-subtitle { font-size: 9px; line-height: 1.4; color: #5f6b66; }
-  .r-card { border: 1px solid #e5ebe7; border-radius: 12px; padding: 10px 11px; background: #fff; }
+  .r-store { font-weight: 900; font-size: 15px; line-height: 1.1; }
+  .r-subtitle { font-size: 9px; line-height: 1.4; color: #111 !important; }
+  .r-card { border: 1px solid #000; border-radius: 12px; padding: 10px 11px; background: #fff; }
   .r-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
   .r-meta { display: flex; flex-direction: column; gap: 2px; }
-  .r-label { font-size: 9px; color: #6b746f; text-transform: uppercase; letter-spacing: .06em; }
-  .r-value { font-size: 11px; font-weight: 700; line-height: 1.35; }
-  .r-section-title { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #50715d; margin-bottom: 8px; }
-  .r-icon { display: inline-flex; width: 16px; height: 16px; border-radius: 999px; align-items: center; justify-content: center; background: #eef6f1; color: #2e6d4a; font-size: 10px; font-weight: 900; }
-  .r-item { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #edf1ee; }
+  .r-label { font-size: 9px; color: #000 !important; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
+  .r-value { font-size: 11px; font-weight: 800; line-height: 1.35; color: #000 !important; }
+  .r-section-title { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #000; margin-bottom: 8px; }
+  .r-icon { display: inline-flex; width: 16px; height: 16px; border-radius: 999px; align-items: center; justify-content: center; background: #fff; color: #000; font-size: 10px; font-weight: 900; border: 1px solid #000; }
+  .r-item { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #000; }
   .r-item:last-child { border-bottom: 0; padding-bottom: 0; }
-  .r-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 7px; border-radius: 999px; background: #eff6f1; color: #2e6d4a; font-size: 9px; font-weight: 800; }
-  .r-name { font-size: 11px; font-weight: 700; line-height: 1.3; }
+  .r-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 7px; border-radius: 999px; background: #fff; color: #000 !important; font-size: 9px; font-weight: 900; border: 1px solid #000; }
+  .r-name { font-size: 11px; font-weight: 800; line-height: 1.3; color: #000 !important; }
   .r-prices { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; white-space: nowrap; }
-  .r-prices span:first-child { font-size: 9px; color: #6b746f; }
-  .r-prices span:last-child { font-size: 11px; font-weight: 800; }
+  .r-prices span:first-child { font-size: 9px; color: #000 !important; }
+  .r-prices span:last-child { font-size: 11px; font-weight: 900; color: #000 !important; }
   .r-summary { display: flex; flex-direction: column; gap: 6px; }
   .r-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; line-height: 1.35; }
-  .r-row span:first-child { color: #5f6b66; }
-  .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 6px; border-top: 1px solid #e5ebe7; font-size: 14px; font-weight: 900; }
-  .r-total span:last-child { font-size: 16px; }
-  .r-payment { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid #eef2ef; }
+  .r-row span:first-child { color: #000 !important; font-weight: 700; }
+  .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 6px; border-top: 1px solid #000; font-size: 14px; font-weight: 900; }
+  .r-total span:last-child { font-size: 16px; color: #000 !important; }
+  .r-payment { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid #000; }
   .r-payment:last-child { border-bottom: 0; padding-bottom: 0; }
-  .r-payment strong { font-size: 11px; }
-  .r-footer { text-align: center; margin-top: 2px; font-size: 10px; line-height: 1.45; color: #5f6b66; }
-  .r-footer, .r-footer * { color: #5f6b66 !important; }
-  .r-store, .r-value, .r-name, .r-prices span:last-child, .r-total span:last-child, .r-payment strong { color: #111 !important; }
-  .r-label, .r-subtitle, .r-prices span:first-child { color: #5f6b66 !important; }
+  .r-payment strong { font-size: 11px; font-weight: 800; color: #000 !important; }
+  .r-footer { text-align: center; margin-top: 2px; font-size: 10px; line-height: 1.45; color: #000 !important; }
+  .r-footer, .r-footer * { color: #000 !important; }
 `;
 
 export default function ReceiptModal({ sale, config = /** @type {Record<string, any>} */ ({}), onClose, onNewSale, primaryLabel = 'Nova venda' }) {

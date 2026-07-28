@@ -9,6 +9,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 test('fiado settlement can be reopened by admin or gerente', () => {
   const api = readFileSync(join(root, 'api', 'index.js'), 'utf8');
   const fiados = readFileSync(join(root, 'src', 'pages', 'Fiados.jsx'), 'utf8');
+  const vendas = readFileSync(join(root, 'src', 'pages', 'Vendas.jsx'), 'utf8');
 
   assert.match(api, /status: 'pendente'/);
   assert.match(api, /fiado_quitacao_desfeita/);
@@ -17,4 +18,7 @@ test('fiado settlement can be reopened by admin or gerente', () => {
   assert.match(fiados, /RotateCcw/);
   assert.match(fiados, /Itens da venda/);
   assert.match(fiados, /Sale\.get\(settleFiado\.sale_id\)/);
+  assert.match(vendas, /printSaleReceipt/);
+  assert.match(vendas, /Imprimir recibo/);
+  assert.match(vendas, /onPrint=\{\(\) => printReceipt\(sale\)\}/);
 });
