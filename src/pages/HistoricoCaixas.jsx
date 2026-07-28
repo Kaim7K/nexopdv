@@ -13,6 +13,7 @@ import {
   MinusCircle,
   PlusCircle,
   ReceiptText,
+  Trash2,
   X,
 } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
@@ -25,6 +26,7 @@ import {
 } from "@/components/common/PageState";
 import PaginationControls from "@/components/common/PaginationControls";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
+import { useConfirm } from "@/components/common/ConfirmProvider";
 import { formatCurrency } from "@/lib/helpers";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -57,6 +59,7 @@ const PAYMENT_LABELS = {
 };
 
 export default function HistoricoCaixas() {
+  const confirm = useConfirm();
   const requestSequence = useRef(0);
   const { user } = /** @type {any} */ (useOutletContext());
   const [filters, setFilters] = useState({
@@ -127,6 +130,25 @@ export default function HistoricoCaixas() {
       setDetailLoading(false);
     }
   };
+  const clearCashHistory = async () => {
+    const confirmed = await confirm({
+      title: "Apagar histórico de caixas?",
+      description:
+        "Esta ação remove as aberturas, fechamentos e movimentações já registradas. O caixa em aberto precisa estar fechado antes.",
+      confirmLabel: "Apagar histórico",
+      tone: "destructive",
+    });
+    if (!confirmed) return;
+    try {
+      await nexoApi.maintenance.reset("cash", "ZERAR");
+      toast.success("Histórico de caixas apagado.");
+      load();
+    } catch (cause) {
+      toast.error(
+        cause.message || "Não foi possível apagar o histórico de caixas.",
+      );
+    }
+  };
   const totals = useMemo(
     () =>
       data.items.reduce(
@@ -143,17 +165,28 @@ export default function HistoricoCaixas() {
 
   return (
     <div className="page-shell space-y-5">
-      <header>
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <Banknote className="h-3.5 w-3.5" /> Operação financeira
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+            <Banknote className="h-3.5 w-3.5" /> Operação financeira
+          </div>
+          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+            Histórico de caixas
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Aberturas, vendas, movimentações, conferência e fechamento por
+            operador.
+          </p>
         </div>
-        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Histórico de caixas
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Aberturas, vendas, movimentações, conferência e fechamento por
-          operador.
-        </p>
+        {user.role === "admin" && (
+          <button
+            type="button"
+            onClick={clearCashHistory}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 text-sm font-bold text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" /> Apagar histórico
+          </button>
+        )}
       </header>
 
       <section

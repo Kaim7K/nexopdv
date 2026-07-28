@@ -246,9 +246,9 @@ export default function PDV() {
   };
 
   useEffect(() => {
-    if (cashLoading || !canUsePdv || products.length) return;
+    if (products.length) return;
     loadProducts();
-  }, [cashLoading, canUsePdv]);
+  }, [products.length]);
 
   useEffect(() => {
     if (
@@ -709,8 +709,42 @@ export default function PDV() {
     });
     toast.success('Valor atualizado e auditoria registrada.');
     setShowPriceCorrection(false);
-    loadProducts();
+    setProducts((previous) =>
+      previous.map((current) =>
+        current.id === product.id
+          ? { ...current, sale_price: Number(newPrice) }
+          : current,
+      ),
+    );
   };
+
+  const syncSoldProducts = useCallback((saleItems) => {
+    if (!Array.isArray(saleItems) || !saleItems.length) return;
+    const soldQuantities = new Map();
+    for (const item of saleItems) {
+      if (!item?.product_id) continue;
+      const quantity = Number(
+        item.unit === 'peso' ? item.weight : item.quantity,
+      );
+      if (!Number.isFinite(quantity) || quantity <= 0) continue;
+      soldQuantities.set(
+        item.product_id,
+        Number(soldQuantities.get(item.product_id) || 0) + quantity,
+      );
+    }
+    if (!soldQuantities.size) return;
+    setProducts((previous) =>
+      previous.map((product) => {
+        const soldQuantity = soldQuantities.get(product.id);
+        if (!soldQuantity) return product;
+        return {
+          ...product,
+          quantity: Math.max(0, Number(product.quantity || 0) - soldQuantity),
+          sales_count: Number(product.sales_count || 0) + soldQuantity,
+        };
+      }),
+    );
+  }, []);
 
   const withLocalIdentity = (sale) =>
     sale._localId
@@ -805,8 +839,10 @@ export default function PDV() {
       setShowReceipt(sale);
       setActiveSale(createEmptySale());
       setSearchQuery('');
-      loadProducts();
-      getNextSaleNumber();
+      syncSoldProducts(sale.items || activeSale.items);
+      if (Number.isFinite(Number(sale.sale_number)))
+        setSaleNumber(Number(sale.sale_number) + 1);
+      else getNextSaleNumber();
       loadCash();
     } catch (error) {
       toast.error(error.message || 'Erro ao concluir venda.');

@@ -2274,6 +2274,8 @@ async function routeHandler(req, res) {
       const soldQuantity =
         unit === 'peso' ? Number(item.weight) : Number(item.quantity);
       const currentPrice = Number(product.sale_price);
+      const allowPdvPriceEdit = Boolean(item.allow_pdv_price_edit);
+      const itemPrice = Number(item.unit_price);
       if (
         !Number.isFinite(soldQuantity) ||
         soldQuantity <= 0 ||
@@ -2285,7 +2287,11 @@ async function routeHandler(req, res) {
           'INVALID_SALE_ITEM',
           'Há quantidade ou preço inválido na venda.',
         );
-      if (Math.abs(Number(item.unit_price) - currentPrice) > 0.009)
+      if (
+        !Number.isFinite(itemPrice) ||
+        itemPrice < 0 ||
+        (!allowPdvPriceEdit && Math.abs(itemPrice - currentPrice) > 0.009)
+      )
         throw new AppError(
           409,
           'PRODUCT_PRICE_CHANGED',
@@ -2298,15 +2304,16 @@ async function routeHandler(req, res) {
         internal_code: text(product.internal_code, 180),
         quantity: unit === 'peso' ? 1 : soldQuantity,
         weight: unit === 'peso' ? soldQuantity : null,
-        unit_price: currentPrice,
+        unit_price: allowPdvPriceEdit ? roundMoney(itemPrice) : currentPrice,
         unit_cost:
           product.cost_price === null ||
           product.cost_price === '' ||
           product.cost_price === undefined
             ? null
             : roundMoney(Math.max(0, Number(product.cost_price) || 0)),
-        subtotal: roundMoney(soldQuantity * currentPrice),
+        subtotal: roundMoney(soldQuantity * (allowPdvPriceEdit ? itemPrice : currentPrice)),
         unit,
+        allow_pdv_price_edit: allowPdvPriceEdit,
       };
     });
     if (
