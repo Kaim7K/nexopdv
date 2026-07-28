@@ -65,46 +65,25 @@ function ProductGrid({ products, onSelect, loading }) {
           </select>
         </div>
         {categories.length > 0 && (
-          <>
-            <div className="lg:hidden">
-              <label className="sr-only" htmlFor="product-category-filter">
-                Filtrar por categoria
-              </label>
-              <select
-                id="product-category-filter"
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                aria-label="Filtrar por categoria"
-              >
-                <option value="">Todas as categorias</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="-mx-1 hidden gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:flex [&::-webkit-scrollbar]:hidden">
-              <button
-                type="button"
-                onClick={() => setCategory('')}
-                className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${!category ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
-              >
-                Todos
-              </button>
+          <div>
+            <label className="sr-only" htmlFor="product-category-filter">
+              Filtrar por categoria
+            </label>
+            <select
+              id="product-category-filter"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              aria-label="Filtrar por categoria"
+            >
+              <option value="">Todas as categorias</option>
               {categories.map((cat) => (
-                <button
-                  type="button"
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`min-h-9 flex-none rounded-full px-3 py-1 text-xs font-medium transition-colors ${category === cat ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
-                >
+                <option key={cat} value={cat}>
                   {cat}
-                </button>
+                </option>
               ))}
-            </div>
-          </>
+            </select>
+          </div>
         )}
       </div>
 
