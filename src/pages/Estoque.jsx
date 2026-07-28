@@ -656,10 +656,12 @@ export default function Estoque() {
     setImageFilter('all');
   };
   const zeroStockCount = products.filter(
-    (product) => Number(product.quantity || 0) <= 0,
+    (product) =>
+      product.track_stock !== false && Number(product.quantity || 0) <= 0,
   ).length;
   const lowStockCount = products.filter(
     (product) =>
+      product.track_stock !== false &&
       Number(product.quantity || 0) > 0 &&
       Number(product.quantity || 0) <= lowStockThreshold,
   ).length;
@@ -957,13 +959,14 @@ export default function Estoque() {
           <div className="grid grid-cols-2 gap-2 p-2 min-[390px]:grid-cols-3 sm:grid-cols-4 sm:p-2.5 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
             {visibleProducts.map((product) => {
               const quantity = Number(product.quantity || 0);
+              const tracksStock = product.track_stock !== false;
               const isZero = quantity <= 0;
-              const isLow = !isZero && quantity <= lowStockThreshold;
+              const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
               const statusClass = dirty.has(product.id)
                 ? 'border-amber-500/40 bg-amber-500/10'
-                : isZero
+                : tracksStock && isZero
                   ? 'border-red-500/30 bg-red-500/10'
-                  : isLow
+                  : tracksStock && isLow
                     ? 'border-amber-500/30 bg-amber-500/5'
                     : 'border-border bg-card';
               return (
@@ -1009,12 +1012,16 @@ export default function Estoque() {
                     <div className="flex items-center justify-between gap-1 text-[9px]">
                       <span
                         className={
-                          isZero
+                          tracksStock && isZero
                             ? 'font-bold text-destructive'
                             : 'text-muted-foreground'
                         }
                       >
-                        {isZero ? 'Sem estoque' : `Estq: ${quantity}`}
+                        {!tracksStock
+                          ? 'Sem controle'
+                          : isZero
+                            ? 'Sem estoque'
+                            : `Estq: ${quantity}`}
                       </span>
                       <span className="min-w-0 truncate text-muted-foreground">
                         {product.barcode || product.internal_code || '-'}
@@ -1030,13 +1037,14 @@ export default function Estoque() {
             <div className="space-y-3 p-3 xl:hidden">
               {visibleProducts.map((product) => {
                 const quantity = Number(product.quantity || 0);
+                const tracksStock = product.track_stock !== false;
                 const isZero = quantity <= 0;
-                const isLow = !isZero && quantity <= lowStockThreshold;
+                const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
                 const badgeClass = dirty.has(product.id)
                   ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200'
-                  : isZero
+                  : tracksStock && isZero
                     ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200'
-                    : isLow
+                    : tracksStock && isLow
                       ? 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-200'
                       : 'border-border bg-muted/30 text-foreground';
                 return (
@@ -1072,7 +1080,7 @@ export default function Estoque() {
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                           <span className="rounded-full border border-border bg-background px-2.5 py-1">
-                            Estoque: {quantity}
+                            {tracksStock ? `Estoque: ${quantity}` : 'Sem controle'}
                           </span>
                           <span className="rounded-full border border-border bg-background px-2.5 py-1">
                             Preço: {formatCurrency(product.sale_price || 0)}
@@ -1175,20 +1183,21 @@ export default function Estoque() {
               <tbody>
                 {visibleProducts.map((product) => {
                   const quantity = Number(product.quantity || 0);
+                  const tracksStock = product.track_stock !== false;
                   const isZero = quantity <= 0;
-                  const isLow = !isZero && quantity <= lowStockThreshold;
+                  const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
                   const rowBackground = dirty.has(product.id)
                     ? 'bg-amber-500/10'
-                    : isZero
+                    : tracksStock && isZero
                       ? 'bg-red-500/10'
-                      : isLow
+                      : tracksStock && isLow
                         ? 'bg-amber-500/5'
                         : '';
                   const stickyBackground = dirty.has(product.id)
                     ? 'bg-amber-50 dark:bg-amber-950/30'
-                    : isZero
+                    : tracksStock && isZero
                       ? 'bg-red-50 dark:bg-red-950/30'
-                      : isLow
+                      : tracksStock && isLow
                         ? 'bg-amber-50 dark:bg-amber-950/20'
                         : 'bg-card';
                   const hasCostPrice =
@@ -1377,7 +1386,7 @@ export default function Estoque() {
                         className={`sticky right-0 z-10 p-2 ${stickyBackground}`}
                       >
                         <div className="flex justify-end gap-1">
-                          {isZero && (
+                          {tracksStock && isZero && (
                             <button
                               type="button"
                               onClick={() => openProductModal('edit', product)}
