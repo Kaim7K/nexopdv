@@ -3094,7 +3094,7 @@ async function routeHandler(req, res) {
       if (
         record &&
         user.role === 'vendedor' &&
-        ['sales', 'fiado_records'].includes(table) &&
+        table === 'sales' &&
         record.seller_id !== user.id
       )
         return send(res, 403, {
@@ -3122,7 +3122,7 @@ async function routeHandler(req, res) {
       }));
       if (
         user.role === 'vendedor' &&
-        ['sales', 'fiado_records'].includes(table)
+        table === 'sales'
       )
         out = out.filter((record) => record.seller_id === user.id);
       const f = parseFiltersQuery(req.query.filters);

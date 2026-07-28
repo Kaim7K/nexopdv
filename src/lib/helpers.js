@@ -2,6 +2,10 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
+const currencyInputFormatter = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export const PAYMENT_METHODS = [
   { method: 'dinheiro', label: 'Dinheiro', color: 'bg-green-100 text-green-800 border-green-300' },
@@ -15,6 +19,23 @@ export const PAYMENT_METHODS = [
 export const formatCurrency = value => {
   const number = Number(value);
   return currencyFormatter.format(Number.isFinite(number) ? number : 0);
+};
+
+export const parseCurrencyDigits = value => {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (!digits) return 0;
+  return Number(digits) / 100;
+};
+
+export const formatCurrencyInput = value => {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'number')
+    return currencyInputFormatter.format(
+      Number.isFinite(value) ? value : 0,
+    );
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (!digits) return '';
+  return currencyInputFormatter.format(Number(digits) / 100);
 };
 
 export const formatDate = date => {

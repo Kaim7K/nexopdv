@@ -38,8 +38,7 @@ export default function Fiados() {
     setLoading(true);
     setLoadError('');
     try {
-      let data = await nexoApi.entities.FiadoRecord.list('-created_date', 300);
-      if (!isGerente) data = data.filter(item => item.seller_id === user.id);
+      const data = await nexoApi.entities.FiadoRecord.list('-created_date', 300);
       setFiados(data);
     } catch (error) {
       setLoadError(error.message || 'Não foi possível carregar os fiados.');
