@@ -261,10 +261,14 @@ export const nexoApi = {
         `/products/barcode-lookup?barcode=${encodeURIComponent(barcode)}`,
         { cacheTTL: 86_400_000 },
       ),
-    quickCreate: (barcode, name) =>
+    quickCreate: (barcode, name, salePrice) =>
       request('/products/quick', {
         method: 'POST',
-        body: { barcode, name },
+        body: {
+          barcode,
+          name,
+          sale_price: salePrice,
+        },
         timeout: 60_000,
       }),
     deleteInactive: () =>

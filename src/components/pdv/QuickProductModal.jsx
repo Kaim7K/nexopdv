@@ -1,14 +1,26 @@
 import React, { useRef, useState } from 'react';
-import { Barcode, Check, Loader2, X } from 'lucide-react';
+import { Barcode, Check, Loader2, Sparkles, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { standardizeProductName } from '@/lib/product-name';
 
 export default function QuickProductModal({ barcode, onSave, onClose }) {
-  const [name,setName] = useState('');
-  const [saving,setSaving] = useState(false);
+  const [name, setName] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
-  const modalRef = useModalBehavior({ onClose,disabled:saving });
+  const modalRef = useModalBehavior({ onClose, disabled: saving });
+
+  const handleStandardizeName = () => {
+    const standardized = standardizeProductName(name);
+    if (!standardized) {
+      toast.error('Digite um nome para padronizar.');
+      return;
+    }
+    setName(standardized);
+    toast.success('Nome padronizado.');
+  };
 
   const handleSave = async event => {
     event?.preventDefault();
@@ -17,11 +29,26 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
       toast.error('Informe o nome do produto.');
       return;
     }
+    const cleanPrice = String(salePrice).trim();
+    const parsedPrice = cleanPrice === ''
+      ? undefined
+      : Number.parseFloat(cleanPrice.replace(',', '.'));
+    if (
+      cleanPrice !== '' &&
+      (!Number.isFinite(parsedPrice) || parsedPrice < 0)
+    ) {
+      toast.error('Informe um preço de venda válido.');
+      return;
+    }
     if (submittingRef.current) return;
     submittingRef.current = true;
     setSaving(true);
     try {
-      const result = await nexoApi.products.quickCreate(barcode,cleanName);
+      const result = await nexoApi.products.quickCreate(
+        barcode,
+        cleanName,
+        parsedPrice,
+      );
       toast.success(result.created ? 'Produto cadastrado e adicionado à venda.' : 'Produto já cadastrado. Item existente adicionado à venda.');
       onSave(result.product,{ created:Boolean(result.created) });
     } catch (error) {
@@ -51,9 +78,28 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
             </span>
           </label>
           <label className="block text-sm font-semibold">Nome do produto <span className="text-destructive">*</span>
-            <input value={name} onChange={event => setName(event.target.value)} autoFocus required maxLength={180} autoComplete="off" placeholder="Ex.: Leite integral 1 L" disabled={saving} className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60" />
+            <div className="mt-1.5 flex gap-2">
+              <input value={name} onChange={event => setName(event.target.value)} autoFocus required maxLength={180} autoComplete="off" placeholder="Ex.: Leite integral 1 L" disabled={saving} className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60 h-12" />
+              <button type="button" onClick={handleStandardizeName} disabled={saving} title="Padronizar nome" className="inline-flex h-12 items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50">
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Padronizar</span>
+              </button>
+            </div>
           </label>
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-xs leading-5 text-muted-foreground">Preço, custo, categoria, estoque e imagem poderão ser preenchidos depois na tela completa do produto. Os padrões do mercadinho serão aplicados agora.</div>
+          <label className="block text-sm font-semibold">
+            Preço de venda
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={salePrice}
+              onChange={event => setSalePrice(event.target.value)}
+              disabled={saving}
+              placeholder="0,00"
+              className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+            />
+          </label>
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-xs leading-5 text-muted-foreground">Custo, categoria, estoque e imagem poderão ser preenchidos depois na tela completa do produto. Os padrões do mercadinho serão aplicados agora.</div>
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row">

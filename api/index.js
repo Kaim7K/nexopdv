@@ -901,6 +901,9 @@ async function routeHandler(req, res) {
         message: 'O código de barras lido não é válido.',
       });
     if (!name) return send(res, 400, { message: 'Informe o nome do produto.' });
+    const rawSalePrice = req.body.sale_price;
+    const hasCustomPrice =
+      rawSalePrice !== undefined && rawSalePrice !== null && rawSalePrice !== '';
     const configRows =
       await sql`SELECT data FROM nexo.records WHERE market_id=${user.market_id} AND entity='system_configs' AND data->>'key'=ANY(ARRAY['default_product_unit','default_product_sale_price','default_product_category','default_product_track_stock'])`;
     const [capacity] =
@@ -923,12 +926,19 @@ async function routeHandler(req, res) {
     const defaultPrice = roundMoney(
       Math.max(0, Number(defaults.default_product_sale_price || 0)),
     );
+    const customPrice = hasCustomPrice
+      ? roundMoney(Math.max(0, Number(rawSalePrice)))
+      : defaultPrice;
+    if (hasCustomPrice && (!Number.isFinite(customPrice) || customPrice < 0))
+      return send(res, 400, {
+        message: 'Informe um preço de venda válido.',
+      });
     const productPayload = {
       name,
       barcode,
       internal_code: `PDV-${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
       image_url: '',
-      sale_price: Number.isFinite(defaultPrice) ? defaultPrice : 0,
+      sale_price: Number.isFinite(customPrice) ? customPrice : 0,
       cost_price: null,
       quantity: 0,
       unit,
