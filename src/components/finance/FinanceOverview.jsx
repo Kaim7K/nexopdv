@@ -78,23 +78,25 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs no-print">
-        <h3 className="sr-only">O que você quer fazer?</h3>
-        <span className="font-semibold text-muted-foreground">Acesso rápido:</span>
+      <div className="grid grid-cols-2 gap-2 text-xs no-print sm:flex sm:flex-wrap sm:items-center">
+        <h3 className="sr-only">Acoes financeiras rapidas</h3>
+        <span className="col-span-2 text-[11px] font-semibold text-muted-foreground sm:col-auto">
+          Atalhos
+        </span>
         <button
           type="button"
           onClick={() => onAddTransaction('revenue')}
           disabled={!canCreate}
-          className="font-bold text-accent hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-9 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 font-bold text-accent transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Registrar entrada
         </button>
         <button
           type="button"
           onClick={() => onNavigate('cashflow')}
-          className="font-bold text-accent hover:underline"
+          className="min-h-9 rounded-lg border border-border bg-card px-3 font-bold text-accent transition hover:border-accent/30 hover:bg-accent/5"
         >
-          Consultar fluxo de caixa
+          Fluxo de caixa
         </button>
       </div>
 

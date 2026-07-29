@@ -136,7 +136,7 @@ export default function Usuarios() {
         </button>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div className="mb-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
         <label className="relative block">
           <span className="sr-only">Pesquisar usuários</span>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -144,7 +144,7 @@ export default function Usuarios() {
             value={search}
             onChange={event => setSearch(event.target.value)}
             placeholder="Pesquisar por nome, e-mail ou perfil"
-            className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11 sm:rounded-xl sm:pl-10 sm:pr-4"
           />
         </label>
         <div className="text-sm font-medium text-muted-foreground">
@@ -153,29 +153,29 @@ export default function Usuarios() {
       </div>
 
       {loading ? (
-        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
-          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground sm:rounded-2xl sm:p-10">
+          <div className="mx-auto mb-2 h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" />
           Carregando usuários...
         </div>
       ) : loadError && !users.length ? (
         <ErrorState description={loadError} onRetry={load} />
       ) : filteredUsers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-          <Users className="mx-auto h-10 w-10 text-muted-foreground/30" />
-          <h2 className="mt-3 font-bold">Nenhum usuário encontrado</h2>
+        <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center sm:rounded-2xl sm:p-10">
+          <Users className="mx-auto h-9 w-9 text-muted-foreground/30" />
+          <h2 className="mt-2 font-bold">Nenhum usuário encontrado</h2>
           <p className="mt-1 text-sm text-muted-foreground">Revise a pesquisa ou cadastre um novo funcionário.</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredUsers.map(item => {
             const isActive = item.active !== false;
             const isManager = ['admin', 'gerente'].includes(item.role);
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
-              <article key={item.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex items-start gap-3">
-                  <div className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-2xl bg-secondary text-secondary-foreground">
+              <article key={item.id} className="rounded-xl border border-border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:p-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-xl bg-secondary text-secondary-foreground sm:h-12 sm:w-12 sm:rounded-2xl">
                     {item.photo_url ? (
                       <img src={item.photo_url} alt={`Foto de ${item.full_name || item.email}`} className="h-full w-full object-cover" loading="lazy" />
                     ) : isManager ? <Shield className="h-5 w-5" /> : <User className="h-5 w-5" />}
@@ -192,7 +192,7 @@ export default function Usuarios() {
                         {isActive ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="mt-2.5 flex items-center justify-between gap-2 sm:mt-3">
                       <span className="rounded-lg bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-secondary-foreground">
                         {ROLE_LABELS[item.role] || item.role}
                       </span>

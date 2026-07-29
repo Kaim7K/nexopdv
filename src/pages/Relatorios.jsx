@@ -519,7 +519,7 @@ export default function Relatorios() {
 
   return (
     <div className="page-shell">
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
         </div>
@@ -531,14 +531,14 @@ export default function Relatorios() {
         </p>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5 sm:gap-2">
         {PERIODS.map((item) => (
           <button
             type="button"
             key={item.key}
             aria-pressed={period === item.key}
             onClick={() => setPeriod(item.key)}
-            className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}
+            className={`min-h-9 rounded-lg px-3 text-sm font-semibold transition sm:min-h-10 sm:rounded-xl sm:px-4 ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}
           >
             {item.label}
           </button>
@@ -576,7 +576,7 @@ export default function Relatorios() {
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <StatCard
           icon={DollarSign}
           label="Faturamento"
@@ -597,7 +597,7 @@ export default function Relatorios() {
         />
       </div>
 
-      <section className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4 lg:grid-cols-4">
+      <section className="mb-3 grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3 lg:grid-cols-4">
         <MiniMetric
           icon={ChartNoAxesColumnIncreasing}
           label="Bruto vendido"
@@ -875,13 +875,13 @@ export default function Relatorios() {
 
 function ChartEmpty({ text }) {
   return (
-    <div className="grid h-[270px] place-items-center rounded-xl border border-dashed border-border bg-muted/15 p-6 text-center text-sm text-muted-foreground">
+    <div className="grid h-36 place-items-center rounded-xl border border-dashed border-border bg-muted/15 p-4 text-center text-sm text-muted-foreground sm:h-48">
       {text}
     </div>
   );
 }
 
-function ChartLoading({ height = 'h-[270px]' }) {
+function ChartLoading({ height = 'h-40 sm:h-[240px]' }) {
   return (
     <div
       role="status"
@@ -894,17 +894,17 @@ function ChartLoading({ height = 'h-[270px]' }) {
 function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
   return (
     <div
-      className={`rounded-xl border bg-card p-4 text-card-foreground ${alert ? 'border-orange-400/60' : 'border-border'}`}
+      className={`rounded-xl border bg-card p-2.5 text-card-foreground sm:p-4 ${alert ? 'border-orange-400/60' : 'border-border'}`}
     >
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-0.5 flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground">
           {label}
         </span>
         <Icon
-          className={`h-5 w-5 ${alert ? 'text-orange-500' : 'text-accent'}`}
+          className={`h-4 w-4 sm:h-5 sm:w-5 ${alert ? 'text-orange-500' : 'text-accent'}`}
         />
       </div>
-      <div className="text-xl font-black">{value}</div>
+      <div className="text-lg font-black sm:text-xl">{value}</div>
       {change !== 0 && (
         <div
           className={`mt-1 flex items-center gap-1 text-xs font-semibold ${change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
@@ -923,16 +923,16 @@ function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
 
 function MiniMetric({ icon: Icon, label, value, hint }) {
   return (
-    <article className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
-      <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-accent/10 text-accent">
-        <Icon className="h-5 w-5" />
+    <article className="flex min-w-0 items-center gap-2.5 rounded-xl border border-border/70 bg-muted/20 p-2.5 sm:gap-3 sm:p-3">
+      <div className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-accent/10 text-accent sm:h-10 sm:w-10">
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+        <p className="truncate text-xs font-semibold text-muted-foreground">{label}</p>
         <strong className="mt-0.5 block truncate text-base font-black">
           {value}
         </strong>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+        <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:text-[11px]">
           {hint}
         </p>
       </div>

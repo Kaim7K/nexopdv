@@ -415,7 +415,7 @@ export default function Configuracoes() {
 
   return (
     <form onSubmit={handleSave} className="page-shell">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Store className="h-3.5 w-3.5" /> Identidade e operação
@@ -441,9 +441,9 @@ export default function Configuracoes() {
         </button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-12">
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-span-7">
-          <div className="mb-5">
+      <div className="grid gap-3 lg:grid-cols-12">
+        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-7">
+          <div className="mb-3">
             <h2 className="flex items-center gap-2 font-bold">
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
             </h2>
@@ -451,7 +451,7 @@ export default function Configuracoes() {
               Informações exibidas na identificação, recibos e relatórios.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm font-semibold sm:col-span-2">
               Nome do mercado <span className="text-destructive">*</span>
               <input
@@ -552,12 +552,12 @@ export default function Configuracoes() {
         </section>
 
         {canUseLogo && (
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-span-5">
+          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-5">
             <h2 className="font-bold">Logo do mercado</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Use uma imagem nítida com fundo transparente quando possível.
             </p>
-            <div className="mt-4 rounded-xl border border-border bg-muted/25 p-3">
+            <div className="mt-3 rounded-xl border border-border bg-muted/25 p-2.5">
               <ImageUploadField
                 value={logoUrl}
                 onChange={(value) => handleChange('logo_url', value)}
@@ -572,7 +572,7 @@ export default function Configuracoes() {
         )}
 
         {canCustomizeSidebar && (
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-span-12">
+          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-12">
             <div className="grid gap-5 lg:grid-cols-[1fr_420px] lg:items-center">
               <div>
                 <h2 className="flex items-center gap-2 font-bold">
@@ -667,7 +667,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-4">
+        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <Layers className="h-5 w-5 text-accent" /> Vendas abertas
           </h2>
@@ -690,7 +690,7 @@ export default function Configuracoes() {
           </label>
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-4">
+        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <PackageSearch className="h-5 w-5 text-accent" /> Estoque baixo
           </h2>
@@ -713,7 +713,7 @@ export default function Configuracoes() {
           </label>
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-span-8">
+        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 font-bold">
@@ -804,7 +804,7 @@ export default function Configuracoes() {
         </section>
 
         {user?.role === 'admin' && (
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-4">
+          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
             <h2 className="flex items-center gap-2 font-bold">
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
             </h2>
@@ -855,7 +855,7 @@ export default function Configuracoes() {
               </p>
             </div>
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-[1fr_240px_auto] md:items-end">
+          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_240px_auto] md:items-end">
             <label className="text-sm font-semibold">
               Área para limpar
               <select

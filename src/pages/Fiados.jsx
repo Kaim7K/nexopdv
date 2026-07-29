@@ -245,33 +245,33 @@ export default function Fiados() {
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Responsável, telefone ou número da venda" className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Responsável, telefone ou número da venda" className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11 sm:rounded-xl sm:pl-10 sm:pr-4" />
           </label>
-          <select aria-label="Filtrar por status" value={filterStatus} onChange={event => setFilterStatus(event.target.value)} className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+          <select aria-label="Filtrar por status" value={filterStatus} onChange={event => setFilterStatus(event.target.value)} className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11 sm:rounded-xl">
             <option value="">Todos status</option>
             <option value="pendente">Pendentes</option>
             <option value="quitado">Quitados</option>
             <option value="cancelado">Cancelados</option>
           </select>
-          {hasFilters && <button type="button" onClick={clearFilters} className="min-h-11 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted">Limpar</button>}
+          {hasFilters && <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted sm:min-h-11 sm:rounded-xl">Limpar</button>}
         </div>
       </FilterPanel>
 
       {loading ? (
-        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card py-8 text-center text-muted-foreground sm:rounded-2xl sm:py-12"><div className="mx-auto mb-2 h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
       ) : loadError && !fiados.length ? (
         <ErrorState description={loadError} onRetry={loadFiados} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center"><HandCoins className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum fiado encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Não há registros para os filtros selecionados.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-8 text-center sm:rounded-2xl sm:py-10"><HandCoins className="mx-auto h-9 w-9 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum fiado encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Não há registros para os filtros selecionados.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
       ) : (
         <div className="grid gap-3">
           {visibleFiados.map(item => {
             const pending = item.status === 'pendente';
             const settled = item.status === 'quitado';
             return (
-              <article key={item.id} className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className={`grid h-9 w-9 flex-none place-items-center rounded-xl sm:h-11 sm:w-11 sm:rounded-2xl ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+              <article key={item.id} className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-4">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-4">
+                  <div className={`grid h-8 w-8 flex-none place-items-center rounded-lg sm:h-11 sm:w-11 sm:rounded-2xl ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                     {pending ? <Clock className="h-5 w-5" /> : settled ? <Check className="h-5 w-5" /> : <Ban className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -289,7 +289,7 @@ export default function Fiados() {
                     {settled && item.settlement_date && <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">Quitado em {formatDateTime(item.settlement_date)} · {item.settlement_method || 'forma não informada'}</p>}
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
-                    <strong className="text-xl font-black tabular-nums">{formatCurrency(item.total_amount)}</strong>
+                    <strong className="text-lg font-black tabular-nums sm:text-xl">{formatCurrency(item.total_amount)}</strong>
                     <div className="flex gap-2">
                       {pending && canManage(item) && (
                         <>

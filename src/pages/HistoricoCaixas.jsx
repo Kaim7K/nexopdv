@@ -13,6 +13,7 @@ import {
   MinusCircle,
   PlusCircle,
   ReceiptText,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -154,84 +155,75 @@ export default function HistoricoCaixas() {
           description="Aberturas, vendas, movimentações, conferência e fechamento por operador."
       />
 
-      <FilterPanel
-        aria-label="Filtros do histórico"
-        className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6"
-      >
-        <Filter label="De">
-          <input
-            type="date"
-            value={filters.from}
-            max={filters.to || undefined}
-            onChange={(e) => updateFilter("from", e.target.value)}
-            className="field"
-          />
-        </Filter>
-        <Filter label="Até">
-          <input
-            type="date"
-            value={filters.to}
-            min={filters.from || undefined}
-            onChange={(e) => updateFilter("to", e.target.value)}
-            className="field"
-          />
-        </Filter>
-        <Filter label="Operador">
-          <select
-            value={filters.operatorId}
-            onChange={(e) => updateFilter("operatorId", e.target.value)}
-            disabled={user.role === "vendedor"}
-            className="field"
-          >
-            <option value="">Todos</option>
-            {data.operators.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </Filter>
-        <Filter label="Status">
-          <select
-            value={filters.status}
-            onChange={(e) => updateFilter("status", e.target.value)}
-            className="field"
-          >
-            <option value="">Todos</option>
-            <option value="aberto">Em andamento</option>
-            <option value="fechado">Fechado</option>
-          </select>
-        </Filter>
-        <Filter label="Unidade">
-          <select
-            value={filters.unitId}
-            onChange={(e) => updateFilter("unitId", e.target.value)}
-            className="field"
-          >
-            <option value="">Todas</option>
-            {data.units.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </Filter>
-        <button
-          type="button"
-          onClick={() => {
-            setFilters({
-              from: monthStartIsoDate(),
-              to: todayIsoDate(),
-              operatorId: "",
-              status: "",
-              unitId: "",
-            });
-            setPage(1);
-          }}
-          className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
-        >
-          <FilterX className="h-4 w-4" /> Limpar
-        </button>
+      <FilterPanel aria-label="Filtros do historico">
+        <div className="grid gap-2 sm:hidden">
+          <div className="grid grid-cols-2 gap-2">
+            <Filter label="De">
+              <input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
+            </Filter>
+            <Filter label="At?">
+              <input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" />
+            </Filter>
+          </div>
+          <details className="group rounded-lg border border-border bg-background">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-bold marker:hidden">
+              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filtros avancados</span>
+              <span className="text-xs text-muted-foreground group-open:hidden">abrir</span>
+              <span className="hidden text-xs text-muted-foreground group-open:inline">fechar</span>
+            </summary>
+            <div className="grid gap-2 border-t border-border p-2">
+              <Filter label="Operador">
+                <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
+                  <option value="">Todos</option>
+                  {data.operators.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              </Filter>
+              <Filter label="Status">
+                <select value={filters.status} onChange={(e) => updateFilter("status", e.target.value)} className="field">
+                  <option value="">Todos</option>
+                  <option value="aberto">Em andamento</option>
+                  <option value="fechado">Fechado</option>
+                </select>
+              </Filter>
+              <Filter label="Unidade">
+                <select value={filters.unitId} onChange={(e) => updateFilter("unitId", e.target.value)} className="field">
+                  <option value="">Todas</option>
+                  {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              </Filter>
+              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
+                <FilterX className="h-4 w-4" /> Limpar
+              </button>
+            </div>
+          </details>
+        </div>
+
+        <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-6">
+          <Filter label="De"><input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
+          <Filter label="At?"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
+          <Filter label="Operador">
+            <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
+              <option value="">Todos</option>
+              {data.operators.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Filter>
+          <Filter label="Status">
+            <select value={filters.status} onChange={(e) => updateFilter("status", e.target.value)} className="field">
+              <option value="">Todos</option>
+              <option value="aberto">Em andamento</option>
+              <option value="fechado">Fechado</option>
+            </select>
+          </Filter>
+          <Filter label="Unidade">
+            <select value={filters.unitId} onChange={(e) => updateFilter("unitId", e.target.value)} className="field">
+              <option value="">Todas</option>
+              {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Filter>
+          <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted">
+            <FilterX className="h-4 w-4" /> Limpar
+          </button>
+        </div>
       </FilterPanel>
 
       {data.items.length > 0 && (
