@@ -72,11 +72,11 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   const totals = calculateSaleTotals(sale);
   const items = Array.isArray(sale.items) ? sale.items : [];
   const payments = Array.isArray(sale.payments) ? sale.payments : [];
-  const estimatedHeight = Math.max(220, 132 + items.length * 14 + payments.length * 8);
+  const estimatedHeight = Math.max(180, 106 + items.length * 11 + payments.length * 6);
   const doc = new jsPDF({ unit: 'mm', format: [80, estimatedHeight] });
   const marginX = 6;
   const width = 68;
-  let y = 8;
+  let y = 6;
 
   const setText = (size = 9, bold = false) => {
     doc.setFontSize(size);
@@ -93,26 +93,26 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
     const lines = doc.splitTextToSize(String(value ?? ''), width);
     setText(size, bold);
     doc.text(lines, 40, y, { align: 'center' });
-    y += Math.max(gap, lines.length * (size >= 11 ? 4.2 : 3.8));
+    y += Math.max(gap, lines.length * (size >= 11 ? 3.6 : 3.2));
   };
 
   const rightValue = (label, value, bold = false) => {
-    setText(8.4, false);
+    setText(7.8, false);
     doc.text(label, marginX, y);
-    setText(bold ? 9.4 : 8.8, bold);
+    setText(bold ? 8.6 : 8, bold);
     doc.text(String(value ?? ''), 72, y, { align: 'right' });
-    y += 4.8;
+    y += 4;
   };
 
   if (config.logo_url) {
     try {
       const logo = await loadLogoForPdf(config.logo_url);
       if (logo) {
-        const ratio = Math.min(26 / logo.width, 14 / logo.height);
+        const ratio = Math.min(22 / logo.width, 12 / logo.height);
         const logoWidth = logo.width * ratio;
         const logoHeight = logo.height * ratio;
         doc.addImage(logo.dataUrl, 'PNG', 40 - logoWidth / 2, y, logoWidth, logoHeight, undefined, 'FAST');
-        y += logoHeight + 3;
+        y += logoHeight + 2;
       }
     } catch (error) {
       onLogoError?.(error);
@@ -126,94 +126,94 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   doc.setTextColor(46, 109, 74);
   doc.text('RECIBO', 40, y + 5.2, { align: 'center' });
   doc.setTextColor(17, 17, 17);
-  y += 11;
+  y += 9;
 
-  centerText(config.nome_mercado || config.market_name || 'Nexo PDV', 12, true, 4.6);
-  if (config.cnpj) centerText(`CNPJ: ${config.cnpj}`, 8.2, false, 3.7);
-  if (config.endereco) centerText(config.endereco, 8.2, false, 4);
+  centerText(config.nome_mercado || config.market_name || 'Nexo PDV', 11, true, 4);
+  if (config.cnpj) centerText(`CNPJ: ${config.cnpj}`, 7.8, false, 3);
+  if (config.endereco) centerText(config.endereco, 7.8, false, 3.2);
 
-  divider(5);
+  divider(4);
   rightValue('Data', formatDateTime(sale.created_date || new Date()));
   rightValue('Venda', `#${sale.sale_number}`, true);
   rightValue('Atendente', sale.seller_name || 'Não informado');
   rightValue('Tipo', sale.sale_type === 'fiado' ? 'Fiado' : 'Normal');
-  divider(5);
+  divider(4);
 
-  setText(9.2, true);
+  setText(8.7, true);
   doc.setTextColor(46, 109, 74);
   doc.text('PRODUTOS', marginX, y);
   doc.setTextColor(17, 17, 17);
-  y += 4.8;
+  y += 4;
 
   if (!items.length) {
-    setText(8.4, false);
+    setText(7.9, false);
     doc.text('Nenhum item nesta venda.', marginX, y);
-    y += 5;
+    y += 4.2;
   } else {
     for (const item of items) {
       const amount = item.unit === 'peso'
         ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
         : `${Number(item.quantity || 0)}x`;
       const nameLines = doc.splitTextToSize(String(item.product_name || 'Produto'), 34);
-      const blockHeight = Math.max(12, nameLines.length * 4 + 3);
+      const blockHeight = Math.max(10, nameLines.length * 3.4 + 2.4);
       doc.setDrawColor(232);
       doc.roundedRect(marginX, y, width, blockHeight, 2, 2, 'S');
       doc.setFillColor(239, 246, 241);
-      doc.roundedRect(marginX + 1.5, y + 2.1, 10, 7, 2, 2, 'F');
-      setText(8, true);
+      doc.roundedRect(marginX + 1.2, y + 1.8, 9, 5.8, 2, 2, 'F');
+      setText(7.6, true);
       doc.setTextColor(46, 109, 74);
-      doc.text(amount, marginX + 6.5, y + 6.7, { align: 'center' });
+      doc.text(amount, marginX + 5.7, y + 5.7, { align: 'center' });
       doc.setTextColor(17, 17, 17);
-      setText(8.7, true);
-      doc.text(nameLines, marginX + 13, y + 5.1);
-      setText(7.5, false);
+      setText(8, true);
+      doc.text(nameLines, marginX + 11.8, y + 4.3);
+      setText(7.2, false);
       doc.setTextColor(95, 107, 102);
-      doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, 72, y + 4.7, { align: 'right' });
-      setText(8.8, true);
+      doc.text(`Unitário: ${pdfCurrency(item.unit_price)}`, 72, y + 3.9, { align: 'right' });
+      setText(8.2, true);
       doc.setTextColor(17, 17, 17);
-      doc.text(pdfCurrency(item.subtotal), 72, y + 9, { align: 'right' });
+      doc.text(pdfCurrency(item.subtotal), 72, y + 7.3, { align: 'right' });
       doc.setTextColor(17, 17, 17);
-      y += blockHeight + 2;
+      y += blockHeight + 1.5;
     }
   }
 
-  divider(5);
-  setText(9.2, true);
+  divider(4);
+  setText(8.7, true);
   doc.setTextColor(46, 109, 74);
   doc.text('RESUMO', marginX, y);
   doc.setTextColor(17, 17, 17);
-  y += 4.8;
+  y += 4;
   rightValue('Subtotal', pdfCurrency(totals.subtotal));
   if (totals.discount > 0) rightValue('Desconto', pdfCurrency(totals.discount));
   doc.setFillColor(240, 248, 242);
   doc.setDrawColor(208, 228, 216);
-  doc.roundedRect(marginX, y + 0.5, width, 10, 2, 2, 'FD');
-  setText(9.3, true);
-  doc.text('TOTAL', marginX + 2.5, y + 6.9);
-  setText(12, true);
-  doc.text(pdfCurrency(totals.total), 72 - 2.5, y + 6.9, { align: 'right' });
-  y += 14;
+  doc.roundedRect(marginX, y + 0.4, width, 8.5, 2, 2, 'FD');
+  setText(8.8, true);
+  doc.text('TOTAL', marginX + 2.4, y + 5.8);
+  setText(10.8, true);
+  doc.text(pdfCurrency(totals.total), 72 - 2.2, y + 5.8, { align: 'right' });
+  y += 11.5;
 
-  divider(5);
-  setText(9.2, true);
+  divider(4);
+  setText(8.7, true);
   doc.setTextColor(46, 109, 74);
   doc.text('PAGAMENTOS', marginX, y);
   doc.setTextColor(17, 17, 17);
-  y += 4.8;
+  y += 4;
 
   if (!payments.length) {
-    setText(8.4, false);
+    setText(7.9, false);
     doc.text('Sem pagamento informado.', marginX, y);
-    y += 5;
+    y += 4.2;
   } else {
     for (const payment of payments) {
       doc.setDrawColor(236);
-      doc.line(marginX, y + 4.5, 74, y + 4.5);
-      setText(8.7, true);
-      doc.text(getPaymentLabel(payment.method), marginX, y + 3.2);
-      setText(8.7, false);
-      doc.text(pdfCurrency(payment.amount), 72, y + 3.2, { align: 'right' });
-      y += 6.1;
+      doc.line(marginX, y + 3.9, 74, y + 3.9);
+      setText(8.1, true);
+      doc.text(getPaymentLabel(payment.method), marginX, y + 2.9);
+      setText(8.1, false);
+      doc.text(pdfCurrency(payment.amount), 72, y + 2.9, { align: 'right' });
+      y += 5.3;
     }
   }
 
@@ -221,19 +221,19 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
     rightValue('Troco', pdfCurrency(sale.change_amount));
   }
   if (sale.observation) {
-    setText(8.1, false);
+    setText(7.7, false);
     doc.setTextColor(95, 107, 102);
     const observationLines = doc.splitTextToSize(`Observação: ${sale.observation}`, width);
     doc.text(observationLines, marginX, y);
-    y += Math.max(5, observationLines.length * 3.8);
+    y += Math.max(4.2, observationLines.length * 3.2);
     doc.setTextColor(17, 17, 17);
   }
 
-  divider(4);
-  setText(8.6, true);
+  divider(3.5);
+  setText(8.1, true);
   doc.setTextColor(95, 107, 102);
   doc.text('Obrigado pela preferência!', 40, y, { align: 'center' });
-  y += 4.2;
+  y += 3.6;
   doc.text('Volte sempre!', 40, y, { align: 'center' });
 
   const marketPart = safeFilePart(config.nome_mercado || config.market_name || 'nexo-pdv');
@@ -254,37 +254,37 @@ const receiptPrintStyles = `
     opacity: 1 !important;
   }
   html, body { background: #fff !important; color: #000 !important; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding: 10px; width: 320px; color: #000 !important; }
-  .receipt { display: flex; flex-direction: column; gap: 10px; }
-  .r-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
-  .r-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 999px; border: 1px solid #000; background: #fff; color: #000; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-  .r-logo { display: flex; align-items: center; justify-content: center; min-height: 54px; }
-  .r-logo img { max-height: 54px; max-width: 180px; object-fit: contain; display: block; }
-  .r-store { font-weight: 900; font-size: 15px; line-height: 1.1; }
-  .r-subtitle { font-size: 9px; line-height: 1.4; color: #000 !important; }
-  .r-card { border: 1px solid #000; border-radius: 12px; padding: 10px 11px; background: #fff; }
-  .r-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-  .r-meta { display: flex; flex-direction: column; gap: 2px; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; padding: 6px; width: 300px; color: #000 !important; }
+  .receipt { display: flex; flex-direction: column; gap: 6px; }
+  .r-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px; }
+  .r-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 999px; border: 1px solid #000; background: #fff; color: #000; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .r-logo { display: flex; align-items: center; justify-content: center; min-height: 42px; }
+  .r-logo img { max-height: 42px; max-width: 160px; object-fit: contain; display: block; }
+  .r-store { font-weight: 900; font-size: 13px; line-height: 1.08; }
+  .r-subtitle { font-size: 8px; line-height: 1.25; color: #000 !important; }
+  .r-card { border: 1px solid #000; border-radius: 10px; padding: 7px 8px; background: #fff; }
+  .r-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+  .r-meta { display: flex; flex-direction: column; gap: 1px; }
   .r-label { font-size: 9px; color: #000 !important; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
-  .r-value { font-size: 11px; font-weight: 800; line-height: 1.35; color: #000 !important; }
-  .r-section-title { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #000; margin-bottom: 8px; }
-  .r-icon { display: inline-flex; width: 16px; height: 16px; border-radius: 999px; align-items: center; justify-content: center; background: #fff; color: #000; font-size: 10px; font-weight: 900; border: 1px solid #000; }
-  .r-item { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #000; }
+  .r-value { font-size: 10px; font-weight: 800; line-height: 1.25; color: #000 !important; }
+  .r-section-title { display: flex; align-items: center; gap: 5px; font-size: 8px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #000; margin-bottom: 5px; }
+  .r-icon { display: inline-flex; width: 14px; height: 14px; border-radius: 999px; align-items: center; justify-content: center; background: #fff; color: #000; font-size: 9px; font-weight: 900; border: 1px solid #000; }
+  .r-item { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: start; padding: 5px 0; border-bottom: 1px solid #000; }
   .r-item:last-child { border-bottom: 0; padding-bottom: 0; }
-  .r-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 7px; border-radius: 999px; background: #fff; color: #000 !important; font-size: 9px; font-weight: 900; border: 1px solid #000; }
-  .r-name { font-size: 11px; font-weight: 800; line-height: 1.3; color: #000 !important; }
+  .r-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; padding: 3px 6px; border-radius: 999px; background: #fff; color: #000 !important; font-size: 8px; font-weight: 900; border: 1px solid #000; }
+  .r-name { font-size: 10px; font-weight: 800; line-height: 1.22; color: #000 !important; }
   .r-prices { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; white-space: nowrap; }
-  .r-prices span:first-child { font-size: 9px; color: #000 !important; }
-  .r-prices span:last-child { font-size: 11px; font-weight: 900; color: #000 !important; }
-  .r-summary { display: flex; flex-direction: column; gap: 6px; }
-  .r-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; line-height: 1.35; }
+  .r-prices span:first-child { font-size: 8px; color: #000 !important; }
+  .r-prices span:last-child { font-size: 10px; font-weight: 900; color: #000 !important; }
+  .r-summary { display: flex; flex-direction: column; gap: 4px; }
+  .r-row { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; line-height: 1.25; }
   .r-row span:first-child { color: #000 !important; font-weight: 700; }
-  .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 6px; border-top: 1px solid #000; font-size: 14px; font-weight: 900; }
-  .r-total span:last-child { font-size: 16px; color: #000 !important; }
-  .r-payment { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid #000; }
+  .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-top: 4px; border-top: 1px solid #000; font-size: 12px; font-weight: 900; }
+  .r-total span:last-child { font-size: 14px; color: #000 !important; }
+  .r-payment { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #000; }
   .r-payment:last-child { border-bottom: 0; padding-bottom: 0; }
-  .r-payment strong { font-size: 11px; font-weight: 800; color: #000 !important; }
-  .r-footer { text-align: center; margin-top: 2px; font-size: 10px; line-height: 1.45; color: #000 !important; }
+  .r-payment strong { font-size: 10px; font-weight: 800; color: #000 !important; }
+  .r-footer { text-align: center; margin-top: 1px; font-size: 9px; line-height: 1.3; color: #000 !important; }
   .r-footer, .r-footer * { color: #000 !important; }
 `;
 
@@ -322,7 +322,7 @@ function buildSaleReceiptHtml(sale, config = {}) {
     : '<p class="text-sm text-muted-foreground">Sem pagamento informado.</p>';
 
   return `
-    <div class="receipt mx-auto w-full max-w-[420px]">
+    <div class="receipt mx-auto w-full max-w-[360px]">
       <div class="r-header">
         <div class="r-badge">Mercado</div>
         <div class="r-logo">
@@ -346,7 +346,7 @@ function buildSaleReceiptHtml(sale, config = {}) {
 
       <div class="r-card">
         <div class="r-section-title"><span class="r-icon">1</span>Produtos</div>
-        <div class="space-y-1">${itemHtml}</div>
+        <div class="space-y-0.5">${itemHtml}</div>
       </div>
 
       <div class="r-card">
@@ -360,7 +360,7 @@ function buildSaleReceiptHtml(sale, config = {}) {
 
       <div class="r-card">
         <div class="r-section-title"><span class="r-icon">3</span>Pagamentos</div>
-        <div class="space-y-1">${paymentHtml}</div>
+        <div class="space-y-0.5">${paymentHtml}</div>
         ${Number(sale.change_amount || 0) > 0 ? `<div class="r-payment"><strong>Troco</strong><span>${escapeHtml(pdfCurrency(sale.change_amount))}</span></div>` : ''}
         ${sale.observation ? `<p class="pt-1 text-xs text-muted-foreground">Obs: ${escapeHtml(sale.observation)}</p>` : ''}
       </div>
@@ -376,7 +376,7 @@ function buildSaleReceiptHtml(sale, config = {}) {
 /** @param {any} sale @param {Record<string, any>} config */
 export async function printSaleReceipt(sale, config = {}) {
   const html = buildSaleReceiptHtml(sale, config);
-  const win = window.open('', '', 'width=380,height=650');
+  const win = window.open('', '', 'width=360,height=580');
   if (!win) throw new Error('O navegador bloqueou a janela de impressão.');
   const closePrintWindow = () => {
     try {
@@ -393,7 +393,7 @@ export async function printSaleReceipt(sale, config = {}) {
     try {
       win.print();
     } finally {
-      window.setTimeout(closePrintWindow, 1200);
+      window.setTimeout(closePrintWindow, 900);
     }
   }, 120);
 }

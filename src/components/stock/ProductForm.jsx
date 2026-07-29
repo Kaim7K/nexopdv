@@ -14,7 +14,11 @@ import {
   X,
 } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
-import { generateInternalCode } from '@/lib/helpers';
+import {
+  generateInternalCode,
+  formatCurrencyInput,
+  parseCurrencyDigits,
+} from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { openGoogleImages } from '@/lib/google-images';
@@ -105,8 +109,14 @@ export default function ProductForm({
         barcode: product.barcode || '',
         internal_code: product.internal_code || generateInternalCode(),
         image_url: product.image_url || '',
-        sale_price: product.sale_price ?? '',
-        cost_price: product.cost_price ?? '',
+        sale_price:
+          product.sale_price === null || product.sale_price === undefined
+            ? ''
+            : String(Math.round(Number(product.sale_price || 0) * 100)),
+        cost_price:
+          product.cost_price === null || product.cost_price === undefined
+            ? ''
+            : String(Math.round(Number(product.cost_price || 0) * 100)),
         quantity: product.quantity ?? '',
         unit: product.unit || 'unidade',
         status: product.status || 'ativo',
@@ -123,8 +133,16 @@ export default function ProductForm({
         barcode: '',
         internal_code: generateInternalCode(),
         image_url: duplicateSource.image_url || '',
-        sale_price: duplicateSource.sale_price ?? '',
-        cost_price: duplicateSource.cost_price ?? '',
+        sale_price:
+          duplicateSource.sale_price === null ||
+          duplicateSource.sale_price === undefined
+            ? ''
+            : String(Math.round(Number(duplicateSource.sale_price || 0) * 100)),
+        cost_price:
+          duplicateSource.cost_price === null ||
+          duplicateSource.cost_price === undefined
+            ? ''
+            : String(Math.round(Number(duplicateSource.cost_price || 0) * 100)),
         quantity: '0',
         unit: duplicateSource.unit || 'unidade',
         status: duplicateSource.status || 'ativo',
@@ -281,7 +299,7 @@ export default function ProductForm({
 
   const validate = () => {
     if (!form.name.trim()) return 'Nome é obrigatório.';
-    if (form.sale_price === '' || Number(form.sale_price) < 0)
+    if (form.sale_price === '' || parseCurrencyDigits(form.sale_price) < 0)
       return 'Informe um preço de venda válido.';
     if (form.quantity !== '' && Number(form.quantity) < 0)
       return 'A quantidade não pode ser negativa.';
@@ -294,9 +312,9 @@ export default function ProductForm({
       category: form.category.trim(),
       barcode: form.barcode.trim(),
       internal_code: form.internal_code,
-      sale_price: Number.parseFloat(form.sale_price) || 0,
+      sale_price: parseCurrencyDigits(form.sale_price) || 0,
       cost_price:
-        form.cost_price === '' ? null : Number.parseFloat(form.cost_price),
+        form.cost_price === '' ? null : parseCurrencyDigits(form.cost_price),
       quantity: form.quantity === '' ? 0 : Number.parseFloat(form.quantity),
       unit: form.unit,
       status: form.status,
@@ -363,8 +381,14 @@ export default function ProductForm({
           name: `${data.name} - Cópia`,
           barcode: '',
           internal_code: generateInternalCode(),
-          sale_price: String(data.sale_price ?? ''),
-          cost_price: String(data.cost_price ?? ''),
+          sale_price:
+            data.sale_price === null || data.sale_price === undefined
+              ? ''
+              : String(Math.round(Number(data.sale_price || 0) * 100)),
+          cost_price:
+            data.cost_price === null || data.cost_price === undefined
+              ? ''
+              : String(Math.round(Number(data.cost_price || 0) * 100)),
           quantity: '0',
           allow_pdv_price_edit: false,
           track_stock: data.track_stock !== false,
@@ -744,13 +768,15 @@ export default function ProductForm({
               </label>
               <input
                 id="product-sale-price"
-                type="number"
+                type="text"
                 required
-                min="0"
-                step="0.01"
-                value={form.sale_price}
+                inputMode="numeric"
+                value={formatCurrencyInput(form.sale_price)}
                 onChange={(event) =>
-                  handleChange('sale_price', event.target.value)
+                  handleChange(
+                    'sale_price',
+                    event.target.value.replace(/\D/g, ''),
+                  )
                 }
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
@@ -764,12 +790,14 @@ export default function ProductForm({
               </label>
               <input
                 id="product-cost-price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.cost_price}
+                type="text"
+                inputMode="numeric"
+                value={formatCurrencyInput(form.cost_price)}
                 onChange={(event) =>
-                  handleChange('cost_price', event.target.value)
+                  handleChange(
+                    'cost_price',
+                    event.target.value.replace(/\D/g, ''),
+                  )
                 }
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />

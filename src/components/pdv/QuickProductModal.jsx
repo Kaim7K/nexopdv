@@ -80,16 +80,16 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         aria-modal="true"
         aria-labelledby="quick-product-title"
         aria-describedby="quick-product-description"
-        className="flex h-dvh w-full max-w-md flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+        className="flex h-dvh w-full max-w-sm flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-w-md sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
           <div>
-            <h2 id="quick-product-title" className="text-lg font-black">
+            <h2 id="quick-product-title" className="text-base font-black sm:text-lg">
               Produto não encontrado
             </h2>
             <p
               id="quick-product-description"
-              className="mt-1 text-sm leading-5 text-muted-foreground"
+              className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm"
             >
               Cadastre somente o essencial e continue a venda sem sair do PDV.
             </p>
@@ -105,7 +105,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           <label className="block text-sm font-semibold">
             Código de barras
             <span className="relative mt-1.5 block">
@@ -151,7 +151,6 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
             <input
               type="text"
               inputMode="numeric"
-              pattern="[0-9]*"
               value={formatCurrencyInput(salePrice)}
               onChange={(event) => setSalePrice(event.target.value.replace(/\D/g, ''))}
               disabled={saving}
@@ -167,7 +166,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row">
+        <div className="flex flex-col-reverse gap-2 border-t border-border px-4 py-4 sm:flex-row sm:px-5">
           <button
             type="button"
             onClick={onClose}

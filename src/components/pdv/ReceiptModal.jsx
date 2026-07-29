@@ -88,7 +88,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
 
   const handlePrint = () => {
     if (!receiptRef.current) return;
-    const win = window.open('', '', 'width=380,height=650');
+    const win = window.open('', '', 'width=360,height=580');
     if (!win) return toast.error('O navegador bloqueou a janela de impressão.');
     const closePrintWindow = () => {
       try {
@@ -105,7 +105,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
       try {
         win.print();
       } finally {
-        window.setTimeout(closePrintWindow, 1200);
+        window.setTimeout(closePrintWindow, 900);
       }
     }, 120);
   };
@@ -151,7 +151,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[#f7f9f8] p-4 text-black sm:p-6" ref={receiptRef}>
-          <div className="receipt mx-auto w-full max-w-[420px]">
+          <div className="receipt mx-auto w-full max-w-[360px]">
             <div className="r-header">
               <div className="r-badge">Mercado</div>
               <div className="r-logo">

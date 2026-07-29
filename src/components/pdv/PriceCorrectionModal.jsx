@@ -39,9 +39,9 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="price-correction-title"
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl sm:max-w-lg"
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3.5 sm:px-6 sm:py-4">
           <div>
             <h2 id="price-correction-title" className="text-lg font-bold">
               Corrigir valor do produto
@@ -59,11 +59,11 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="space-y-4 p-6">
+        <div className="space-y-4 p-4 sm:p-6">
           <div className="text-sm text-muted-foreground">
             Selecione o item com valor incorreto:
           </div>
-          <div className="max-h-48 space-y-1 overflow-y-auto">
+          <div className="max-h-44 space-y-1 overflow-y-auto sm:max-h-48">
             {items.map((item, i) => (
               <button
                 type="button"
@@ -100,20 +100,19 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
                 <input
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9]*"
                   value={formatCurrencyInput(newPrice)}
                   onChange={(e) =>
                     setNewPrice(e.target.value.replace(/\D/g, ''))
                   }
                   autoFocus
-                  className="mt-1 w-full rounded border border-border bg-background px-3 py-2 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="mt-1 h-12 w-full rounded-xl border border-border bg-background px-3 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                 />
               </div>
             </div>
           )}
         </div>
-        <div className="flex gap-2 border-t px-6 py-4">
+        <div className="flex flex-col-reverse gap-2 border-t px-4 py-4 sm:flex-row sm:px-6">
           <button
             type="button"
             onClick={onClose}
@@ -125,7 +124,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
             type="button"
             onClick={handleSave}
             disabled={selectedIndex === null || !newPrice}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
           >
             <Check className="h-4 w-4" /> Salvar Alteração
           </button>

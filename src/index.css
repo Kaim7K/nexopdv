@@ -168,32 +168,32 @@
     @apply mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60;
   }
   .page-shell {
-    @apply mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
+    @apply mx-auto w-full max-w-[1480px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8;
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 
   .page-header {
-    @apply mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between;
+    @apply mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-start sm:justify-between;
   }
 
   .page-title {
-    @apply text-2xl font-bold tracking-tight text-foreground sm:text-3xl;
+    @apply text-xl font-bold tracking-tight text-foreground sm:text-3xl;
   }
 
   .page-subtitle {
-    @apply mt-1 max-w-3xl text-sm leading-6 text-muted-foreground;
+    @apply mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6;
   }
 
   .surface-card {
-    @apply rounded-lg border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.03] transition-colors;
+    @apply rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.03] transition-colors sm:rounded-lg;
   }
 
   .empty-state {
-    @apply grid min-h-56 place-items-center rounded-lg border border-dashed border-border bg-card px-5 py-10 text-center shadow-sm shadow-black/[0.02];
+    @apply grid min-h-44 place-items-center rounded-xl border border-dashed border-border bg-card px-4 py-8 text-center shadow-sm shadow-black/[0.02] sm:min-h-56 sm:px-5 sm:py-10 sm:rounded-lg;
   }
 
   .loading-state {
-    @apply grid min-h-56 place-items-center rounded-lg border border-border/80 bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02];
+    @apply grid min-h-44 place-items-center rounded-xl border border-border/80 bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02] sm:min-h-56 sm:px-5 sm:py-10 sm:rounded-lg;
   }
 
   .nexo-toast {
@@ -223,7 +223,8 @@
 @media (max-width: 639px) {
   [role='dialog'],
   [role='alertdialog'] {
-    max-width: 100vw;
+    width: calc(100vw - 0.75rem);
+    max-width: calc(100vw - 0.75rem);
   }
 
   button,
@@ -234,6 +235,29 @@
 
   .page-header > :last-child:not(:first-child) {
     width: 100%;
+  }
+
+  .page-shell {
+    @apply px-3 py-4;
+  }
+
+  .page-shell .page-title,
+  .page-shell h1 {
+    @apply text-xl leading-tight;
+  }
+
+  .page-shell h2 {
+    @apply text-lg leading-tight;
+  }
+
+  .page-shell h3 {
+    @apply text-base leading-tight;
+  }
+
+  .page-shell .surface-card,
+  .page-shell section,
+  .page-shell article {
+    border-radius: 0.75rem;
   }
 }
 
