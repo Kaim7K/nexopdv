@@ -1,0 +1,262 @@
+{
+  "baseUrl": "https://nexopdvnovo.vercel.app",
+  "generatedAt": "2026-07-29T17:50:15.819Z",
+  "loggedIn": false,
+  "routes": [
+    "/",
+    "/login"
+  ],
+  "viewports": [
+    {
+      "label": "mobile-360",
+      "width": 360,
+      "height": 780
+    },
+    {
+      "label": "mobile-390",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "label": "mobile-430",
+      "width": 430,
+      "height": 932
+    },
+    {
+      "label": "tablet-768",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "label": "notebook-1024",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "label": "laptop-1366",
+      "width": 1366,
+      "height": 900
+    },
+    {
+      "label": "desktop-1440",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "label": "ultrawide-1920",
+      "width": 1920,
+      "height": 1080
+    }
+  ],
+  "consoleErrors": [],
+  "results": [
+    {
+      "route": "/",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 8741,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 8778,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 8809,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 8320,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 5346,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 5450,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 5550,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__landing.png",
+      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "url": "/",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 5630,
+      "overflowing": [],
+      "appCrashed": false
+    },
+    {
+      "route": "/login",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__login.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "appCrashed": false
+    }
+  ]
+}

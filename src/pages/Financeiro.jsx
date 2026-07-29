@@ -29,6 +29,7 @@ import {
   Store,
   Target,
   TrendingUp,
+  WalletCards,
   X,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
