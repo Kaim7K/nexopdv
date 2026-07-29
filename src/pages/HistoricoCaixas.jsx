@@ -148,8 +148,8 @@ export default function HistoricoCaixas() {
   );
 
   return (
-    <div className="page-shell space-y-5">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="page-shell space-y-3 sm:space-y-5">
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Banknote className="h-3.5 w-3.5" /> Operação financeira
@@ -166,7 +166,7 @@ export default function HistoricoCaixas() {
 
       <section
         aria-label="Filtros do histórico"
-        className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-6"
+        className="grid gap-2 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:grid-cols-2 sm:rounded-2xl sm:p-4 xl:grid-cols-6"
       >
         <Filter label="De">
           <input
@@ -246,7 +246,7 @@ export default function HistoricoCaixas() {
 
       {data.items.length > 0 && (
         <section
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
           aria-label="Resumo do período exibido"
         >
           <Metric
@@ -365,11 +365,11 @@ export default function HistoricoCaixas() {
               </tbody>
             </table>
           </div>
-          <div className="grid gap-3 lg:hidden">
+          <div className="grid gap-2 lg:hidden">
             {data.items.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-2xl border border-border bg-card p-3.5 shadow-sm"
+                  className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-3.5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -1023,14 +1023,14 @@ function Filter({ label, children }) {
 }
 function Metric({ label, value, icon: Icon, tone = "text-accent" }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-4">
       <div
-        className={`mb-3 grid h-9 w-9 place-items-center rounded-xl bg-muted ${tone}`}
+        className={`mb-1.5 grid h-7 w-7 place-items-center rounded-lg bg-muted sm:mb-3 sm:h-9 sm:w-9 sm:rounded-xl ${tone}`}
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       </div>
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-      <strong className="mt-1 block text-xl font-black tabular-nums">
+      <p className="line-clamp-1 text-[10px] font-semibold text-muted-foreground sm:text-xs">{label}</p>
+      <strong className="mt-0.5 block text-sm font-black tabular-nums sm:mt-1 sm:text-xl">
         {value}
       </strong>
     </div>

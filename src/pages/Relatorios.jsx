@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  X,
 } from 'lucide-react';
 import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
@@ -32,7 +33,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'M?s' },
+  { key: 'month', label: 'Mês' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -86,7 +87,7 @@ export default function Relatorios() {
       setFiados(fiadoData);
       setProducts(productData);
     } catch (error) {
-      setLoadError(error.message || 'N?o foi poss?vel carregar os relat?rios.');
+      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -266,7 +267,7 @@ export default function Relatorios() {
 
     const sellerMap = {};
     for (const sale of periodSales) {
-      const seller = sale.seller_name || 'Sem identificaÃ§Ã£o';
+      const seller = sale.seller_name || 'Sem identificação';
       if (!sellerMap[seller])
         sellerMap[seller] = { count: 0, revenue: 0, items: 0 };
       sellerMap[seller].count += 1;
@@ -320,7 +321,7 @@ export default function Relatorios() {
       .map(([, value]) => value);
 
     const breakdownMap = {};
-    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S?b'];
+    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     for (const sale of periodSales) {
       const date = new Date(sale.created_date);
       let key;
@@ -459,12 +460,12 @@ export default function Relatorios() {
     if (stats.revenueChange > 0)
       list.push({
         type: 'up',
-        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em rela??o ao per?odo anterior.`,
+        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relação ao período anterior.`,
       });
     else if (stats.revenueChange < 0)
       list.push({
         type: 'down',
-        text: `As vendas ca?ram ${Math.abs(stats.revenueChange).toFixed(1)}% em rela??o ao per?odo anterior.`,
+        text: `As vendas caíram ${Math.abs(stats.revenueChange).toFixed(1)}% em relação ao período anterior.`,
       });
     if (productRankingRows.length)
       list.push({
@@ -479,7 +480,7 @@ export default function Relatorios() {
       const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do per?odo.`,
+        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do período.`,
       });
     }
     if (stats.bestBreakdown)
@@ -490,24 +491,24 @@ export default function Relatorios() {
     if (stats.itemsPerSale > 0)
       list.push({
         type: 'info',
-        text: `Cada venda teve em m?dia ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
+        text: `Cada venda teve em média ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
       });
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
-        text: `H? ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste per?odo.`,
+        text: `Há ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste período.`,
       });
     if (stats.cancelled > 0)
       list.push({
         type: 'alert',
-        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no per?odo.`,
+        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no período.`,
       });
     return list;
   }, [stats, productRankingRows]);
 
   if (loading)
     return (
-      <LoadingState className="min-h-[60vh]" label="Carregando relat?rios..." />
+      <LoadingState className="min-h-[60vh]" label="Carregando relatórios..." />
     );
   if (loadError && !sales.length)
     return (
@@ -518,19 +519,19 @@ export default function Relatorios() {
 
   return (
     <div className="page-shell">
-      <div className="mb-6">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do neg?cio
+      <div className="mb-4">
+        <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Relat?rios gerenciais
+          Relatórios gerenciais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Acompanhe vendas, pagamentos, produtos, equipe e fiados.
         </p>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {PERIODS.map((item) => (
           <button
             type="button"
@@ -556,7 +557,7 @@ export default function Relatorios() {
               />
             </label>
             <label className="text-xs font-semibold text-muted-foreground">
-              At?{' '}
+              Até{' '}
               <input
                 aria-label="Data final"
                 type="date"
@@ -569,13 +570,13 @@ export default function Relatorios() {
         )}
       </div>
       {!customRangeValid && (
-        <div className="mb-5 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          Informe um per?odo v?lido: a data inicial deve ser anterior ou igual ?
+        <div className="mb-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
+          Informe um período válido: a data inicial deve ser anterior ou igual à
           data final.
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           icon={DollarSign}
           label="Faturamento"
@@ -585,7 +586,7 @@ export default function Relatorios() {
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
         <StatCard
           icon={Receipt}
-          label="Ticket m?dio"
+          label="Ticket médio"
           value={formatCurrency(stats.avgTicket)}
         />
         <StatCard
@@ -596,7 +597,7 @@ export default function Relatorios() {
         />
       </div>
 
-      <section className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground lg:grid-cols-4">
+      <section className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4 lg:grid-cols-4">
         <MiniMetric
           icon={ChartNoAxesColumnIncreasing}
           label="Bruto vendido"
@@ -633,10 +634,10 @@ export default function Relatorios() {
         />
       </section>
 
-      <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
-        <div className="border-b border-border p-4">
-          <h3 className="text-sm font-bold">Estat?sticas de faturamento</h3>
-          <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
+      <section className="mb-4 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
+        <div className="border-b border-border p-3 sm:p-4">
+          <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
+          <div className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
               <button
                 type="button"
@@ -651,7 +652,7 @@ export default function Relatorios() {
         </div>
         {stats.breakdownData.length ? (
           <>
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               <Suspense fallback={<ChartLoading height="h-[280px]" />}>
                 <BreakdownChart data={stats.breakdownData} />
               </Suspense>
@@ -677,7 +678,7 @@ export default function Relatorios() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Ticket m?dio</dt>
+                      <dt className="text-muted-foreground">Ticket médio</dt>
                       <dd className="mt-1 font-bold tabular-nums">
                         {formatCurrency(row.average)}
                       </dd>
@@ -695,7 +696,7 @@ export default function Relatorios() {
                     </th>
                     <th className="px-4 py-3">Faturamento</th>
                     <th className="px-4 py-3">Vendas</th>
-                    <th className="px-4 py-3">Ticket m?dio</th>
+                    <th className="px-4 py-3">Ticket médio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -716,25 +717,25 @@ export default function Relatorios() {
             </div>
           </>
         ) : (
-          <ChartEmpty text="Sem vendas no per?odo selecionado." />
+          <ChartEmpty text="Sem vendas no período selecionado." />
         )}
       </section>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
           <h3 className="mb-3 text-sm font-bold">
-            Faturamento por {period === 'year' ? 'm?s' : 'dia'}
+            Faturamento por {period === 'year' ? 'mês' : 'dia'}
           </h3>
           {stats.dailyData.length ? (
             <Suspense fallback={<ChartLoading />}>
               <DailyRevenueChart data={stats.dailyData} />
             </Suspense>
           ) : (
-            <ChartEmpty text="Sem vendas no per?odo selecionado." />
+            <ChartEmpty text="Sem vendas no período selecionado." />
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+        <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
           <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
           {stats.paymentData.length ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
@@ -744,12 +745,12 @@ export default function Relatorios() {
               <PaymentLegend rows={stats.paymentData} />
             </div>
           ) : (
-            <ChartEmpty text="Sem pagamentos no per?odo selecionado." />
+            <ChartEmpty text="Sem pagamentos no período selecionado." />
           )}
         </section>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Ranking
           title="Ranking de produtos"
           sortKey={productRankingSort}
@@ -788,10 +789,10 @@ export default function Relatorios() {
                 : formatCurrency(row.revenue),
             detail:
               sellerRankingSort === 'items'
-                ? `${formatCurrency(row.revenue)} de faturamento ? ${row.sales} vendas`
+                ? `${formatCurrency(row.revenue)} de faturamento · ${row.sales} vendas`
                 : `${Number(row.items).toLocaleString('pt-BR', {
                     maximumFractionDigits: 3,
-                  })} itens ? ${formatCurrency(row.average)} ticket`,
+                  })} itens · ${formatCurrency(row.average)} ticket`,
             percent:
               sellerRankingSort === 'items'
                 ? (row.items / Math.max(1, sellerRankingRows[0]?.items || 1)) * 100
@@ -800,7 +801,7 @@ export default function Relatorios() {
         />
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Ranking
           title="Categorias com maior receita"
           sortKey={categoryRankingSort}
@@ -828,9 +829,9 @@ export default function Relatorios() {
         <ExecutiveSummary stats={stats} />
       </div>
 
-      <section className="rounded-xl border border-accent/25 bg-accent/5 p-4">
+      <section className="rounded-xl border border-accent/25 bg-accent/5 p-3 sm:p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Lightbulb className="h-5 w-5 text-accent" /> Insights do per?odo
+          <Lightbulb className="h-5 w-5 text-accent" /> Insights do período
         </h3>
         <div className="space-y-2">
           {insights.map((insight, index) => (
@@ -863,7 +864,7 @@ export default function Relatorios() {
           ))}
           {!insights.length && (
             <p className="text-sm text-muted-foreground">
-              Sem insights para este per?odo.
+              Sem insights para este período.
             </p>
           )}
         </div>
@@ -884,7 +885,7 @@ function ChartLoading({ height = 'h-[270px]' }) {
   return (
     <div
       role="status"
-      aria-label="Carregando gr?fico"
+      aria-label="Carregando gráfico"
       className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
     />
   );
@@ -971,7 +972,7 @@ function ExecutiveSummary({ stats }) {
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
     ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pend?ncias'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
   ];
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
@@ -999,6 +1000,38 @@ function ExecutiveSummary({ stats }) {
 }
 
 function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
+  const [open, setOpen] = useState(false);
+  const visibleRows = rows.slice(0, 5);
+  const hasMore = rows.length > visibleRows.length;
+  const renderRow = (row, index) => (
+    <div
+      key={`${row.name}-${index}`}
+      className="relative flex items-center justify-between gap-3 overflow-hidden rounded-lg px-1 py-1.5 text-sm"
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-black text-accent">
+          {index + 1}
+        </span>
+        <span className="truncate">{row.name}</span>
+      </span>
+      <span className="flex-shrink-0 text-right font-bold">
+        {row.value}
+        <span className="ml-1 hidden text-xs font-normal text-muted-foreground sm:inline">
+          ({row.detail})
+        </span>
+      </span>
+      <div className="sr-only">
+        Participação: {Number(row.percent || 0).toFixed(1)}%
+      </div>
+      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
+        <div
+          className="h-full bg-accent"
+          style={{ width: `${Math.min(100, Number(row.percent || 0))}%` }}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1023,40 +1056,65 @@ function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
         )}
       </div>
       <div className="space-y-2">
-        {rows.map((row, index) => (
-          <div
-            key={`${row.name}-${index}`}
-            className="relative flex items-center justify-between gap-4 overflow-hidden rounded-lg px-1 py-1.5 text-sm"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-black text-accent">
-                {index + 1}
-              </span>
-              <span className="truncate">{row.name}</span>
-            </span>
-            <span className="flex-shrink-0 text-right font-bold">
-              {row.value}
-              <span className="ml-1 text-xs font-normal text-muted-foreground">
-                ({row.detail})
-              </span>
-            </span>
-            <div className="sr-only">
-              Participa??o: {Number(row.percent || 0).toFixed(1)}%
-            </div>
-            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
-              <div
-                className="h-full bg-accent"
-                style={{ width: `${Math.min(100, Number(row.percent || 0))}%` }}
-              />
-            </div>
-          </div>
-        ))}
+        {visibleRows.map(renderRow)}
         {!rows.length && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Sem dados no per?odo.
+            Sem dados no período.
           </p>
         )}
       </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-3 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          Ver ranking completo ({rows.length})
+        </button>
+      )}
+      {open && (
+        <RankingModal
+          title={title}
+          rows={rows}
+          onClose={() => setOpen(false)}
+          renderRow={renderRow}
+        />
+      )}
     </section>
+  );
+}
+
+function RankingModal({ title, rows, onClose, renderRow }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${title} completo`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3"
+      onClick={onClose}
+    >
+      <section
+        className="max-h-[88vh] w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold">{title}</h3>
+            <p className="text-xs text-muted-foreground">{rows.length} item(ns)</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar ranking completo"
+            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto p-4">
+          <div className="space-y-2">{rows.map(renderRow)}</div>
+        </div>
+      </section>
+    </div>
   );
 }

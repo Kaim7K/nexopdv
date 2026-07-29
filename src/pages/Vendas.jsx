@@ -120,7 +120,7 @@ export default function Vendas() {
         setPage(Math.max(1, Number(data.page_count || 1)));
     } catch (error) {
       if (sequence === requestSequence.current) {
-        setLoadError(error.message || 'Não foi possível carregar as vendas.');
+        setLoadError(error.message || 'NÃ£o foi possÃ­vel carregar as vendas.');
         toast.error(error.message || 'Erro ao carregar vendas.');
       }
     } finally {
@@ -176,7 +176,7 @@ export default function Vendas() {
     } catch (error) {
       setDetailSale(null);
       toast.error(
-        error.message || 'Não foi possível abrir os detalhes da venda.',
+        error.message || 'NÃ£o foi possÃ­vel abrir os detalhes da venda.',
       );
     } finally {
       setDetailLoading(false);
@@ -191,11 +191,11 @@ export default function Vendas() {
         : await nexoApi.entities.Sale.get(sale.id);
       await downloadSaleReceiptPdf(fullSale, receiptConfig, {
         onLogoError: () =>
-          toast('A logo não respondeu, mas o recibo foi gerado normalmente.'),
+          toast('A logo nÃ£o respondeu, mas o recibo foi gerado normalmente.'),
       });
       toast.success(`Recibo da venda #${fullSale.sale_number} baixado.`);
     } catch (error) {
-      toast.error(error.message || 'Não foi possível baixar o recibo.');
+      toast.error(error.message || 'NÃ£o foi possÃ­vel baixar o recibo.');
     } finally {
       setReceiptLoadingId(null);
     }
@@ -208,9 +208,9 @@ export default function Vendas() {
         ? sale
         : await nexoApi.entities.Sale.get(sale.id);
       await printSaleReceipt(fullSale, receiptConfig);
-      toast.success(`Impressão da venda #${fullSale.sale_number} enviada.`);
+      toast.success(`ImpressÃ£o da venda #${fullSale.sale_number} enviada.`);
     } catch (error) {
-      toast.error(error.message || 'Não foi possível imprimir a venda.');
+      toast.error(error.message || 'NÃ£o foi possÃ­vel imprimir a venda.');
     } finally {
       setPrintingSaleId(null);
     }
@@ -232,7 +232,7 @@ export default function Vendas() {
         toast.success('Venda cancelada e estoque restaurado.');
       } else {
         await nexoApi.sales.delete(currentAction.sale.id);
-        toast.success('Venda excluída definitivamente.');
+        toast.success('Venda excluÃ­da definitivamente.');
       }
       setPendingAction(null);
       setCancelReason('');
@@ -257,7 +257,7 @@ export default function Vendas() {
       Number.isNaN(to.getTime()) ||
       to <= from
     ) {
-      toast.error('Informe uma data e um intervalo de horário válido.');
+      toast.error('Informe uma data e um intervalo de horÃ¡rio vÃ¡lido.');
       return;
     }
     setReporting(true);
@@ -285,10 +285,10 @@ export default function Vendas() {
         sellerName,
         paymentLabel,
       });
-      toast.success('Relatório diário baixado em PDF.');
+      toast.success('RelatÃ³rio diÃ¡rio baixado em PDF.');
     } catch (error) {
       toast.error(
-        error.message || 'Não foi possível gerar o relatório diário.',
+        error.message || 'NÃ£o foi possÃ­vel gerar o relatÃ³rio diÃ¡rio.',
       );
     } finally {
       setReporting(false);
@@ -300,13 +300,13 @@ export default function Vendas() {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <History className="h-3.5 w-3.5" /> Histórico e acompanhamento
+            <History className="h-3.5 w-3.5" /> HistÃ³rico e acompanhamento
           </div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            Histórico de vendas
+            HistÃ³rico de vendas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {canSeeTeam ? 'Vendas de toda a equipe' : 'Somente suas vendas'} ·{' '}
+            {canSeeTeam ? 'Vendas de toda a equipe' : 'Somente suas vendas'} Â·{' '}
             {total} registro{total === 1 ? '' : 's'}
           </p>
         </div>
@@ -347,7 +347,7 @@ export default function Vendas() {
       )}
 
       <section
-        className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm"
+        className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3"
         aria-label="Filtros de vendas"
       >
         <div
@@ -362,7 +362,7 @@ export default function Vendas() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Número, vendedor ou pagamento"
+              placeholder="NÃºmero, vendedor ou pagamento"
               className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
@@ -410,7 +410,7 @@ export default function Vendas() {
             className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Todos os status</option>
-            <option value="concluida">Concluídas</option>
+            <option value="concluida">ConcluÃ­das</option>
             <option value="cancelada">Canceladas</option>
           </select>
           {hasFilters && (
@@ -496,7 +496,7 @@ export default function Vendas() {
                     <th className="px-4 py-3 text-left">Tipo</th>
                     <th className="px-4 py-3 text-right">Total</th>
                     <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Ações</th>
+                    <th className="px-4 py-3 text-center">AÃ§Ãµes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -510,7 +510,7 @@ export default function Vendas() {
                       </td>
                       {canSeeTeam && (
                         <td className="px-4 py-3 font-semibold">
-                          {sale.seller_name || '—'}
+                          {sale.seller_name || 'â€”'}
                         </td>
                       )}
                       <td className="max-w-[240px] px-4 py-3 text-muted-foreground">
@@ -594,10 +594,10 @@ function DailyReportCard(props) {
         </span>
         <div>
           <h2 id="daily-report-title" className="font-black">
-            Relatório de vendas do dia
+            RelatÃ³rio de vendas do dia
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Baixe um PDF com resumo, pagamentos e todas as vendas do período
+            Baixe um PDF com resumo, pagamentos e todas as vendas do perÃ­odo
             selecionado.
           </p>
         </div>
@@ -618,7 +618,7 @@ function DailyReportCard(props) {
         </label>
         <label className="text-xs font-bold text-muted-foreground">
           <span className="mb-1.5 flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" /> Início
+            <Clock3 className="h-3.5 w-3.5" /> InÃ­cio
           </span>
           <input
             type="time"
@@ -681,12 +681,12 @@ function DailyReportCard(props) {
           ) : (
             <Download className="h-4 w-4" />
           )}{' '}
-          {props.reporting ? 'Gerando...' : 'Baixar relatório'}
+          {props.reporting ? 'Gerando...' : 'Baixar relatÃ³rio'}
         </button>
       </div>
       {!props.canSeeTeam && (
         <p className="px-4 pb-4 text-xs font-medium text-muted-foreground lg:px-5">
-          O relatório de vendedor inclui exclusivamente as vendas vinculadas à
+          O relatÃ³rio de vendedor inclui exclusivamente as vendas vinculadas Ã 
           sua conta.
         </p>
       )}
@@ -708,25 +708,25 @@ function SaleCard({
   onDelete,
 }) {
   return (
-    <article className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+    <article className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-3.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-black">
+          <h2 className="truncate text-sm font-black sm:text-base">
             Venda #{sale.sale_number}
           </h2>
           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
             {formatDateTime(sale.created_date)}
-            {canSeeTeam && sale.seller_name ? ` � ${sale.seller_name}` : ''}
+            {canSeeTeam && sale.seller_name ? ` · ${sale.seller_name}` : ''}
           </p>
         </div>
         <SaleStatus sale={sale} />
       </div>
-      <div className="mt-3 grid grid-cols-[1fr_auto] items-end gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
+      <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-2 rounded-lg bg-muted/30 px-2.5 py-2 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2.5">
         <div className="min-w-0">
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
             Pagamento
           </span>
-          <strong className="mt-0.5 block truncate text-sm">
+          <strong className="mt-0.5 block truncate text-xs sm:text-sm">
             {paymentNames(sale)}
           </strong>
         </div>
@@ -734,25 +734,25 @@ function SaleCard({
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
             Total
           </span>
-          <strong className="block text-lg font-black tabular-nums">
+          <strong className="block text-base font-black tabular-nums sm:text-lg">
             {formatCurrency(sale.total)}
           </strong>
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-muted-foreground">
-        <span className="rounded-full border border-border bg-background px-2.5 py-1">
+      <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-semibold text-muted-foreground sm:mt-2 sm:gap-2 sm:text-[11px]">
+        <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
           {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
         </span>
         {canSeeTeam && (
-          <span className="rounded-full border border-border bg-background px-2.5 py-1">
-            {sale.seller_name || '�'}
+          <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
+            {sale.seller_name || '—'}
           </span>
         )}
       </div>
       <button
         type="button"
         onClick={onDetails}
-        className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
+        className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-xs font-bold hover:bg-muted sm:mt-3 sm:min-h-10 sm:rounded-xl sm:text-sm"
       >
         <Eye className="h-4 w-4" /> Ver detalhes
       </button>
@@ -864,7 +864,7 @@ function SaleStatus({ sale }) {
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${sale.status === 'concluida' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}
     >
-      {sale.status === 'concluida' ? 'Concluída' : 'Cancelada'}
+      {sale.status === 'concluida' ? 'ConcluÃ­da' : 'Cancelada'}
     </span>
   );
 }
@@ -881,7 +881,7 @@ function paymentNames(sale) {
   return (
     (sale.payments || [])
       .map((payment) => getPaymentLabel(payment.method))
-      .join(', ') || '—'
+      .join(', ') || 'â€”'
   );
 }
 function LoadingState() {
@@ -987,7 +987,7 @@ function SaleDetailModal({
           <div className="grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
             <Info
               label="Vendedor"
-              value={sale.seller_name || 'Não informado'}
+              value={sale.seller_name || 'NÃ£o informado'}
             />
             <Info
               label="Tipo"
@@ -995,12 +995,12 @@ function SaleDetailModal({
             />
             <Info
               label="Status"
-              value={sale.status === 'concluida' ? 'Concluída' : 'Cancelada'}
+              value={sale.status === 'concluida' ? 'ConcluÃ­da' : 'Cancelada'}
             />
             <Info label="Pagamento" value={paymentNames(sale)} />
           </div>
           {sale.observation && (
-            <Info label="Observação" value={sale.observation} />
+            <Info label="ObservaÃ§Ã£o" value={sale.observation} />
           )}
           {sale.cancellation_reason && (
             <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-3">
@@ -1091,7 +1091,7 @@ function ConfirmSaleAction({
               {action.type === 'cancel' ? 'Cancelar venda' : 'Excluir venda'}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Venda #{action.sale.sale_number} ·{' '}
+              Venda #{action.sale.sale_number} Â·{' '}
               {formatCurrency(action.sale.total)}
             </p>
           </div>
@@ -1108,8 +1108,8 @@ function ConfirmSaleAction({
         {action.type === 'cancel' ? (
           <>
             <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
-              Os produtos serão devolvidos ao estoque. Se a venda for fiado, o
-              registro pendente também será cancelado.
+              Os produtos serÃ£o devolvidos ao estoque. Se a venda for fiado, o
+              registro pendente tambÃ©m serÃ¡ cancelado.
             </div>
             <label className="mt-4 block text-sm font-semibold">
               Motivo do cancelamento{' '}
@@ -1129,8 +1129,8 @@ function ConfirmSaleAction({
           </>
         ) : (
           <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            Esta ação é definitiva. O histórico desta venda será removido, mas a
-            auditoria da exclusão será mantida.
+            Esta aÃ§Ã£o Ã© definitiva. O histÃ³rico desta venda serÃ¡ removido, mas a
+            auditoria da exclusÃ£o serÃ¡ mantida.
           </div>
         )}
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

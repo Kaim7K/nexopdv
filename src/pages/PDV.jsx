@@ -950,8 +950,8 @@ export default function PDV() {
         </div>
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <div className="flex h-[48%] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
-            <div className="flex-shrink-0 p-3 pb-1.5 sm:p-4 sm:pb-2">
+          <div className="flex h-[34%] min-h-[230px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
+            <div className="flex-shrink-0 p-2 pb-1 sm:p-4 sm:pb-2">
               <div className="relative" ref={searchContainerRef}>
                 <ProductSearch
                   query={searchQuery}
@@ -973,10 +973,10 @@ export default function PDV() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden px-3 pb-3 sm:px-4 sm:pb-4">
-              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                <div className="flex gap-2 border-b border-border bg-muted/30 px-4 py-2.5 text-xs font-semibold">
-                  <LayoutGrid className="h-5 w-5" /> Produtos
+            <div className="flex-1 overflow-hidden px-2 pb-2 sm:px-4 sm:pb-4">
+              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:rounded-xl">
+                <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-[11px] font-semibold sm:px-4 sm:py-2.5 sm:text-xs">
+                  <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" /> Produtos
                 </div>
                 <ProductGrid
                   products={products}

@@ -812,31 +812,89 @@ function ChartSkeleton({ height = 'h-[260px]' }) {
   );
 }
 function SimpleRanking({ title, items }) {
+  const [open, setOpen] = useState(false);
+  const rows = items || [];
+  const visibleItems = rows.slice(0, 5);
+  const hasMore = rows.length > visibleItems.length;
+  const renderItem = (item, index) => (
+    <div key={`${item.label}-${index}`} className="flex items-center gap-3">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-bold">
+        {index + 1}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm">
+        {item.label}
+      </span>
+      <strong className="shrink-0 text-sm tabular-nums">
+        {formatCurrency(item.revenue ?? item.value)}
+      </strong>
+    </div>
+  );
+
   return (
     <section className="surface-card p-4">
       <h3 className="text-sm font-bold">{title}</h3>
-      {items.length ? (
+      {rows.length ? (
         <div className="mt-3 space-y-3">
-          {items.slice(0, 6).map((item, index) => (
-            <div key={item.label} className="flex items-center gap-3">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-bold">
-                {index + 1}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-sm">
-                {item.label}
-              </span>
-              <strong className="text-sm tabular-nums">
-                {formatCurrency(item.revenue ?? item.value)}
-              </strong>
-            </div>
-          ))}
+          {visibleItems.map(renderItem)}
         </div>
       ) : (
         <p className="py-8 text-center text-sm text-muted-foreground">
           Sem dados no período.
         </p>
       )}
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-3 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          Ver ranking completo ({rows.length})
+        </button>
+      )}
+      {open && (
+        <SimpleRankingModal
+          title={title}
+          items={rows}
+          onClose={() => setOpen(false)}
+          renderItem={renderItem}
+        />
+      )}
     </section>
+  );
+}
+
+function SimpleRankingModal({ title, items, onClose, renderItem }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${title} completo`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3"
+      onClick={onClose}
+    >
+      <section
+        className="max-h-[88vh] w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold">{title}</h3>
+            <p className="text-xs text-muted-foreground">{items.length} item(ns)</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar ranking completo"
+            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto p-4">
+          <div className="space-y-3">{items.map(renderItem)}</div>
+        </div>
+      </section>
+    </div>
   );
 }
 function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {

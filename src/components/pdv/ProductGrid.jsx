@@ -95,7 +95,7 @@ function ProductGrid({ products, onSelect, loading }) {
             <p className="text-sm">Nenhum produto encontrado.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr))]">
             {visibleProducts.map(product => (
               <button
                 type="button"
@@ -110,20 +110,20 @@ function ProductGrid({ products, onSelect, loading }) {
                     <Package className="w-8 h-8 text-muted-foreground/40" />
                   )}
                 </div>
-                <div className="mb-1 line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 sm:text-xs">{product.name}</div>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-bold text-accent">{formatCurrency(product.sale_price)}</span>
+                <div title={product.name} className="mb-1 line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 sm:text-xs">{product.name}</div>
+                <div className="mt-auto flex min-w-0 flex-col gap-0.5">
+                  <span className="truncate text-sm font-bold text-accent">{formatCurrency(product.sale_price)}</span>
                   {product.quantity <= 0 ? (
-                    <span className="flex items-center gap-0.5 text-[10px] text-destructive">
-                      <AlertTriangle className="w-2.5 h-2.5" /> Sem estoque
+                    <span className="flex min-w-0 items-center gap-0.5 text-[10px] leading-3 text-destructive">
+                      <AlertTriangle className="h-2.5 w-2.5 shrink-0" /> <span className="truncate">Sem estoque</span>
                     </span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground">Estq: {product.quantity}</span>
+                    <span className="truncate text-[10px] leading-3 text-muted-foreground">Estq: {product.quantity}</span>
                   )}
                 </div>
                 {sortMode === 'sold_desc' && (
-                  <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <TrendingUp className="h-3 w-3" /> {Number(product.sales_count || 0)} venda(s)
+                  <div className="mt-1 flex min-w-0 items-center gap-1 text-[10px] leading-3 text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 shrink-0" /> <span className="truncate">{Number(product.sales_count || 0)} venda(s)</span>
                   </div>
                 )}
               </button>

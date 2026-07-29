@@ -229,13 +229,13 @@ export default function Fiados() {
         <p className="mt-1 text-sm text-muted-foreground">Acompanhe pendências e registre os recebimentos.</p>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      <div className="mb-3 grid grid-cols-3 gap-2 sm:mb-4 sm:grid-cols-3 sm:gap-3">
         <Metric label="Total pendente" value={formatCurrency(totals.pending)} emphasis="orange" />
         <Metric label="Pendências" value={totals.pendingCount} />
         <Metric label="Total quitado no filtro" value={formatCurrency(totals.settled)} emphasis="green" />
       </div>
 
-      <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros de fiados">
+      <section className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3" aria-label="Filtros de fiados">
         <div className="grid gap-2 sm:grid-cols-[1fr_190px_auto]">
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
@@ -264,9 +264,9 @@ export default function Fiados() {
             const pending = item.status === 'pendente';
             const settled = item.status === 'quitado';
             return (
-              <article key={item.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <article key={item.id} className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className={`grid h-11 w-11 flex-none place-items-center rounded-2xl ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                  <div className={`grid h-9 w-9 flex-none place-items-center rounded-xl sm:h-11 sm:w-11 sm:rounded-2xl ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                     {pending ? <Clock className="h-5 w-5" /> : settled ? <Check className="h-5 w-5" /> : <Ban className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -388,7 +388,7 @@ export default function Fiados() {
 
 function Metric({ label, value, emphasis = '' }) {
   const valueClass = emphasis === 'orange' ? 'text-orange-600 dark:text-orange-300' : emphasis === 'green' ? 'text-emerald-600 dark:text-emerald-300' : 'text-foreground';
-  return <div className="rounded-2xl border border-border bg-card p-4 shadow-sm"><span className="text-xs font-semibold text-muted-foreground">{label}</span><strong className={`mt-1 block text-2xl font-black tabular-nums ${valueClass}`}>{value}</strong></div>;
+  return <div className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-4"><span className="line-clamp-2 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-xs sm:leading-4">{label}</span><strong className={`mt-0.5 block text-base font-black tabular-nums sm:mt-1 sm:text-2xl ${valueClass}`}>{value}</strong></div>;
 }
 
 function StatusBadge({ status }) {

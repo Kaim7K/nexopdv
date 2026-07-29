@@ -345,7 +345,7 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 border-b border-border/80 bg-card/95 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] shadow-sm backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 flex min-h-[46px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2.5 py-1.5 shadow-sm backdrop-blur md:hidden">
           <button
             ref={mobileMenuButtonRef}
             type="button"
@@ -353,15 +353,15 @@ export default function Layout() {
             aria-controls="main-navigation"
             aria-expanded={mobileMenu}
             onClick={() => setMobileMenu(true)}
-            className="grid h-11 w-11 place-items-center rounded-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Menu className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-black">
+            <div className="truncate text-[13px] font-black leading-4">
               {currentItem?.label}
             </div>
-            <div className="truncate text-[11px] text-muted-foreground">
+            <div className="truncate text-[10px] leading-3 text-muted-foreground">
               {brandName}
             </div>
           </div>

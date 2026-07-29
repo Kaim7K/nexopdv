@@ -21,7 +21,7 @@ export default function ThemeToggle({ className = '' }) {
   };
 
   if (!mounted) {
-    return <div aria-hidden="true" className={`h-11 w-11 ${className}`} />;
+    return <div aria-hidden="true" className={`h-9 w-9 sm:h-11 sm:w-11 ${className}`} />;
   }
 
   return (
@@ -30,7 +30,7 @@ export default function ThemeToggle({ className = '' }) {
       onClick={toggle}
       aria-label={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
       aria-pressed={theme === 'dark'}
-      className={`flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/70 transition duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] ${className}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground/70 transition duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] sm:h-11 sm:w-11 ${className}`}
       title={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
     >
       {theme === 'light' ? (

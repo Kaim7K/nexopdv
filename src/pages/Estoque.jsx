@@ -697,7 +697,7 @@ export default function Estoque() {
 
   return (
     <div className="page-shell !max-w-[1700px]">
-      <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Package className="h-3.5 w-3.5" /> Produtos e quantidades
@@ -714,7 +714,7 @@ export default function Estoque() {
             type="button"
             onClick={download}
             disabled={exporting || loading}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
           >
             <Download className="h-4 w-4" />{' '}
             {exporting ? 'Gerando...' : 'Baixar Excel'}
@@ -723,7 +723,7 @@ export default function Estoque() {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={importing || loading}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
           >
             <Upload className="h-4 w-4" />{' '}
             {importing ? 'Importando...' : 'Importar'}
@@ -739,7 +739,7 @@ export default function Estoque() {
             type="button"
             disabled={!dirty.size || saving}
             onClick={saveInline}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
           >
             <Save className="h-4 w-4" />{' '}
             {saving
@@ -756,7 +756,7 @@ export default function Estoque() {
                 deletingInactive || !inactiveCandidates.length || loading
               }
               title="Apaga produtos que não possuem venda há pelo menos 2 meses"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-card px-4 text-sm font-bold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-card px-3 text-xs font-bold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
             >
               <Trash2 className="h-4 w-4" />{' '}
               {deletingInactive
@@ -767,14 +767,14 @@ export default function Estoque() {
           <button
             type="button"
             onClick={() => openProductModal('create')}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary/90"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary/90 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
           >
             <Plus className="h-4 w-4" /> Novo produto
           </button>
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
         <StockMetric
           label="Produtos cadastrados"
           value={products.length}
@@ -813,7 +813,7 @@ export default function Estoque() {
       </div>
 
       <section
-        className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm"
+        className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3"
         aria-label="Filtros do estoque"
       >
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_repeat(2,minmax(110px,.7fr))_repeat(2,minmax(145px,.9fr))_minmax(125px,.75fr)_auto]">
@@ -935,7 +935,7 @@ export default function Estoque() {
 
       <div
         ref={tableRef}
-        className="min-h-[360px] scroll-mt-4 overflow-auto rounded-2xl border border-border bg-card xl:max-h-[calc(100dvh-300px)]"
+        className="min-h-[260px] scroll-mt-4 overflow-auto rounded-xl border border-border bg-card sm:min-h-[360px] sm:rounded-2xl xl:max-h-[calc(100dvh-300px)]"
       >
         {loading ? (
           <div
@@ -1034,7 +1034,7 @@ export default function Estoque() {
           </div>
         ) : (
           <>
-            <div className="space-y-3 p-3 xl:hidden">
+            <div className="space-y-2 p-2 xl:hidden">
               {visibleProducts.map((product) => {
                 const quantity = Number(product.quantity || 0);
                 const tracksStock = product.track_stock !== false;
@@ -1050,13 +1050,13 @@ export default function Estoque() {
                 return (
                   <article
                     key={product.id}
-                    className={`rounded-2xl border p-4 shadow-sm ${badgeClass}`}
+                    className={`rounded-xl border p-2.5 shadow-sm ${badgeClass}`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2.5">
                       <button
                         type="button"
                         onClick={() => openProductModal('edit', product)}
-                        className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white"
+                        className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white"
                         aria-label={`Editar ${product.name}`}
                       >
                         {product.image_url ? (
@@ -1072,31 +1072,31 @@ export default function Estoque() {
                         )}
                       </button>
                       <div className="min-w-0 flex-1">
-                        <p className="text-base font-bold leading-6 break-words">
+                        <p className="line-clamp-2 text-sm font-bold leading-4 break-words">
                           {product.name}
                         </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
                           {product.category || 'Sem categoria'}
                         </p>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+                        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
                             {tracksStock ? `Estoque: ${quantity}` : 'Sem controle'}
                           </span>
-                          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
                             Preço: {formatCurrency(product.sale_price || 0)}
                           </span>
-                          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
                             {product.status === 'inativo' ? 'Inativo' : 'Ativo'}
                           </span>
                         </div>
-                        <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-                          <span>
+                        <div className="mt-1.5 grid gap-0.5 text-[11px] leading-4 text-muted-foreground">
+                          <span className="truncate">
                             Código de barras: {product.barcode || '-'}
                           </span>
-                          <span>
+                          <span className="truncate">
                             Código interno: {product.internal_code || '-'}
                           </span>
-                          <span>
+                          <span className="truncate">
                             Última venda:{' '}
                             {product.last_sale_at
                               ? formatDateTime(product.last_sale_at)
@@ -1105,18 +1105,18 @@ export default function Estoque() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-1.5">
                       <button
                         type="button"
                         onClick={() => openProductModal('edit', product)}
-                        className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold hover:bg-muted"
+                        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
                       >
                         Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => openProductModal('duplicate', product)}
-                        className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold hover:bg-muted"
+                        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
                       >
                         Duplicar
                       </button>
@@ -1125,7 +1125,7 @@ export default function Estoque() {
                           type="button"
                           disabled={deletingId === product.id}
                           onClick={() => handleDeleteProduct(product)}
-                          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-destructive/25 bg-card px-3 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
+                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-destructive/25 bg-card px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
                         >
                           Excluir
                         </button>
@@ -1548,18 +1548,18 @@ function StockMetric({
     <Component
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`rounded-2xl border bg-card p-4 text-left shadow-sm transition ${borderClass} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
+      className={`rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:rounded-2xl sm:p-4 ${borderClass} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
     >
-      <span className="text-xs font-semibold text-muted-foreground">
+      <span className="line-clamp-1 text-[11px] font-semibold text-muted-foreground sm:text-xs">
         {label}
       </span>
       <strong
-        className={`mt-1 block text-2xl font-bold tabular-nums ${valueClass}`}
+        className={`mt-0.5 block text-xl font-bold tabular-nums sm:mt-1 sm:text-2xl ${valueClass}`}
       >
         {value}
       </strong>
       {hint && (
-        <span className="mt-1 block text-[11px] text-muted-foreground">
+        <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
           {hint}
         </span>
       )}

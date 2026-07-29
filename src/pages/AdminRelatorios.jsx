@@ -15,14 +15,14 @@ export default function AdminRelatorios() {
     [data, setData] = useState(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
-  const load = async () => {
+  const load = async (nextFilters = filters) => {
     setLoading(true);
     setError("");
     try {
       setData(
         await nexoApi.admin.reports({
-          from: `${filters.from}T00:00:00`,
-          to: `${filters.to}T23:59:59`,
+          from: `${nextFilters.from}T00:00:00`,
+          to: `${nextFilters.to}T23:59:59`,
         }),
       );
     } catch (cause) {
@@ -30,6 +30,12 @@ export default function AdminRelatorios() {
     } finally {
       setLoading(false);
     }
+  };
+  const applyToday = () => {
+    const value = today();
+    const nextFilters = { from: value, to: value };
+    setFilters(nextFilters);
+    load(nextFilters);
   };
   useEffect(() => {
     load();
@@ -81,7 +87,15 @@ export default function AdminRelatorios() {
           <Download className="h-4 w-4" /> Exportar CSV
         </button>
       </header>
-      <section className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[1fr_1fr_auto]">
+      <section className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:p-4">
+        <button
+          type="button"
+          onClick={applyToday}
+          disabled={loading}
+          className="mt-auto inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+        >
+          Hoje
+        </button>
         <label className="text-xs font-bold text-muted-foreground">
           De
           <input

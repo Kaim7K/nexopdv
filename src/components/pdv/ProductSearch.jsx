@@ -1,10 +1,15 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
 
-export default function ProductSearch({ query, onQueryChange, inputRef, onFocus }) {
+export default function ProductSearch({
+  query,
+  onQueryChange,
+  inputRef,
+  onFocus,
+}) {
   return (
     <div className="relative flex items-center">
-      <Search className="absolute left-3.5 w-5 h-5 text-muted-foreground pointer-events-none" />
+      <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground sm:left-3.5 sm:h-5 sm:w-5" />
       <input
         ref={inputRef}
         type="text"
@@ -12,16 +17,23 @@ export default function ProductSearch({ query, onQueryChange, inputRef, onFocus 
         onChange={(e) => onQueryChange(e.target.value)}
         onFocus={onFocus}
         placeholder="Buscar por nome, similares, código de barras ou código interno..."
-        className="w-full pl-11 pr-24 py-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+        className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-10 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent sm:h-auto sm:rounded-xl sm:py-3 sm:pl-11 sm:pr-24"
         autoComplete="off"
       />
-      <div className="absolute right-3 flex items-center gap-1.5">
+      <div className="absolute right-2 flex items-center gap-1.5 sm:right-3">
         {query && (
-          <button type="button" aria-label="Limpar busca" onClick={() => onQueryChange('')} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-            <X className="w-4 h-4" />
+          <button
+            type="button"
+            aria-label="Limpar busca"
+            onClick={() => onQueryChange('')}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9"
+          >
+            <X className="h-4 w-4" />
           </button>
         )}
-        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium bg-muted border border-border rounded text-muted-foreground">F4</kbd>
+        <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-block">
+          F4
+        </kbd>
       </div>
     </div>
   );

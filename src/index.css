@@ -168,12 +168,12 @@
     @apply mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60;
   }
   .page-shell {
-    @apply mx-auto w-full max-w-[1480px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8;
-    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    @apply mx-auto w-full max-w-[1480px] px-3 py-3 sm:px-5 sm:py-4 lg:px-6;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   .page-header {
-    @apply mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-start sm:justify-between;
+    @apply mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-start sm:justify-between;
   }
 
   .page-title {
@@ -189,11 +189,11 @@
   }
 
   .empty-state {
-    @apply grid min-h-44 place-items-center rounded-xl border border-dashed border-border bg-card px-4 py-8 text-center shadow-sm shadow-black/[0.02] sm:min-h-56 sm:px-5 sm:py-10 sm:rounded-lg;
+    @apply grid min-h-40 place-items-center rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center shadow-sm shadow-black/[0.02] sm:min-h-48 sm:px-5 sm:py-8 sm:rounded-lg;
   }
 
   .loading-state {
-    @apply grid min-h-44 place-items-center rounded-xl border border-border/80 bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02] sm:min-h-56 sm:px-5 sm:py-10 sm:rounded-lg;
+    @apply grid min-h-40 place-items-center rounded-xl border border-border/80 bg-card px-4 py-6 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02] sm:min-h-48 sm:px-5 sm:py-8 sm:rounded-lg;
   }
 
   .nexo-toast {
@@ -238,26 +238,99 @@
   }
 
   .page-shell {
-    @apply px-3 py-4;
+    @apply px-2.5 py-2.5;
   }
 
   .page-shell .page-title,
   .page-shell h1 {
-    @apply text-xl leading-tight;
-  }
-
-  .page-shell h2 {
     @apply text-lg leading-tight;
   }
 
-  .page-shell h3 {
+  .page-shell h2 {
     @apply text-base leading-tight;
+  }
+
+  .page-shell h3 {
+    @apply text-sm leading-tight;
   }
 
   .page-shell .surface-card,
   .page-shell section,
   .page-shell article {
-    border-radius: 0.75rem;
+    border-radius: 0.65rem;
+  }
+
+  .page-shell > :where(div, header, section):not(:last-child),
+  .page-shell > :where(.mb-6, .mb-5, .mb-4) {
+    margin-bottom: 0.625rem !important;
+  }
+
+  .page-shell :where(.rounded-2xl) {
+    border-radius: 0.85rem !important;
+  }
+
+  .page-shell :where(.rounded-xl) {
+    border-radius: 0.65rem !important;
+  }
+
+  .page-shell :where(.p-8, .p-7, .p-6, .p-5, .p-4) {
+    padding: 0.75rem !important;
+  }
+
+  .page-shell :where(.py-16, .py-12, .py-10, .py-8, .py-6) {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .page-shell :where(.px-5, .px-4) {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .page-shell :where(.gap-4, .gap-3) {
+    gap: 0.5rem !important;
+  }
+
+  .page-shell :where(.space-y-5 > :not([hidden]) ~ :not([hidden]),
+    .space-y-4 > :not([hidden]) ~ :not([hidden]),
+    .space-y-3 > :not([hidden]) ~ :not([hidden])) {
+    margin-top: 0.5rem !important;
+  }
+
+  .page-shell :where(input:not([type='checkbox']):not([type='radio']), select) {
+    height: 2.35rem !important;
+    min-height: 2.35rem !important;
+    border-radius: 0.65rem !important;
+    font-size: 0.8125rem !important;
+  }
+
+  .page-shell :where(button) {
+    min-height: 2.35rem;
+    border-radius: 0.65rem;
+  }
+
+  .page-shell :where(.text-3xl, .text-2xl) {
+    font-size: 1.375rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .page-shell :where(.text-xl) {
+    font-size: 1.125rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .page-shell :where(.text-lg) {
+    font-size: 1rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .page-shell :where(p.text-sm, .text-sm) {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .page-shell :where(.shadow-lg, .shadow-md, .shadow-sm) {
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08) !important;
   }
 }
 

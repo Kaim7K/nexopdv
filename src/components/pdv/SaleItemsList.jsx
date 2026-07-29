@@ -15,10 +15,10 @@ export default function SaleItemsList({
 }) {
   if (!items.length) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center p-8 text-muted-foreground">
-        <Package className="mb-3 h-12 w-12 text-muted-foreground/20" />
-        <p className="text-sm font-semibold">Nenhum produto adicionado</p>
-        <p className="mt-1 text-xs">
+      <div className="flex flex-1 flex-col items-center justify-center p-4 text-center text-muted-foreground sm:p-8">
+        <Package className="mb-2 h-8 w-8 text-muted-foreground/20 sm:mb-3 sm:h-12 sm:w-12" />
+        <p className="text-xs font-semibold sm:text-sm">Nenhum produto adicionado</p>
+        <p className="mt-1 text-[11px] sm:text-xs">
           Busque ou escaneie produtos para iniciar a venda.
         </p>
       </div>
@@ -38,7 +38,7 @@ export default function SaleItemsList({
       {items.map((item, index) => (
         <div
           key={`${item.product_id}-${index}`}
-          className="grid grid-cols-[1fr_auto] gap-2.5 border-b border-border px-3 py-3 transition-colors hover:bg-muted/30 sm:px-4 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
+          className="grid grid-cols-[1fr_auto] gap-2 border-b border-border px-2.5 py-2 transition-colors hover:bg-muted/30 sm:px-4 sm:py-3 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
         >
           <div className="order-2 lg:order-1">
             {item.unit === 'peso' ? (
@@ -69,7 +69,7 @@ export default function SaleItemsList({
                       Math.max(1, Number(item.quantity || 1) - 1),
                     )
                   }
-                  className="grid h-11 w-11 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9 sm:rounded-lg"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -88,7 +88,7 @@ export default function SaleItemsList({
                       ),
                     )
                   }
-                  className="h-11 w-14 rounded-xl border border-border bg-background px-1 text-center text-base font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent sm:h-9 sm:rounded-lg"
+                  className="h-8 w-12 rounded-lg border border-border bg-background px-1 text-center text-sm font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent sm:h-9 sm:text-base"
                 />
                 <button
                   type="button"
@@ -96,7 +96,7 @@ export default function SaleItemsList({
                   onClick={() =>
                     onUpdateQuantity(index, Number(item.quantity || 1) + 1)
                   }
-                  className="grid h-11 w-11 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9 sm:rounded-lg"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground sm:h-9 sm:w-9"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -105,10 +105,10 @@ export default function SaleItemsList({
           </div>
 
           <div className="order-1 min-w-0 lg:order-2">
-            <p className="line-clamp-2 text-sm font-semibold leading-5 lg:truncate">
+            <p className="line-clamp-1 text-xs font-semibold leading-4 sm:text-sm sm:leading-5 lg:truncate">
               {item.product_name}
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
               {item.unit === 'peso'
                 ? `Peso: ${Number(item.weight || 0).toFixed(3)} kg`
                 : `Quantidade: ${item.quantity || 1}`}
@@ -157,7 +157,7 @@ export default function SaleItemsList({
             type="button"
             aria-label={`Remover ${item.product_name}`}
             onClick={() => onRemoveItem(index)}
-            className="order-5 col-span-2 ml-auto grid h-11 w-11 place-items-center rounded-xl text-destructive hover:bg-destructive/10 sm:h-9 sm:w-9 sm:rounded-lg lg:col-span-1 lg:ml-0"
+            className="order-5 col-span-2 ml-auto grid h-8 w-8 place-items-center rounded-lg text-destructive hover:bg-destructive/10 sm:h-9 sm:w-9 lg:col-span-1 lg:ml-0"
           >
             <Trash2 className="h-5 w-5" />
           </button>
