@@ -21,6 +21,7 @@ import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 
 const PERIODS = [
+  { key: 'today', label: 'Hoje' },
   { key: 'week', label: 'Semanal' },
   { key: 'month', label: 'Mensal' },
   { key: 'year', label: 'Anual' },
@@ -31,7 +32,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'MÃªs' },
+  { key: 'month', label: 'M?s' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -85,7 +86,7 @@ export default function Relatorios() {
       setFiados(fiadoData);
       setProducts(productData);
     } catch (error) {
-      setLoadError(error.message || 'NÃ£o foi possÃ­vel carregar os relatÃ³rios.');
+      setLoadError(error.message || 'N?o foi poss?vel carregar os relat?rios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -98,7 +99,18 @@ export default function Relatorios() {
     let end;
     let prevStart;
     let prevEnd;
-    if (period === 'week') {
+    if (period === 'today') {
+      start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      prevStart = new Date(now);
+      prevStart.setDate(prevStart.getDate() - 1);
+      prevStart.setHours(0, 0, 0, 0);
+      prevEnd = new Date(now);
+      prevEnd.setDate(prevEnd.getDate() - 1);
+      prevEnd.setHours(23, 59, 59, 999);
+    } else if (period === 'week') {
       start = new Date(now);
       start.setDate(now.getDate() - now.getDay());
       start.setHours(0, 0, 0, 0);
@@ -254,7 +266,7 @@ export default function Relatorios() {
 
     const sellerMap = {};
     for (const sale of periodSales) {
-      const seller = sale.seller_name || 'Sem identificação';
+      const seller = sale.seller_name || 'Sem identificaÃ§Ã£o';
       if (!sellerMap[seller])
         sellerMap[seller] = { count: 0, revenue: 0, items: 0 };
       sellerMap[seller].count += 1;
@@ -308,7 +320,7 @@ export default function Relatorios() {
       .map(([, value]) => value);
 
     const breakdownMap = {};
-    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
+    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S?b'];
     for (const sale of periodSales) {
       const date = new Date(sale.created_date);
       let key;
@@ -447,12 +459,12 @@ export default function Relatorios() {
     if (stats.revenueChange > 0)
       list.push({
         type: 'up',
-        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relaÃ§Ã£o ao perÃ­odo anterior.`,
+        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em rela??o ao per?odo anterior.`,
       });
     else if (stats.revenueChange < 0)
       list.push({
         type: 'down',
-        text: `As vendas caÃ­ram ${Math.abs(stats.revenueChange).toFixed(1)}% em relaÃ§Ã£o ao perÃ­odo anterior.`,
+        text: `As vendas ca?ram ${Math.abs(stats.revenueChange).toFixed(1)}% em rela??o ao per?odo anterior.`,
       });
     if (productRankingRows.length)
       list.push({
@@ -467,7 +479,7 @@ export default function Relatorios() {
       const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do perÃ­odo.`,
+        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do per?odo.`,
       });
     }
     if (stats.bestBreakdown)
@@ -478,24 +490,24 @@ export default function Relatorios() {
     if (stats.itemsPerSale > 0)
       list.push({
         type: 'info',
-        text: `Cada venda teve em mÃ©dia ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
+        text: `Cada venda teve em m?dia ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
       });
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
-        text: `HÃ¡ ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste perÃ­odo.`,
+        text: `H? ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste per?odo.`,
       });
     if (stats.cancelled > 0)
       list.push({
         type: 'alert',
-        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no perÃ­odo.`,
+        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no per?odo.`,
       });
     return list;
   }, [stats, productRankingRows]);
 
   if (loading)
     return (
-      <LoadingState className="min-h-[60vh]" label="Carregando relatÃ³rios..." />
+      <LoadingState className="min-h-[60vh]" label="Carregando relat?rios..." />
     );
   if (loadError && !sales.length)
     return (
@@ -508,10 +520,10 @@ export default function Relatorios() {
     <div className="page-shell">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negÃ³cio
+          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do neg?cio
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          RelatÃ³rios gerenciais
+          Relat?rios gerenciais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Acompanhe vendas, pagamentos, produtos, equipe e fiados.
@@ -544,7 +556,7 @@ export default function Relatorios() {
               />
             </label>
             <label className="text-xs font-semibold text-muted-foreground">
-              AtÃ©{' '}
+              At?{' '}
               <input
                 aria-label="Data final"
                 type="date"
@@ -558,7 +570,7 @@ export default function Relatorios() {
       </div>
       {!customRangeValid && (
         <div className="mb-5 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          Informe um perÃ­odo vÃ¡lido: a data inicial deve ser anterior ou igual Ã 
+          Informe um per?odo v?lido: a data inicial deve ser anterior ou igual ?
           data final.
         </div>
       )}
@@ -573,7 +585,7 @@ export default function Relatorios() {
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
         <StatCard
           icon={Receipt}
-          label="Ticket mÃ©dio"
+          label="Ticket m?dio"
           value={formatCurrency(stats.avgTicket)}
         />
         <StatCard
@@ -623,7 +635,7 @@ export default function Relatorios() {
 
       <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
         <div className="border-b border-border p-4">
-          <h3 className="text-sm font-bold">EstatÃ­sticas de faturamento</h3>
+          <h3 className="text-sm font-bold">Estat?sticas de faturamento</h3>
           <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
               <button
@@ -665,7 +677,7 @@ export default function Relatorios() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Ticket mÃ©dio</dt>
+                      <dt className="text-muted-foreground">Ticket m?dio</dt>
                       <dd className="mt-1 font-bold tabular-nums">
                         {formatCurrency(row.average)}
                       </dd>
@@ -683,7 +695,7 @@ export default function Relatorios() {
                     </th>
                     <th className="px-4 py-3">Faturamento</th>
                     <th className="px-4 py-3">Vendas</th>
-                    <th className="px-4 py-3">Ticket mÃ©dio</th>
+                    <th className="px-4 py-3">Ticket m?dio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -704,21 +716,21 @@ export default function Relatorios() {
             </div>
           </>
         ) : (
-          <ChartEmpty text="Sem vendas no perÃ­odo selecionado." />
+          <ChartEmpty text="Sem vendas no per?odo selecionado." />
         )}
       </section>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
           <h3 className="mb-3 text-sm font-bold">
-            Faturamento por {period === 'year' ? 'mÃªs' : 'dia'}
+            Faturamento por {period === 'year' ? 'm?s' : 'dia'}
           </h3>
           {stats.dailyData.length ? (
             <Suspense fallback={<ChartLoading />}>
               <DailyRevenueChart data={stats.dailyData} />
             </Suspense>
           ) : (
-            <ChartEmpty text="Sem vendas no perÃ­odo selecionado." />
+            <ChartEmpty text="Sem vendas no per?odo selecionado." />
           )}
         </section>
 
@@ -732,7 +744,7 @@ export default function Relatorios() {
               <PaymentLegend rows={stats.paymentData} />
             </div>
           ) : (
-            <ChartEmpty text="Sem pagamentos no perÃ­odo selecionado." />
+            <ChartEmpty text="Sem pagamentos no per?odo selecionado." />
           )}
         </section>
       </div>
@@ -818,7 +830,7 @@ export default function Relatorios() {
 
       <section className="rounded-xl border border-accent/25 bg-accent/5 p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Lightbulb className="h-5 w-5 text-accent" /> Insights do perÃ­odo
+          <Lightbulb className="h-5 w-5 text-accent" /> Insights do per?odo
         </h3>
         <div className="space-y-2">
           {insights.map((insight, index) => (
@@ -851,7 +863,7 @@ export default function Relatorios() {
           ))}
           {!insights.length && (
             <p className="text-sm text-muted-foreground">
-              Sem insights para este perÃ­odo.
+              Sem insights para este per?odo.
             </p>
           )}
         </div>
@@ -872,7 +884,7 @@ function ChartLoading({ height = 'h-[270px]' }) {
   return (
     <div
       role="status"
-      aria-label="Carregando grÃ¡fico"
+      aria-label="Carregando gr?fico"
       className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
     />
   );
@@ -959,7 +971,7 @@ function ExecutiveSummary({ stats }) {
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
     ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendÃªncias'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pend?ncias'],
   ];
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
