@@ -13,13 +13,13 @@ import {
 } from '@/components/stock/stock-view-utils';
 
 const visibleColumns = [
-  ['barcode', 'Código barras', 'text', 'hidden 2xl:table-cell'],
-  ['internal_code', 'Código interno', 'text', 'hidden 2xl:table-cell'],
+  ['barcode', 'Cod. barras', 'text', 'hidden 2xl:table-cell'],
+  ['internal_code', 'Cod. interno', 'text', 'hidden 2xl:table-cell'],
   ['sale_price', 'Venda', 'number', ''],
   ['cost_price', 'Custo', 'number', 'hidden 2xl:table-cell'],
   ['quantity', 'Estoque', 'number', ''],
   ['unit', 'Unidade', 'text', 'hidden min-[1320px]:table-cell'],
-  ['last_sale_at', 'Última venda', 'date', 'hidden min-[1320px]:table-cell'],
+  ['last_sale_at', 'Ultima venda', 'date', 'hidden min-[1320px]:table-cell'],
   ['status', 'Status', 'text', 'hidden 2xl:table-cell'],
 ];
 
@@ -35,7 +35,7 @@ const columnWidths = {
 };
 
 const fieldClass =
-  'h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-sm outline-none transition hover:border-border focus:border-accent focus:bg-background';
+  'h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none transition hover:bg-muted/35 focus:border-accent/40 focus:bg-background';
 
 export default function StockTable({
   products,
@@ -56,7 +56,7 @@ export default function StockTable({
   return (
     <table className="hidden w-full min-w-[1180px] border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
-        <col className="w-[320px]" />
+        <col className="w-[340px]" />
         {visibleColumns.map(([key, , , visibility]) => (
           <col
             key={key}
@@ -65,7 +65,7 @@ export default function StockTable({
         ))}
         <col className="w-[122px]" />
       </colgroup>
-      <thead className="sticky top-0 z-20 bg-secondary/95 text-secondary-foreground shadow-sm backdrop-blur">
+      <thead className="sticky top-0 z-20 bg-card/95 text-card-foreground backdrop-blur">
         <tr>
           <HeaderButton
             sticky
@@ -85,8 +85,8 @@ export default function StockTable({
               onSort={onSort}
             />
           ))}
-          <th className="sticky right-0 z-30 border-b border-border bg-secondary px-3 py-2 text-right text-[11px] font-black uppercase text-muted-foreground">
-            Ações
+          <th className="sticky right-0 z-30 border-b border-l border-border/70 bg-card px-3 py-2 text-right text-[11px] font-black uppercase text-muted-foreground">
+            Acoes
           </th>
         </tr>
       </thead>
@@ -94,20 +94,15 @@ export default function StockTable({
         {products.map((product) => {
           const { quantity, tracksStock, isZero, isLow, isDirty } =
             getStockState(product, lowStockThreshold, dirty);
-          const rowTone = isDirty
-            ? 'bg-amber-500/10'
+          const rowTone = 'bg-card';
+          const stickyTone = 'bg-card';
+          const stockStripe = isDirty
+            ? 'before:bg-amber-400'
             : tracksStock && isZero
-              ? 'bg-red-500/10'
+              ? 'before:bg-red-500'
               : tracksStock && isLow
-                ? 'bg-amber-500/5'
-                : 'bg-card';
-          const stickyTone = isDirty
-            ? 'bg-amber-50 dark:bg-amber-950/30'
-            : tracksStock && isZero
-              ? 'bg-red-50 dark:bg-red-950/30'
-              : tracksStock && isLow
-                ? 'bg-amber-50 dark:bg-amber-950/20'
-                : 'bg-card';
+                ? 'before:bg-amber-400'
+                : 'before:bg-transparent';
           const hasCostPrice =
             product.cost_price !== null &&
             product.cost_price !== '' &&
@@ -118,16 +113,16 @@ export default function StockTable({
           return (
             <tr
               key={product.id}
-              className={`group transition-colors hover:bg-muted/30 ${rowTone}`}
+              className={`group transition-colors hover:bg-muted/25 ${rowTone}`}
             >
               <td
-                className={`sticky left-0 z-10 border-b border-border/70 p-2 align-middle ${stickyTone}`}
+                className={`sticky left-0 z-10 border-b border-r border-border/60 px-2 py-1.5 align-middle ${stickyTone} before:absolute before:bottom-0 before:left-0 before:top-0 before:w-0.5 ${stockStripe}`}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <button
                     type="button"
                     onClick={() => onEdit(product)}
-                    className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background shadow-sm"
+                    className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border border-border/80 bg-background"
                     aria-label={`Editar ${product.name}`}
                   >
                     {product.image_url ? (
@@ -139,13 +134,13 @@ export default function StockTable({
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <Package className="h-5 w-5 text-muted-foreground" />
+                      <Package className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
                   <div className="min-w-0 flex-1">
                     <input
                       aria-label={`Produto ${product.name}`}
-                      className={`${fieldClass} h-8 px-1 font-bold`}
+                      className={`${fieldClass} px-1 font-bold`}
                       type="text"
                       value={product.name ?? ''}
                       onChange={(event) =>
@@ -154,7 +149,7 @@ export default function StockTable({
                     />
                     <select
                       aria-label={`Categoria de ${product.name}`}
-                      className="mt-0.5 h-7 w-full rounded-md border border-transparent bg-transparent px-1 text-xs text-muted-foreground outline-none hover:border-border focus:border-accent focus:bg-background"
+                      className="mt-0.5 h-6 w-full rounded-sm border border-transparent bg-transparent px-1 text-xs text-muted-foreground outline-none hover:bg-muted/35 focus:border-accent/40 focus:bg-background"
                       value={product.category || ''}
                       onChange={(event) =>
                         onInlineEdit(
@@ -177,16 +172,16 @@ export default function StockTable({
                     <button
                       type="button"
                       onClick={() => onEdit(product)}
-                      className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${
+                      className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
                         isZero
-                          ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300'
-                          : 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300'
+                          ? 'border-red-500/35 bg-transparent text-red-600 dark:text-red-300'
+                          : 'border-amber-500/35 bg-transparent text-amber-600 dark:text-amber-300'
                       }`}
                       aria-label={`Atualizar estoque de ${product.name}`}
                       title={isZero ? 'Sem estoque' : 'Estoque baixo'}
                     >
                       <span className="sr-only">Atualizar estoque</span>
-                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTriangle className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
@@ -194,7 +189,7 @@ export default function StockTable({
               {visibleColumns.map(([key, label, type, visibility]) => (
                 <td
                   key={key}
-                  className={`border-b border-border/70 px-2 py-2 align-middle ${visibility}`}
+                  className={`border-b border-border/60 px-2 py-1.5 align-middle ${visibility}`}
                 >
                   <CellEditor
                     product={product}
@@ -210,22 +205,22 @@ export default function StockTable({
                 </td>
               ))}
               <td
-                className={`sticky right-0 z-10 border-b border-border/70 p-2 align-middle ${stickyTone}`}
+                className={`sticky right-0 z-10 border-b border-l border-border/60 px-2 py-1.5 align-middle ${stickyTone}`}
               >
-                <div className="flex justify-end gap-1.5">
+                <div className="flex justify-end gap-1">
                   <ActionButton
-                    label={`Editar ${product.name} no formulário`}
+                    label={`Editar ${product.name} no formulario`}
                     title="Editar"
                     onClick={() => onEdit(product)}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="h-3.5 w-3.5" />
                   </ActionButton>
                   <ActionButton
                     label={`Duplicar ${product.name}`}
                     title="Duplicar"
                     onClick={() => onDuplicate(product)}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3.5 w-3.5" />
                   </ActionButton>
                   {canDelete && (
                     <ActionButton
@@ -235,7 +230,7 @@ export default function StockTable({
                       title="Excluir"
                       onClick={() => onDelete(product)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </ActionButton>
                   )}
                 </div>
@@ -265,12 +260,12 @@ function HeaderButton({
 }) {
   return (
     <th
-      className={`${sticky ? 'sticky bg-secondary' : ''} border-b border-border p-0 text-left ${className}`}
+      className={`${sticky ? 'sticky bg-card' : ''} border-b border-border/70 p-0 text-left ${className}`}
     >
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        className="flex h-11 w-full items-center gap-1.5 px-3 text-[11px] font-black uppercase tracking-wide text-muted-foreground hover:bg-muted/60"
+        className="flex h-9 w-full items-center gap-1.5 px-3 text-[11px] font-black uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
         aria-label={`Ordenar por ${label}`}
       >
         <span className="truncate">{label}</span>
@@ -300,7 +295,7 @@ function CellEditor({
             : 'Nunca vendido'}
         </span>
         <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
-          {product.last_sale_at ? 'Última saída' : 'Sem vendas'}
+          {product.last_sale_at ? 'Ultima saida' : 'Sem vendas'}
         </span>
       </div>
     );
@@ -327,7 +322,7 @@ function CellEditor({
         </label>
         {fieldKey === 'sale_price' && hasCostPrice && (
           <span
-            className={`mt-0.5 block truncate px-2 text-[10px] font-bold ${
+            className={`mt-0.5 block truncate px-1.5 text-[10px] font-bold ${
               unitProfit >= 0
                 ? 'text-emerald-600 dark:text-emerald-300'
                 : 'text-red-600 dark:text-red-300'
@@ -421,7 +416,7 @@ function ActionButton({
       onClick={onClick}
       aria-label={label}
       title={title}
-      className={`grid h-8 w-8 place-items-center rounded-lg border transition disabled:cursor-wait disabled:opacity-50 ${
+      className={`grid h-7 w-7 place-items-center rounded-md border transition disabled:cursor-wait disabled:opacity-50 ${
         destructive
           ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
           : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
