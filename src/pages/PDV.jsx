@@ -11,21 +11,16 @@ import React, {
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import {
-  ArrowRight,
-  Banknote,
-  Edit3,
-  LayoutGrid,
-  LockKeyhole,
-} from 'lucide-react';
-import ProductSearch from '@/components/pdv/ProductSearch';
-import SearchResults from '@/components/pdv/SearchResults';
 import SaleSummary from '@/components/pdv/SaleSummary';
-import ProductGrid from '@/components/pdv/ProductGrid';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { formatCurrency } from '@/lib/helpers';
 import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
 import { hasMarketFeature } from '@/lib/market-modules';
+import {
+  PdvLockedState,
+  PdvProductPanel,
+  PdvTopBar,
+} from '@/components/pdv/PdvLayout';
 import {
   addProductToSaleItems,
   createEmptySale,
@@ -47,12 +42,6 @@ const PriceCorrectionModal = lazy(() =>
 );
 const MinimizedSalesBar = lazy(() => import('@/components/pdv/MinimizedSalesBar'));
 const CashRegisterModal = lazy(() => import('@/components/pdv/CashRegisterModal'));
-
-const Kbd = ({ children }) => (
-  <kbd className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs font-bold leading-none">
-    {children}
-  </kbd>
-);
 
 const modalFallback = (
   <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
@@ -854,138 +843,42 @@ export default function PDV() {
 
   return (
     <div className="flex h-full flex-col bg-muted/20">
-      <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
-        <div>
-          <h1 className="text-base font-black">
-            Venda #{saleNumber}
-            {activeSale.temporary_number && (
-              <span className="ml-2 text-xs font-semibold text-accent">
-                aberta #{activeSale.temporary_number}
-              </span>
-            )}
-          </h1>
-          <p className="max-w-[150px] truncate text-xs text-muted-foreground sm:max-w-none">
-            {user.full_name || user.email}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 text-xs text-muted-foreground xl:flex">
-            <span className="flex items-center gap-1.5">
-              <Kbd>F1</Kbd> Pagamento
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Kbd>F2</Kbd> Remover
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Kbd>F4</Kbd> Buscar
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Kbd>F6</Kbd> Descartar
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Kbd>F7</Kbd> Minimizar
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={openCashDialog}
-            disabled={cashLoading}
-            aria-label={cashState.session ? 'Caixa aberto' : 'Abrir caixa'}
-            className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition disabled:opacity-50 ${cashState.session ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300' : 'border-border bg-card text-foreground hover:bg-muted'}`}
-          >
-            {cashState.session ? (
-              <Banknote className="h-4 w-4" />
-            ) : (
-              <LockKeyhole className="h-4 w-4" />
-            )}{' '}
-            <span className="hidden sm:inline">
-              {cashState.session ? 'Caixa aberto' : 'Abrir caixa'}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowPriceCorrection(true)}
-            disabled={!activeSale.items.length || !canUsePdv}
-            aria-label="Corrigir valor de um produto da venda"
-            className="flex min-h-11 items-center gap-2 rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30"
-          >
-            <Edit3 className="h-5 w-5" />{' '}
-            <span className="hidden sm:inline">Valor errado</span>
-          </button>
-        </div>
-      </div>
+      <PdvTopBar
+        saleNumber={saleNumber}
+        temporaryNumber={activeSale.temporary_number}
+        userLabel={user.full_name || user.email}
+        cashOpen={Boolean(cashState.session)}
+        cashLoading={cashLoading}
+        hasItems={Boolean(activeSale.items.length)}
+        canUsePdv={canUsePdv}
+        onCashClick={openCashDialog}
+        onPriceCorrection={() => setShowPriceCorrection(true)}
+      />
 
       {!canUsePdv && !cashLoading ? (
-        <div className="grid flex-1 place-items-center p-6">
-          <div className="max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-lg">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent">
-              <LockKeyhole className="h-7 w-7" />
-            </div>
-            <h2 className="mt-5 text-2xl font-black">
-              Abra o caixa para começar
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Informe o valor inicial disponível para troco. Depois disso, o PDV
-              será liberado para suas vendas.
-            </p>
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              {continuePath && (
-                <button
-                  type="button"
-                  onClick={continueWithoutCash}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-bold hover:bg-muted"
-                >
-                  Continuar sem caixa <ArrowRight className="h-4 w-4" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setCashModal('open')}
-                className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90"
-              >
-                Abrir caixa
-              </button>
-            </div>
-          </div>
-        </div>
+        <PdvLockedState
+          continuePath={continuePath}
+          onContinue={continueWithoutCash}
+          onOpenCash={() => setCashModal('open')}
+        />
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <div className="flex h-[34%] min-h-[230px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
-            <div className="flex-shrink-0 p-2 pb-1 sm:p-4 sm:pb-2">
-              <div className="relative" ref={searchContainerRef}>
-                <ProductSearch
-                  query={searchQuery}
-                  onQueryChange={setSearchQuery}
-                  inputRef={inputRef}
-                  onFocus={() => setShowResults(true)}
-                />
-                {showResults && searchQuery && (
-                  <SearchResults
-                    results={searchResults}
-                    loading={false}
-                    onSelect={(product) => {
-                      addProductToSale(product);
-                      setSearchQuery('');
-                      setShowResults(false);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-hidden px-2 pb-2 sm:px-4 sm:pb-4">
-              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:rounded-xl">
-                <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-[11px] font-semibold sm:px-4 sm:py-2.5 sm:text-xs">
-                  <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" /> Produtos
-                </div>
-                <ProductGrid
-                  products={products}
-                  onSelect={addProductToSale}
-                  loading={productsLoading}
-                />
-              </div>
-            </div>
-          </div>
+          <PdvProductPanel
+            searchContainerRef={searchContainerRef}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            inputRef={inputRef}
+            onSearchFocus={() => setShowResults(true)}
+            showResults={showResults}
+            searchResults={searchResults}
+            onSelectProduct={(product) => {
+              addProductToSale(product);
+              setSearchQuery('');
+              setShowResults(false);
+            }}
+            products={products}
+            productsLoading={productsLoading}
+          />
 
           <div className="flex min-w-0 flex-1 flex-col bg-card">
             <SaleSummary

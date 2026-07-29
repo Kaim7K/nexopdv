@@ -8,9 +8,10 @@ import {
 } from '../src/lib/pdv.js';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-const [api, stock, settings, auth, layout, googleImages, pdv, css] = await Promise.all([
+const [api, stock, stockMetric, settings, auth, layout, googleImages, pdv, css] = await Promise.all([
   read('api/index.js'),
   read('src/pages/Estoque.jsx'),
+  read('src/components/stock/StockMetric.jsx'),
   read('src/pages/Configuracoes.jsx'),
   read('src/lib/AuthContext.jsx'),
   read('src/components/Layout.jsx'),
@@ -45,7 +46,7 @@ assert.equal(searchProducts(searchableProducts, '7892')[0]?.id, '2');
 assert.match(api, /SET active=false,[\s\S]*email=\$\{deletedEmail\}/, 'Excluir usuário deve desativar a conta e liberar o e-mail.');
 assert.match(api, /password_hash=\$\{revokedPasswordHash\}/, 'A conta excluída deve perder a credencial anterior.');
 assert.match(api, /AND active=true ORDER BY/, 'Usuários excluídos não devem voltar à listagem.');
-assert.match(stock, /StockMetric\s+label="Sem estoque"/, 'A falta de estoque deve ficar resumida no indicador.');
+assert.match(`${stock}\n${stockMetric}`, /StockMetric\s+label="Sem estoque"[\s\S]*function StockMetric|function StockMetric[\s\S]*StockMetric\s+label="Sem estoque"/, 'A falta de estoque deve ficar resumida no indicador.');
 assert.doesNotMatch(stock, /produtos sem estoque[\s\S]{0,300}bg-red-600/i, 'O painel vermelho grande antigo não deve voltar.');
 assert.match(settings, /sidebar_background_color/, 'Configurações deve permitir alterar o fundo da sidebar.');
 assert.match(settings, /isAccentDistinct/, 'O sistema deve impedir combinações sem contraste.');

@@ -3,15 +3,15 @@ import { BarChart3, Download, RefreshCw } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
 import { ErrorState, LoadingState } from "@/components/common/PageState";
 import { formatCurrency } from "@/lib/helpers";
+import { todayIsoDate } from "@/lib/date-helpers";
 
-const today = () => new Date().toISOString().slice(0, 10);
 const yearAgo = () => {
   const date = new Date();
   date.setFullYear(date.getFullYear() - 1);
   return date.toISOString().slice(0, 10);
 };
 export default function AdminRelatorios() {
-  const [filters, setFilters] = useState({ from: yearAgo(), to: today() }),
+  const [filters, setFilters] = useState({ from: yearAgo(), to: todayIsoDate() }),
     [data, setData] = useState(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -32,7 +32,7 @@ export default function AdminRelatorios() {
     }
   };
   const applyToday = () => {
-    const value = today();
+    const value = todayIsoDate();
     const nextFilters = { from: value, to: value };
     setFilters(nextFilters);
     load(nextFilters);

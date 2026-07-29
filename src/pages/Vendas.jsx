@@ -5,26 +5,17 @@ import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import PaginationControls from '@/components/common/PaginationControls';
 import {
-  Ban,
   CalendarDays,
   Clock3,
   Download,
-  Eye,
   FileText,
   History,
   Loader2,
-  Printer,
-  ReceiptText,
   Search,
-  Trash2,
-  X,
 } from 'lucide-react';
 import {
-  calculateSaleTotals,
   formatCurrency,
   formatDateTime,
-  formatDiscount,
-  getPaymentLabel,
   PAYMENT_METHODS,
 } from '@/lib/helpers';
 import {
@@ -33,6 +24,15 @@ import {
   printSaleReceipt,
 } from '@/lib/sales-pdf';
 import { ErrorState } from '@/components/common/PageState';
+import {
+  ConfirmSaleAction,
+  SaleActions,
+  SaleCard,
+  SaleDetailModal,
+  SaleStatus,
+  SaleType,
+  paymentNames,
+} from '@/components/sales/SaleHistory';
 
 const PAGE_SIZE = 20;
 const todayKey = () => {
@@ -120,7 +120,7 @@ export default function Vendas() {
         setPage(Math.max(1, Number(data.page_count || 1)));
     } catch (error) {
       if (sequence === requestSequence.current) {
-        setLoadError(error.message || 'NÃ£o foi possÃ­vel carregar as vendas.');
+        setLoadError(error.message || 'Não foi possível carregar as vendas.');
         toast.error(error.message || 'Erro ao carregar vendas.');
       }
     } finally {
@@ -176,7 +176,7 @@ export default function Vendas() {
     } catch (error) {
       setDetailSale(null);
       toast.error(
-        error.message || 'NÃ£o foi possÃ­vel abrir os detalhes da venda.',
+        error.message || 'Não foi possível abrir os detalhes da venda.',
       );
     } finally {
       setDetailLoading(false);
@@ -191,11 +191,11 @@ export default function Vendas() {
         : await nexoApi.entities.Sale.get(sale.id);
       await downloadSaleReceiptPdf(fullSale, receiptConfig, {
         onLogoError: () =>
-          toast('A logo nÃ£o respondeu, mas o recibo foi gerado normalmente.'),
+          toast('A logo não respondeu, mas o recibo foi gerado normalmente.'),
       });
       toast.success(`Recibo da venda #${fullSale.sale_number} baixado.`);
     } catch (error) {
-      toast.error(error.message || 'NÃ£o foi possÃ­vel baixar o recibo.');
+      toast.error(error.message || 'Não foi possível baixar o recibo.');
     } finally {
       setReceiptLoadingId(null);
     }
@@ -208,9 +208,9 @@ export default function Vendas() {
         ? sale
         : await nexoApi.entities.Sale.get(sale.id);
       await printSaleReceipt(fullSale, receiptConfig);
-      toast.success(`ImpressÃ£o da venda #${fullSale.sale_number} enviada.`);
+      toast.success(`Impressão da venda #${fullSale.sale_number} enviada.`);
     } catch (error) {
-      toast.error(error.message || 'NÃ£o foi possÃ­vel imprimir a venda.');
+      toast.error(error.message || 'Não foi possível imprimir a venda.');
     } finally {
       setPrintingSaleId(null);
     }
@@ -232,7 +232,7 @@ export default function Vendas() {
         toast.success('Venda cancelada e estoque restaurado.');
       } else {
         await nexoApi.sales.delete(currentAction.sale.id);
-        toast.success('Venda excluÃ­da definitivamente.');
+        toast.success('Venda excluída definitivamente.');
       }
       setPendingAction(null);
       setCancelReason('');
@@ -257,7 +257,7 @@ export default function Vendas() {
       Number.isNaN(to.getTime()) ||
       to <= from
     ) {
-      toast.error('Informe uma data e um intervalo de horÃ¡rio vÃ¡lido.');
+      toast.error('Informe uma data e um intervalo de horário válido.');
       return;
     }
     setReporting(true);
@@ -285,10 +285,10 @@ export default function Vendas() {
         sellerName,
         paymentLabel,
       });
-      toast.success('RelatÃ³rio diÃ¡rio baixado em PDF.');
+      toast.success('Relatório diário baixado em PDF.');
     } catch (error) {
       toast.error(
-        error.message || 'NÃ£o foi possÃ­vel gerar o relatÃ³rio diÃ¡rio.',
+        error.message || 'Não foi possível gerar o relatório diário.',
       );
     } finally {
       setReporting(false);
@@ -300,13 +300,13 @@ export default function Vendas() {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <History className="h-3.5 w-3.5" /> HistÃ³rico e acompanhamento
+            <History className="h-3.5 w-3.5" /> Histórico e acompanhamento
           </div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            HistÃ³rico de vendas
+            Histórico de vendas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {canSeeTeam ? 'Vendas de toda a equipe' : 'Somente suas vendas'} Â·{' '}
+            {canSeeTeam ? 'Vendas de toda a equipe' : 'Somente suas vendas'} ·{' '}
             {total} registro{total === 1 ? '' : 's'}
           </p>
         </div>
@@ -362,7 +362,7 @@ export default function Vendas() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="NÃºmero, vendedor ou pagamento"
+              placeholder="Número, vendedor ou pagamento"
               className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
@@ -410,7 +410,7 @@ export default function Vendas() {
             className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Todos os status</option>
-            <option value="concluida">ConcluÃ­das</option>
+            <option value="concluida">Concluídas</option>
             <option value="cancelada">Canceladas</option>
           </select>
           {hasFilters && (
@@ -496,7 +496,7 @@ export default function Vendas() {
                     <th className="px-4 py-3 text-left">Tipo</th>
                     <th className="px-4 py-3 text-right">Total</th>
                     <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">AÃ§Ãµes</th>
+                    <th className="px-4 py-3 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -510,7 +510,7 @@ export default function Vendas() {
                       </td>
                       {canSeeTeam && (
                         <td className="px-4 py-3 font-semibold">
-                          {sale.seller_name || 'â€”'}
+                          {sale.seller_name || '-'}
                         </td>
                       )}
                       <td className="max-w-[240px] px-4 py-3 text-muted-foreground">
@@ -594,10 +594,10 @@ function DailyReportCard(props) {
         </span>
         <div>
           <h2 id="daily-report-title" className="font-black">
-            RelatÃ³rio de vendas do dia
+            Relatório de vendas do dia
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Baixe um PDF com resumo, pagamentos e todas as vendas do perÃ­odo
+            Baixe um PDF com resumo, pagamentos e todas as vendas do período
             selecionado.
           </p>
         </div>
@@ -618,7 +618,7 @@ function DailyReportCard(props) {
         </label>
         <label className="text-xs font-bold text-muted-foreground">
           <span className="mb-1.5 flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" /> InÃ­cio
+            <Clock3 className="h-3.5 w-3.5" /> Início
           </span>
           <input
             type="time"
@@ -681,12 +681,12 @@ function DailyReportCard(props) {
           ) : (
             <Download className="h-4 w-4" />
           )}{' '}
-          {props.reporting ? 'Gerando...' : 'Baixar relatÃ³rio'}
+          {props.reporting ? 'Gerando...' : 'Baixar relatório'}
         </button>
       </div>
       {!props.canSeeTeam && (
         <p className="px-4 pb-4 text-xs font-medium text-muted-foreground lg:px-5">
-          O relatÃ³rio de vendedor inclui exclusivamente as vendas vinculadas Ã 
+          O relatório de vendedor inclui exclusivamente as vendas vinculadas à
           sua conta.
         </p>
       )}
@@ -694,196 +694,6 @@ function DailyReportCard(props) {
   );
 }
 
-function SaleCard({
-  sale,
-  canSeeTeam,
-  canCancel,
-  canDelete,
-  receiptLoading,
-  printing,
-  onDetails,
-  onReceipt,
-  onPrint,
-  onCancel,
-  onDelete,
-}) {
-  return (
-    <article className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-3.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-black sm:text-base">
-            Venda #{sale.sale_number}
-          </h2>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-            {formatDateTime(sale.created_date)}
-            {canSeeTeam && sale.seller_name ? ` · ${sale.seller_name}` : ''}
-          </p>
-        </div>
-        <SaleStatus sale={sale} />
-      </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-2 rounded-lg bg-muted/30 px-2.5 py-2 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2.5">
-        <div className="min-w-0">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Pagamento
-          </span>
-          <strong className="mt-0.5 block truncate text-xs sm:text-sm">
-            {paymentNames(sale)}
-          </strong>
-        </div>
-        <div className="text-right">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-            Total
-          </span>
-          <strong className="block text-base font-black tabular-nums sm:text-lg">
-            {formatCurrency(sale.total)}
-          </strong>
-        </div>
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-semibold text-muted-foreground sm:mt-2 sm:gap-2 sm:text-[11px]">
-        <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
-          {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
-        </span>
-        {canSeeTeam && (
-          <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
-            {sale.seller_name || '—'}
-          </span>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onDetails}
-        className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-xs font-bold hover:bg-muted sm:mt-3 sm:min-h-10 sm:rounded-xl sm:text-sm"
-      >
-        <Eye className="h-4 w-4" /> Ver detalhes
-      </button>
-    </article>
-  );
-}
-function SaleActions({
-  sale,
-  receiptLoading,
-  canCancel,
-  canDelete,
-  onDetails,
-  onReceipt,
-  onPrint,
-  onCancel,
-  onDelete,
-  printing = false,
-  mobile = false,
-}) {
-  return (
-    <div
-      className={`flex items-center ${mobile ? 'mt-3 grid grid-cols-2 gap-2' : 'justify-center gap-1'}`}
-    >
-      <button
-        type="button"
-        onClick={onDetails}
-        className={
-          mobile
-            ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted'
-            : 'grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground'
-        }
-        title="Ver detalhes"
-      >
-        <Eye className="h-4 w-4" />
-        {mobile && 'Detalhes'}
-      </button>
-      <button
-        type="button"
-        disabled={receiptLoading}
-        onClick={onReceipt}
-        className={
-          mobile
-            ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-accent/25 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50'
-            : 'grid h-9 w-9 place-items-center rounded-lg text-accent hover:bg-accent/10 disabled:opacity-50'
-        }
-        title="Baixar recibo"
-      >
-        {receiptLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <ReceiptText className="h-4 w-4" />
-        )}
-        {mobile && 'Recibo PDF'}
-      </button>
-      <button
-        type="button"
-        disabled={printing}
-        onClick={onPrint}
-        className={
-          mobile
-            ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted disabled:opacity-50'
-            : 'grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50'
-        }
-        title="Imprimir recibo"
-      >
-        {printing ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Printer className="h-4 w-4" />
-        )}
-        {mobile && 'Imprimir'}
-      </button>
-      {sale.status === 'concluida' && canCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
-          className={
-            mobile
-              ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 text-sm font-bold text-amber-700 hover:bg-amber-50 dark:text-amber-300'
-              : 'grid h-9 w-9 place-items-center rounded-lg text-amber-600 hover:bg-amber-50 dark:text-amber-300'
-          }
-          title="Cancelar"
-        >
-          <Ban className="h-4 w-4" />
-          {mobile && 'Cancelar'}
-        </button>
-      )}
-      {sale.status === 'cancelada' && canDelete && (
-        <button
-          type="button"
-          onClick={onDelete}
-          className={
-            mobile
-              ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-destructive/25 text-sm font-bold text-destructive hover:bg-destructive/10'
-              : 'grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10'
-          }
-          title="Excluir definitivamente"
-        >
-          <Trash2 className="h-4 w-4" />
-          {mobile && 'Excluir'}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SaleStatus({ sale }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${sale.status === 'concluida' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}
-    >
-      {sale.status === 'concluida' ? 'ConcluÃ­da' : 'Cancelada'}
-    </span>
-  );
-}
-function SaleType({ sale }) {
-  return (
-    <span
-      className={`rounded-full px-2 py-1 text-xs font-bold ${sale.sale_type === 'fiado' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300' : 'bg-muted text-muted-foreground'}`}
-    >
-      {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
-    </span>
-  );
-}
-function paymentNames(sale) {
-  return (
-    (sale.payments || [])
-      .map((payment) => getPaymentLabel(payment.method))
-      .join(', ') || 'â€”'
-  );
-}
 function LoadingState() {
   return (
     <div
@@ -897,278 +707,3 @@ function LoadingState() {
     </div>
   );
 }
-
-function SaleDetailModal({
-  sale,
-  loading,
-  receiptLoading,
-  printing,
-  onReceipt,
-  onPrint,
-  onClose,
-}) {
-  if (loading || sale._loading)
-    return (
-      <div
-        className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
-        role="presentation"
-      >
-        <div className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl">
-          <Loader2 className="mx-auto h-7 w-7 animate-spin text-accent" />
-          <p className="mt-3 text-sm font-semibold">Carregando detalhes...</p>
-        </div>
-      </div>
-    );
-  const totals = calculateSaleTotals(sale);
-  const discountLabel =
-    sale.discount_type === 'percentual'
-      ? `${formatDiscount(sale)} (${formatCurrency(totals.discount)})`
-      : formatCurrency(totals.discount);
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sale-detail-title"
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-4">
-          <div>
-            <h2 id="sale-detail-title" className="text-lg font-black">
-              Venda #{sale.sale_number}
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatDateTime(sale.created_date)}
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={receiptLoading}
-              onClick={onReceipt}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/25 px-3 text-xs font-bold text-accent hover:bg-accent/10 disabled:opacity-50"
-            >
-              {receiptLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}{' '}
-              Recibo
-            </button>
-            <button
-              type="button"
-              disabled={printing}
-              onClick={onPrint}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground hover:bg-muted disabled:opacity-50"
-            >
-              {printing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Printer className="h-4 w-4" />
-              )}{' '}
-              Imprimir
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Fechar detalhes"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-        <div className="space-y-4 p-5 text-sm">
-          <div className="grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
-            <Info
-              label="Vendedor"
-              value={sale.seller_name || 'NÃ£o informado'}
-            />
-            <Info
-              label="Tipo"
-              value={sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
-            />
-            <Info
-              label="Status"
-              value={sale.status === 'concluida' ? 'ConcluÃ­da' : 'Cancelada'}
-            />
-            <Info label="Pagamento" value={paymentNames(sale)} />
-          </div>
-          {sale.observation && (
-            <Info label="ObservaÃ§Ã£o" value={sale.observation} />
-          )}
-          {sale.cancellation_reason && (
-            <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-3">
-              <span className="block text-xs font-bold uppercase tracking-wide text-destructive">
-                Motivo do cancelamento
-              </span>
-              <p className="mt-1 text-sm">{sale.cancellation_reason}</p>
-            </div>
-          )}
-          <section>
-            <h3 className="mb-2 text-xs font-black uppercase tracking-[0.08em] text-muted-foreground">
-              Produtos
-            </h3>
-            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-              {(sale.items || []).map((item, index) => {
-                const amount =
-                  item.unit === 'peso'
-                    ? `${Number(item.weight || 0).toLocaleString('pt-BR')} kg`
-                    : `${item.quantity || 0} un.`;
-                return (
-                  <div
-                    key={`${item.product_id || item.product_name}-${index}`}
-                    className="flex items-center justify-between gap-4 px-3 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
-                        {item.product_name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {amount}
-                      </p>
-                    </div>
-                    <span className="flex-none font-bold tabular-nums">
-                      {formatCurrency(item.subtotal)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-          <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span>
-              <span className="tabular-nums">
-                {formatCurrency(totals.subtotal)}
-              </span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Desconto</span>
-              <span className="tabular-nums">{discountLabel}</span>
-            </div>
-            <div className="flex justify-between border-t border-border pt-3 text-lg font-black">
-              <span>Total</span>
-              <span className="text-accent tabular-nums">
-                {formatCurrency(sale.total ?? totals.total)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmSaleAction({
-  action,
-  reason,
-  processing,
-  onReason,
-  onClose,
-  onConfirm,
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-      role="presentation"
-    >
-      <div
-        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="sale-action-title"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="sale-action-title" className="text-xl font-black">
-              {action.type === 'cancel' ? 'Cancelar venda' : 'Excluir venda'}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Venda #{action.sale.sale_number} Â·{' '}
-              {formatCurrency(action.sale.total)}
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={processing}
-            onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50"
-            aria-label="Fechar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        {action.type === 'cancel' ? (
-          <>
-            <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
-              Os produtos serÃ£o devolvidos ao estoque. Se a venda for fiado, o
-              registro pendente tambÃ©m serÃ¡ cancelado.
-            </div>
-            <label className="mt-4 block text-sm font-semibold">
-              Motivo do cancelamento{' '}
-              <span className="font-normal text-muted-foreground">
-                (opcional)
-              </span>
-              <textarea
-                autoFocus
-                rows={3}
-                value={reason}
-                onChange={(event) => onReason(event.target.value)}
-                maxLength={300}
-                className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                placeholder="Ex.: cliente desistiu da compra"
-              />
-            </label>
-          </>
-        ) : (
-          <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            Esta aÃ§Ã£o Ã© definitiva. O histÃ³rico desta venda serÃ¡ removido, mas a
-            auditoria da exclusÃ£o serÃ¡ mantida.
-          </div>
-        )}
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            disabled={processing}
-            onClick={onClose}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
-          >
-            Voltar
-          </button>
-          <button
-            type="button"
-            disabled={processing}
-            onClick={onConfirm}
-            className={`min-h-11 rounded-xl px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${action.type === 'cancel' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-destructive hover:bg-destructive/90'}`}
-          >
-            {processing
-              ? 'Processando...'
-              : action.type === 'cancel'
-                ? 'Confirmar cancelamento'
-                : 'Excluir definitivamente'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Info({ label, value }) {
-  return (
-    <div>
-      <span className="block text-xs font-semibold text-muted-foreground">
-        {label}
-      </span>
-      <span className="mt-0.5 block font-semibold">{value}</span>
-    </div>
-  );
-}
-
-

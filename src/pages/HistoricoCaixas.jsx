@@ -32,20 +32,18 @@ import {
   formatCurrencyInput,
   parseCurrencyDigits,
 } from "@/lib/helpers";
+import {
+  FilterPanel,
+  MetricCard,
+  PageHeader,
+} from "@/components/common/AppShell";
+import {
+  monthStartIsoDate,
+  todayIsoDate,
+  toDateTimeStart,
+  toExclusiveDateTimeEnd,
+} from "@/lib/date-helpers";
 
-const today = () => new Date().toISOString().slice(0, 10);
-const monthStart = () => {
-  const date = new Date();
-  date.setDate(1);
-  return date.toISOString().slice(0, 10);
-};
-const toStart = (value) => (value ? `${value}T00:00:00` : "");
-const toExclusiveEnd = (value) => {
-  if (!value) return "";
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + 1);
-  return date.toISOString();
-};
 const formatDate = (value) =>
   value
     ? new Intl.DateTimeFormat("pt-BR", {
@@ -66,8 +64,8 @@ export default function HistoricoCaixas() {
   const requestSequence = useRef(0);
   const { user } = /** @type {any} */ (useOutletContext());
   const [filters, setFilters] = useState({
-    from: monthStart(),
-    to: today(),
+    from: monthStartIsoDate(),
+    to: todayIsoDate(),
     operatorId: "",
     status: "",
     unitId: "",
@@ -93,8 +91,8 @@ export default function HistoricoCaixas() {
       const result = await nexoApi.cash.history({
         page,
         pageSize: 20,
-        from: toStart(filters.from),
-        to: toExclusiveEnd(filters.to),
+        from: toDateTimeStart(filters.from),
+        to: toExclusiveDateTimeEnd(filters.to),
         operatorId: filters.operatorId,
         status: filters.status,
         unitId: filters.unitId,
@@ -149,24 +147,16 @@ export default function HistoricoCaixas() {
 
   return (
     <div className="page-shell space-y-3 sm:space-y-5">
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <Banknote className="h-3.5 w-3.5" /> Operação financeira
-          </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            Histórico de caixas
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Aberturas, vendas, movimentações, conferência e fechamento por
-            operador.
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        icon={Banknote}
+        eyebrow="Operação financeira"
+        title="Histórico de caixas"
+          description="Aberturas, vendas, movimentações, conferência e fechamento por operador."
+      />
 
-      <section
+      <FilterPanel
         aria-label="Filtros do histórico"
-        className="grid gap-2 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:grid-cols-2 sm:rounded-2xl sm:p-4 xl:grid-cols-6"
+        className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6"
       >
         <Filter label="De">
           <input
@@ -230,8 +220,8 @@ export default function HistoricoCaixas() {
           type="button"
           onClick={() => {
             setFilters({
-              from: monthStart(),
-              to: today(),
+              from: monthStartIsoDate(),
+              to: todayIsoDate(),
               operatorId: "",
               status: "",
               unitId: "",
@@ -242,39 +232,35 @@ export default function HistoricoCaixas() {
         >
           <FilterX className="h-4 w-4" /> Limpar
         </button>
-      </section>
+      </FilterPanel>
 
       {data.items.length > 0 && (
         <section
           className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
           aria-label="Resumo do período exibido"
         >
-          <Metric
+          <MetricCard
             label="Vendas na página"
             value={formatCurrency(totals.sales)}
             icon={ReceiptText}
           />
-          <Metric
+          <MetricCard
             label="Entradas"
             value={formatCurrency(totals.entries)}
             icon={PlusCircle}
-            tone="text-emerald-600"
+            tone="green"
           />
-          <Metric
+          <MetricCard
             label="Retiradas"
             value={formatCurrency(totals.withdrawals)}
             icon={MinusCircle}
-            tone="text-amber-600"
+            tone="orange"
           />
-          <Metric
+          <MetricCard
             label="Diferenças"
             value={formatCurrency(totals.differences)}
             icon={Banknote}
-            tone={
-              Math.abs(totals.differences) > 0.009
-                ? "text-red-600"
-                : "text-emerald-600"
-            }
+            tone={Math.abs(totals.differences) > 0.009 ? "red" : "green"}
           />
         </section>
       )}
@@ -459,6 +445,22 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     session.status === "aberto" && session.seller_id === currentUser.id;
   const canDelete = currentUser.role === "admin" && session.status === "fechado";
   const canManageClosed = currentUser.role === "admin" && session.status === "fechado";
+  const paymentEntries = Object.entries(summary.payments || {});
+  const openingAmount = Number(summary.opening_amount ?? session.opening_amount ?? 0);
+  const totalSales = Number(summary.total || 0);
+  const cashReceived = Number(
+    summary.payments?.dinheiro ?? summary.cash_sales ?? 0,
+  );
+  const expectedBeforeExpense = Number(summary.expected_cash || 0);
+  const closingExpense = Number(
+    session.closing_expense ?? summary.closing_expense ?? 0,
+  );
+  const expectedAfterExpense = expectedBeforeExpense - closingExpense;
+  const declaredCash = Number(session.closing_amount ?? expectedAfterExpense);
+  const cashDifference =
+    session.difference !== null && session.difference !== undefined
+      ? Number(session.difference)
+      : declaredCash - expectedAfterExpense;
 
   useEffect(() => {
     setEditing(false);
@@ -659,38 +661,86 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             <LoadingState label="Carregando movimentação completa..." />
           ) : (
             <>
-              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <ValueCard
-                  label="Valor inicial"
-                  value={formatCurrency(
-                    summary.opening_amount ?? session.opening_amount,
-                  )}
-                />
-                <ValueCard
-                  label="Total de vendas"
-                  value={formatCurrency(summary.total)}
-                  hint={`${summary.sales_count || 0} venda(s)`}
-                />
-                <ValueCard
-                  label="Esperado em dinheiro"
-                  value={formatCurrency(summary.expected_cash)}
-                />
-                <ValueCard
-                  label="Valor final"
-                  value={formatCurrency(
-                    session.closing_amount ?? summary.expected_cash,
-                  )}
-                  hint={
-                    session.difference !== null &&
-                    session.difference !== undefined
-                      ? `Diferença: ${formatCurrency(session.difference)}`
-                      : "Em andamento"
-                  }
-                />
-              </dl>
+              <section className="rounded-2xl border border-border bg-muted/10 p-4">
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="font-black">Resumo do turno</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Vendas registradas no período deste caixa.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {summary.sales_count || 0} venda(s)
+                  </span>
+                </div>
+                <dl className="grid gap-3 sm:grid-cols-3">
+                  <ValueCard
+                    label="Total vendido"
+                    value={formatCurrency(totalSales)}
+                    hint="Todos os pagamentos"
+                  />
+                  <ValueCard
+                    label="Recebido em dinheiro"
+                    value={formatCurrency(cashReceived)}
+                    hint="Entra na conferência"
+                  />
+                  <ValueCard
+                    label="Outras formas"
+                    value={formatCurrency(totalSales - cashReceived)}
+                    hint="Pix, cartão, fiado e outros"
+                  />
+                </dl>
+              </section>
+
+              <section className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+                <div className="mb-4">
+                  <h3 className="font-black">Conferência do dinheiro</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Valor inicial + dinheiro recebido - despesas = dinheiro esperado.
+                  </p>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
+                  <dl className="grid gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <CashFormulaRow label="Valor inicial" value={openingAmount} />
+                    <CashFormulaRow label="Recebido em dinheiro" value={cashReceived} positive />
+                    <CashFormulaRow label="Despesa no fechamento" value={closingExpense} negative />
+                    <CashFormulaRow
+                      label="Esperado no caixa"
+                      value={expectedAfterExpense}
+                      total
+                    />
+                  </dl>
+                  <div className="hidden w-px bg-border lg:block" />
+                  <dl className="grid gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <CashFormulaRow
+                      label="Dinheiro contado"
+                      value={declaredCash}
+                      total
+                    />
+                    <CashFormulaRow
+                      label="Diferença"
+                      value={cashDifference}
+                      total
+                      tone={
+                        cashDifference === 0
+                          ? "neutral"
+                          : cashDifference > 0
+                            ? "positive"
+                            : "negative"
+                      }
+                    />
+                    <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      {session.status === "fechado"
+                        ? "A diferença compara o dinheiro esperado com o dinheiro contado no fechamento."
+                        : "Caixa em andamento. A conferência final aparece ao fechar."}
+                    </p>
+                  </dl>
+                </div>
+              </section>
+
               <section>
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-black">Formas de pagamento</h3>
+                  <h3 className="font-black">Distribuição dos pagamentos</h3>
                   {canMove && (
                     <button
                       type="button"
@@ -702,8 +752,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {Object.entries(summary.payments || {}).length ? (
-                    Object.entries(summary.payments || {}).map(
+                  {paymentEntries.length ? (
+                    paymentEntries.map(
                       ([method, value]) => (
                         <div
                           key={method}
@@ -724,58 +774,66 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
               {editing && canManageClosed && (
                 <form
                   onSubmit={saveEdit}
-                  className="grid gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 sm:grid-cols-3"
+                  className="rounded-2xl border border-accent/30 bg-accent/5 p-4"
                 >
-                  <Filter label="Valor inicial">
-                    <input
-                      className="field"
-                      required
-                      type="text"
-                      inputMode="numeric"
-                      value={editForm.opening_amount}
-                      onChange={(e) =>
-                        setEditForm((current) => ({
-                          ...current,
-                          opening_amount: formatCurrencyInput(
-                            e.target.value.replace(/\D/g, ""),
-                          ),
-                        }))
-                      }
-                    />
-                  </Filter>
-                  <Filter label="Valor final">
-                    <input
-                      className="field"
-                      type="text"
-                      inputMode="numeric"
-                      value={editForm.closing_amount}
-                      onChange={(e) =>
-                        setEditForm((current) => ({
-                          ...current,
-                          closing_amount: formatCurrencyInput(
-                            e.target.value.replace(/\D/g, ""),
-                          ),
-                        }))
-                      }
-                    />
-                  </Filter>
-                  <Filter label="Despesa">
-                    <input
-                      className="field"
-                      type="text"
-                      inputMode="numeric"
-                      value={editForm.closing_expense}
-                      onChange={(e) =>
-                        setEditForm((current) => ({
-                          ...current,
-                          closing_expense: formatCurrencyInput(
-                            e.target.value.replace(/\D/g, ""),
-                          ),
-                        }))
-                      }
-                    />
-                  </Filter>
-                  <div className="flex gap-2 sm:col-span-3 sm:justify-end">
+                  <div className="mb-3">
+                    <h3 className="font-black">Ajustar conferência</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Edite apenas os valores físicos usados no fechamento do caixa.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Filter label="Valor inicial do caixa">
+                      <input
+                        className="field"
+                        required
+                        type="text"
+                        inputMode="numeric"
+                        value={editForm.opening_amount}
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            opening_amount: formatCurrencyInput(
+                              e.target.value.replace(/\D/g, ""),
+                            ),
+                          }))
+                        }
+                      />
+                    </Filter>
+                    <Filter label="Dinheiro contado no fechamento">
+                      <input
+                        className="field"
+                        type="text"
+                        inputMode="numeric"
+                        value={editForm.closing_amount}
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            closing_amount: formatCurrencyInput(
+                              e.target.value.replace(/\D/g, ""),
+                            ),
+                          }))
+                        }
+                      />
+                    </Filter>
+                    <Filter label="Despesa no fechamento">
+                      <input
+                        className="field"
+                        type="text"
+                        inputMode="numeric"
+                        value={editForm.closing_expense}
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            closing_expense: formatCurrencyInput(
+                              e.target.value.replace(/\D/g, ""),
+                            ),
+                          }))
+                        }
+                      />
+                    </Filter>
+                  </div>
+                  <div className="mt-4 flex gap-2 sm:justify-end">
                     <button
                       type="button"
                       onClick={() => setEditing(false)}
@@ -1021,21 +1079,6 @@ function Filter({ label, children }) {
     </label>
   );
 }
-function Metric({ label, value, icon: Icon, tone = "text-accent" }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-4">
-      <div
-        className={`mb-1.5 grid h-7 w-7 place-items-center rounded-lg bg-muted sm:mb-3 sm:h-9 sm:w-9 sm:rounded-xl ${tone}`}
-      >
-        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-      </div>
-      <p className="line-clamp-1 text-[10px] font-semibold text-muted-foreground sm:text-xs">{label}</p>
-      <strong className="mt-0.5 block text-sm font-black tabular-nums sm:mt-1 sm:text-xl">
-        {value}
-      </strong>
-    </div>
-  );
-}
 function Status({ value }) {
   const open = value === "aberto";
   return (
@@ -1054,6 +1097,38 @@ function Value({ label, value }) {
     </div>
   );
 }
+
+function CashFormulaRow({
+  label,
+  value,
+  positive = false,
+  negative = false,
+  total = false,
+  tone = "neutral",
+}) {
+  const sign = negative ? "- " : positive ? "+ " : "";
+  const toneClass =
+    tone === "positive"
+      ? "text-emerald-600 dark:text-emerald-300"
+      : tone === "negative"
+        ? "text-red-600 dark:text-red-300"
+        : "text-foreground";
+
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${
+        total ? "bg-muted/40 font-black" : "bg-muted/20"
+      }`}
+    >
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={`text-sm tabular-nums ${total ? toneClass : ""}`}>
+        {sign}
+        {formatCurrency(Math.abs(Number(value || 0)))}
+      </dd>
+    </div>
+  );
+}
+
 function ValueCard({ label, value, hint = null }) {
   return (
     <div className="rounded-xl border border-border bg-muted/20 p-3">

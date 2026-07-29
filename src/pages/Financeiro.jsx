@@ -8,15 +8,12 @@ import React, {
   useState,
 } from 'react';
 import {
-  AlertTriangle,
   ArrowDownCircle,
   ArrowRightLeft,
   ArrowUpCircle,
   BarChart3,
   CalendarRange,
   Check,
-  ChevronDown,
-  ChevronRight,
   CircleDollarSign,
   ClipboardList,
   Download,
@@ -32,8 +29,6 @@ import {
   Store,
   Target,
   TrendingUp,
-  Users,
-  WalletCards,
   X,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -45,6 +40,14 @@ import {
 } from '@/components/common/PageState';
 import PaginationControls from '@/components/common/PaginationControls';
 import ImageUploadField from '@/components/ImageUploadField';
+import {
+  Field,
+  FinanceModal,
+  ModalActions,
+  ReferenceCards,
+} from '@/components/finance/FinanceUi';
+import FinanceOverview from '@/components/finance/FinanceOverview';
+import TransactionList from '@/components/finance/TransactionList';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
@@ -53,6 +56,10 @@ import {
   formatDateTime,
   getPaymentLabel,
 } from '@/lib/helpers';
+import {
+  todayIsoDate,
+  toInputDate,
+} from '@/lib/date-helpers';
 
 /** @type {Array<{label: string, items: Array<[string, string, React.ElementType]>}>} */
 const NAV_GROUPS = [
@@ -93,36 +100,11 @@ const PRIMARY_NAV_KEYS = new Set([
   'movements',
   'payables',
 ]);
-const FinanceTrendChart = lazy(() =>
-  import('@/components/finance/FinanceCharts').then((module) => ({
-    default: module.FinanceTrendChart,
-  })),
-);
-const ExpenseCategoryChart = lazy(() =>
-  import('@/components/finance/FinanceCharts').then((module) => ({
-    default: module.ExpenseCategoryChart,
-  })),
-);
 const CashFlowChart = lazy(() =>
   import('@/components/finance/FinanceCharts').then((module) => ({
     default: module.CashFlowChart,
   })),
 );
-const STATUS_LABEL = {
-  pending: 'Pendente',
-  partial: 'Parcial',
-  paid: 'Pago',
-  overdue: 'Atrasado',
-  cancelled: 'Cancelado',
-  reversed: 'Estornado',
-};
-const TYPE_LABEL = {
-  expense: 'Despesa',
-  revenue: 'Receita',
-  transfer: 'Transferência',
-  loss: 'Perda',
-  adjustment: 'Ajuste',
-};
 const PAYMENT_OPTIONS = [
   'dinheiro',
   'pix',
@@ -132,10 +114,6 @@ const PAYMENT_OPTIONS = [
   'transferencia',
   'outros',
 ];
-const today = () => new Date().toISOString().slice(0, 10);
-const monthStart = () => `${today().slice(0, 8)}01`;
-const toInputDate = (value) => (value ? String(value).slice(0, 10) : '');
-
 function rangePreset(key) {
   const end = new Date(),
     start = new Date(end);
@@ -446,7 +424,7 @@ function FinanceSection({
 }) {
   if (active === 'overview')
     return (
-      <Overview
+      <FinanceOverview
         data={dashboard}
         onNavigate={onNavigate}
         onAddTransaction={onAddTransaction}
@@ -497,406 +475,6 @@ function FinanceSection({
   return <FinanceSettings bootstrap={bootstrap} refreshAll={refresh} />;
 }
 
-function Overview({ data, onNavigate, onAddTransaction, canCreate }) {
-  const [analyticsOpen, setAnalyticsOpen] = useState(false);
-  const summary = data?.summary || {};
-  const cards = [
-    {
-      label: 'Receita líquida',
-      value: summary.net_revenue,
-      help: 'O que entrou após descontos e cancelamentos',
-      change: data?.comparison?.revenue,
-      icon: ArrowUpCircle,
-      tone: 'positive',
-    },
-    {
-      label: 'Despesas',
-      value: summary.expenses,
-      help: 'Tudo o que saiu para manter o mercado',
-      icon: ArrowDownCircle,
-      tone: 'negative',
-    },
-    {
-      label: 'Lucro estimado',
-      value: summary.estimated_profit,
-      help: 'O que restou após custos, taxas e despesas',
-      icon: TrendingUp,
-      tone: 'info',
-    },
-    {
-      label: 'Saldo disponível',
-      value: summary.financial_balance,
-      help: 'Total atual das contas financeiras',
-      icon: WalletCards,
-      tone: 'neutral',
-    },
-  ];
-  return (
-    <div className="space-y-5">
-      <section aria-labelledby="financial-summary-title">
-        <div className="mb-3">
-          <h3 id="financial-summary-title" className="text-base font-bold">
-            Como está o seu financeiro
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Os quatro números mais importantes do período selecionado.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <MetricCard
-              key={card.label}
-              {...card}
-              value={formatCurrency(card.value)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs no-print">
-        <h3 className="sr-only">O que você quer fazer?</h3>
-        <span className="font-semibold text-muted-foreground">Acesso rápido:</span>
-        <button
-          type="button"
-          onClick={() => onAddTransaction('revenue')}
-          disabled={!canCreate}
-          className="font-bold text-accent hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Registrar entrada
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('cashflow')}
-          className="font-bold text-accent hover:underline"
-        >
-          Consultar fluxo de caixa
-        </button>
-      </div>
-
-      {data?.alerts?.length > 0 && (
-        <section
-          aria-labelledby="financial-alerts-title"
-          className="surface-card overflow-hidden"
-        >
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300">
-              <AlertTriangle className="h-4 w-4" />
-            </span>
-            <div>
-              <h3 id="financial-alerts-title" className="text-sm font-bold">
-                Pontos que precisam de atenção
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                {data.alerts.length}{' '}
-                {data.alerts.length === 1
-                  ? 'aviso encontrado'
-                  : 'avisos encontrados'}
-              </p>
-            </div>
-          </div>
-          <div className="divide-y divide-border">
-            {data.alerts.slice(0, 3).map((alert) => (
-              <div key={alert.type} className="flex gap-3 px-4 py-3">
-                <span
-                  className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === 'critical' ? 'bg-destructive' : 'bg-amber-500'}`}
-                  aria-hidden="true"
-                />
-                <div>
-                  <h4 className="text-xs font-bold">{alert.title}</h4>
-                  <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
-                    {alert.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
-        <ChartCard title="Entradas, saídas e lucro">
-          <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
-            Acompanhe a evolução diária sem confundir faturamento com saldo.
-          </p>
-          <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
-            <FinanceTrendChart data={data?.series || []} />
-          </Suspense>
-        </ChartCard>
-        <section className="surface-card p-4">
-          <h3 className="text-sm font-bold">Próximos compromissos</h3>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Valores pendentes que afetam seu saldo.
-          </p>
-          <div className="mt-4 space-y-3">
-            <FinancialPositionRow
-              label="Contas a pagar"
-              value={summary.payable}
-              help="Ainda precisam ser pagas"
-              tone="negative"
-              onClick={() => onNavigate('payables')}
-            />
-            <FinancialPositionRow
-              label="Contas a receber"
-              value={summary.receivable}
-              help="Inclui fiados pendentes"
-              tone="positive"
-              onClick={() => onNavigate('receivables')}
-            />
-            <FinancialPositionRow
-              label="Dinheiro em caixa"
-              value={summary.cash_available}
-              help="Caixa físico, carteira e cofre"
-              onClick={() => onNavigate('accounts')}
-            />
-          </div>
-        </section>
-      </section>
-
-      <details
-        className="surface-card group overflow-hidden"
-        onToggle={(event) => setAnalyticsOpen(event.currentTarget.open)}
-      >
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden hover:bg-muted/40">
-          <span>
-            <strong className="block text-sm">Ver análises detalhadas</strong>
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">
-              Margem, faturamento bruto, categorias, pagamentos e produtos.
-            </span>
-          </span>
-          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
-        </summary>
-        {analyticsOpen && (
-          <div className="space-y-4 border-t border-border p-4">
-            <section className="grid gap-3 sm:grid-cols-3">
-              <MetricCard
-                label="Faturamento bruto"
-                value={formatCurrency(summary.gross_revenue)}
-                help="Total vendido antes dos descontos"
-              />
-              <MetricCard
-                label="Margem de lucro"
-                value={`${Number(summary.margin || 0).toLocaleString('pt-BR')}%`}
-                help="Quanto do faturamento virou lucro"
-              />
-              <MetricCard
-                label="Disponível em caixa"
-                value={formatCurrency(summary.cash_available)}
-                help="Dinheiro com disponibilidade imediata"
-              />
-            </section>
-            <section className="grid gap-4 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
-              <ChartCard title="Despesas por categoria">
-                <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
-                  <ExpenseCategoryChart
-                    data={data?.expenses_by_category || []}
-                  />
-                </Suspense>
-              </ChartCard>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SimpleRanking
-                  title="Formas de pagamento"
-                  items={Object.entries(data?.payments || {}).map(
-                    ([label, value]) => ({
-                      label: getPaymentLabel(label),
-                      value,
-                    }),
-                  )}
-                />
-                <SimpleRanking
-                  title="Produtos que mais geraram receita"
-                  items={data?.top_products || []}
-                />
-              </div>
-            </section>
-          </div>
-        )}
-      </details>
-    </div>
-  );
-}
-
-function FinancialPositionRow({
-  label,
-  value,
-  help,
-  tone = 'neutral',
-  onClick,
-}) {
-  const toneClass =
-    tone === 'negative'
-      ? 'text-destructive'
-      : tone === 'positive'
-        ? 'text-emerald-700 dark:text-emerald-300'
-        : 'text-foreground';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5"
-    >
-      <span className="min-w-0">
-        <strong className="block text-xs">{label}</strong>
-        <span className="mt-0.5 block text-[10px] text-muted-foreground">
-          {help}
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1.5">
-        <strong className={`text-sm tabular-nums ${toneClass}`}>
-          {formatCurrency(value)}
-        </strong>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </span>
-    </button>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  help,
-  change = null,
-  icon: Icon = null,
-  tone = 'neutral',
-}) {
-  const iconTone = {
-    positive: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    negative: 'bg-destructive/10 text-destructive',
-    info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
-    neutral: 'bg-muted text-muted-foreground',
-  }[tone];
-  return (
-    <article className="surface-card p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && (
-            <span
-              className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${iconTone}`}
-            >
-              <Icon className="h-4 w-4" />
-            </span>
-          )}
-          <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        </div>
-        {change !== null && change !== undefined && (
-          <span
-            title="Comparação com o período anterior"
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${change >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 text-destructive'}`}
-          >
-            {change > 0 ? '+' : ''}
-            {change}%
-          </span>
-        )}
-      </div>
-      <strong className="mt-2 block break-words text-xl tabular-nums sm:text-2xl">
-        {value}
-      </strong>
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">{help}</p>
-    </article>
-  );
-}
-function ChartCard({ title, children }) {
-  return (
-    <section className="surface-card min-w-0 p-4">
-      <h3 className="mb-4 text-sm font-bold">{title}</h3>
-      {children}
-    </section>
-  );
-}
-function ChartSkeleton({ height = 'h-[260px]' }) {
-  return (
-    <div
-      role="status"
-      aria-label="Carregando gráfico"
-      className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
-    />
-  );
-}
-function SimpleRanking({ title, items }) {
-  const [open, setOpen] = useState(false);
-  const rows = items || [];
-  const visibleItems = rows.slice(0, 5);
-  const hasMore = rows.length > visibleItems.length;
-  const renderItem = (item, index) => (
-    <div key={`${item.label}-${index}`} className="flex items-center gap-3">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-bold">
-        {index + 1}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm">
-        {item.label}
-      </span>
-      <strong className="shrink-0 text-sm tabular-nums">
-        {formatCurrency(item.revenue ?? item.value)}
-      </strong>
-    </div>
-  );
-
-  return (
-    <section className="surface-card p-4">
-      <h3 className="text-sm font-bold">{title}</h3>
-      {rows.length ? (
-        <div className="mt-3 space-y-3">
-          {visibleItems.map(renderItem)}
-        </div>
-      ) : (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Sem dados no período.
-        </p>
-      )}
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-3 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
-        >
-          Ver ranking completo ({rows.length})
-        </button>
-      )}
-      {open && (
-        <SimpleRankingModal
-          title={title}
-          items={rows}
-          onClose={() => setOpen(false)}
-          renderItem={renderItem}
-        />
-      )}
-    </section>
-  );
-}
-
-function SimpleRankingModal({ title, items, onClose, renderItem }) {
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${title} completo`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3"
-      onClick={onClose}
-    >
-      <section
-        className="max-h-[88vh] w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-bold">{title}</h3>
-            <p className="text-xs text-muted-foreground">{items.length} item(ns)</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar ranking completo"
-            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto p-4">
-          <div className="space-y-3">{items.map(renderItem)}</div>
-        </div>
-      </section>
-    </div>
-  );
-}
 function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
   const confirm = useConfirm();
   const requestSequence = useRef(0);
@@ -1104,196 +682,6 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
   );
 }
 
-function TransactionList({
-  items,
-  selectable = false,
-  selected = [],
-  setSelected,
-  onPay,
-  onEdit,
-  onCancel,
-  onDuplicate,
-}) {
-  if (!items.length)
-    return (
-      <EmptyState
-        icon={Receipt}
-        title="Nenhum lançamento encontrado"
-        description="Ajuste o período ou registre o primeiro lançamento."
-      />
-    );
-  return (
-    <>
-      <div className="grid gap-3 lg:hidden">
-        {items.map((item) => (
-          <article key={item.id} className="surface-card p-4">
-            <div className="flex items-start gap-3">
-              {selectable && (
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5"
-                  checked={selected.includes(item.id)}
-                  onChange={() =>
-                    setSelected((value) =>
-                      value.includes(item.id)
-                        ? value.filter((id) => id !== item.id)
-                        : [...value, item.id],
-                    )
-                  }
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <strong className="break-words text-sm">
-                    {item.description}
-                  </strong>
-                  <StatusBadge status={item.status} />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {item.category_name || TYPE_LABEL[item.type]} ·{' '}
-                  {formatDate(item.due_date || item.issue_date)}
-                </p>
-                <strong
-                  className={`mt-3 block text-lg tabular-nums ${item.type === 'revenue' ? 'text-emerald-600' : 'text-foreground'}`}
-                >
-                  {formatCurrency(item.amount)}
-                </strong>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <RowActions
-                    item={item}
-                    onPay={onPay}
-                    onEdit={onEdit}
-                    onCancel={onCancel}
-                    onDuplicate={onDuplicate}
-                  />
-                </div>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="surface-card hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[920px] text-sm">
-          <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-            <tr>
-              {selectable && <th className="w-12 px-4 py-3">Sel.</th>}
-              <th className="px-4 py-3">Descrição</th>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3">Vencimento</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Pago</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-muted/20">
-                {selectable && (
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={selected.includes(item.id)}
-                      onChange={() =>
-                        setSelected((value) =>
-                          value.includes(item.id)
-                            ? value.filter((id) => id !== item.id)
-                            : [...value, item.id],
-                        )
-                      }
-                    />
-                  </td>
-                )}
-                <td className="max-w-64 px-4 py-3 font-semibold">
-                  {item.description}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {item.category_name || '—'}
-                </td>
-                <td className="px-4 py-3">
-                  {formatDate(item.due_date || item.issue_date)}
-                </td>
-                <td className="px-4 py-3 font-bold tabular-nums">
-                  {formatCurrency(item.amount)}
-                </td>
-                <td className="px-4 py-3 tabular-nums">
-                  {formatCurrency(item.paid_amount)}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={item.status} />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-1">
-                    <RowActions
-                      item={item}
-                      onPay={onPay}
-                      onEdit={onEdit}
-                      onCancel={onCancel}
-                      onDuplicate={onDuplicate}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
-function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
-  return (
-    <>
-      {onPay && ['pending', 'partial', 'overdue'].includes(item.status) && (
-        <button
-          type="button"
-          onClick={() => onPay(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
-        >
-          Pagar
-        </button>
-      )}
-      {onDuplicate && (
-        <button
-          type="button"
-          onClick={() => onDuplicate(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
-        >
-          Duplicar
-        </button>
-      )}
-      {onEdit && ['pending', 'partial', 'overdue'].includes(item.status) && (
-        <button
-          type="button"
-          onClick={() => onEdit(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
-        >
-          Editar
-        </button>
-      )}
-      {onCancel && !['cancelled', 'reversed'].includes(item.status) && (
-        <button
-          type="button"
-          onClick={() => onCancel(item)}
-          className="rounded-lg border border-destructive/30 px-2.5 py-2 text-xs font-bold text-destructive hover:bg-destructive/5"
-        >
-          Cancelar
-        </button>
-      )}
-    </>
-  );
-}
-function StatusBadge({ status }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${status === 'paid' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : status === 'overdue' ? 'bg-destructive/10 text-destructive' : status === 'cancelled' || status === 'reversed' ? 'bg-muted text-muted-foreground' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}
-    >
-      {STATUS_LABEL[status] || status}
-    </span>
-  );
-}
-
 function TransactionModal({
   open,
   onClose,
@@ -1312,8 +700,8 @@ function TransactionModal({
       bootstrap?.accounts?.find((item) => item.is_default)?.id ||
       bootstrap?.accounts?.[0]?.id ||
       '',
-    issue_date: today(),
-    due_date: today(),
+    issue_date: todayIsoDate(),
+    due_date: todayIsoDate(),
     payment_method: '',
     status: 'pending',
     notes: '',
@@ -2269,7 +1657,7 @@ function PurchaseModal({
       bootstrap.accounts?.find((a) => a.is_default)?.id ||
       bootstrap.accounts?.[0]?.id ||
       '',
-    issue_date: today(),
+    issue_date: todayIsoDate(),
     payment_method: 'boleto',
     discount: '0',
     freight: '0',
@@ -2611,7 +1999,7 @@ function Reconciliation({ range }) {
 
 function Goals({ bootstrap, data, refreshAll }) {
   const [form, setForm] = useState({
-      period: today().slice(0, 7),
+      period: todayIsoDate().slice(0, 7),
       type: 'revenue',
       target_value: '',
       category_id: '',
@@ -2991,7 +2379,7 @@ function RecurringPanel({ bootstrap, refreshAll }) {
       bootstrap.accounts?.[0]?.id ||
       '',
     frequency: 'monthly',
-    start_date: today(),
+    start_date: todayIsoDate(),
     due_day: String(new Date().getDate()),
     transaction_type: 'expense',
     payment_method: 'boleto',
@@ -3225,92 +2613,6 @@ function PermissionsPanel({ bootstrap, refreshAll }) {
   );
 }
 
-function ReferenceCards({ items = [], empty, render }) {
-  if (!items.length) return <EmptyState icon={Users} title={empty} />;
-  return (
-    <div className="grid content-start gap-3 sm:grid-cols-2">
-      {items.map((item) => (
-        <article
-          key={item.id}
-          className={`surface-card p-4 ${!item.active ? 'opacity-60' : ''}`}
-        >
-          {render(item)}
-        </article>
-      ))}
-    </div>
-  );
-}
-function Field({ label, children }) {
-  return (
-    <label className="block text-xs font-bold text-muted-foreground">
-      {label}
-      {children}
-    </label>
-  );
-}
-function ModalActions({ saving, onClose, label = 'Salvar' }) {
-  return (
-    <div className="sticky -bottom-5 flex flex-col-reverse gap-2 border-t border-border bg-card pt-4 sm:flex-row sm:justify-end">
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={saving}
-        className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
-      >
-        Cancelar
-      </button>
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-60"
-      >
-        {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-        {label}
-      </button>
-    </div>
-  );
-}
-function FinanceModal({ title, onClose, children, wide = false }) {
-  useEffect(() => {
-    const close = (e) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', close);
-    const old = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', close);
-      document.body.style.overflow = old;
-    };
-  }, [onClose]);
-  return (
-    <div
-      className="fixed inset-0 z-[80] grid items-end bg-black/55 p-0 sm:place-items-center sm:p-4"
-      role="presentation"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="finance-modal-title"
-        className={`max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-card p-4 shadow-2xl sm:rounded-2xl sm:p-5 ${wide ? 'sm:max-w-5xl' : 'sm:max-w-2xl'}`}
-      >
-        <header className="mb-5 flex items-center justify-between gap-3">
-          <h2 id="finance-modal-title" className="text-lg font-bold">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="grid h-11 w-11 place-items-center rounded-xl hover:bg-muted"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
-        {children}
-      </section>
-    </div>
-  );
-}
 function downloadCsv(rows, name) {
   const content = rows
     .map((row) =>

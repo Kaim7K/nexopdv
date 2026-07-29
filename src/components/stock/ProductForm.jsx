@@ -1,26 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Check,
-  ChevronDown,
   CopyPlus,
   ExternalLink,
   ImageIcon,
   Loader2,
-  Pencil,
   Save,
   ScanSearch,
   Sparkles,
-  Trash2,
   X,
 } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
-import {
-  generateInternalCode,
-  formatCurrencyInput,
-  parseCurrencyDigits,
-} from '@/lib/helpers';
+import { formatCurrencyInput } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
+import ProductCategoryField from '@/components/stock/ProductCategoryField';
 import { openGoogleImages } from '@/lib/google-images';
 import {
   readClipboardImageUrl,
@@ -36,21 +29,14 @@ import {
 import { standardizeProductName } from '@/lib/product-name';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import { hasMarketFeature } from '@/lib/market-modules';
-
-const EMPTY_FORM = {
-  name: '',
-  category: '',
-  barcode: '',
-  internal_code: '',
-  image_url: '',
-  sale_price: '',
-  cost_price: '',
-  quantity: '',
-  unit: 'unidade',
-  status: 'ativo',
-  allow_pdv_price_edit: false,
-  track_stock: true,
-};
+import {
+  EMPTY_PRODUCT_FORM,
+  createEmptyProductForm,
+  duplicateProductToForm,
+  productFormPayload,
+  productToForm,
+  validateProductForm,
+} from '@/lib/product-form-helpers';
 
 export default function ProductForm({
   product = null,
@@ -60,7 +46,7 @@ export default function ProductForm({
   onSave,
   onClose,
 }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
   const [saving, setSaving] = useState(false);
   const [imageChanged, setImageChanged] = useState(false);
   const [identifying, setIdentifying] = useState(false);
@@ -103,56 +89,16 @@ export default function ProductForm({
   useEffect(() => {
     if (product) {
       setImageChanged(false);
-      setForm({
-        name: product.name || '',
-        category: product.category || '',
-        barcode: product.barcode || '',
-        internal_code: product.internal_code || generateInternalCode(),
-        image_url: product.image_url || '',
-        sale_price:
-          product.sale_price === null || product.sale_price === undefined
-            ? ''
-            : String(Math.round(Number(product.sale_price || 0) * 100)),
-        cost_price:
-          product.cost_price === null || product.cost_price === undefined
-            ? ''
-            : String(Math.round(Number(product.cost_price || 0) * 100)),
-        quantity: product.quantity ?? '',
-        unit: product.unit || 'unidade',
-        status: product.status || 'ativo',
-        allow_pdv_price_edit: Boolean(product.allow_pdv_price_edit),
-        track_stock: product.track_stock !== false,
-      });
+      setForm(productToForm(product));
       return;
     }
     if (duplicateSource) {
       setImageChanged(true);
-      setForm({
-        name: `${duplicateSource.name || 'Produto'} - Cópia`,
-        category: duplicateSource.category || '',
-        barcode: '',
-        internal_code: generateInternalCode(),
-        image_url: duplicateSource.image_url || '',
-        sale_price:
-          duplicateSource.sale_price === null ||
-          duplicateSource.sale_price === undefined
-            ? ''
-            : String(Math.round(Number(duplicateSource.sale_price || 0) * 100)),
-        cost_price:
-          duplicateSource.cost_price === null ||
-          duplicateSource.cost_price === undefined
-            ? ''
-            : String(Math.round(Number(duplicateSource.cost_price || 0) * 100)),
-        quantity: '0',
-        unit: duplicateSource.unit || 'unidade',
-        status: duplicateSource.status || 'ativo',
-        allow_pdv_price_edit: false,
-        track_stock: duplicateSource.track_stock !== false,
-      });
+      setForm(duplicateProductToForm(duplicateSource));
       return;
     }
     setImageChanged(false);
-    setForm({ ...EMPTY_FORM, internal_code: generateInternalCode() });
+    setForm(createEmptyProductForm());
   }, [product, duplicateSource]);
 
   useEffect(() => {
@@ -297,47 +243,21 @@ export default function ProductForm({
     }
   };
 
-  const validate = () => {
-    if (!form.name.trim()) return 'Nome é obrigatório.';
-    if (form.sale_price === '' || parseCurrencyDigits(form.sale_price) < 0)
-      return 'Informe um preço de venda válido.';
-    if (form.quantity !== '' && Number(form.quantity) < 0)
-      return 'A quantidade não pode ser negativa.';
-    return '';
-  };
-
-  const payload = () => {
-    const data = {
-      name: form.name.trim(),
-      category: form.category.trim(),
-      barcode: form.barcode.trim(),
-      internal_code: form.internal_code,
-      sale_price: parseCurrencyDigits(form.sale_price) || 0,
-      cost_price:
-        form.cost_price === '' ? null : parseCurrencyDigits(form.cost_price),
-      quantity: form.quantity === '' ? 0 : Number.parseFloat(form.quantity),
-      unit: form.unit,
-      status: form.status,
-      allow_pdv_price_edit: Boolean(form.allow_pdv_price_edit),
-      track_stock: Boolean(form.track_stock),
-    };
-    if (
-      canUploadProductImage &&
-      (!isEditing || imageChanged || !product?.image_is_inline)
-    )
-      data.image_url = form.image_url || '';
-    return data;
-  };
-
   const saveProduct = async ({ duplicateAfter = false } = {}) => {
-    const invalid = validate();
+    const invalid = validateProductForm(form);
     if (invalid) {
       toast.error(invalid);
       return;
     }
     setSaving(true);
     try {
-      const data = payload();
+      const data = productFormPayload({
+        form,
+        canUploadProductImage,
+        isEditing,
+        imageChanged,
+        product,
+      });
       let saved;
       if (isEditing) {
         if (Number(product.sale_price) !== Number(data.sale_price)) {
@@ -375,24 +295,7 @@ export default function ProductForm({
 
       onSave(saved, { keepOpen: duplicateAfter });
       if (duplicateAfter) {
-        setForm({
-          ...data,
-          image_url: data.image_url || '',
-          name: `${data.name} - Cópia`,
-          barcode: '',
-          internal_code: generateInternalCode(),
-          sale_price:
-            data.sale_price === null || data.sale_price === undefined
-              ? ''
-              : String(Math.round(Number(data.sale_price || 0) * 100)),
-          cost_price:
-            data.cost_price === null || data.cost_price === undefined
-              ? ''
-              : String(Math.round(Number(data.cost_price || 0) * 100)),
-          quantity: '0',
-          allow_pdv_price_edit: false,
-          track_stock: data.track_stock !== false,
-        });
+        setForm(duplicateProductToForm(data));
         toast.success(
           'Primeiro produto criado. Ajuste a cópia e clique em Criar.',
         );
@@ -546,140 +449,25 @@ export default function ProductForm({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="relative">
-              <label
-                htmlFor="product-category"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Categoria
-              </label>
-              <button
-                type="button"
-                onClick={() => setCategoryMenuOpen((open) => !open)}
-                className="mt-1 flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm text-left focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                <span
-                  className={
-                    form.category ? 'text-foreground' : 'text-muted-foreground'
-                  }
-                >
-                  {form.category || 'Selecione uma categoria'}
-                </span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
-              {categoryMenuOpen && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-                  <div className="sticky top-0 border-b border-border bg-card p-2">
-                    <input
-                      value={categorySearch}
-                      onChange={(event) =>
-                        setCategorySearch(event.target.value)
-                      }
-                      placeholder="Buscar categoria..."
-                      className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                    />
-                  </div>
-                  <div className="max-h-[260px] overflow-y-auto p-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleChange('category', '');
-                        setCategoryMenuOpen(false);
-                      }}
-                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.25 text-left text-sm hover:bg-muted"
-                    >
-                      <span className="text-muted-foreground">
-                        Selecione uma categoria
-                      </span>
-                      {!form.category && (
-                        <Check className="h-4 w-4 text-accent" />
-                      )}
-                    </button>
-                    {filteredCategories.map((category) => (
-                      <div
-                        key={category}
-                        className="group flex items-center gap-0.5 rounded-lg px-1 hover:bg-muted/70"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleChange('category', category);
-                            setCategoryMenuOpen(false);
-                          }}
-                          className="min-w-0 flex-1 rounded-md px-2 py-1.25 text-left text-sm"
-                        >
-                          <span className="block truncate">{category}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => editCategory(category)}
-                          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
-                          aria-label={`Editar ${category}`}
-                          title="Editar categoria"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteCategory(category)}
-                          className="grid h-7 w-7 place-items-center rounded-md text-destructive hover:bg-destructive/10"
-                          aria-label={`Excluir ${category}`}
-                          title="Excluir categoria"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-border bg-muted/20 p-2">
-                    <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {editingCategory ? 'Editar categoria' : 'Nova categoria'}
-                    </label>
-                    <div className="mt-1.5 flex gap-2">
-                      <input
-                        value={categoryDraft}
-                        onChange={(event) =>
-                          setCategoryDraft(event.target.value)
-                        }
-                        placeholder={editingCategory || 'Digite a categoria'}
-                        className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-1.75 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                      />
-                      <button
-                        type="button"
-                        onClick={commitCategory}
-                        className="inline-flex h-8 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700"
-                      >
-                        <Save className="h-4 w-4" />{' '}
-                        {editingCategory ? 'Salvar' : 'Adicionar'}
-                      </button>
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-between gap-2">
-                      {editingCategory && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingCategory('');
-                            setCategoryDraft('');
-                          }}
-                          className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-                        >
-                          Cancelar edição
-                        </button>
-                      )}
-                      {categorySearch && (
-                        <button
-                          type="button"
-                          onClick={() => setCategorySearch('')}
-                          className="ml-auto text-xs font-semibold text-muted-foreground hover:text-foreground"
-                        >
-                          Limpar busca
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ProductCategoryField
+              category={form.category}
+              open={categoryMenuOpen}
+              onOpenChange={setCategoryMenuOpen}
+              search={categorySearch}
+              onSearchChange={setCategorySearch}
+              filteredCategories={filteredCategories}
+              draft={categoryDraft}
+              onDraftChange={setCategoryDraft}
+              editingCategory={editingCategory}
+              onEditCategory={editCategory}
+              onDeleteCategory={deleteCategory}
+              onCommitCategory={commitCategory}
+              onCancelEdit={() => {
+                setEditingCategory('');
+                setCategoryDraft('');
+              }}
+              onChange={(value) => handleChange('category', value)}
+            />
             <div>
               <label
                 htmlFor="product-unit"

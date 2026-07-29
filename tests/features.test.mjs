@@ -7,6 +7,7 @@ const [
   form,
   imageUpload,
   stock,
+  stockTable,
   users,
   settings,
   receipt,
@@ -14,6 +15,7 @@ const [
   payment,
   minimized,
   pdv,
+  pdvLayout,
   reports,
   layout,
   googleImages,
@@ -23,6 +25,7 @@ const [
   read('src/components/stock/ProductForm.jsx'),
   read('src/components/ImageUploadField.jsx'),
   read('src/pages/Estoque.jsx'),
+  read('src/components/stock/StockTable.jsx'),
   read('src/pages/Usuarios.jsx'),
   read('src/pages/Configuracoes.jsx'),
   read('src/components/pdv/ReceiptModal.jsx'),
@@ -30,6 +33,7 @@ const [
   read('src/components/pdv/PaymentModal.jsx'),
   read('src/components/pdv/MinimizedSalesBar.jsx'),
   read('src/pages/PDV.jsx'),
+  read('src/components/pdv/PdvLayout.jsx'),
   read('src/pages/Relatorios.jsx'),
   read('src/components/Layout.jsx'),
   read('src/lib/google-images.js'),
@@ -72,7 +76,7 @@ assert.match(
   'O estoque deve permitir excluir produtos.',
 );
 assert.match(
-  stock,
+  `${stock}\n${stockTable}`,
   /Atualizar estoque/,
   'Produtos zerados devem permitir atualização.',
 );
@@ -142,7 +146,7 @@ assert.match(
   'O PDV deve controlar abertura e fechamento do caixa.',
 );
 assert.match(
-  pdv,
+  pdvLayout,
   /Continuar sem caixa/,
   'O vendedor deve poder acessar outros módulos sem abrir o caixa.',
 );

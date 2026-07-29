@@ -16,10 +16,10 @@ import {
   TrendingUp,
   Trophy,
   Users,
-  X,
 } from 'lucide-react';
 import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
+import RankingList from '@/components/common/RankingList';
 
 const PERIODS = [
   { key: 'today', label: 'Hoje' },
@@ -1000,9 +1000,6 @@ function ExecutiveSummary({ stats }) {
 }
 
 function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
-  const [open, setOpen] = useState(false);
-  const visibleRows = rows.slice(0, 5);
-  const hasMore = rows.length > visibleRows.length;
   const renderRow = (row, index) => (
     <div
       key={`${row.name}-${index}`}
@@ -1033,10 +1030,12 @@ function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
   );
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-bold">{title}</h3>
-        {onSortKeyChange && (
+    <RankingList
+      title={title}
+      items={rows}
+      renderItem={renderRow}
+      headerActions={
+        onSortKeyChange && (
           <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1 text-xs font-bold">
             <button
               type="button"
@@ -1053,68 +1052,8 @@ function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
               Itens
             </button>
           </div>
-        )}
-      </div>
-      <div className="space-y-2">
-        {visibleRows.map(renderRow)}
-        {!rows.length && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Sem dados no período.
-          </p>
-        )}
-      </div>
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-border bg-muted/30 px-3 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground"
-        >
-          Ver ranking completo ({rows.length})
-        </button>
-      )}
-      {open && (
-        <RankingModal
-          title={title}
-          rows={rows}
-          onClose={() => setOpen(false)}
-          renderRow={renderRow}
-        />
-      )}
-    </section>
-  );
-}
-
-function RankingModal({ title, rows, onClose, renderRow }) {
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${title} completo`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3"
-      onClick={onClose}
-    >
-      <section
-        className="max-h-[88vh] w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-bold">{title}</h3>
-            <p className="text-xs text-muted-foreground">{rows.length} item(ns)</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar ranking completo"
-            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto p-4">
-          <div className="space-y-2">{rows.map(renderRow)}</div>
-        </div>
-      </section>
-    </div>
+        )
+      }
+    />
   );
 }

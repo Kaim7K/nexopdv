@@ -8,6 +8,11 @@ import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import { ErrorState } from '@/components/common/PageState';
+import {
+  FilterPanel,
+  MetricCard,
+  PageHeader,
+} from '@/components/common/AppShell';
 
 const SETTLEMENT_METHODS = [
   ['dinheiro', 'Dinheiro'],
@@ -221,21 +226,21 @@ export default function Fiados() {
 
   return (
     <div className="page-shell !max-w-6xl">
-      <div className="mb-6">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-700 dark:text-orange-300">
-          <HandCoins className="h-3.5 w-3.5" /> Contas a receber
-        </div>
-        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Vendas fiado</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Acompanhe pendências e registre os recebimentos.</p>
-      </div>
+      <PageHeader
+        icon={HandCoins}
+        eyebrow="Contas a receber"
+        title="Vendas fiado"
+        description="Acompanhe pendências e registre os recebimentos."
+        tone="orange"
+      />
 
       <div className="mb-3 grid grid-cols-3 gap-2 sm:mb-4 sm:grid-cols-3 sm:gap-3">
-        <Metric label="Total pendente" value={formatCurrency(totals.pending)} emphasis="orange" />
-        <Metric label="Pendências" value={totals.pendingCount} />
-        <Metric label="Total quitado no filtro" value={formatCurrency(totals.settled)} emphasis="green" />
+        <MetricCard label="Total pendente" value={formatCurrency(totals.pending)} tone="orange" />
+        <MetricCard label="Pendências" value={totals.pendingCount} />
+        <MetricCard label="Total quitado" value={formatCurrency(totals.settled)} tone="green" />
       </div>
 
-      <section className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3" aria-label="Filtros de fiados">
+      <FilterPanel aria-label="Filtros de fiados">
         <div className="grid gap-2 sm:grid-cols-[1fr_190px_auto]">
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
@@ -250,7 +255,7 @@ export default function Fiados() {
           </select>
           {hasFilters && <button type="button" onClick={clearFilters} className="min-h-11 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted">Limpar</button>}
         </div>
-      </section>
+      </FilterPanel>
 
       {loading ? (
         <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
@@ -384,11 +389,6 @@ export default function Fiados() {
       )}
     </div>
   );
-}
-
-function Metric({ label, value, emphasis = '' }) {
-  const valueClass = emphasis === 'orange' ? 'text-orange-600 dark:text-orange-300' : emphasis === 'green' ? 'text-emerald-600 dark:text-emerald-300' : 'text-foreground';
-  return <div className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-4"><span className="line-clamp-2 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-xs sm:leading-4">{label}</span><strong className={`mt-0.5 block text-base font-black tabular-nums sm:mt-1 sm:text-2xl ${valueClass}`}>{value}</strong></div>;
 }
 
 function StatusBadge({ status }) {

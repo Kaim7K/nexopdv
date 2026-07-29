@@ -10,143 +10,43 @@ import React, {
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { formatCurrency, formatDateTime } from '@/lib/helpers';
+import { formatDateTime } from '@/lib/helpers';
 import {
   ArrowDownAZ,
   ArrowDownZA,
-  ArrowRight,
   ArrowUpDown,
-  Copy,
-  Download,
-  FilterX,
-  LayoutGrid,
-  List,
   Package,
-  Pencil,
-  Plus,
-  Save,
-  Search,
-  Upload,
-  Trash2,
 } from 'lucide-react';
 import {
   mergeProductCategories,
   parseProductCategories,
 } from '@/lib/product-categories';
+import {
+  EDITABLE_COLUMNS,
+  TABLE_COLUMNS,
+  discardDuplicateProducts,
+  normalizeHeader,
+  normalizeImportedImageUrl,
+  normalizeStockValue,
+  pickRowValue,
+  safeFilePart,
+} from '@/lib/stock-helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ErrorState } from '@/components/common/PageState';
+import { PageHeader } from '@/components/common/AppShell';
+import StockActionsToolbar from '@/components/stock/StockActionsToolbar';
+import StockFilters from '@/components/stock/StockFilters';
+import StockMetric from '@/components/stock/StockMetric';
+import StockProductViews from '@/components/stock/StockProductViews';
 
 const ProductForm = lazy(() => import('@/components/stock/ProductForm'));
-
-const EDITABLE_COLUMNS = [
-  ['name', 'Produto', 'text'],
-  ['category', 'Categoria', 'text'],
-  ['barcode', 'Código de barras', 'text'],
-  ['internal_code', 'Código interno', 'text'],
-  ['sale_price', 'Preço venda', 'number'],
-  ['cost_price', 'Preço custo', 'number'],
-  ['quantity', 'Estoque', 'number'],
-  ['unit', 'Unidade', 'text'],
-  ['status', 'Status', 'text'],
-];
-
-const TABLE_COLUMNS = [
-  ...EDITABLE_COLUMNS.slice(0, 8),
-  ['last_sale_at', 'Última venda', 'date'],
-  EDITABLE_COLUMNS[8],
-];
-
-const TABLE_COLUMN_VISIBILITY = {
-  category: 'hidden min-[1440px]:table-cell',
-  barcode: 'hidden min-[1440px]:table-cell',
-  status: 'hidden min-[1440px]:table-cell',
-  internal_code: 'hidden min-[1800px]:table-cell',
-  cost_price: 'hidden min-[1800px]:table-cell',
-};
-
-const tableColumnWidth = (key) =>
-  ({
-    name: 'min-w-[200px]',
-    category: 'min-w-[132px]',
-    barcode: 'min-w-[124px]',
-    internal_code: 'min-w-[112px]',
-    sale_price: 'min-w-[104px]',
-    cost_price: 'min-w-[104px]',
-    quantity: 'min-w-[84px]',
-    unit: 'min-w-[96px]',
-    last_sale_at: 'min-w-[124px]',
-    status: 'min-w-[96px]',
-  })[key] || 'min-w-[104px]';
-
-const normalize = (value, type) =>
-  type === 'number' ? (value === '' ? '' : Number(value)) : String(value ?? '');
-const normalizeHeader = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-const pickRowValue = (row, normalizedRow, labels = []) => {
-  for (const label of labels) {
-    const value = row?.[label];
-    if (value !== undefined && value !== null && String(value).trim() !== '')
-      return value;
-    const normalized = normalizedRow?.[normalizeHeader(label)];
-    if (
-      normalized !== undefined &&
-      normalized !== null &&
-      String(normalized).trim() !== ''
-    )
-      return normalized;
-  }
-  return '';
-};
-const normalizeImportedImageUrl = (value) => {
-  const text = String(value || '').trim();
-  if (!text) return '';
-  if (/^https?:\/\//i.test(text)) return text;
-  if (/^www\./i.test(text)) return `https://${text}`;
-  if (/^\/\/[^/]+/i.test(text)) return `https:${text}`;
-  if (/^data:image\/(jpeg|png|webp|avif);base64,[a-z0-9+/=\s]+$/i.test(text))
-    return text.replace(/\s+/g, '');
-  return '';
-};
 
 const collator = new Intl.Collator('pt-BR', {
   numeric: true,
   sensitivity: 'base',
 });
-const productNameKey = (value) =>
-  String(value || '')
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR')
-    .replace(/\s+/g, ' ');
-const safeFilePart = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/gi, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
-
-const discardDuplicateProducts = (items) => {
-  const seenNames = new Set();
-  const seenBarcodes = new Set();
-  const products = items.filter((product) => {
-    const name = productNameKey(product.name);
-    const barcode = String(product.barcode || '').trim();
-    if (seenNames.has(name) || (barcode && seenBarcodes.has(barcode)))
-      return false;
-    seenNames.add(name);
-    if (barcode) seenBarcodes.add(barcode);
-    return true;
-  });
-  return { products, discarded: items.length - products.length };
-};
 
 export default function Estoque() {
   const confirm = useConfirm();
@@ -327,7 +227,7 @@ export default function Estoque() {
     setProducts((current) =>
       current.map((product) =>
         product.id === id
-          ? { ...product, [key]: normalize(value, type) }
+          ? { ...product, [key]: normalizeStockValue(value, type) }
           : product,
       ),
     );
@@ -453,7 +353,7 @@ export default function Estoque() {
           ...Object.fromEntries(
             EDITABLE_COLUMNS.map(([key, label, type]) => [
               key,
-              normalize(
+              normalizeStockValue(
                 row[label] ?? normalizedRow[normalizeHeader(label)],
                 type,
               ),
@@ -698,80 +598,28 @@ export default function Estoque() {
   return (
     <div className="page-shell !max-w-[1700px]">
       <div className="mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <Package className="h-3.5 w-3.5" /> Produtos e quantidades
-          </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            Estoque
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Edite direto na tabela ou use o cadastro completo.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-          <button
-            type="button"
-            onClick={download}
-            disabled={exporting || loading}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
-          >
-            <Download className="h-4 w-4" />{' '}
-            {exporting ? 'Gerando...' : 'Baixar Excel'}
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={importing || loading}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
-          >
-            <Upload className="h-4 w-4" />{' '}
-            {importing ? 'Importando...' : 'Importar'}
-          </button>
-          <input
-            ref={fileRef}
-            hidden
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={uploadSpreadsheet}
-          />
-          <button
-            type="button"
-            disabled={!dirty.size || saving}
-            onClick={saveInline}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
-          >
-            <Save className="h-4 w-4" />{' '}
-            {saving
-              ? 'Salvando...'
-              : dirty.size
-                ? `Salvar ${dirty.size}`
-                : 'Tudo salvo'}
-          </button>
-          {['admin', 'gerente'].includes(user.role) && (
-            <button
-              type="button"
-              onClick={handleDeleteInactive}
-              disabled={
-                deletingInactive || !inactiveCandidates.length || loading
-              }
-              title="Apaga produtos que não possuem venda há pelo menos 2 meses"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-card px-3 text-xs font-bold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
-            >
-              <Trash2 className="h-4 w-4" />{' '}
-              {deletingInactive
-                ? 'Apagando...'
-                : `Apagar inativos${inactiveCandidates.length ? ` (${inactiveCandidates.length})` : ''}`}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => openProductModal('create')}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary/90 sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
-          >
-            <Plus className="h-4 w-4" /> Novo produto
-          </button>
-        </div>
+        <PageHeader
+          icon={Package}
+          eyebrow="Produtos e quantidades"
+          title="Estoque"
+          description="Edite direto na tabela ou use o cadastro completo."
+        />
+        <StockActionsToolbar
+          ref={fileRef}
+          loading={loading}
+          exporting={exporting}
+          importing={importing}
+          saving={saving}
+          dirtyCount={dirty.size}
+          canDeleteInactive={['admin', 'gerente'].includes(user.role)}
+          deletingInactive={deletingInactive}
+          inactiveCount={inactiveCandidates.length}
+          onExport={download}
+          onImport={uploadSpreadsheet}
+          onSave={saveInline}
+          onDeleteInactive={handleDeleteInactive}
+          onCreate={() => openProductModal('create')}
+        />
       </div>
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
@@ -812,117 +660,27 @@ export default function Estoque() {
         />
       </div>
 
-      <section
-        className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3"
-        aria-label="Filtros do estoque"
-      >
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_repeat(2,minmax(110px,.7fr))_repeat(2,minmax(145px,.9fr))_minmax(125px,.75fr)_auto]">
-          <label className="relative sm:col-span-2 lg:col-span-2 2xl:col-span-1">
-            <span className="sr-only">Pesquisar produtos</span>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder="Produto, categoria ou código"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-          <select
-            aria-label="Filtrar por categoria"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-          >
-            <option value="">Todas as categorias</option>
-            {categories.map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
-          <label className="sr-only" htmlFor="min-price">
-            Preço mínimo
-          </label>
-          <input
-            id="min-price"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Preço mínimo"
-            value={minPrice}
-            onChange={(event) => setMinPrice(event.target.value)}
-          />
-          <label className="sr-only" htmlFor="max-price">
-            Preço máximo
-          </label>
-          <input
-            id="max-price"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Preço máximo"
-            value={maxPrice}
-            onChange={(event) => setMaxPrice(event.target.value)}
-          />
-          <select
-            aria-label="Filtrar por disponibilidade"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            value={stock}
-            onChange={(event) => setStock(event.target.value)}
-          >
-            <option value="todos">Qualquer estoque</option>
-            <option value="disponivel">Estoque normal</option>
-            <option value="baixo">Estoque baixo</option>
-            <option value="zerado">Sem estoque</option>
-          </select>
-          <select
-            aria-label="Filtrar por imagem"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            value={imageFilter}
-            onChange={(event) => setImageFilter(event.target.value)}
-          >
-            <option value="all">Com ou sem imagem</option>
-            <option value="with">Somente com imagem</option>
-            <option value="without">Somente sem imagem</option>
-          </select>
-          <select
-            aria-label="Quantidade por página"
-            className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            value={pageSize}
-            onChange={(event) => setPageSize(Number(event.target.value))}
-          >
-            <option value="20">20 por página</option>
-            <option value="50">50 por página</option>
-            <option value="100">100 por página</option>
-            <option value="200">200 por página</option>
-          </select>
-          <div className="inline-flex min-w-0 overflow-hidden rounded-xl border border-border bg-background sm:justify-self-start 2xl:justify-self-stretch">
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-            >
-              <List className="h-4 w-4" /> Tabela
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`inline-flex min-h-11 items-center gap-2 border-l border-border px-3 text-sm font-semibold ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-            >
-              <LayoutGrid className="h-4 w-4" /> Grade
-            </button>
-          </div>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
-            >
-              <FilterX className="h-4 w-4" /> Limpar
-            </button>
-          )}
-        </div>
-      </section>
+      <StockFilters
+        search={search}
+        onSearchChange={setSearch}
+        category={category}
+        onCategoryChange={setCategory}
+        categories={categories}
+        minPrice={minPrice}
+        onMinPriceChange={setMinPrice}
+        maxPrice={maxPrice}
+        onMaxPriceChange={setMaxPrice}
+        stock={stock}
+        onStockChange={setStock}
+        imageFilter={imageFilter}
+        onImageFilterChange={setImageFilter}
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        hasFilters={hasFilters}
+        onClearFilters={clearFilters}
+      />
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>
@@ -955,512 +713,24 @@ export default function Estoque() {
             description={loadError}
             onRetry={load}
           />
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 gap-2 p-2 min-[390px]:grid-cols-3 sm:grid-cols-4 sm:p-2.5 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-            {visibleProducts.map((product) => {
-              const quantity = Number(product.quantity || 0);
-              const tracksStock = product.track_stock !== false;
-              const isZero = quantity <= 0;
-              const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
-              const statusClass = dirty.has(product.id)
-                ? 'border-amber-500/40 bg-amber-500/10'
-                : tracksStock && isZero
-                  ? 'border-red-500/30 bg-red-500/10'
-                  : tracksStock && isLow
-                    ? 'border-amber-500/30 bg-amber-500/5'
-                    : 'border-border bg-card';
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => openProductModal('edit', product)}
-                  className={`group min-w-0 overflow-hidden rounded-xl border text-left transition active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:shadow-md ${statusClass}`}
-                >
-                  <div className="aspect-[4/3] bg-muted/30 sm:aspect-square">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="h-full w-full object-contain p-1.5"
-                        loading="lazy"
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="grid h-full place-items-center text-muted-foreground/30">
-                        <Package className="h-6 w-6" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1 p-2">
-                    <div>
-                      <p className="line-clamp-2 min-h-8 text-[11px] font-bold leading-4 sm:text-xs">
-                        {product.name}
-                      </p>
-                      <p className="line-clamp-1 text-[9px] text-muted-foreground sm:text-[10px]">
-                        {product.category || 'Sem categoria'}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-xs font-black text-accent">
-                        {formatCurrency(product.sale_price || 0)}
-                      </span>
-                      <span className="max-w-16 truncate rounded-full border border-border bg-background px-1.5 py-0.5 text-[8px] font-semibold text-muted-foreground">
-                        {product.unit || 'unidade'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1 text-[9px]">
-                      <span
-                        className={
-                          tracksStock && isZero
-                            ? 'font-bold text-destructive'
-                            : 'text-muted-foreground'
-                        }
-                      >
-                        {!tracksStock
-                          ? 'Sem controle'
-                          : isZero
-                            ? 'Sem estoque'
-                            : `Estq: ${quantity}`}
-                      </span>
-                      <span className="min-w-0 truncate text-muted-foreground">
-                        {product.barcode || product.internal_code || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         ) : (
-          <>
-            <div className="space-y-2 p-2 xl:hidden">
-              {visibleProducts.map((product) => {
-                const quantity = Number(product.quantity || 0);
-                const tracksStock = product.track_stock !== false;
-                const isZero = quantity <= 0;
-                const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
-                const badgeClass = dirty.has(product.id)
-                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200'
-                  : tracksStock && isZero
-                    ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200'
-                    : tracksStock && isLow
-                      ? 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-200'
-                      : 'border-border bg-muted/30 text-foreground';
-                return (
-                  <article
-                    key={product.id}
-                    className={`rounded-xl border p-2.5 shadow-sm ${badgeClass}`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => openProductModal('edit', product)}
-                        className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white"
-                        aria-label={`Editar ${product.name}`}
-                      >
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt=""
-                            className="h-full w-full object-contain p-1"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <Package className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm font-bold leading-4 break-words">
-                          {product.name}
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          {product.category || 'Sem categoria'}
-                        </p>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
-                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
-                            {tracksStock ? `Estoque: ${quantity}` : 'Sem controle'}
-                          </span>
-                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
-                            Preço: {formatCurrency(product.sale_price || 0)}
-                          </span>
-                          <span className="rounded-full border border-border bg-background px-2 py-0.5">
-                            {product.status === 'inativo' ? 'Inativo' : 'Ativo'}
-                          </span>
-                        </div>
-                        <div className="mt-1.5 grid gap-0.5 text-[11px] leading-4 text-muted-foreground">
-                          <span className="truncate">
-                            Código de barras: {product.barcode || '-'}
-                          </span>
-                          <span className="truncate">
-                            Código interno: {product.internal_code || '-'}
-                          </span>
-                          <span className="truncate">
-                            Última venda:{' '}
-                            {product.last_sale_at
-                              ? formatDateTime(product.last_sale_at)
-                              : 'Nunca vendido'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => openProductModal('edit', product)}
-                        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openProductModal('duplicate', product)}
-                        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
-                      >
-                        Duplicar
-                      </button>
-                      {['admin', 'gerente'].includes(user.role) && (
-                        <button
-                          type="button"
-                          disabled={deletingId === product.id}
-                          onClick={() => handleDeleteProduct(product)}
-                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-destructive/25 bg-card px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
-                        >
-                          Excluir
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-              {!filtered.length && (
-                <div className="rounded-2xl border border-border p-8 text-center">
-                  <Package className="mx-auto h-10 w-10 text-muted-foreground/25" />
-                  <p className="mt-3 font-bold">Nenhum produto encontrado</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Altere os filtros ou cadastre um novo produto.
-                  </p>
-                  {hasFilters && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground"
-                    >
-                      Limpar filtros
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-            <table className="hidden w-full min-w-[1560px] table-fixed text-sm xl:table">
-              <thead className="sticky top-0 z-20 bg-secondary/95 text-secondary-foreground shadow-sm backdrop-blur">
-                <tr>
-                  <th className="sticky left-0 z-30 w-[76px] bg-secondary px-3 py-3 text-left">
-                    <span className="sr-only">Imagem</span>
-                    <Package className="h-5 w-5" />
-                  </th>
-                  {TABLE_COLUMNS.map(([key, label]) => (
-                    <th
-                      key={key}
-                      className={`p-0 text-left ${TABLE_COLUMN_VISIBILITY[key] || ''} ${key === 'name' ? 'sticky left-[76px] z-30 bg-secondary' : ''}`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(key)}
-                        className={`flex w-full items-center gap-1.5 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide hover:bg-muted ${tableColumnWidth(key)} ${key === 'name' ? 'whitespace-normal text-left leading-5' : 'whitespace-nowrap'}`}
-                        aria-label={`Ordenar por ${label}`}
-                      >
-                        {label} <SortIcon column={key} />
-                      </button>
-                    </th>
-                  ))}
-                  <th className="sticky right-0 z-30 w-[214px] bg-secondary px-3 py-3 text-right">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleProducts.map((product) => {
-                  const quantity = Number(product.quantity || 0);
-                  const tracksStock = product.track_stock !== false;
-                  const isZero = quantity <= 0;
-                  const isLow = tracksStock && !isZero && quantity <= lowStockThreshold;
-                  const rowBackground = dirty.has(product.id)
-                    ? 'bg-amber-500/10'
-                    : tracksStock && isZero
-                      ? 'bg-red-500/10'
-                      : tracksStock && isLow
-                        ? 'bg-amber-500/5'
-                        : '';
-                  const stickyBackground = dirty.has(product.id)
-                    ? 'bg-amber-50 dark:bg-amber-950/30'
-                    : tracksStock && isZero
-                      ? 'bg-red-50 dark:bg-red-950/30'
-                      : tracksStock && isLow
-                        ? 'bg-amber-50 dark:bg-amber-950/20'
-                        : 'bg-card';
-                  const hasCostPrice =
-                    product.cost_price !== null &&
-                    product.cost_price !== '' &&
-                    Number.isFinite(Number(product.cost_price));
-                  const unitProfit =
-                    Number(product.sale_price || 0) -
-                    Number(product.cost_price || 0);
-                  return (
-                    <tr
-                      key={product.id}
-                      className={`border-t border-border/80 transition-colors hover:bg-muted/30 ${rowBackground}`}
-                    >
-                      <td
-                        className={`sticky left-0 z-10 p-2 align-middle ${stickyBackground}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => openProductModal('edit', product)}
-                          className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-background shadow-sm"
-                          aria-label={`Editar ${product.name}`}
-                        >
-                          {product.image_url ? (
-                            <img
-                              src={product.image_url}
-                              alt=""
-                              className="h-full w-full object-contain p-1"
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </button>
-                      </td>
-                      {TABLE_COLUMNS.map(([key, label, type]) => (
-                        <td
-                          key={key}
-                          className={`p-1 align-middle ${TABLE_COLUMN_VISIBILITY[key] || ''} ${
-                            key === 'name'
-                              ? `sticky left-[76px] z-10 ${stickyBackground}`
-                              : ''
-                          }`}
-                        >
-                          {key === 'last_sale_at' ? (
-                            <div className="min-w-[124px] px-2">
-                              <span className="block text-xs font-bold">
-                                {product.last_sale_at
-                                  ? formatDateTime(product.last_sale_at)
-                                  : 'Nunca vendido'}
-                              </span>
-                              <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                                {product.last_sale_at
-                                  ? 'Última saída registrada'
-                                  : 'Sem vendas registradas'}
-                              </span>
-                            </div>
-                          ) : key === 'sale_price' || key === 'cost_price' ? (
-                            <div className="min-w-[104px] px-1">
-                              <label className="relative block">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
-                                  R$
-                                </span>
-                                <input
-                                  aria-label={`${label} de ${product.name}`}
-                                  className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold tabular-nums hover:border-border focus:border-accent focus:bg-background focus:outline-none"
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={product[key] ?? ''}
-                                  onChange={(event) =>
-                                    editInline(
-                                      product.id,
-                                      key,
-                                      event.target.value,
-                                      type,
-                                    )
-                                  }
-                                />
-                              </label>
-                              {key === 'sale_price' && hasCostPrice && (
-                                <span
-                                  className={`mt-0.5 block px-2 text-[10px] font-bold ${unitProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}
-                                >
-                                  {unitProfit >= 0 ? '+ ' : '− '}
-                                  {formatCurrency(Math.abs(unitProfit))}
-                                </span>
-                              )}
-                            </div>
-                          ) : key === 'category' ? (
-                            <select
-                              aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[132px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none"
-                              value={product.category || ''}
-                              onChange={(event) =>
-                                editInline(
-                                  product.id,
-                                  key,
-                                  event.target.value,
-                                  type,
-                                )
-                              }
-                            >
-                              <option value="">Sem categoria</option>
-                              {categories.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-                          ) : key === 'status' ? (
-                            <select
-                              aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[96px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
-                              value={product.status || 'ativo'}
-                              onChange={(event) =>
-                                editInline(
-                                  product.id,
-                                  key,
-                                  event.target.value,
-                                  type,
-                                )
-                              }
-                            >
-                              <option value="ativo">Ativo</option>
-                              <option value="inativo">Inativo</option>
-                            </select>
-                          ) : key === 'unit' ? (
-                            <select
-                              aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[96px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
-                              value={product.unit || 'unidade'}
-                              onChange={(event) =>
-                                editInline(
-                                  product.id,
-                                  key,
-                                  event.target.value,
-                                  type,
-                                )
-                              }
-                            >
-                              <option value="unidade">Unidade</option>
-                              <option value="peso">Peso</option>
-                            </select>
-                          ) : key === 'name' ? (
-                            <input
-                              aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[200px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
-                              type={type}
-                              value={product[key] ?? ''}
-                              onChange={(event) =>
-                                editInline(
-                                  product.id,
-                                  key,
-                                  event.target.value,
-                                  type,
-                                )
-                              }
-                            />
-                          ) : (
-                            <input
-                              aria-label={`${label} de ${product.name}`}
-                              className={`h-10 w-full rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none ${tableColumnWidth(key)}`}
-                              type={type}
-                              min={type === 'number' ? '0' : undefined}
-                              step={
-                                key === 'sale_price' || key === 'cost_price'
-                                  ? '0.01'
-                                  : 'any'
-                              }
-                              value={product[key] ?? ''}
-                              onChange={(event) =>
-                                editInline(
-                                  product.id,
-                                  key,
-                                  event.target.value,
-                                  type,
-                                )
-                              }
-                            />
-                          )}
-                        </td>
-                      ))}
-                      <td
-                        className={`sticky right-0 z-10 p-2 align-middle ${stickyBackground}`}
-                      >
-                        <div className="flex flex-wrap justify-end gap-1">
-                          {tracksStock && isZero && (
-                            <button
-                              type="button"
-                              onClick={() => openProductModal('edit', product)}
-                              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/35 bg-red-500/10 px-3 text-xs font-bold text-red-700 hover:bg-red-500/15 dark:text-red-300"
-                            >
-                              Atualizar estoque{' '}
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => openProductModal('edit', product)}
-                            className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                            aria-label={`Editar ${product.name} no formulário`}
-                            title="Editar no formulário"
-                          >
-                            <Pencil className="h-[18px] w-[18px]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openProductModal('duplicate', product)
-                            }
-                            className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                            aria-label={`Duplicar ${product.name}`}
-                            title="Duplicar produto"
-                          >
-                            <Copy className="h-[18px] w-[18px]" />
-                          </button>
-                          {['admin', 'gerente'].includes(user.role) && (
-                            <button
-                              type="button"
-                              disabled={deletingId === product.id}
-                              onClick={() => handleDeleteProduct(product)}
-                              className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/25 text-destructive transition hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
-                              aria-label={`Excluir ${product.name}`}
-                              title="Excluir produto"
-                            >
-                              <Trash2 className="h-[18px] w-[18px]" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!filtered.length && (
-                  <tr>
-                    <td
-                      colSpan={TABLE_COLUMNS.length + 2}
-                      className="p-16 text-center"
-                    >
-                      <Package className="mx-auto h-10 w-10 text-muted-foreground/25" />
-                      <p className="mt-3 font-bold">
-                        Nenhum produto encontrado
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Altere os filtros ou cadastre um novo produto.
-                      </p>
-                      {hasFilters && (
-                        <button
-                          type="button"
-                          onClick={clearFilters}
-                          className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground"
-                        >
-                          Limpar filtros
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </>
+          <StockProductViews
+            viewMode={viewMode}
+            products={visibleProducts}
+            lowStockThreshold={lowStockThreshold}
+            dirty={dirty}
+            categories={categories}
+            userRole={user.role}
+            deletingId={deletingId}
+            SortIcon={SortIcon}
+            onSort={toggleSort}
+            onEdit={(product) => openProductModal('edit', product)}
+            onDuplicate={(product) => openProductModal('duplicate', product)}
+            onDelete={handleDeleteProduct}
+            onInlineEdit={editInline}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+          />
         )}
       </div>
 
@@ -1520,49 +790,5 @@ export default function Estoque() {
         </Suspense>
       )}
     </div>
-  );
-}
-
-function StockMetric({
-  label,
-  value,
-  alert = false,
-  low = false,
-  pending = false,
-  active = false,
-  hint = '',
-  onClick = undefined,
-}) {
-  const valueClass = alert
-    ? 'text-red-600 dark:text-red-300'
-    : low || pending
-      ? 'text-amber-600 dark:text-amber-300'
-      : 'text-foreground';
-  const borderClass = alert
-    ? 'border-red-500/35'
-    : low
-      ? 'border-amber-400/45'
-      : 'border-border';
-  const Component = onClick ? 'button' : 'div';
-  return (
-    <Component
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
-      className={`rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:rounded-2xl sm:p-4 ${borderClass} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
-    >
-      <span className="line-clamp-1 text-[11px] font-semibold text-muted-foreground sm:text-xs">
-        {label}
-      </span>
-      <strong
-        className={`mt-0.5 block text-xl font-bold tabular-nums sm:mt-1 sm:text-2xl ${valueClass}`}
-      >
-        {value}
-      </strong>
-      {hint && (
-        <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
-          {hint}
-        </span>
-      )}
-    </Component>
   );
 }
