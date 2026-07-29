@@ -9,6 +9,9 @@ const apiClient = read('src/api/nexoApi.js');
 const financeService = read('server/finance.js');
 const financePage = read('src/pages/Financeiro.jsx');
 const reportsPage = read('src/pages/Relatorios.jsx');
+const pdvPage = read('src/pages/PDV.jsx');
+const salesPage = read('src/pages/Vendas.jsx');
+const receiptModal = read('src/components/pdv/ReceiptModal.jsx');
 const migration = read('database/migrations/015_performance_indexes.sql');
 const database = read('server/db.js');
 
@@ -56,6 +59,21 @@ assert.doesNotMatch(
   reportsPage,
   /from 'recharts'/,
   'Relatórios devem carregar a biblioteca de gráficos progressivamente.',
+);
+assert.doesNotMatch(
+  pdvPage,
+  /from '@\/lib\/sales-pdf'/,
+  'O PDV deve carregar o gerador de PDF apenas quando exportar.',
+);
+assert.doesNotMatch(
+  salesPage,
+  /from '@\/lib\/sales-pdf'/,
+  'Historico de vendas deve carregar PDF apenas quando solicitado.',
+);
+assert.doesNotMatch(
+  receiptModal,
+  /from '@\/lib\/sales-pdf'/,
+  'O modal de recibo deve gerar PDF sob demanda.',
 );
 assert.match(migration, /gin_trgm_ops/);
 assert.match(migration, /nexo_finance_transactions_type_period_idx/);

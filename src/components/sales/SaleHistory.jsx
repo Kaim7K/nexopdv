@@ -22,7 +22,7 @@ export function SaleCard({
   onDelete,
 }) {
   return (
-    <article className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-3.5">
+    <article className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-black sm:text-base">
@@ -35,7 +35,7 @@ export function SaleCard({
         </div>
         <SaleStatus sale={sale} />
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-2 rounded-lg bg-muted/30 px-2.5 py-2 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2.5">
+      <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-2 rounded-lg bg-muted/30 px-2.5 py-2 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2">
         <div className="min-w-0">
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
             Pagamento
@@ -48,7 +48,7 @@ export function SaleCard({
           <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
             Total
           </span>
-          <strong className="block text-base font-black tabular-nums sm:text-lg">
+          <strong className="block text-base font-black tabular-nums sm:text-base">
             {formatCurrency(sale.total)}
           </strong>
         </div>
@@ -214,7 +214,7 @@ export function SaleDetailModal({
         className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
         role="presentation"
       >
-        <div className="rounded-2xl border border-border bg-card px-8 py-7 text-center shadow-2xl">
+        <div className="rounded-xl border border-border bg-card px-5 py-4 text-center shadow-2xl">
           <Loader2 className="mx-auto h-7 w-7 animate-spin text-accent" />
           <p className="mt-3 text-sm font-semibold">Carregando detalhes...</p>
         </div>
@@ -232,13 +232,13 @@ export function SaleDetailModal({
       role="presentation"
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
+        className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sale-detail-title"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-4 py-3">
           <div>
             <h2 id="sale-detail-title" className="text-lg font-black">
               Venda #{sale.sale_number}
@@ -392,7 +392,7 @@ export function ConfirmSaleAction({
       role="presentation"
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="sale-action-title"
@@ -471,3 +471,4 @@ export function ConfirmSaleAction({
     </div>
   );
 }
+

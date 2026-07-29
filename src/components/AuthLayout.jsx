@@ -3,14 +3,14 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function AuthLayout({ title, subtitle, children }) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-8 sm:px-6">
+    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--muted)/0.65),transparent_42%),linear-gradient(180deg,transparent,hsl(var(--accent)/0.08))]" />
       <ThemeToggle className="absolute right-4 top-4 !text-muted-foreground hover:!bg-muted hover:!text-foreground" />
       <div className="relative w-full max-w-md">
-        <div className="mb-7 flex flex-col items-center">
-          <div className="mb-4 flex h-20 items-center justify-center">
-            <img src="/brand/nexo-logo.svg" alt="Nexo PDV" width="220" height="83" className="h-16 w-auto max-w-[220px] dark:hidden" />
-            <img src="/brand/nexo-logo-white.svg" alt="" width="220" height="83" className="hidden h-16 w-auto max-w-[220px] dark:block" />
+        <div className="mb-5 flex flex-col items-center sm:mb-6">
+          <div className="mb-3 flex h-14 items-center justify-center sm:h-16">
+            <img src="/brand/nexo-logo.svg" alt="Nexo PDV" width="220" height="83" className="h-12 w-auto max-w-[180px] sm:h-14 sm:max-w-[210px] dark:hidden" />
+            <img src="/brand/nexo-logo-white.svg" alt="" width="220" height="83" className="hidden h-12 w-auto max-w-[180px] sm:h-14 sm:max-w-[210px] dark:block" />
           </div>
           {subtitle && <p className="text-xs font-bold uppercase tracking-[0.12em] text-accent">{subtitle}</p>}
           <h1 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>

@@ -16,7 +16,7 @@ export default function PaginationControls({
   return (
     <nav
       aria-label="Paginação"
-      className="mt-4 flex flex-col items-center justify-between gap-3 rounded-lg border border-border/80 bg-card px-3 py-3 shadow-sm sm:flex-row"
+      className="mt-3 flex flex-col items-center justify-between gap-2 rounded-lg border border-border/80 bg-card px-2.5 py-2.5 shadow-sm sm:flex-row sm:px-3"
     >
       <span className="text-xs font-medium text-muted-foreground">
         Exibindo {first}-{last} de {total}
@@ -27,12 +27,12 @@ export default function PaginationControls({
           aria-label="Página anterior"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 sm:px-3"
+          className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-border px-2 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 sm:min-h-10 sm:px-3"
         >
           <ChevronLeft className="h-4 w-4" />
           <span className="hidden min-[380px]:inline">Anterior</span>
         </button>
-        <span className="min-w-16 rounded-lg bg-muted/55 px-3 py-2 text-center text-xs font-bold tabular-nums sm:min-w-20">
+        <span className="min-w-14 rounded-lg bg-muted/55 px-2 py-2 text-center text-xs font-bold tabular-nums sm:min-w-20 sm:px-3">
           {page} de {pageCount}
         </span>
         <button
@@ -40,7 +40,7 @@ export default function PaginationControls({
           aria-label="Próxima página"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= pageCount}
-          className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 sm:px-3"
+          className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-border px-2 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 sm:min-h-10 sm:px-3"
         >
           <span className="hidden min-[380px]:inline">Próxima</span>
           <ChevronRight className="h-4 w-4" />

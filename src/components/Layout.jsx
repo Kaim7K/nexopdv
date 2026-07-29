@@ -248,9 +248,9 @@ export default function Layout() {
         ref={mobileNavRef}
         id="main-navigation"
         aria-label="Menu principal"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(268px,calc(100vw-3rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:w-60 md:translate-x-0 md:shadow-none ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(264px,calc(100vw-2.25rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:w-56 md:translate-x-0 md:shadow-none xl:w-60 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="relative flex min-h-[78px] items-center border-b border-sidebar-border px-5">
+        <div className="relative flex min-h-[64px] items-center border-b border-sidebar-border px-4 xl:min-h-[72px] xl:px-5">
           <button
             type="button"
             aria-label="Fechar menu"
@@ -265,7 +265,7 @@ export default function Layout() {
               src={config.logo_url || user.logo_url}
               alt={brandName}
               decoding="async"
-              className="max-h-12 w-auto max-w-[188px] object-contain object-left"
+              className="max-h-10 w-auto max-w-[172px] object-contain object-left xl:max-h-12 xl:max-w-[188px]"
             />
           ) : (
             <div className="text-xl font-bold text-sidebar-foreground">
@@ -274,13 +274,13 @@ export default function Layout() {
           )}
         </div>
 
-        <div className="px-4 pb-2 pt-4">
+        <div className="px-3 pb-1.5 pt-3 xl:px-4 xl:pt-4">
           <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/40">
             {brandName}
           </p>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 pb-3 xl:px-3 xl:pb-4">
           {filteredItems.map((item) => {
             const active = item.exact
               ? accessPath === item.path
@@ -292,7 +292,7 @@ export default function Layout() {
                 onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()}
                 onFocus={() => ROUTE_PREFETCHERS[item.path]?.()}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
+                className={`group flex min-h-10 items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 xl:min-h-11 xl:gap-3 xl:px-3 xl:text-sm ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
               >
                 <item.icon
                   className={`h-[18px] w-[18px] flex-none transition ${active ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'}`}
@@ -306,9 +306,9 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-3 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/60 p-2.5">
-            <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-lg bg-sidebar-accent">
+        <div className="border-t border-sidebar-border p-2.5 xl:p-3">
+          <div className="flex items-center gap-2.5 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/60 p-2">
+            <div className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-lg bg-sidebar-accent xl:h-10 xl:w-10">
               {user.photo_url ? (
                 <img
                   src={user.photo_url}
@@ -345,7 +345,7 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex min-h-[46px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2.5 py-1.5 shadow-sm backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 flex min-h-[44px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2 py-1 shadow-sm backdrop-blur md:hidden">
           <button
             ref={mobileMenuButtonRef}
             type="button"

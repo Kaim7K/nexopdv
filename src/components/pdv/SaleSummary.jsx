@@ -48,7 +48,7 @@ export default function SaleSummary({
 
       <SaleItemsList items={sale.items} onUpdateQuantity={onUpdateQuantity} onUpdateWeight={onUpdateWeight} onUpdatePrice={onUpdatePrice} onRemoveItem={onRemoveItem} />
 
-      <div className="border-t border-border bg-muted/20 px-3 py-2 sm:px-5 sm:py-4">
+      <div className="border-t border-border bg-muted/20 px-3 py-2 sm:px-4 sm:py-3">
         <div className="mb-1.5 flex justify-between text-[11px] text-muted-foreground sm:mb-2 sm:text-xs">
           <span>Subtotal</span>
           <span className="tabular-nums">{formatCurrency(subtotal)}</span>
@@ -59,26 +59,26 @@ export default function SaleSummary({
             <span className="tabular-nums">- {formatCurrency(discount)}</span>
           </div>
         )}
-        <div className="flex items-end justify-between gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 sm:rounded-xl sm:px-4 sm:py-3">
+        <div className="flex items-end justify-between gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 sm:rounded-xl sm:px-3.5 sm:py-2.5">
           <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 sm:text-sm">Total da venda</span>
-          <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-4xl">{formatCurrency(total)}</span>
+          <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-3xl xl:text-4xl">{formatCurrency(total)}</span>
         </div>
       </div>
 
-      <div className="space-y-1.5 p-2 sm:space-y-2 sm:p-4">
+      <div className="space-y-1.5 p-2 sm:space-y-2 sm:p-3">
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14 sm:rounded-xl">
+          <button type="button" onClick={onDiscardClick} disabled={!sale.items.length} title="Descartar venda (F6)" className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-destructive transition-colors hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-11 sm:rounded-xl">
             <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs font-semibold sm:text-sm">Descartar</span>
             <Kbd>F6</Kbd>
           </button>
-          <button type="button" onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-14 sm:rounded-xl">
+          <button type="button" onClick={onMinimizeClick} disabled={!sale.items.length || !canMinimize} title={canMinimize ? 'Minimizar venda (F7)' : `Limite de ${maxMinimized} vendas minimizadas`} className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-11 sm:rounded-xl">
             <Minimize2 className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs font-semibold sm:text-sm">Minimizar</span>
             <Kbd>F7</Kbd>
           </button>
         </div>
-        <button type="button" onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-16 sm:rounded-xl sm:text-base">
+        <button type="button" onClick={onPaymentClick} disabled={!sale.items.length} title="Pagamento (F1)" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-30 sm:min-h-12 sm:rounded-xl sm:text-base xl:min-h-14">
           <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" /> Pagamento <Kbd>F1</Kbd>
         </button>
       </div>

@@ -28,9 +28,9 @@ export function PdvTopBar({
   onPriceCorrection,
 }) {
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 py-2 sm:gap-3 sm:px-5 sm:py-3">
+    <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2.5 py-1.5 sm:gap-3 sm:px-4 sm:py-2">
       <div className="min-w-0">
-        <h1 className="truncate text-sm font-black sm:text-base">
+        <h1 className="truncate text-sm font-black sm:text-[15px]">
           Venda #{saleNumber}
           {temporaryNumber && (
             <span className="ml-2 text-xs font-semibold text-accent">
@@ -65,7 +65,7 @@ export function PdvTopBar({
           onClick={onCashClick}
           disabled={cashLoading}
           aria-label={cashOpen ? 'Caixa aberto' : 'Abrir caixa'}
-          className={`flex min-h-9 items-center gap-2 rounded-lg border px-2.5 text-xs font-bold transition disabled:opacity-50 sm:min-h-10 sm:rounded-xl sm:px-3 sm:text-sm ${
+          className={`flex min-h-9 items-center gap-2 rounded-lg border px-2.5 text-xs font-bold transition disabled:opacity-50 sm:min-h-9 sm:px-3 sm:text-sm ${
             cashOpen
               ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300'
               : 'border-border bg-card text-foreground hover:bg-muted'
@@ -85,7 +85,7 @@ export function PdvTopBar({
           onClick={onPriceCorrection}
           disabled={!hasItems || !canUsePdv}
           aria-label="Corrigir valor de um produto da venda"
-          className="flex min-h-9 items-center gap-2 rounded-lg border border-amber-300 px-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 sm:min-h-10 sm:rounded-xl sm:px-3 sm:text-sm dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30"
+          className="flex min-h-9 items-center gap-2 rounded-lg border border-amber-300 px-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40 sm:min-h-9 sm:px-3 sm:text-sm dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30"
         >
           <Edit3 className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="hidden sm:inline">Valor errado</span>
@@ -97,12 +97,12 @@ export function PdvTopBar({
 
 export function PdvLockedState({ continuePath, onContinue, onOpenCash }) {
   return (
-    <div className="grid flex-1 place-items-center p-4 sm:p-6">
-      <div className="max-w-md rounded-2xl border border-border bg-card p-5 text-center shadow-lg sm:rounded-3xl sm:p-7">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-accent/10 text-accent sm:h-16 sm:w-16 sm:rounded-2xl">
+    <div className="grid flex-1 place-items-center p-3 sm:p-5">
+      <div className="max-w-md rounded-2xl border border-border bg-card p-4 text-center shadow-lg sm:p-5">
+        <div className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-accent/10 text-accent sm:h-14 sm:w-14">
           <LockKeyhole className="h-6 w-6 sm:h-7 sm:w-7" />
         </div>
-        <h2 className="mt-4 text-xl font-black sm:mt-5 sm:text-2xl">
+        <h2 className="mt-3 text-lg font-black sm:mt-4 sm:text-xl">
           Abra o caixa para começar
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -145,7 +145,7 @@ export function PdvProductPanel({
   productsLoading,
 }) {
   return (
-    <div className="flex h-[30%] min-h-[190px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[300px]">
+    <div className="flex h-[28%] min-h-[150px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
       <div className="flex-shrink-0 p-2 pb-1 sm:p-3 sm:pb-2">
         <div className="relative" ref={searchContainerRef}>
           <ProductSearch

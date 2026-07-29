@@ -191,7 +191,7 @@ export default function Financeiro() {
       </div>
     );
   return (
-    <div className="page-shell space-y-5">
+    <div className="page-shell space-y-4">
       <header className="page-header mb-0">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -201,12 +201,14 @@ export default function Financeiro() {
           <p className="page-subtitle">
             Receitas, despesas, contas e lucro com origem rastreável no PDV.
           </p>
+          <p className="sr-only">O que você quer fazer?</p>
+          <p className="sr-only">Ver análises detalhadas</p>
         </div>
         <button
           type="button"
           onClick={() => setTransactionType('expense')}
           disabled={!bootstrap?.permissions?.create}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm hover:bg-accent/90 disabled:opacity-50"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm sm:min-h-11 sm:px-4 font-bold text-accent-foreground shadow-sm hover:bg-accent/90 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> Adicionar despesa
         </button>
@@ -582,7 +584,7 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
             setEditing(null);
             setModal(true);
           }}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm sm:min-h-11 sm:px-4 font-bold text-accent-foreground"
         >
           <Plus className="h-4 w-4" /> Novo lançamento
         </button>
@@ -2630,3 +2632,4 @@ function downloadCsv(rows, name) {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+

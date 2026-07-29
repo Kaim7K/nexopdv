@@ -24,7 +24,7 @@ export default function StockFilters({
 }) {
   return (
     <section
-      className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3"
+      className="mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-3 sm:p-3"
       aria-label="Filtros do estoque"
     >
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_repeat(2,minmax(110px,.7fr))_repeat(2,minmax(145px,.9fr))_minmax(125px,.75fr)_auto]">
@@ -32,7 +32,7 @@ export default function StockFilters({
           <span className="sr-only">Pesquisar produtos</span>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
-            className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm sm:h-11 sm:rounded-xl sm:pl-10 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             placeholder="Produto, categoria ou código"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -40,7 +40,7 @@ export default function StockFilters({
         </label>
         <select
           aria-label="Filtrar por categoria"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           value={category}
           onChange={(event) => onCategoryChange(event.target.value)}
         >
@@ -54,7 +54,7 @@ export default function StockFilters({
         </label>
         <input
           id="min-price"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           type="number"
           min="0"
           step="0.01"
@@ -67,7 +67,7 @@ export default function StockFilters({
         </label>
         <input
           id="max-price"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           type="number"
           min="0"
           step="0.01"
@@ -77,7 +77,7 @@ export default function StockFilters({
         />
         <select
           aria-label="Filtrar por disponibilidade"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           value={stock}
           onChange={(event) => onStockChange(event.target.value)}
         >
@@ -88,7 +88,7 @@ export default function StockFilters({
         </select>
         <select
           aria-label="Filtrar por imagem"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           value={imageFilter}
           onChange={(event) => onImageFilterChange(event.target.value)}
         >
@@ -98,7 +98,7 @@ export default function StockFilters({
         </select>
         <select
           aria-label="Quantidade por página"
-          className="h-11 min-w-0 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm sm:h-11 sm:rounded-xl outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
         >
@@ -107,18 +107,18 @@ export default function StockFilters({
           <option value="100">100 por página</option>
           <option value="200">200 por página</option>
         </select>
-        <div className="inline-flex min-w-0 overflow-hidden rounded-xl border border-border bg-background sm:justify-self-start 2xl:justify-self-stretch">
+        <div className="inline-flex min-w-0 overflow-hidden rounded-lg border sm:rounded-xl border-border bg-background sm:justify-self-start 2xl:justify-self-stretch">
           <button
             type="button"
             onClick={() => onViewModeChange('table')}
-            className={`inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+            className={`inline-flex min-h-10 items-center gap-2 sm:min-h-11 px-3 text-sm font-semibold ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
           >
             <List className="h-4 w-4" /> Tabela
           </button>
           <button
             type="button"
             onClick={() => onViewModeChange('grid')}
-            className={`inline-flex min-h-11 items-center gap-2 border-l border-border px-3 text-sm font-semibold ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+            className={`inline-flex min-h-10 items-center gap-2 sm:min-h-11 border-l border-border px-3 text-sm font-semibold ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
           >
             <LayoutGrid className="h-4 w-4" /> Grade
           </button>
@@ -127,7 +127,7 @@ export default function StockFilters({
           <button
             type="button"
             onClick={onClearFilters}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg sm:min-h-11 sm:rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
           >
             <FilterX className="h-4 w-4" /> Limpar
           </button>
@@ -136,3 +136,4 @@ export default function StockFilters({
     </section>
   );
 }
+

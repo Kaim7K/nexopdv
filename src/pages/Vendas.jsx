@@ -18,11 +18,6 @@ import {
   formatDateTime,
   PAYMENT_METHODS,
 } from '@/lib/helpers';
-import {
-  downloadDailySalesReportPdf,
-  downloadSaleReceiptPdf,
-  printSaleReceipt,
-} from '@/lib/sales-pdf';
 import { ErrorState } from '@/components/common/PageState';
 import {
   ConfirmSaleAction,
@@ -189,6 +184,7 @@ export default function Vendas() {
       const fullSale = sale.items
         ? sale
         : await nexoApi.entities.Sale.get(sale.id);
+      const { downloadSaleReceiptPdf } = await import('@/lib/sales-pdf');
       await downloadSaleReceiptPdf(fullSale, receiptConfig, {
         onLogoError: () =>
           toast('A logo não respondeu, mas o recibo foi gerado normalmente.'),
@@ -207,6 +203,7 @@ export default function Vendas() {
       const fullSale = sale.items
         ? sale
         : await nexoApi.entities.Sale.get(sale.id);
+      const { printSaleReceipt } = await import('@/lib/sales-pdf');
       await printSaleReceipt(fullSale, receiptConfig);
       toast.success(`Impressão da venda #${fullSale.sale_number} enviada.`);
     } catch (error) {
@@ -274,6 +271,7 @@ export default function Vendas() {
       const paymentLabel =
         PAYMENT_METHODS.find((item) => item.method === reportPayment)?.label ||
         '';
+      const { downloadDailySalesReportPdf } = await import('@/lib/sales-pdf');
       await downloadDailySalesReportPdf({
         sales: result.sales || [],
         summary: result.summary || {},

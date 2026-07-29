@@ -25,7 +25,7 @@ export function StockEmptyState({ hasFilters, onClearFilters, table = false }) {
   if (table) {
     return (
       <tr>
-        <td colSpan={TABLE_COLUMNS.length + 2} className="p-16 text-center">
+        <td colSpan={TABLE_COLUMNS.length + 2} className="p-8 text-center sm:p-12">
           {content}
         </td>
       </tr>
@@ -33,7 +33,7 @@ export function StockEmptyState({ hasFilters, onClearFilters, table = false }) {
   }
 
   return (
-    <div className="rounded-2xl border border-border p-8 text-center">
+    <div className="rounded-xl border border-border p-5 text-center sm:p-6">
       {content}
     </div>
   );

@@ -461,6 +461,18 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     session.difference !== null && session.difference !== undefined
       ? Number(session.difference)
       : declaredCash - expectedAfterExpense;
+  const hasDifference = Math.abs(cashDifference) >= 0.005;
+  const differenceLabel = !hasDifference
+    ? "Caixa conferido"
+    : cashDifference > 0
+      ? "Sobra no caixa"
+      : "Falta no caixa";
+  const differenceTone = !hasDifference
+    ? "text-emerald-700 dark:text-emerald-300"
+    : "text-red-600 dark:text-red-300";
+  const differenceSummary = !hasDifference
+    ? "Dinheiro contado bate com o esperado."
+    : "Revise recebimentos em dinheiro, despesas e contagem final.";
 
   useEffect(() => {
     setEditing(false);
@@ -599,27 +611,27 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
         aria-labelledby="cash-detail-title"
         className="flex h-dvh w-full max-w-4xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
       >
-        <header className="flex items-start justify-between border-b border-border p-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 id="cash-detail-title" className="text-xl font-black">
+        <header className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id="cash-detail-title" className="truncate text-lg font-black sm:text-xl">
                 Caixa de {session.seller_name}
               </h2>
               <Status value={session.status} />
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">
               {session.unit_name || "Unidade principal"} · aberto em{" "}
               {formatDate(session.opened_at)}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:flex-none">
             {canManageClosed && !editing && (
               <>
                 <button
                   type="button"
                   onClick={reopenSession}
                   disabled={editingCash}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-500/5 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-300"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-500/5 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-300"
                 >
                   <PlusCircle className="h-4 w-4" />
                   {editingCash ? "Reabrindo..." : "Reabrir"}
@@ -628,7 +640,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   type="button"
                   onClick={() => setEditing(true)}
                   disabled={editingCash}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-muted disabled:opacity-50"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-muted disabled:opacity-50"
                 >
                   <ReceiptText className="h-4 w-4" />
                   Editar caixa
@@ -640,7 +652,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 type="button"
                 onClick={deleteSession}
                 disabled={deleting}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
                 {deleting ? "Excluindo..." : "Excluir"}
@@ -650,57 +662,73 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
               type="button"
               aria-label="Fechar detalhes"
               onClick={onClose}
-              className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
+              className="grid h-9 w-9 place-items-center rounded-xl hover:bg-muted"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </header>
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           {loading ? (
             <LoadingState label="Carregando movimentação completa..." />
           ) : (
             <>
               <section className="rounded-2xl border border-border bg-muted/10 p-4">
-                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-black">Resumo do turno</h3>
                     <p className="text-xs text-muted-foreground">
                       Vendas registradas no período deste caixa.
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-muted-foreground">
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
                     {summary.sales_count || 0} venda(s)
                   </span>
                 </div>
-                <dl className="grid gap-3 sm:grid-cols-3">
+                <dl className="grid gap-2 sm:grid-cols-3">
                   <ValueCard
                     label="Total vendido"
                     value={formatCurrency(totalSales)}
-                    hint="Todos os pagamentos"
+                    hint="Receita registrada"
                   />
                   <ValueCard
-                    label="Recebido em dinheiro"
+                    label="Dinheiro"
                     value={formatCurrency(cashReceived)}
-                    hint="Entra na conferência"
+                    hint="Vai para conferência"
                   />
                   <ValueCard
                     label="Outras formas"
                     value={formatCurrency(totalSales - cashReceived)}
-                    hint="Pix, cartão, fiado e outros"
+                    hint="Pix, cartão, fiado"
                   />
                 </dl>
               </section>
 
               <section className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-                <div className="mb-4">
-                  <h3 className="font-black">Conferência do dinheiro</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Valor inicial + dinheiro recebido - despesas = dinheiro esperado.
-                  </p>
+                <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+                  <div>
+                    <h3 className="font-black">Conferência do dinheiro</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Valor inicial + dinheiro recebido - despesas = dinheiro esperado.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="text-xs font-bold uppercase text-muted-foreground">
+                      Resultado
+                    </p>
+                    <strong className={`mt-1 block text-xl font-black tabular-nums ${differenceTone}`}>
+                      {differenceLabel}
+                    </strong>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {differenceSummary}
+                    </p>
+                  </div>
                 </div>
-                <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
+                <div className="grid gap-3 lg:grid-cols-2">
                   <dl className="grid gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <div className="px-3 pb-1 text-xs font-black uppercase text-muted-foreground">
+                      Cálculo esperado
+                    </div>
                     <CashFormulaRow label="Valor inicial" value={openingAmount} />
                     <CashFormulaRow label="Recebido em dinheiro" value={cashReceived} positive />
                     <CashFormulaRow label="Despesa no fechamento" value={closingExpense} negative />
@@ -710,8 +738,10 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                       total
                     />
                   </dl>
-                  <div className="hidden w-px bg-border lg:block" />
                   <dl className="grid gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <div className="px-3 pb-1 text-xs font-black uppercase text-muted-foreground">
+                      Fechamento informado
+                    </div>
                     <CashFormulaRow
                       label="Dinheiro contado"
                       value={declaredCash}
@@ -722,7 +752,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                       value={cashDifference}
                       total
                       tone={
-                        cashDifference === 0
+                        !hasDifference
                           ? "neutral"
                           : cashDifference > 0
                             ? "positive"
@@ -738,8 +768,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </div>
               </section>
 
-              <section>
-                <div className="mb-3 flex items-center justify-between">
+              <section className="rounded-2xl border border-border bg-card p-4">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-black">Distribuição dos pagamentos</h3>
                   {canMove && (
                     <button
@@ -751,13 +781,13 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     </button>
                   )}
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {paymentEntries.length ? (
                     paymentEntries.map(
                       ([method, value]) => (
                         <div
                           key={method}
-                          className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3 text-sm"
+                          className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-3 py-2.5 text-sm"
                         >
                           <span>{PAYMENT_LABELS[method] || method}</span>
                           <strong>{formatCurrency(value)}</strong>
@@ -901,7 +931,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </button>
                 </form>
               )}
-              <section>
+              <div className="grid gap-4 xl:grid-cols-2">
+              <section className="rounded-2xl border border-border bg-card p-4">
                 <h3 className="mb-3 font-black">Entradas e retiradas</h3>
                 {summary.movements?.length ? (
                   <div className="space-y-2">
@@ -942,7 +973,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </p>
                 )}
               </section>
-              <section>
+              <section className="rounded-2xl border border-border bg-card p-4">
                 <h3 className="mb-3 font-black">Vendas vinculadas</h3>
                 {summary.sales?.length ? (
                   <div className="space-y-2">
@@ -973,6 +1004,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </p>
                 )}
               </section>
+              </div>
             </>
           )}
         </div>

@@ -57,7 +57,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
     },
   ];
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <section aria-labelledby="financial-summary-title">
         <div className="mb-3">
           <h3 id="financial-summary-title" className="text-base font-bold">
@@ -67,7 +67,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             Os quatro números mais importantes do período selecionado.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <MetricCard
               key={card.label}
@@ -103,7 +103,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           aria-labelledby="financial-alerts-title"
           className="surface-card overflow-hidden"
         >
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border px-3 py-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4" />
             </span>
@@ -121,7 +121,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           </div>
           <div className="divide-y divide-border">
             {data.alerts.slice(0, 3).map((alert) => (
-              <div key={alert.type} className="flex gap-3 px-4 py-3">
+              <div key={alert.type} className="flex gap-3 px-3 py-2.5">
                 <span
                   className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === 'critical' ? 'bg-destructive' : 'bg-amber-500'}`}
                   aria-hidden="true"
@@ -143,16 +143,16 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
             Acompanhe a evolução diária sem confundir faturamento com saldo.
           </p>
-          <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
+          <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
             <FinanceTrendChart data={data?.series || []} />
           </Suspense>
         </ChartCard>
-        <section className="surface-card p-4">
+        <section className="surface-card p-3 sm:p-4">
           <h3 className="text-sm font-bold">Próximos compromissos</h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Valores pendentes que afetam seu saldo.
           </p>
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2">
             <FinancialPositionRow
               label="Contas a pagar"
               value={summary.payable}
@@ -181,7 +181,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         className="surface-card group overflow-hidden"
         onToggle={(event) => setAnalyticsOpen(event.currentTarget.open)}
       >
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden hover:bg-muted/40">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
             <strong className="block text-sm">Ver análises detalhadas</strong>
             <span className="mt-0.5 block text-[11px] text-muted-foreground">
@@ -191,7 +191,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
         </summary>
         {analyticsOpen && (
-          <div className="space-y-4 border-t border-border p-4">
+          <div className="space-y-3 border-t border-border p-3 sm:p-4">
             <section className="grid gap-3 sm:grid-cols-3">
               <MetricCard
                 label="Faturamento bruto"
@@ -211,7 +211,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             </section>
             <section className="grid gap-4 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
               <ChartCard title="Despesas por categoria">
-                <Suspense fallback={<ChartSkeleton height="h-[260px]" />}>
+                <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
                   <ExpenseCategoryChart
                     data={data?.expenses_by_category || []}
                   />
@@ -257,7 +257,7 @@ function FinancialPositionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5"
+      className="flex w-full items-center justify-between gap-2 rounded-xl border border-border p-2.5 text-left transition hover:border-accent/40 hover:bg-accent/5"
     >
       <span className="min-w-0">
         <strong className="block text-xs">{label}</strong>
@@ -290,7 +290,7 @@ function MetricCard({
     neutral: 'bg-muted text-muted-foreground',
   }[tone];
   return (
-    <article className="surface-card p-4">
+    <article className="surface-card p-3 sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {Icon && (
@@ -312,7 +312,7 @@ function MetricCard({
           </span>
         )}
       </div>
-      <strong className="mt-2 block break-words text-xl tabular-nums sm:text-2xl">
+      <strong className="mt-1.5 block break-words text-lg tabular-nums sm:text-xl">
         {value}
       </strong>
       <p className="mt-2 text-[11px] leading-4 text-muted-foreground">{help}</p>
@@ -327,7 +327,7 @@ function ChartCard({ title, children }) {
     </section>
   );
 }
-function ChartSkeleton({ height = 'h-[260px]' }) {
+function ChartSkeleton({ height = 'h-[220px] sm:h-[240px]' }) {
   return (
     <div
       role="status"
@@ -357,7 +357,7 @@ function SimpleRanking({ title, items }) {
       title={title}
       items={rows}
       renderItem={renderItem}
-      containerClassName="surface-card p-4"
+      containerClassName="surface-card p-3 sm:p-4"
       headerClassName=""
       listClassName="mt-3 space-y-3"
       emptyText="Sem dados no período."
@@ -365,3 +365,4 @@ function SimpleRanking({ title, items }) {
     />
   );
 }
+

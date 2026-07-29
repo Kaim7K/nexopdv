@@ -86,6 +86,7 @@
     text-rendering: optimizeLegibility;
     -webkit-text-size-adjust: 100%;
     scrollbar-gutter: stable;
+    overflow-x: hidden;
   }
 
   body {
@@ -97,6 +98,7 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-wrap: break-word;
     overscroll-behavior-y: none;
+    overflow-x: hidden;
   }
 
   #root {
@@ -132,6 +134,7 @@
   select,
   textarea {
     min-width: 0;
+    max-width: 100%;
   }
 
   button,
@@ -165,10 +168,10 @@
 
 @layer components {
   .field {
-    @apply mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60;
+    @apply mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60 sm:h-11;
   }
   .page-shell {
-    @apply mx-auto w-full max-w-[1480px] px-3 py-3 sm:px-5 sm:py-4 lg:px-6;
+    @apply mx-auto w-full max-w-[1440px] px-3 py-3 sm:px-4 sm:py-4 lg:px-5 xl:px-6;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
@@ -177,11 +180,11 @@
   }
 
   .page-title {
-    @apply text-xl font-bold tracking-tight text-foreground sm:text-3xl;
+    @apply text-xl font-bold tracking-tight text-foreground sm:text-2xl xl:text-[1.65rem];
   }
 
   .page-subtitle {
-    @apply mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6;
+    @apply mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-5;
   }
 
   .surface-card {
@@ -213,10 +216,42 @@
     @apply bg-muted/30;
   }
 
+  .page-shell :where(table) {
+    border-collapse: separate;
+  }
+
+  .page-shell :where(.overflow-auto, .overflow-x-auto) {
+    overscroll-behavior-inline: contain;
+  }
+
   .page-shell input:not([type='checkbox']):not([type='radio']),
   .page-shell select,
   .page-shell textarea {
     @apply shadow-sm transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30;
+  }
+
+  .compact-scroll {
+    scrollbar-width: thin;
+  }
+}
+
+@media (min-width: 1536px) {
+  .page-shell {
+    max-width: min(1480px, calc(100vw - 3rem));
+  }
+
+  .page-shell :where(.text-4xl) {
+    font-size: 2.25rem;
+    line-height: 1.08;
+  }
+
+  .page-shell :where(.text-3xl) {
+    font-size: 1.65rem;
+    line-height: 1.15;
+  }
+
+  .page-shell :where(.p-8, .p-7, .p-6) {
+    padding: 1.25rem;
   }
 }
 
@@ -225,6 +260,13 @@
   [role='alertdialog'] {
     width: calc(100vw - 0.75rem);
     max-width: calc(100vw - 0.75rem);
+    max-height: calc(100dvh - 0.75rem);
+  }
+
+  .fixed.inset-0 [role='dialog'],
+  .fixed.inset-0 [role='alertdialog'] {
+    width: 100%;
+    max-width: 100%;
   }
 
   button,
@@ -274,12 +316,12 @@
   }
 
   .page-shell :where(.p-8, .p-7, .p-6, .p-5, .p-4) {
-    padding: 0.75rem !important;
+    padding: 0.625rem !important;
   }
 
   .page-shell :where(.py-16, .py-12, .py-10, .py-8, .py-6) {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+    padding-top: 0.875rem !important;
+    padding-bottom: 0.875rem !important;
   }
 
   .page-shell :where(.px-5, .px-4) {
@@ -291,6 +333,10 @@
     gap: 0.5rem !important;
   }
 
+  .page-shell :where(.mb-6, .mb-5, .mb-4) {
+    margin-bottom: 0.625rem !important;
+  }
+
   .page-shell :where(.space-y-5 > :not([hidden]) ~ :not([hidden]),
     .space-y-4 > :not([hidden]) ~ :not([hidden]),
     .space-y-3 > :not([hidden]) ~ :not([hidden])) {
@@ -298,24 +344,28 @@
   }
 
   .page-shell :where(input:not([type='checkbox']):not([type='radio']), select) {
-    height: 2.35rem !important;
-    min-height: 2.35rem !important;
+    height: 2.25rem !important;
+    min-height: 2.25rem !important;
     border-radius: 0.65rem !important;
     font-size: 0.8125rem !important;
   }
 
   .page-shell :where(button) {
-    min-height: 2.35rem;
+    min-height: 2.25rem;
     border-radius: 0.65rem;
   }
 
+  .page-shell :where(table) {
+    font-size: 0.78rem;
+  }
+
   .page-shell :where(.text-3xl, .text-2xl) {
-    font-size: 1.375rem !important;
+    font-size: 1.25rem !important;
     line-height: 1.15 !important;
   }
 
   .page-shell :where(.text-xl) {
-    font-size: 1.125rem !important;
+    font-size: 1.05rem !important;
     line-height: 1.25 !important;
   }
 
@@ -325,12 +375,27 @@
   }
 
   .page-shell :where(p.text-sm, .text-sm) {
-    font-size: 0.8125rem;
+    font-size: 0.8rem;
     line-height: 1.35;
   }
 
   .page-shell :where(.shadow-lg, .shadow-md, .shadow-sm) {
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.08) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .page-shell {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .page-shell :where(.grid) {
+    min-width: 0;
+  }
+
+  .page-shell :where(.text-base) {
+    font-size: 0.9rem;
   }
 }
 

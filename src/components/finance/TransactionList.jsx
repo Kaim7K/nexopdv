@@ -39,9 +39,9 @@ export default function TransactionList({
     );
   return (
     <>
-      <div className="grid gap-3 lg:hidden">
+      <div className="grid gap-2 lg:hidden">
         {items.map((item) => (
-          <article key={item.id} className="surface-card p-4">
+          <article key={item.id} className="surface-card p-3">
             <div className="flex items-start gap-3">
               {selectable && (
                 <input
@@ -69,11 +69,11 @@ export default function TransactionList({
                   {formatDate(item.due_date || item.issue_date)}
                 </p>
                 <strong
-                  className={`mt-3 block text-lg tabular-nums ${item.type === 'revenue' ? 'text-emerald-600' : 'text-foreground'}`}
+                  className={`mt-2 block text-base tabular-nums ${item.type === 'revenue' ? 'text-emerald-600' : 'text-foreground'}`}
                 >
                   {formatCurrency(item.amount)}
                 </strong>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   <RowActions
                     item={item}
                     onPay={onPay}
@@ -88,24 +88,24 @@ export default function TransactionList({
         ))}
       </div>
       <div className="surface-card hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[920px] text-sm">
+        <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
             <tr>
-              {selectable && <th className="w-12 px-4 py-3">Sel.</th>}
-              <th className="px-4 py-3">Descrição</th>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3">Vencimento</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Pago</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Ações</th>
+              {selectable && <th className="w-12 px-3 py-2.5">Sel.</th>}
+              <th className="px-3 py-2.5">Descrição</th>
+              <th className="px-3 py-2.5">Categoria</th>
+              <th className="px-3 py-2.5">Vencimento</th>
+              <th className="px-3 py-2.5">Valor</th>
+              <th className="px-3 py-2.5">Pago</th>
+              <th className="px-3 py-2.5">Status</th>
+              <th className="px-3 py-2.5 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {items.map((item) => (
               <tr key={item.id} className="hover:bg-muted/20">
                 {selectable && (
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -120,25 +120,25 @@ export default function TransactionList({
                     />
                   </td>
                 )}
-                <td className="max-w-64 px-4 py-3 font-semibold">
+                <td className="max-w-64 px-3 py-2.5 font-semibold">
                   {item.description}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                <td className="px-3 py-2.5 text-muted-foreground">
                   {item.category_name || '—'}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2.5">
                   {formatDate(item.due_date || item.issue_date)}
                 </td>
-                <td className="px-4 py-3 font-bold tabular-nums">
+                <td className="px-3 py-2.5 font-bold tabular-nums">
                   {formatCurrency(item.amount)}
                 </td>
-                <td className="px-4 py-3 tabular-nums">
+                <td className="px-3 py-2.5 tabular-nums">
                   {formatCurrency(item.paid_amount)}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2.5">
                   <StatusBadge status={item.status} />
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2.5">
                   <div className="flex justify-end gap-1">
                     <RowActions
                       item={item}
@@ -164,7 +164,7 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
         <button
           type="button"
           onClick={() => onPay(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold hover:bg-muted"
         >
           Pagar
         </button>
@@ -173,7 +173,7 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
         <button
           type="button"
           onClick={() => onDuplicate(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold hover:bg-muted"
         >
           Duplicar
         </button>
@@ -182,7 +182,7 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
         <button
           type="button"
           onClick={() => onEdit(item)}
-          className="rounded-lg border border-border px-2.5 py-2 text-xs font-bold hover:bg-muted"
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold hover:bg-muted"
         >
           Editar
         </button>
@@ -191,7 +191,7 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
         <button
           type="button"
           onClick={() => onCancel(item)}
-          className="rounded-lg border border-destructive/30 px-2.5 py-2 text-xs font-bold text-destructive hover:bg-destructive/5"
+          className="rounded-lg border border-destructive/30 px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/5"
         >
           Cancelar
         </button>
@@ -208,3 +208,4 @@ function StatusBadge({ status }) {
     </span>
   );
 }
+

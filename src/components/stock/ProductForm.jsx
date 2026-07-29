@@ -7,6 +7,7 @@ import {
   Save,
   ScanSearch,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';

@@ -22,7 +22,7 @@ export function PageHeader({
       <div className="min-w-0">
         {eyebrow && (
           <div
-            className={`mb-1.5 inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold text-current sm:mb-2 sm:text-xs ${toneClasses[tone] || toneClasses.accent}`}
+            className={`mb-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-current sm:mb-1.5 sm:px-3 sm:py-1 sm:text-xs ${toneClasses[tone] || toneClasses.accent}`}
           >
             {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
             <span className="truncate">{eyebrow}</span>
@@ -31,7 +31,7 @@ export function PageHeader({
         <h1 className="page-title">{title}</h1>
         {description && <p className="page-subtitle">{description}</p>}
       </div>
-      {actions && <div className="shrink-0">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">{actions}</div>}
     </header>
   );
 }
@@ -39,7 +39,7 @@ export function PageHeader({
 export function FilterPanel({ children, className = '', ...props }) {
   return (
     <section
-      className={`mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3 ${className}`}
+      className={`mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-3 sm:p-3 ${className}`}
       {...props}
     >
       {children}
@@ -69,19 +69,19 @@ export function MetricCard({
     <Component
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`min-w-0 rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:rounded-2xl sm:p-4 ${toneMap[tone] || toneMap.default} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
+      className={`min-w-0 rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:p-3 ${toneMap[tone] || toneMap.default} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
         <span className="line-clamp-2 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-xs sm:leading-4">
           {label}
         </span>
         {Icon && (
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground sm:h-9 sm:w-9 sm:rounded-xl">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground sm:h-8 sm:w-8">
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </span>
         )}
       </div>
-      <strong className="mt-0.5 block truncate text-base font-black tabular-nums sm:mt-1 sm:text-2xl">
+      <strong className="mt-0.5 block truncate text-base font-black tabular-nums sm:mt-1 sm:text-xl xl:text-2xl">
         {value}
       </strong>
       {hint && (

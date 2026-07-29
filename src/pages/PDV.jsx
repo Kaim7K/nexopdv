@@ -14,7 +14,6 @@ import { toast } from 'react-hot-toast';
 import SaleSummary from '@/components/pdv/SaleSummary';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { formatCurrency } from '@/lib/helpers';
-import { downloadDailySalesReportPdf } from '@/lib/sales-pdf';
 import { hasMarketFeature } from '@/lib/market-modules';
 import {
   PdvLockedState,
@@ -468,6 +467,7 @@ export default function PDV() {
     }
     setCashReporting(true);
     try {
+      const { downloadDailySalesReportPdf } = await import('@/lib/sales-pdf');
       await downloadDailySalesReportPdf({
         sales: summary.sales,
         summary,

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, Printer, ReceiptText, Store, User, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatCurrency, formatDateTime, getPaymentLabel } from '@/lib/helpers';
-import { downloadSaleReceiptPdf } from '@/lib/sales-pdf';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 const printStyles = `
@@ -114,6 +113,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
+      const { downloadSaleReceiptPdf } = await import('@/lib/sales-pdf');
       await downloadSaleReceiptPdf(sale, config, {
         onLogoError: () => toast.error('A logo do mercado não pôde ser adicionada ao PDF.'),
       });

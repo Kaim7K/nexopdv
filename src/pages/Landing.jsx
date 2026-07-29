@@ -270,7 +270,7 @@ function SectionHeader({ eyebrow, title, description, light = false }) {
         {eyebrow}
       </span>
       <h2
-        className={`mt-4 text-3xl font-bold leading-tight sm:text-4xl ${
+        className={`mt-4 text-2xl font-bold leading-tight sm:text-3xl ${
           light ? 'text-white' : 'text-slate-950'
         }`}
       >
@@ -404,7 +404,7 @@ function PlanCard({ plan, contactHref }) {
         )}
       </div>
       <div className="mt-5 flex items-end gap-1">
-        <strong className="text-4xl font-bold leading-none">{plan.price}</strong>
+        <strong className="text-3xl font-bold leading-none">{plan.price}</strong>
         {plan.price.startsWith('R$') && (
           <span
             className={`pb-1 text-sm ${
@@ -529,24 +529,24 @@ export default function Landing() {
           <div className="absolute inset-0 -z-20 bg-[#061b15]/50" />
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#061b15_0%,rgba(6,27,21,0.92)_38%,rgba(6,27,21,0.58)_68%,rgba(6,27,21,0.18)_100%)]" />
 
-          <div className="mx-auto grid min-h-[calc(100dvh-72px)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:px-8">
+          <div className="mx-auto grid min-h-[calc(100dvh-64px)] max-w-7xl items-center gap-7 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,0.55fr)] lg:px-8">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase text-emerald-100 backdrop-blur">
                 <Store className="h-3.5 w-3.5" />
                 PDV web para mercados de bairro
               </span>
 
-              <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.02] sm:text-6xl lg:text-7xl">
+              <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-[1.05] sm:text-5xl lg:text-5xl">
                 Caixa, estoque e gestão em uma tela simples de operar.
               </h1>
 
-              <p className="mt-6 max-w-2xl text-base leading-7 text-emerald-50/90 sm:text-lg sm:leading-8">
+              <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/90 sm:text-lg sm:leading-8">
                 O Nexo PDV ajuda mercadinhos a vender rápido, controlar
                 produtos, organizar fiados e enxergar resultados sem
                 complicação.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <ButtonLink href={contactHref} variant="light">
                   Falar pelo WhatsApp
                   <MessageCircle className="h-4 w-4" />
@@ -747,10 +747,10 @@ export default function Landing() {
         </section>
 
         <section className="bg-[#f4f8f6] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-lg bg-[#071f18] p-6 text-white shadow-2xl shadow-slate-950/20 sm:p-8 lg:grid-cols-[1fr_auto]">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-lg bg-[#071f18] p-5 text-white shadow-2xl shadow-slate-950/20 sm:p-6 lg:grid-cols-[1fr_auto]">
             <div>
               <Logo light />
-              <h2 className="mt-5 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
+              <h2 className="mt-5 max-w-2xl text-2xl font-bold leading-tight sm:text-3xl">
                 Um PDV moderno para o mercado vender melhor hoje.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:text-base">
@@ -783,3 +783,4 @@ export default function Landing() {
     </div>
   );
 }
+
