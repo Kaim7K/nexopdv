@@ -958,7 +958,7 @@ function ExecutiveSummary({ stats }) {
   const rows = [
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
-    ['Produtos no ranking', productRankingRows.length, 'Itens com faturamento'],
+    ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
     ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendÃªncias'],
   ];
   return (
