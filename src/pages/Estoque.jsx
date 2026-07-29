@@ -68,17 +68,17 @@ const TABLE_COLUMN_VISIBILITY = {
 
 const tableColumnWidth = (key) =>
   ({
-    name: 'min-w-[220px]',
-    category: 'min-w-[150px]',
-    barcode: 'min-w-[130px]',
-    internal_code: 'min-w-[120px]',
-    sale_price: 'min-w-[112px]',
-    cost_price: 'min-w-[112px]',
-    quantity: 'min-w-[88px]',
-    unit: 'min-w-[100px]',
-    last_sale_at: 'min-w-[132px]',
-    status: 'min-w-[104px]',
-  })[key] || 'min-w-[112px]';
+    name: 'min-w-[200px]',
+    category: 'min-w-[132px]',
+    barcode: 'min-w-[124px]',
+    internal_code: 'min-w-[112px]',
+    sale_price: 'min-w-[104px]',
+    cost_price: 'min-w-[104px]',
+    quantity: 'min-w-[84px]',
+    unit: 'min-w-[96px]',
+    last_sale_at: 'min-w-[124px]',
+    status: 'min-w-[96px]',
+  })[key] || 'min-w-[104px]';
 
 const normalize = (value, type) =>
   type === 'number' ? (value === '' ? '' : Number(value)) : String(value ?? '');
@@ -935,7 +935,7 @@ export default function Estoque() {
 
       <div
         ref={tableRef}
-        className="min-h-[360px] scroll-mt-4 overflow-visible rounded-2xl border border-border bg-card xl:max-h-[calc(100dvh-300px)] xl:overflow-auto"
+        className="min-h-[360px] scroll-mt-4 overflow-auto rounded-2xl border border-border bg-card xl:max-h-[calc(100dvh-300px)]"
       >
         {loading ? (
           <div
@@ -1153,29 +1153,29 @@ export default function Estoque() {
                 </div>
               )}
             </div>
-            <table className="hidden w-full text-sm xl:table">
-              <thead className="sticky top-0 z-20 bg-secondary text-secondary-foreground shadow-sm">
+            <table className="hidden w-full min-w-[1560px] table-fixed text-sm xl:table">
+              <thead className="sticky top-0 z-20 bg-secondary/95 text-secondary-foreground shadow-sm backdrop-blur">
                 <tr>
-                  <th className="sticky left-0 z-30 bg-secondary p-3 text-left">
+                  <th className="sticky left-0 z-30 w-[76px] bg-secondary px-3 py-3 text-left">
                     <span className="sr-only">Imagem</span>
                     <Package className="h-5 w-5" />
                   </th>
                   {TABLE_COLUMNS.map(([key, label]) => (
                     <th
                       key={key}
-                      className={`p-0 text-left ${TABLE_COLUMN_VISIBILITY[key] || ''} ${key === 'name' ? 'sticky left-14 z-30 bg-secondary' : ''}`}
+                      className={`p-0 text-left ${TABLE_COLUMN_VISIBILITY[key] || ''} ${key === 'name' ? 'sticky left-[76px] z-30 bg-secondary' : ''}`}
                     >
                       <button
                         type="button"
                         onClick={() => toggleSort(key)}
-                        className={`flex w-full items-center gap-1.5 px-2.5 py-3 font-semibold hover:bg-muted ${tableColumnWidth(key)} ${key === 'name' ? 'whitespace-normal text-left leading-5' : 'whitespace-nowrap'}`}
+                        className={`flex w-full items-center gap-1.5 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide hover:bg-muted ${tableColumnWidth(key)} ${key === 'name' ? 'whitespace-normal text-left leading-5' : 'whitespace-nowrap'}`}
                         aria-label={`Ordenar por ${label}`}
                       >
                         {label} <SortIcon column={key} />
                       </button>
                     </th>
                   ))}
-                  <th className="sticky right-0 z-30 bg-secondary px-3 py-3 text-right">
+                  <th className="sticky right-0 z-30 w-[214px] bg-secondary px-3 py-3 text-right">
                     Ações
                   </th>
                 </tr>
@@ -1210,15 +1210,15 @@ export default function Estoque() {
                   return (
                     <tr
                       key={product.id}
-                      className={`border-t border-border transition hover:bg-muted/25 ${rowBackground}`}
+                      className={`border-t border-border/80 transition-colors hover:bg-muted/30 ${rowBackground}`}
                     >
                       <td
-                        className={`sticky left-0 z-10 p-2 ${stickyBackground}`}
+                        className={`sticky left-0 z-10 p-2 align-middle ${stickyBackground}`}
                       >
                         <button
                           type="button"
                           onClick={() => openProductModal('edit', product)}
-                          className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-white"
+                          className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-border bg-background shadow-sm"
                           aria-label={`Editar ${product.name}`}
                         >
                           {product.image_url ? (
@@ -1237,14 +1237,14 @@ export default function Estoque() {
                       {TABLE_COLUMNS.map(([key, label, type]) => (
                         <td
                           key={key}
-                          className={`p-1 align-top ${TABLE_COLUMN_VISIBILITY[key] || ''} ${
+                          className={`p-1 align-middle ${TABLE_COLUMN_VISIBILITY[key] || ''} ${
                             key === 'name'
-                              ? `sticky left-14 z-10 ${stickyBackground}`
+                              ? `sticky left-[76px] z-10 ${stickyBackground}`
                               : ''
                           }`}
                         >
                           {key === 'last_sale_at' ? (
-                            <div className="min-w-[132px] px-1.5">
+                            <div className="min-w-[124px] px-2">
                               <span className="block text-xs font-bold">
                                 {product.last_sale_at
                                   ? formatDateTime(product.last_sale_at)
@@ -1257,14 +1257,14 @@ export default function Estoque() {
                               </span>
                             </div>
                           ) : key === 'sale_price' || key === 'cost_price' ? (
-                            <div className="min-w-[112px] px-0.5">
+                            <div className="min-w-[104px] px-1">
                               <label className="relative block">
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
                                   R$
                                 </span>
                                 <input
                                   aria-label={`${label} de ${product.name}`}
-                                  className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                                  className="h-10 w-full rounded-lg border border-transparent bg-transparent pl-8 pr-2 text-sm font-bold tabular-nums hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                                   type="number"
                                   min="0"
                                   step="0.01"
@@ -1291,7 +1291,7 @@ export default function Estoque() {
                           ) : key === 'category' ? (
                             <select
                               aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[150px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                              className="h-10 w-full min-w-[132px] rounded-lg border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                               value={product.category || ''}
                               onChange={(event) =>
                                 editInline(
@@ -1312,7 +1312,7 @@ export default function Estoque() {
                           ) : key === 'status' ? (
                             <select
                               aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[104px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                              className="h-10 w-full min-w-[96px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                               value={product.status || 'ativo'}
                               onChange={(event) =>
                                 editInline(
@@ -1329,7 +1329,7 @@ export default function Estoque() {
                           ) : key === 'unit' ? (
                             <select
                               aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[110px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                              className="h-10 w-full min-w-[96px] rounded-lg border border-transparent bg-transparent px-2 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                               value={product.unit || 'unidade'}
                               onChange={(event) =>
                                 editInline(
@@ -1346,7 +1346,7 @@ export default function Estoque() {
                           ) : key === 'name' ? (
                             <input
                               aria-label={`${label} de ${product.name}`}
-                              className="h-10 w-full min-w-[220px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
+                              className="h-10 w-full min-w-[200px] rounded-lg border border-transparent bg-transparent px-2 text-sm font-semibold leading-5 hover:border-border focus:border-accent focus:bg-background focus:outline-none"
                               type={type}
                               value={product[key] ?? ''}
                               onChange={(event) =>
@@ -1383,9 +1383,9 @@ export default function Estoque() {
                         </td>
                       ))}
                       <td
-                        className={`sticky right-0 z-10 p-2 ${stickyBackground}`}
+                        className={`sticky right-0 z-10 p-2 align-middle ${stickyBackground}`}
                       >
-                        <div className="flex justify-end gap-1">
+                        <div className="flex flex-wrap justify-end gap-1">
                           {tracksStock && isZero && (
                             <button
                               type="button"

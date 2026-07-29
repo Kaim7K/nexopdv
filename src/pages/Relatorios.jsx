@@ -31,7 +31,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'Mês' },
+  { key: 'month', label: 'MÃªs' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -52,6 +52,7 @@ const PaymentChart = lazy(() =>
 
 export default function Relatorios() {
   const [sales, setSales] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [period, setPeriod] = useState('month');
@@ -59,6 +60,9 @@ export default function Relatorios() {
   const [customEnd, setCustomEnd] = useState('');
   const [fiados, setFiados] = useState([]);
   const [breakdown, setBreakdown] = useState('hour');
+  const [productRankingSort, setProductRankingSort] = useState('revenue');
+  const [sellerRankingSort, setSellerRankingSort] = useState('revenue');
+  const [categoryRankingSort, setCategoryRankingSort] = useState('revenue');
 
   const customRangeValid =
     period !== 'custom' ||
@@ -72,14 +76,16 @@ export default function Relatorios() {
     setLoading(true);
     setLoadError('');
     try {
-      const [saleData, fiadoData] = await Promise.all([
+      const [saleData, fiadoData, productData] = await Promise.all([
         nexoApi.entities.Sale.list('-created_date', 5000),
         nexoApi.entities.FiadoRecord.list('-created_date', 500),
+        nexoApi.products.catalog(2000),
       ]);
       setSales(saleData);
       setFiados(fiadoData);
+      setProducts(productData);
     } catch (error) {
-      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
+      setLoadError(error.message || 'NÃ£o foi possÃ­vel carregar os relatÃ³rios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -191,27 +197,45 @@ export default function Relatorios() {
 
     const productMap = {};
     const categoryMap = {};
+    const productLookup = new Map(
+      products.map((product) => [String(product.id), product]),
+    );
+    const normalizeCategory = (value) => {
+      const text = String(value ?? '').trim();
+      if (!text) return 'Sem categoria';
+      if (text.toLowerCase() === 'sem categoria') return 'Sem categoria';
+      return text;
+    };
+    const resolveCategory = (item) => {
+      const product = productLookup.get(String(item.product_id));
+      return normalizeCategory(
+        item.category ||
+          item.product_category ||
+          item.category_name ||
+          item.product?.category ||
+          item.product?.category_name ||
+          item.product?.product_category ||
+          product?.category ||
+          product?.category_name ||
+          product?.product_category,
+      );
+    };
     for (const sale of periodSales) {
       for (const item of sale.items || []) {
-        if (!productMap[item.product_name])
-          productMap[item.product_name] = { qty: 0, revenue: 0, sales: 0 };
+        const productName = item.product_name || 'Produto sem nome';
+        if (!productMap[productName])
+          productMap[productName] = { qty: 0, revenue: 0, sales: 0 };
         const quantity =
           Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
-        productMap[item.product_name].qty += quantity;
-        productMap[item.product_name].revenue += Number(item.subtotal || 0);
-        productMap[item.product_name].sales += 1;
-        const category = item.category || item.product_category || 'Sem categoria';
+        productMap[productName].qty += quantity;
+        productMap[productName].revenue += Number(item.subtotal || 0);
+        productMap[productName].sales += 1;
+        const category = resolveCategory(item);
         if (!categoryMap[category]) categoryMap[category] = { qty: 0, revenue: 0 };
         categoryMap[category].qty += quantity;
         categoryMap[category].revenue += Number(item.subtotal || 0);
       }
     }
-    const topProducts = Object.entries(productMap)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 8);
-    const topCategories = Object.entries(categoryMap)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 6);
 
     const paymentMap = {};
     for (const sale of periodSales) {
@@ -231,9 +255,16 @@ export default function Relatorios() {
     const sellerMap = {};
     for (const sale of periodSales) {
       const seller = sale.seller_name || 'Sem identificação';
-      if (!sellerMap[seller]) sellerMap[seller] = { count: 0, revenue: 0 };
+      if (!sellerMap[seller])
+        sellerMap[seller] = { count: 0, revenue: 0, items: 0 };
       sellerMap[seller].count += 1;
       sellerMap[seller].revenue += Number(sale.total || 0);
+      sellerMap[seller].items += (sale.items || []).reduce(
+        (sum, item) =>
+          sum +
+          (Number(item.unit === 'peso' ? item.weight : item.quantity) || 0),
+        0,
+      );
     }
     const sellerData = Object.entries(sellerMap)
       .map(([name, data]) => [
@@ -277,7 +308,7 @@ export default function Relatorios() {
       .map(([, value]) => value);
 
     const breakdownMap = {};
-    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
     for (const sale of periodSales) {
       const date = new Date(sale.created_date);
       let key;
@@ -332,6 +363,8 @@ export default function Relatorios() {
       totalItems,
       itemsPerSale,
       cancelled,
+      productMap,
+      categoryMap,
       topProducts,
       topCategories,
       paymentData,
@@ -351,19 +384,77 @@ export default function Relatorios() {
     endDate,
     period,
     breakdown,
+    products,
   ]);
+
+  const productRankingRows = useMemo(() => {
+    const rows = Object.entries(stats.productMap || {}).map(([name, data]) => ({
+      name,
+      revenue: Number(data.revenue || 0),
+      items: Number(data.qty || 0),
+      sales: Number(data.sales || 0),
+    }));
+    return rows.sort((first, second) =>
+      (productRankingSort === 'items'
+        ? second.items - first.items
+        : second.revenue - first.revenue) ||
+      second.revenue - first.revenue ||
+      String(first.name).localeCompare(String(second.name), 'pt-BR', {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+  }, [stats.productMap, productRankingSort]);
+
+  const sellerRankingRows = useMemo(() => {
+    const rows = (stats.sellerData || []).map(([name, data]) => ({
+      name,
+      revenue: Number(data.revenue || 0),
+      items: Number(data.items || 0),
+      sales: Number(data.count || 0),
+      average: Number(data.average || 0),
+    }));
+    return rows.sort((first, second) =>
+      (sellerRankingSort === 'items'
+        ? second.items - first.items
+        : second.revenue - first.revenue) ||
+      second.revenue - first.revenue ||
+      String(first.name).localeCompare(String(second.name), 'pt-BR', {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+  }, [stats.sellerData, sellerRankingSort]);
+
+  const categoryRankingRows = useMemo(() => {
+    const rows = Object.entries(stats.categoryMap || {}).map(([name, data]) => ({
+      name,
+      revenue: Number(data.revenue || 0),
+      items: Number(data.qty || 0),
+    }));
+    return rows.sort((first, second) =>
+      (categoryRankingSort === 'items'
+        ? second.items - first.items
+        : second.revenue - first.revenue) ||
+      second.revenue - first.revenue ||
+      String(first.name).localeCompare(String(second.name), 'pt-BR', {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+  }, [stats.categoryMap, categoryRankingSort]);
 
   const insights = useMemo(() => {
     const list = [];
     if (stats.revenueChange > 0)
       list.push({
         type: 'up',
-        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relação ao período anterior.`,
+        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relaÃ§Ã£o ao perÃ­odo anterior.`,
       });
     else if (stats.revenueChange < 0)
       list.push({
         type: 'down',
-        text: `As vendas caíram ${Math.abs(stats.revenueChange).toFixed(1)}% em relação ao período anterior.`,
+        text: `As vendas caÃ­ram ${Math.abs(stats.revenueChange).toFixed(1)}% em relaÃ§Ã£o ao perÃ­odo anterior.`,
       });
     if (stats.topProducts.length)
       list.push({
@@ -378,7 +469,7 @@ export default function Relatorios() {
       const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do período.`,
+        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do perÃ­odo.`,
       });
     }
     if (stats.bestBreakdown)
@@ -389,24 +480,24 @@ export default function Relatorios() {
     if (stats.itemsPerSale > 0)
       list.push({
         type: 'info',
-        text: `Cada venda teve em média ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
+        text: `Cada venda teve em mÃ©dia ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
       });
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
-        text: `Há ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste período.`,
+        text: `HÃ¡ ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste perÃ­odo.`,
       });
     if (stats.cancelled > 0)
       list.push({
         type: 'alert',
-        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no período.`,
+        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no perÃ­odo.`,
       });
     return list;
   }, [stats]);
 
   if (loading)
     return (
-      <LoadingState className="min-h-[60vh]" label="Carregando relatórios..." />
+      <LoadingState className="min-h-[60vh]" label="Carregando relatÃ³rios..." />
     );
   if (loadError && !sales.length)
     return (
@@ -419,10 +510,10 @@ export default function Relatorios() {
     <div className="page-shell">
       <div className="mb-6">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
+          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negÃ³cio
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Relatórios gerenciais
+          RelatÃ³rios gerenciais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Acompanhe vendas, pagamentos, produtos, equipe e fiados.
@@ -455,7 +546,7 @@ export default function Relatorios() {
               />
             </label>
             <label className="text-xs font-semibold text-muted-foreground">
-              Até{' '}
+              AtÃ©{' '}
               <input
                 aria-label="Data final"
                 type="date"
@@ -469,7 +560,7 @@ export default function Relatorios() {
       </div>
       {!customRangeValid && (
         <div className="mb-5 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          Informe um período válido: a data inicial deve ser anterior ou igual à
+          Informe um perÃ­odo vÃ¡lido: a data inicial deve ser anterior ou igual Ã 
           data final.
         </div>
       )}
@@ -484,7 +575,7 @@ export default function Relatorios() {
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
         <StatCard
           icon={Receipt}
-          label="Ticket médio"
+          label="Ticket mÃ©dio"
           value={formatCurrency(stats.avgTicket)}
         />
         <StatCard
@@ -534,7 +625,7 @@ export default function Relatorios() {
 
       <section className="mb-6 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
         <div className="border-b border-border p-4">
-          <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
+          <h3 className="text-sm font-bold">EstatÃ­sticas de faturamento</h3>
           <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
               <button
@@ -576,7 +667,7 @@ export default function Relatorios() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Ticket médio</dt>
+                      <dt className="text-muted-foreground">Ticket mÃ©dio</dt>
                       <dd className="mt-1 font-bold tabular-nums">
                         {formatCurrency(row.average)}
                       </dd>
@@ -594,7 +685,7 @@ export default function Relatorios() {
                     </th>
                     <th className="px-4 py-3">Faturamento</th>
                     <th className="px-4 py-3">Vendas</th>
-                    <th className="px-4 py-3">Ticket médio</th>
+                    <th className="px-4 py-3">Ticket mÃ©dio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -615,21 +706,21 @@ export default function Relatorios() {
             </div>
           </>
         ) : (
-          <ChartEmpty text="Sem vendas no período selecionado." />
+          <ChartEmpty text="Sem vendas no perÃ­odo selecionado." />
         )}
       </section>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
           <h3 className="mb-3 text-sm font-bold">
-            Faturamento por {period === 'year' ? 'mês' : 'dia'}
+            Faturamento por {period === 'year' ? 'mÃªs' : 'dia'}
           </h3>
           {stats.dailyData.length ? (
             <Suspense fallback={<ChartLoading />}>
               <DailyRevenueChart data={stats.dailyData} />
             </Suspense>
           ) : (
-            <ChartEmpty text="Sem vendas no período selecionado." />
+            <ChartEmpty text="Sem vendas no perÃ­odo selecionado." />
           )}
         </section>
 
@@ -643,7 +734,7 @@ export default function Relatorios() {
               <PaymentLegend rows={stats.paymentData} />
             </div>
           ) : (
-            <ChartEmpty text="Sem pagamentos no período selecionado." />
+            <ChartEmpty text="Sem pagamentos no perÃ­odo selecionado." />
           )}
         </section>
       </div>
@@ -651,25 +742,50 @@ export default function Relatorios() {
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Ranking
           title="Ranking de produtos"
-          rows={stats.topProducts.map(([name, data]) => ({
-            name,
-            value: formatCurrency(data.revenue),
-            detail: `${Number(data.qty)
-              .toFixed(3)
-              .replace(/\.000$/, '')} vendidos`,
+          sortKey={productRankingSort}
+          onSortKeyChange={setProductRankingSort}
+          rows={productRankingRows.map((row) => ({
+            name: row.name,
+            value:
+              productRankingSort === 'items'
+                ? Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })
+                : formatCurrency(row.revenue),
+            detail:
+              productRankingSort === 'items'
+                ? `${formatCurrency(row.revenue)} de faturamento`
+                : `${Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })} vendidos`,
             percent:
-              stats.totalRevenue > 0
-                ? (data.revenue / stats.totalRevenue) * 100
-                : 0,
+              productRankingSort === 'items'
+                ? (row.items / Math.max(1, productRankingRows[0]?.items || 1)) * 100
+                : (row.revenue / Math.max(1, stats.totalRevenue || 1)) * 100,
           }))}
         />
         <Ranking
           title="Desempenho por vendedor"
-          rows={stats.sellerData.map(([name, data]) => ({
-            name,
-            value: formatCurrency(data.revenue),
-            detail: `${data.count} vendas · ${formatCurrency(data.average)} ticket`,
-            percent: data.share,
+          sortKey={sellerRankingSort}
+          onSortKeyChange={setSellerRankingSort}
+          rows={sellerRankingRows.map((row) => ({
+            name: row.name,
+            value:
+              sellerRankingSort === 'items'
+                ? Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })
+                : formatCurrency(row.revenue),
+            detail:
+              sellerRankingSort === 'items'
+                ? `${formatCurrency(row.revenue)} de faturamento ? ${row.sales} vendas`
+                : `${Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })} itens ? ${formatCurrency(row.average)} ticket`,
+            percent:
+              sellerRankingSort === 'items'
+                ? (row.items / Math.max(1, sellerRankingRows[0]?.items || 1)) * 100
+                : (row.revenue / Math.max(1, stats.totalRevenue || 1)) * 100,
           }))}
         />
       </div>
@@ -677,16 +793,26 @@ export default function Relatorios() {
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Ranking
           title="Categorias com maior receita"
-          rows={stats.topCategories.map(([name, data]) => ({
-            name,
-            value: formatCurrency(data.revenue),
-            detail: `${Number(data.qty)
-              .toFixed(3)
-              .replace(/\.000$/, '')} itens`,
+          sortKey={categoryRankingSort}
+          onSortKeyChange={setCategoryRankingSort}
+          rows={categoryRankingRows.map((row) => ({
+            name: row.name,
+            value:
+              categoryRankingSort === 'items'
+                ? Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })
+                : formatCurrency(row.revenue),
+            detail:
+              categoryRankingSort === 'items'
+                ? `${formatCurrency(row.revenue)} de faturamento`
+                : `${Number(row.items).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3,
+                  })} itens`,
             percent:
-              stats.totalRevenue > 0
-                ? (data.revenue / stats.totalRevenue) * 100
-                : 0,
+              categoryRankingSort === 'items'
+                ? (row.items / Math.max(1, categoryRankingRows[0]?.items || 1)) * 100
+                : (row.revenue / Math.max(1, stats.totalRevenue || 1)) * 100,
           }))}
         />
         <ExecutiveSummary stats={stats} />
@@ -694,7 +820,7 @@ export default function Relatorios() {
 
       <section className="rounded-xl border border-accent/25 bg-accent/5 p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Lightbulb className="h-5 w-5 text-accent" /> Insights do período
+          <Lightbulb className="h-5 w-5 text-accent" /> Insights do perÃ­odo
         </h3>
         <div className="space-y-2">
           {insights.map((insight, index) => (
@@ -727,7 +853,7 @@ export default function Relatorios() {
           ))}
           {!insights.length && (
             <p className="text-sm text-muted-foreground">
-              Sem insights para este período.
+              Sem insights para este perÃ­odo.
             </p>
           )}
         </div>
@@ -748,7 +874,7 @@ function ChartLoading({ height = 'h-[270px]' }) {
   return (
     <div
       role="status"
-      aria-label="Carregando gráfico"
+      aria-label="Carregando grÃ¡fico"
       className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
     />
   );
@@ -835,7 +961,7 @@ function ExecutiveSummary({ stats }) {
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
     ['Produtos no ranking', stats.topProducts.length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendÃªncias'],
   ];
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
@@ -862,10 +988,30 @@ function ExecutiveSummary({ stats }) {
   );
 }
 
-function Ranking({ title, rows }) {
+function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
-      <h3 className="mb-3 text-sm font-bold">{title}</h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold">{title}</h3>
+        {onSortKeyChange && (
+          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => onSortKeyChange('revenue')}
+              className={`rounded-md px-2.5 py-1.5 transition ${sortKey === 'revenue' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Receita
+            </button>
+            <button
+              type="button"
+              onClick={() => onSortKeyChange('items')}
+              className={`rounded-md px-2.5 py-1.5 transition ${sortKey === 'items' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Itens
+            </button>
+          </div>
+        )}
+      </div>
       <div className="space-y-2">
         {rows.map((row, index) => (
           <div
@@ -885,7 +1031,7 @@ function Ranking({ title, rows }) {
               </span>
             </span>
             <div className="sr-only">
-              Participação: {Number(row.percent || 0).toFixed(1)}%
+              Participa??o: {Number(row.percent || 0).toFixed(1)}%
             </div>
             <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
               <div
@@ -897,7 +1043,7 @@ function Ranking({ title, rows }) {
         ))}
         {!rows.length && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Sem dados no período.
+            Sem dados no per?odo.
           </p>
         )}
       </div>

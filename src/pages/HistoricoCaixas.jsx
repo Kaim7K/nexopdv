@@ -367,24 +367,24 @@ export default function HistoricoCaixas() {
           </div>
           <div className="grid gap-3 lg:hidden">
             {data.items.map((item) => (
-              <article
-                key={item.id}
-                className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-black">{item.seller_name}</h2>
-                    <p className="text-xs text-muted-foreground">
-                      {item.unit_name || "Unidade principal"} ·{" "}
-                      {formatDate(item.opened_at)}
-                    </p>
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-border bg-card p-3.5 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-black">{item.seller_name}</h2>
+                      <p className="text-[11px] text-muted-foreground">
+                        {item.unit_name || "Unidade principal"} ·{" "}
+                        {formatDate(item.opened_at)}
+                      </p>
+                    </div>
+                    <Status value={item.status} />
                   </div>
-                  <Status value={item.status} />
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <Value
-                    label="Valor inicial"
-                    value={formatCurrency(item.opening_amount)}
+                  <dl className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
+                    <Value
+                      label="Valor inicial"
+                      value={formatCurrency(item.opening_amount)}
                   />
                   <Value
                     label="Total de vendas"
@@ -398,15 +398,15 @@ export default function HistoricoCaixas() {
                     label="Valor final"
                     value={formatCurrency(item.final_amount)}
                   />
-                </dl>
-                <button
-                  type="button"
-                  onClick={() => openDetail(item)}
-                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
-                >
-                  <Eye className="h-4 w-4" /> Ver resumo completo
-                </button>
-              </article>
+                  </dl>
+                  <button
+                    type="button"
+                    onClick={() => openDetail(item)}
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
+                  >
+                    <Eye className="h-4 w-4" /> Ver resumo completo
+                  </button>
+                </article>
             ))}
           </div>
           <PaginationControls
@@ -438,6 +438,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const { session, summary = {} } = data;
   const [movementOpen, setMovementOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [selectedSaleLoading, setSelectedSaleLoading] = useState(false);
   const [movement, setMovement] = useState({
     type: "entrada",
     amount: "",
@@ -568,6 +570,18 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
       toast.error(cause.message || "Não foi possível salvar as alterações.");
     } finally {
       setEditingCash(false);
+    }
+  };
+  const openSaleDetail = async (sale) => {
+    setSelectedSale({ ...sale, _loading: true });
+    setSelectedSaleLoading(true);
+    try {
+      setSelectedSale(await nexoApi.entities.Sale.get(sale.id));
+    } catch (cause) {
+      setSelectedSale(null);
+      toast.error(cause.message || "Não foi possível abrir a venda.");
+    } finally {
+      setSelectedSaleLoading(false);
     }
   };
   return (
@@ -875,18 +889,24 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 {summary.sales?.length ? (
                   <div className="space-y-2">
                     {summary.sales.map((sale) => (
-                      <div
+                      <button
                         key={sale.id}
-                        className="flex items-center justify-between rounded-xl border border-border p-3 text-sm"
+                        type="button"
+                        onClick={() => openSaleDetail(sale)}
+                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:bg-muted/25"
                       >
-                        <div>
-                          <strong>Venda #{sale.sale_number}</strong>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <strong className="block truncate">
+                            Venda #{sale.sale_number}
+                          </strong>
+                          <p className="truncate text-[11px] text-muted-foreground">
                             {formatDate(sale.created_date)} · {sale.status}
                           </p>
                         </div>
-                        <strong>{formatCurrency(sale.total)}</strong>
-                      </div>
+                        <strong className="flex-none tabular-nums">
+                          {formatCurrency(sale.total)}
+                        </strong>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -898,7 +918,97 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             </>
           )}
         </div>
+        {selectedSale && (
+          <CashSaleDetailModal
+            sale={selectedSale}
+            loading={selectedSaleLoading || selectedSale._loading}
+            onClose={() => setSelectedSale(null)}
+          />
+        )}
       </section>
+    </div>
+  );
+}
+
+function CashSaleDetailModal({ sale, loading, onClose }) {
+  const { summary = {} } = sale;
+  const totals = {
+    subtotal: Number(sale.subtotal ?? (sale.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0)),
+    total: Number(sale.total ?? summary.total ?? 0),
+  };
+  return (
+    <div
+      className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-0 backdrop-blur-sm sm:p-4"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card shadow-2xl sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cash-sale-detail-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
+          <div className="min-w-0">
+            <h2 id="cash-sale-detail-title" className="truncate text-lg font-black">
+              Venda #{sale.sale_number}
+            </h2>
+            <p className="truncate text-xs text-muted-foreground">
+              {formatDate(sale.created_date)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-muted"
+            aria-label="Fechar venda"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+          {loading ? (
+            <LoadingState label="Carregando venda..." />
+          ) : (
+            <div className="space-y-4 text-sm">
+              <div className="grid gap-2 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
+                <Value label="Status" value={sale.status === "concluida" ? "Concluída" : "Cancelada"} />
+                <Value label="Total" value={formatCurrency(totals.total)} />
+                <Value label="Subtotal" value={formatCurrency(totals.subtotal)} />
+                <Value label="Pagamento" value={(sale.payments || []).map((payment) => PAYMENT_LABELS[payment.method] || payment.method).join(", ") || "—"} />
+              </div>
+              <section>
+                <h3 className="mb-2 text-xs font-black uppercase tracking-[0.08em] text-muted-foreground">
+                  Itens
+                </h3>
+                <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                  {(sale.items || []).map((item, index) => {
+                    const amount =
+                      item.unit === "peso"
+                        ? `${Number(item.weight || 0).toLocaleString("pt-BR")} kg`
+                        : `${item.quantity || 0} un.`;
+                    return (
+                      <div
+                        key={`${item.product_id || item.product_name}-${index}`}
+                        className="flex items-center justify-between gap-3 px-3 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{item.product_name}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{amount}</p>
+                        </div>
+                        <span className="flex-none font-bold tabular-nums">
+                          {formatCurrency(item.subtotal)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

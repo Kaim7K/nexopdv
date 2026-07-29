@@ -708,59 +708,57 @@ function SaleCard({
   onDelete,
 }) {
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black">Venda #{sale.sale_number}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+    <article className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-black">
+            Venda #{sale.sale_number}
+          </h2>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
             {formatDateTime(sale.created_date)}
+            {canSeeTeam && sale.seller_name ? ` · ${sale.seller_name}` : ''}
           </p>
         </div>
         <SaleStatus sale={sale} />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-muted/35 p-3 text-sm">
-        <div>
-          <span className="block text-xs text-muted-foreground">Total</span>
-          <strong className="mt-0.5 block text-base">
+      <div className="mt-3 grid grid-cols-[1fr_auto] items-end gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
+        <div className="min-w-0">
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Pagamento
+          </span>
+          <strong className="mt-0.5 block truncate text-sm">
+            {paymentNames(sale)}
+          </strong>
+        </div>
+        <div className="text-right">
+          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+            Total
+          </span>
+          <strong className="block text-lg font-black tabular-nums">
             {formatCurrency(sale.total)}
           </strong>
         </div>
-        <div>
-          <span className="block text-xs text-muted-foreground">Tipo</span>
-          <strong className="mt-0.5 block">
-            {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
-          </strong>
-        </div>
-        {canSeeTeam && (
-          <div className="col-span-2">
-            <span className="block text-xs text-muted-foreground">
-              Vendedor
-            </span>
-            <strong className="mt-0.5 block">{sale.seller_name || 'â€”'}</strong>
-          </div>
-        )}
-        <div className="col-span-2">
-          <span className="block text-xs text-muted-foreground">Pagamento</span>
-          <strong className="mt-0.5 block">{paymentNames(sale)}</strong>
-        </div>
       </div>
-      <SaleActions
-        sale={sale}
-        receiptLoading={receiptLoading}
-        canCancel={canCancel}
-        canDelete={canDelete}
-        onDetails={onDetails}
-        onReceipt={onReceipt}
-        onPrint={onPrint}
-        onCancel={onCancel}
-        onDelete={onDelete}
-        mobile
-        printing={printing}
-      />
+      <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-muted-foreground">
+        <span className="rounded-full border border-border bg-background px-2.5 py-1">
+          {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
+        </span>
+        {canSeeTeam && (
+          <span className="rounded-full border border-border bg-background px-2.5 py-1">
+            {sale.seller_name || '—'}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onDetails}
+        className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
+      >
+        <Eye className="h-4 w-4" /> Ver detalhes
+      </button>
     </article>
   );
 }
-
 function SaleActions({
   sale,
   receiptLoading,
@@ -1172,3 +1170,5 @@ function Info({ label, value }) {
     </div>
   );
 }
+
+
