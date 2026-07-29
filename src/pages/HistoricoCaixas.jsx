@@ -294,7 +294,7 @@ export default function HistoricoCaixas() {
         />
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:block">
+          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:block">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
@@ -351,7 +351,7 @@ export default function HistoricoCaixas() {
               </tbody>
             </table>
           </div>
-          <div className="grid gap-2 lg:hidden">
+          <div className="grid gap-2 xl:hidden">
             {data.items.map((item) => (
                 <article
                   key={item.id}

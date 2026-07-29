@@ -33,3 +33,7 @@ dist-ssr
 .vite
 
 .vercel
+
+# Local browser/test artifacts
+.codex-browser-profile/
+artifacts/

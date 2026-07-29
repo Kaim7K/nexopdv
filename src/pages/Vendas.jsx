@@ -583,27 +583,27 @@ export default function Vendas() {
 function DailyReportCard(props) {
   return (
     <section
-      className="mb-4 overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm"
+      className="mb-3 overflow-hidden rounded-xl border border-accent/20 bg-card shadow-sm sm:mb-4 sm:rounded-2xl"
       aria-labelledby="daily-report-title"
     >
-      <div className="flex items-start gap-3 border-b border-border bg-accent/5 p-4 sm:p-5">
-        <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-accent text-accent-foreground">
-          <FileText className="h-5 w-5" />
+      <div className="flex items-start gap-2.5 border-b border-border bg-accent/5 p-3 sm:gap-3 sm:p-4 lg:p-5">
+        <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-accent text-accent-foreground sm:h-11 sm:w-11 sm:rounded-xl">
+          <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
         </span>
         <div>
-          <h2 id="daily-report-title" className="font-black">
+          <h2 id="daily-report-title" className="text-sm font-black sm:text-base">
             Relatório de vendas do dia
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:mt-1 sm:text-sm">
             Baixe um PDF com resumo, pagamentos e todas as vendas do período
             selecionado.
           </p>
         </div>
       </div>
       <div
-        className={`grid gap-3 p-4 sm:grid-cols-2 lg:p-5 ${props.canSeeTeam ? 'lg:grid-cols-[180px_140px_140px_1fr_190px_auto]' : 'lg:grid-cols-[180px_140px_140px_1fr_auto]'}`}
+        className={`grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-2 sm:gap-3 sm:p-4 lg:p-5 ${props.canSeeTeam ? 'lg:grid-cols-[180px_140px_140px_1fr_190px_auto]' : 'lg:grid-cols-[180px_140px_140px_1fr_auto]'}`}
       >
-        <label className="text-xs font-bold text-muted-foreground">
+        <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
           <span className="mb-1.5 flex items-center gap-1">
             <CalendarDays className="h-3.5 w-3.5" /> Data
           </span>
@@ -611,7 +611,7 @@ function DailyReportCard(props) {
             type="date"
             value={props.date}
             onChange={(event) => props.onDate(event.target.value)}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           />
         </label>
         <label className="text-xs font-bold text-muted-foreground">
@@ -622,7 +622,7 @@ function DailyReportCard(props) {
             type="time"
             value={props.start}
             onChange={(event) => props.onStart(event.target.value)}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           />
         </label>
         <label className="text-xs font-bold text-muted-foreground">
@@ -633,16 +633,16 @@ function DailyReportCard(props) {
             type="time"
             value={props.end}
             onChange={(event) => props.onEnd(event.target.value)}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           />
         </label>
         {props.canSeeTeam && (
-          <label className="text-xs font-bold text-muted-foreground">
+          <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
             Vendedor
             <select
               value={props.seller}
               onChange={(event) => props.onSeller(event.target.value)}
-              className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
             >
               <option value="">Todos os vendedores</option>
               {props.sellers.map((seller) => (
@@ -653,12 +653,12 @@ function DailyReportCard(props) {
             </select>
           </label>
         )}
-        <label className="text-xs font-bold text-muted-foreground">
+        <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
           Pagamento
           <select
             value={props.payment}
             onChange={(event) => props.onPayment(event.target.value)}
-            className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           >
             <option value="">Todos os pagamentos</option>
             {PAYMENT_METHODS.map((payment) => (
@@ -672,7 +672,7 @@ function DailyReportCard(props) {
           type="button"
           disabled={props.reporting}
           onClick={props.onDownload}
-          className="inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
+          className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 self-end rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 sm:min-h-11 lg:col-span-1"
         >
           {props.reporting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
