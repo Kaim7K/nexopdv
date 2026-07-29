@@ -12,9 +12,11 @@ import {
   History,
   Loader2,
   Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   formatCurrency,
+  formatDate,
   formatDateTime,
   PAYMENT_METHODS,
 } from '@/lib/helpers';
@@ -345,11 +347,90 @@ export default function Vendas() {
       )}
 
       <section
-        className="mb-3 rounded-xl border border-border bg-card p-2.5 shadow-sm sm:mb-4 sm:rounded-2xl sm:p-3"
+        className="mb-3 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:p-3"
         aria-label="Filtros de vendas"
       >
+        <div className="space-y-2 sm:hidden">
+          <label className="relative block">
+            <span className="sr-only">Buscar vendas</span>
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Número, vendedor ou pagamento"
+              className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+          </label>
+          <details className="group rounded-lg border border-border bg-background">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-bold marker:hidden">
+              <span className="inline-flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" /> Filtros avançados
+              </span>
+              <span className="text-xs text-muted-foreground group-open:hidden">abrir</span>
+              <span className="hidden text-xs text-muted-foreground group-open:inline">fechar</span>
+            </summary>
+            <div className="grid gap-2 border-t border-border p-2">
+              {canSeeTeam && (
+                <select
+                  aria-label="Filtrar por vendedor"
+                  value={filterSeller}
+                  onChange={(event) => {
+                    setFilterSeller(event.target.value);
+                    setPage(1);
+                  }}
+                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                >
+                  <option value="">Todos os vendedores</option>
+                  {sellers.map((seller) => (
+                    <option key={seller.id} value={seller.id}>{seller.name}</option>
+                  ))}
+                </select>
+              )}
+              <select
+                aria-label="Filtrar por pagamento"
+                value={filterPayment}
+                onChange={(event) => {
+                  setFilterPayment(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              >
+                <option value="">Todos os pagamentos</option>
+                {PAYMENT_METHODS.map((payment) => (
+                  <option key={payment.method} value={payment.method}>{payment.label}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Filtrar por status"
+                value={filterStatus}
+                onChange={(event) => {
+                  setFilterStatus(event.target.value);
+                  setPage(1);
+                }}
+                className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              >
+                <option value="">Todos os status</option>
+                <option value="concluida">Concluídas</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="min-h-10 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+          </details>
+        </div>
+
         <div
-          className={`grid gap-2 sm:grid-cols-2 ${canSeeTeam ? 'lg:grid-cols-[minmax(260px,1fr)_190px_180px_170px_auto]' : 'lg:grid-cols-[minmax(260px,1fr)_190px_170px_auto]'}`}
+          className={`hidden gap-2 sm:grid sm:grid-cols-2 ${canSeeTeam ? 'lg:grid-cols-[minmax(260px,1fr)_190px_180px_170px_auto]' : 'lg:grid-cols-[minmax(260px,1fr)_190px_170px_auto]'}`}
         >
           <label className="relative sm:col-span-2 lg:col-span-1">
             <span className="sr-only">Buscar vendas</span>
@@ -376,9 +457,7 @@ export default function Vendas() {
             >
               <option value="">Todos os vendedores</option>
               {sellers.map((seller) => (
-                <option key={seller.id} value={seller.id}>
-                  {seller.name}
-                </option>
+                <option key={seller.id} value={seller.id}>{seller.name}</option>
               ))}
             </select>
           )}
@@ -393,9 +472,7 @@ export default function Vendas() {
           >
             <option value="">Todos os pagamentos</option>
             {PAYMENT_METHODS.map((payment) => (
-              <option key={payment.method} value={payment.method}>
-                {payment.label}
-              </option>
+              <option key={payment.method} value={payment.method}>{payment.label}</option>
             ))}
           </select>
           <select
@@ -582,116 +659,131 @@ export default function Vendas() {
 
 function DailyReportCard(props) {
   return (
-    <section
-      className="mb-3 overflow-hidden rounded-xl border border-accent/20 bg-card shadow-sm sm:mb-4 sm:rounded-2xl"
-      aria-labelledby="daily-report-title"
-    >
-      <div className="flex items-start gap-2.5 border-b border-border bg-accent/5 p-3 sm:gap-3 sm:p-4 lg:p-5">
-        <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-accent text-accent-foreground sm:h-11 sm:w-11 sm:rounded-xl">
-          <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-        </span>
-        <div>
-          <h2 id="daily-report-title" className="text-sm font-black sm:text-base">
-            Relatório de vendas do dia
-          </h2>
-          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:mt-1 sm:text-sm">
-            Baixe um PDF com resumo, pagamentos e todas as vendas do período
-            selecionado.
-          </p>
-        </div>
-      </div>
-      <div
-        className={`grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-2 sm:gap-3 sm:p-4 lg:p-5 ${props.canSeeTeam ? 'lg:grid-cols-[180px_140px_140px_1fr_190px_auto]' : 'lg:grid-cols-[180px_140px_140px_1fr_auto]'}`}
+    <>
+      <details className="mb-3 overflow-hidden rounded-xl border border-accent/20 bg-card shadow-sm sm:hidden">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 bg-accent/5 px-3 marker:hidden">
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
+              <FileText className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <strong className="block truncate text-sm">Relatório do dia</strong>
+              <span className="block text-[11px] text-muted-foreground">
+                {formatDate(props.date)} · PDF de vendas
+              </span>
+            </span>
+          </span>
+          <span className="text-xs font-bold text-accent">abrir</span>
+        </summary>
+        <DailyReportFields props={props} />
+      </details>
+
+      <details
+        open
+        className="mb-4 hidden overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm sm:block"
       >
-        <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
-          <span className="mb-1.5 flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5" /> Data
+        <summary className="flex list-none items-start gap-3 border-b border-border bg-accent/5 p-4 marker:hidden lg:p-5">
+          <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-accent text-accent-foreground">
+            <FileText className="h-5 w-5" />
           </span>
-          <input
-            type="date"
-            value={props.date}
-            onChange={(event) => props.onDate(event.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
-          />
-        </label>
-        <label className="text-xs font-bold text-muted-foreground">
-          <span className="mb-1.5 flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" /> Início
-          </span>
-          <input
-            type="time"
-            value={props.start}
-            onChange={(event) => props.onStart(event.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
-          />
-        </label>
-        <label className="text-xs font-bold text-muted-foreground">
-          <span className="mb-1.5 flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" /> Fim
-          </span>
-          <input
-            type="time"
-            value={props.end}
-            onChange={(event) => props.onEnd(event.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
-          />
-        </label>
-        {props.canSeeTeam && (
-          <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
-            Vendedor
-            <select
-              value={props.seller}
-              onChange={(event) => props.onSeller(event.target.value)}
-              className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
-            >
-              <option value="">Todos os vendedores</option>
-              {props.sellers.map((seller) => (
-                <option key={seller.id} value={seller.id}>
-                  {seller.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div>
+            <h2 id="daily-report-title" className="font-black">
+              Relatório de vendas do dia
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Baixe um PDF com resumo, pagamentos e todas as vendas do período selecionado.
+            </p>
+          </div>
+        </summary>
+        <DailyReportFields props={props} desktop />
+        {!props.canSeeTeam && (
+          <p className="px-4 pb-4 text-xs font-medium text-muted-foreground lg:px-5">
+            O relatório de vendedor inclui exclusivamente as vendas vinculadas à sua conta.
+          </p>
         )}
-        <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
-          Pagamento
-          <select
-            value={props.payment}
-            onChange={(event) => props.onPayment(event.target.value)}
-            className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
-          >
-            <option value="">Todos os pagamentos</option>
-            {PAYMENT_METHODS.map((payment) => (
-              <option key={payment.method} value={payment.method}>
-                {payment.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          disabled={props.reporting}
-          onClick={props.onDownload}
-          className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 self-end rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 sm:min-h-11 lg:col-span-1"
-        >
-          {props.reporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}{' '}
-          {props.reporting ? 'Gerando...' : 'Baixar relatório'}
-        </button>
-      </div>
-      {!props.canSeeTeam && (
-        <p className="px-4 pb-4 text-xs font-medium text-muted-foreground lg:px-5">
-          O relatório de vendedor inclui exclusivamente as vendas vinculadas à
-          sua conta.
-        </p>
-      )}
-    </section>
+      </details>
+    </>
   );
 }
 
+function DailyReportFields({ props, desktop = false }) {
+  return (
+    <div
+      className={`grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-2 sm:gap-3 sm:p-4 lg:p-5 ${desktop ? (props.canSeeTeam ? 'lg:grid-cols-[180px_140px_140px_1fr_190px_auto]' : 'lg:grid-cols-[180px_140px_140px_1fr_auto]') : ''}`}
+    >
+      <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
+        <span className="mb-1.5 flex items-center gap-1">
+          <CalendarDays className="h-3.5 w-3.5" /> Data
+        </span>
+        <input
+          type="date"
+          value={props.date}
+          onChange={(event) => props.onDate(event.target.value)}
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+        />
+      </label>
+      <label className="text-xs font-bold text-muted-foreground">
+        <span className="mb-1.5 flex items-center gap-1">
+          <Clock3 className="h-3.5 w-3.5" /> Início
+        </span>
+        <input
+          type="time"
+          value={props.start}
+          onChange={(event) => props.onStart(event.target.value)}
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+        />
+      </label>
+      <label className="text-xs font-bold text-muted-foreground">
+        <span className="mb-1.5 flex items-center gap-1">
+          <Clock3 className="h-3.5 w-3.5" /> Fim
+        </span>
+        <input
+          type="time"
+          value={props.end}
+          onChange={(event) => props.onEnd(event.target.value)}
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+        />
+      </label>
+      {props.canSeeTeam && (
+        <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
+          Vendedor
+          <select
+            value={props.seller}
+            onChange={(event) => props.onSeller(event.target.value)}
+            className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+          >
+            <option value="">Todos os vendedores</option>
+            {props.sellers.map((seller) => (
+              <option key={seller.id} value={seller.id}>{seller.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label className="col-span-2 text-xs font-bold text-muted-foreground sm:col-span-1">
+        Pagamento
+        <select
+          value={props.payment}
+          onChange={(event) => props.onPayment(event.target.value)}
+          className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+        >
+          <option value="">Todos os pagamentos</option>
+          {PAYMENT_METHODS.map((payment) => (
+            <option key={payment.method} value={payment.method}>{payment.label}</option>
+          ))}
+        </select>
+      </label>
+      <button
+        type="button"
+        disabled={props.reporting}
+        onClick={props.onDownload}
+        className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 self-end rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 sm:min-h-11 lg:col-span-1"
+      >
+        {props.reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{' '}
+        {props.reporting ? 'Gerando...' : 'Baixar relatório'}
+      </button>
+    </div>
+  );
+}
 function LoadingState() {
   return (
     <div

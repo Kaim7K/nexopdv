@@ -67,7 +67,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             Os quatro números mais importantes do período selecionado.
           </p>
         </div>
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-1.5 sm:gap-2.5 lg:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <MetricCard
               key={card.label}
@@ -290,32 +290,47 @@ function MetricCard({
     neutral: 'bg-muted text-muted-foreground',
   }[tone];
   return (
-    <article className="surface-card p-3 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && (
+    <article className="surface-card flex items-center gap-2.5 p-2.5 sm:block sm:p-3">
+      {Icon && (
+        <span
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:hidden ${iconTone}`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {Icon && (
+              <span
+                className={`hidden h-8 w-8 shrink-0 place-items-center rounded-xl sm:grid ${iconTone}`}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
+            )}
+            <p className="truncate text-xs font-semibold text-muted-foreground">
+              {label}
+            </p>
+          </div>
+          {change !== null && change !== undefined && (
             <span
-              className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${iconTone}`}
+              title="Comparação com o período anterior"
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${change >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 text-destructive'}`}
             >
-              <Icon className="h-4 w-4" />
+              {change > 0 ? '+' : ''}
+              {change}%
             </span>
           )}
-          <p className="text-xs font-semibold text-muted-foreground">{label}</p>
         </div>
-        {change !== null && change !== undefined && (
-          <span
-            title="Comparação com o período anterior"
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${change >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-destructive/10 text-destructive'}`}
-          >
-            {change > 0 ? '+' : ''}
-            {change}%
-          </span>
-        )}
+        <div className="mt-0.5 flex items-baseline justify-between gap-2 sm:block">
+          <strong className="block break-words text-base tabular-nums sm:mt-1.5 sm:text-lg">
+            {value}
+          </strong>
+          <p className="line-clamp-1 text-[10px] leading-4 text-muted-foreground sm:mt-2 sm:text-[11px]">
+            {help}
+          </p>
+        </div>
       </div>
-      <strong className="mt-1.5 block break-words text-lg tabular-nums sm:text-xl">
-        {value}
-      </strong>
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">{help}</p>
     </article>
   );
 }
