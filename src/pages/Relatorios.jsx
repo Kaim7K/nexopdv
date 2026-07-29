@@ -365,8 +365,6 @@ export default function Relatorios() {
       cancelled,
       productMap,
       categoryMap,
-      topProducts,
-      topCategories,
       paymentData,
       sellerData,
       pendingFiado,
@@ -456,11 +454,11 @@ export default function Relatorios() {
         type: 'down',
         text: `As vendas caÃ­ram ${Math.abs(stats.revenueChange).toFixed(1)}% em relaÃ§Ã£o ao perÃ­odo anterior.`,
       });
-    if (stats.topProducts.length)
+    if (productRankingRows.length)
       list.push({
         type: 'info',
-        text: `O produto com maior faturamento foi ${stats.topProducts[0][0]}, com ${Number(
-          stats.topProducts[0][1].qty,
+        text: `O produto com maior faturamento foi ${productRankingRows[0].name}, com ${Number(
+          productRankingRows[0].items,
         )
           .toFixed(3)
           .replace(/\.000$/, '')} vendidos.`,
@@ -493,7 +491,7 @@ export default function Relatorios() {
         text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no perÃ­odo.`,
       });
     return list;
-  }, [stats]);
+  }, [stats, productRankingRows]);
 
   if (loading)
     return (
@@ -960,7 +958,7 @@ function ExecutiveSummary({ stats }) {
   const rows = [
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
-    ['Produtos no ranking', stats.topProducts.length, 'Itens com faturamento'],
+    ['Produtos no ranking', productRankingRows.length, 'Itens com faturamento'],
     ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendÃªncias'],
   ];
   return (
