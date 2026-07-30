@@ -70,7 +70,7 @@ const TABLE_COLUMNS = [
 ];
 
 const inputClass =
-  'h-8 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-sm shadow-none outline-none transition-colors focus:border-accent/45 focus:bg-background focus:ring-2 focus:ring-accent/15';
+  'h-8 w-full min-w-0 rounded-md border !border-transparent !bg-transparent px-2 text-sm !shadow-none outline-none transition-colors hover:!border-transparent hover:!bg-transparent focus:!border-accent/45 focus:!bg-background focus:!shadow-none focus:!ring-2 focus:!ring-accent/15';
 
 const cellClass =
   'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/25';
@@ -101,7 +101,7 @@ export default function StockTable({
           />
         ))}
       </colgroup>
-      <thead className="sticky top-0 z-20">
+      <thead className="sticky top-0 z-40 bg-card">
         <tr>
           {TABLE_COLUMNS.map((column) => (
             <HeaderCell
@@ -154,7 +154,7 @@ function HeaderCell({ column, SortIcon, onSort }) {
 
   return (
     <th
-      className={`${stickyClass} border-b border-border bg-muted/55 px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-muted-foreground ${column.visibility || ''}`}
+      className={`${stickyClass} border-b border-border bg-card px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-muted-foreground shadow-none ${column.visibility || ''}`}
     >
       {column.sortKey ? (
         <button
@@ -198,7 +198,7 @@ function ProductRow({
   return (
     <tr className="group">
       <td
-        className={`${cellClass} sticky left-0 z-10 border-r border-border/70 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-0.5 ${stripeClass}`}
+        className={`${cellClass} sticky left-0 z-10 border-r border-border/70 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-0.5 ${stripeClass} relative`}
       >
         <ProductIdentity
           product={product}
@@ -490,7 +490,7 @@ function ActionButton({
       onClick={onClick}
       aria-label={label}
       title={title}
-      className={`grid h-8 w-8 place-items-center rounded-lg border bg-card transition-colors disabled:cursor-wait disabled:opacity-50 ${
+      className={`grid h-8 w-8 place-items-center rounded-lg border bg-card !shadow-none transition-colors disabled:cursor-wait disabled:opacity-50 ${
         destructive
           ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
           : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
