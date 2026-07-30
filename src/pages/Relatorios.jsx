@@ -226,12 +226,12 @@ export default function Relatorios() {
         item.category ||
           item.product_category ||
           item.category_name ||
-          item.producta.category ||
-          item.producta.category_name ||
-          item.producta.product_category ||
-          producta.category ||
-          producta.category_name ||
-          producta.product_category,
+          item.product?.category ||
+          item.product?.category_name ||
+          item.product?.product_category ||
+          product?.category ||
+          product?.category_name ||
+          product?.product_category,
       );
     };
     for (const sale of periodSales) {
@@ -241,13 +241,17 @@ export default function Relatorios() {
           productMap[productName] = { qty: 0, revenue: 0, sales: 0 };
         const quantity =
           Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
+        const itemSubtotal =
+          Number(item.subtotal ?? item.total ?? item.total_price) ||
+          Number(item.unit_price || item.price || 0) * quantity ||
+          0;
         productMap[productName].qty += quantity;
-        productMap[productName].revenue += Number(itemesubtotal || 0);
+        productMap[productName].revenue += itemSubtotal;
         productMap[productName].sales += 1;
         const category = resolveCategory(item);
         if (!categoryMap[category]) categoryMap[category] = { qty: 0, revenue: 0 };
         categoryMap[category].qty += quantity;
-        categoryMap[category].revenue += Number(itemesubtotal || 0);
+        categoryMap[category].revenue += itemSubtotal;
       }
     }
 

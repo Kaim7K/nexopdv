@@ -12,30 +12,89 @@ import {
   StockEmptyState,
 } from '@/components/stock/stock-view-utils';
 
-const visibleColumns = [
-  ['barcode', 'Cod. barras', 'text', 'hidden 2xl:table-cell'],
-  ['internal_code', 'Cod. interno', 'text', 'hidden 2xl:table-cell'],
-  ['sale_price', 'Venda', 'number', ''],
-  ['cost_price', 'Custo', 'number', 'hidden 2xl:table-cell'],
-  ['quantity', 'Estoque', 'number', ''],
-  ['unit', 'Unidade', 'text', 'hidden min-[1320px]:table-cell'],
-  ['last_sale_at', 'Ultima venda', 'date', 'hidden min-[1320px]:table-cell'],
-  ['status', 'Status', 'text', 'hidden 2xl:table-cell'],
+const TABLE_COLUMNS = [
+  {
+    key: 'name',
+    label: 'Produto',
+    sortKey: 'name',
+    width: 'w-[340px]',
+    sticky: 'left',
+  },
+  {
+    key: 'barcode',
+    label: 'Cod. barras',
+    sortKey: 'barcode',
+    width: 'w-[118px]',
+    visibility: 'hidden 2xl:table-cell',
+    type: 'text',
+  },
+  {
+    key: 'internal_code',
+    label: 'Cod. interno',
+    sortKey: 'internal_code',
+    width: 'w-[118px]',
+    visibility: 'hidden 2xl:table-cell',
+    type: 'text',
+  },
+  {
+    key: 'sale_price',
+    label: 'Venda',
+    sortKey: 'sale_price',
+    width: 'w-[112px]',
+    type: 'number',
+  },
+  {
+    key: 'cost_price',
+    label: 'Custo',
+    sortKey: 'cost_price',
+    width: 'w-[112px]',
+    visibility: 'hidden 2xl:table-cell',
+    type: 'number',
+  },
+  {
+    key: 'quantity',
+    label: 'Estoque',
+    sortKey: 'quantity',
+    width: 'w-[112px]',
+    type: 'number',
+  },
+  {
+    key: 'unit',
+    label: 'Unidade',
+    sortKey: 'unit',
+    width: 'w-[116px]',
+    visibility: 'hidden min-[1320px]:table-cell',
+    type: 'text',
+  },
+  {
+    key: 'last_sale_at',
+    label: 'Ultima venda',
+    sortKey: 'last_sale_at',
+    width: 'w-[150px]',
+    visibility: 'hidden min-[1320px]:table-cell',
+    type: 'date',
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortKey: 'status',
+    width: 'w-[112px]',
+    visibility: 'hidden 2xl:table-cell',
+    type: 'text',
+  },
+  {
+    key: 'actions',
+    label: 'Acoes',
+    width: 'w-[116px]',
+    sticky: 'right',
+  },
 ];
 
-const columnWidths = {
-  barcode: 'w-[132px]',
-  internal_code: 'w-[132px]',
-  sale_price: 'w-[104px]',
-  cost_price: 'w-[112px]',
-  quantity: 'w-[104px]',
-  unit: 'w-[104px]',
-  last_sale_at: 'w-[150px]',
-  status: 'w-[100px]',
-};
+const inputClass =
+  'h-8 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-sm outline-none transition-colors hover:border-border hover:bg-background/80 focus:border-accent/45 focus:bg-background focus:ring-2 focus:ring-accent/15';
 
-const fieldClass =
-  'h-7 w-full rounded-sm border border-transparent bg-transparent px-1.5 text-sm outline-none transition hover:bg-muted/35 focus:border-accent/40 focus:bg-background';
+const cellClass =
+  'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/35';
 
 export default function StockTable({
   products,
@@ -54,193 +113,49 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1340px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+    <table className="hidden w-full min-w-[1290px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
-        <col className="w-[360px]" />
-        {visibleColumns.map(([key, , , visibility]) => (
+        {TABLE_COLUMNS.map((column) => (
           <col
-            key={key}
-            className={`${columnWidths[key] || 'w-[120px]'} ${visibility}`}
+            key={column.key}
+            className={`${column.width} ${column.visibility || ''}`}
           />
         ))}
-        <col className="w-[110px]" />
       </colgroup>
-      <thead className="sticky top-0 z-20 bg-card/95 text-card-foreground backdrop-blur">
+      <thead className="sticky top-0 z-20">
         <tr>
-          <HeaderButton
-            sticky
-            className="left-0 z-30"
-            label="Produto"
-            sortKey="name"
-            SortIcon={SortIcon}
-            onSort={onSort}
-          />
-          {visibleColumns.map(([key, label, , visibility]) => (
-            <HeaderButton
-              key={key}
-              className={visibility}
-              label={label}
-              sortKey={key}
+          {TABLE_COLUMNS.map((column) => (
+            <HeaderCell
+              key={column.key}
+              column={column}
               SortIcon={SortIcon}
               onSort={onSort}
             />
           ))}
-          <th className="sticky right-0 z-30 border-b border-l border-border/70 bg-card px-3 py-2 text-right text-[11px] font-black uppercase text-muted-foreground">
-            Acoes
-          </th>
         </tr>
       </thead>
       <tbody>
         {products.map((product) => {
-          const { quantity, tracksStock, isZero, isLow, isDirty } =
-            getStockState(product, lowStockThreshold, dirty);
-          const rowTone = 'bg-card';
-          const stickyTone = 'bg-card';
-          const stockStripe = isDirty
-            ? 'before:bg-amber-400'
-            : tracksStock && isZero
-              ? 'before:bg-red-500'
-              : tracksStock && isLow
-                ? 'before:bg-amber-400'
-                : 'before:bg-transparent';
-          const hasCostPrice =
-            product.cost_price !== null &&
-            product.cost_price !== '' &&
-            Number.isFinite(Number(product.cost_price));
-          const unitProfit =
-            Number(product.sale_price || 0) - Number(product.cost_price || 0);
-
+          const stock = getStockState(product, lowStockThreshold, dirty);
           return (
-            <tr
+            <ProductRow
               key={product.id}
-              className={`group transition-colors hover:bg-muted/25 ${rowTone}`}
-            >
-              <td
-                className={`sticky left-0 z-10 border-b border-r border-border/60 px-2 py-1.5 align-middle ${stickyTone} before:absolute before:bottom-0 before:left-0 before:top-0 before:w-0.5 ${stockStripe}`}
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(product)}
-                    className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border border-border/80 bg-background"
-                    aria-label={`Editar ${product.name}`}
-                  >
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt=""
-                        className="h-full w-full object-contain p-1"
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <InlineField
-                      aria-label={`Produto ${product.name}`}
-                      className={`${fieldClass} px-1 font-bold`}
-                      type="text"
-                      value={product.name ?? ''}
-                      onCommit={(value) =>
-                        onInlineEdit(product.id, 'name', value, 'text')
-                      }
-                    />
-                    <InlineSelect
-                      aria-label={`Categoria de ${product.name}`}
-                      className="mt-0.5 h-6 w-full rounded-sm border border-transparent bg-transparent px-1 text-xs text-muted-foreground outline-none hover:bg-muted/35 focus:border-accent/40 focus:bg-background"
-                      value={product.category || ''}
-                      onCommit={(value) =>
-                        onInlineEdit(
-                          product.id,
-                          'category',
-                          value,
-                          'text',
-                        )
-                      }
-                    >
-                      <option value="">Sem categoria</option>
-                      {categories.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </InlineSelect>
-                  </div>
-                  {tracksStock && (isZero || isLow) && (
-                    <button
-                      type="button"
-                      onClick={() => onEdit(product)}
-                      className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
-                        isZero
-                          ? 'border-red-500/35 bg-transparent text-red-600 dark:text-red-300'
-                          : 'border-amber-500/35 bg-transparent text-amber-600 dark:text-amber-300'
-                      }`}
-                      aria-label={`Atualizar estoque de ${product.name}`}
-                      title={isZero ? 'Sem estoque' : 'Estoque baixo'}
-                    >
-                      <span className="sr-only">Atualizar estoque</span>
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              </td>
-              {visibleColumns.map(([key, label, type, visibility]) => (
-                <td
-                  key={key}
-                  className={`border-b border-border/60 px-2 py-1.5 align-middle ${visibility}`}
-                >
-                  <CellEditor
-                    product={product}
-                    fieldKey={key}
-                    label={label}
-                    type={type}
-                    quantity={quantity}
-                    tracksStock={tracksStock}
-                    hasCostPrice={hasCostPrice}
-                    unitProfit={unitProfit}
-                    onInlineEdit={onInlineEdit}
-                  />
-                </td>
-              ))}
-              <td
-                className={`sticky right-0 z-10 border-b border-l border-border/60 px-2 py-1.5 align-middle ${stickyTone}`}
-              >
-                <div className="flex justify-end gap-1">
-                  <ActionButton
-                    label={`Editar ${product.name} no formulario`}
-                    title="Editar"
-                    onClick={() => onEdit(product)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </ActionButton>
-                  <ActionButton
-                    label={`Duplicar ${product.name}`}
-                    title="Duplicar"
-                    onClick={() => onDuplicate(product)}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </ActionButton>
-                  {canDelete && (
-                    <ActionButton
-                      destructive
-                      disabled={deletingId === product.id}
-                      label={`Excluir ${product.name}`}
-                      title="Excluir"
-                      onClick={() => onDelete(product)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </ActionButton>
-                  )}
-                </div>
-              </td>
-            </tr>
+              product={product}
+              stock={stock}
+              categories={categories}
+              deletingId={deletingId}
+              canDelete={canDelete}
+              onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
+              onInlineEdit={onInlineEdit}
+            />
           );
         })}
         {!products.length && (
           <StockEmptyState
             table
+            colSpan={TABLE_COLUMNS.length}
             hasFilters={hasFilters}
             onClearFilters={onClearFilters}
           />
@@ -250,42 +165,185 @@ export default function StockTable({
   );
 }
 
-function HeaderButton({
-  label,
-  sortKey,
-  SortIcon,
-  onSort,
-  sticky = false,
-  className = '',
-}) {
+function HeaderCell({ column, SortIcon, onSort }) {
+  const stickyClass =
+    column.sticky === 'left'
+      ? 'sticky left-0 z-30'
+      : column.sticky === 'right'
+        ? 'sticky right-0 z-30 text-right'
+        : '';
+
   return (
     <th
-      className={`${sticky ? 'sticky bg-card' : ''} border-b border-border/70 p-0 text-left ${className}`}
+      className={`${stickyClass} border-b border-border bg-muted/55 px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-muted-foreground ${column.visibility || ''}`}
     >
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        className="flex h-9 w-full items-center gap-1.5 px-3 text-[11px] font-black uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
-        aria-label={`Ordenar por ${label}`}
-      >
-        <span className="truncate">{label}</span>
-        <SortIcon column={sortKey} />
-      </button>
+      {column.sortKey ? (
+        <button
+          type="button"
+          onClick={() => onSort(column.sortKey)}
+          className={`flex h-6 w-full items-center gap-1.5 rounded-md transition hover:text-foreground ${
+            column.sticky === 'right' ? 'justify-end' : ''
+          }`}
+          aria-label={`Ordenar por ${column.label}`}
+        >
+          <span className="truncate">{column.label}</span>
+          <SortIcon column={column.sortKey} />
+        </button>
+      ) : (
+        <span>{column.label}</span>
+      )}
     </th>
   );
 }
 
-function CellEditor({
+function ProductRow({
   product,
-  fieldKey,
-  label,
-  type,
-  quantity,
-  tracksStock,
-  hasCostPrice,
-  unitProfit,
+  stock,
+  categories,
+  deletingId,
+  canDelete,
+  onEdit,
+  onDuplicate,
+  onDelete,
   onInlineEdit,
 }) {
+  const { quantity, tracksStock, isZero, isLow, isDirty } = stock;
+  const stripeClass = isDirty
+    ? 'before:bg-amber-400'
+    : tracksStock && isZero
+      ? 'before:bg-red-500'
+      : tracksStock && isLow
+        ? 'before:bg-amber-400'
+        : 'before:bg-transparent';
+
+  return (
+    <tr className="group">
+      <td
+        className={`${cellClass} sticky left-0 z-10 border-r border-border/70 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-0.5 ${stripeClass}`}
+      >
+        <ProductIdentity
+          product={product}
+          categories={categories}
+          stock={stock}
+          onEdit={onEdit}
+          onInlineEdit={onInlineEdit}
+        />
+      </td>
+      {TABLE_COLUMNS.slice(1, -1).map((column) => (
+        <td key={column.key} className={`${cellClass} ${column.visibility || ''}`}>
+          <CellEditor
+            product={product}
+            column={column}
+            quantity={quantity}
+            tracksStock={tracksStock}
+            onInlineEdit={onInlineEdit}
+          />
+        </td>
+      ))}
+      <td className={`${cellClass} sticky right-0 z-10 border-l border-border/70`}>
+        <div className="flex justify-end gap-1.5">
+          <ActionButton
+            label={`Editar ${product.name} no formulario`}
+            title="Editar"
+            onClick={() => onEdit(product)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </ActionButton>
+          <ActionButton
+            label={`Duplicar ${product.name}`}
+            title="Duplicar"
+            onClick={() => onDuplicate(product)}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </ActionButton>
+          {canDelete && (
+            <ActionButton
+              destructive
+              disabled={deletingId === product.id}
+              label={`Excluir ${product.name}`}
+              title="Excluir"
+              onClick={() => onDelete(product)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </ActionButton>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function ProductIdentity({ product, categories, stock, onEdit, onInlineEdit }) {
+  const { tracksStock, isZero, isLow } = stock;
+
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        onClick={() => onEdit(product)}
+        className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background transition-colors group-hover:border-accent/25"
+        aria-label={`Editar ${product.name}`}
+      >
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt=""
+            className="h-full w-full object-contain p-1"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <Package className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      <div className="min-w-0 flex-1">
+        <InlineField
+          aria-label={`Produto ${product.name}`}
+          className={`${inputClass} h-7 px-1.5 font-bold`}
+          type="text"
+          value={product.name ?? ''}
+          onCommit={(value) => onInlineEdit(product.id, 'name', value, 'text')}
+        />
+        <InlineSelect
+          aria-label={`Categoria de ${product.name}`}
+          className={`${inputClass} mt-0.5 h-7 px-1.5 text-xs text-muted-foreground`}
+          value={product.category || ''}
+          onCommit={(value) =>
+            onInlineEdit(product.id, 'category', value, 'text')
+          }
+        >
+          <option value="">Sem categoria</option>
+          {categories.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </InlineSelect>
+      </div>
+      {tracksStock && (isZero || isLow) && (
+        <button
+          type="button"
+          onClick={() => onEdit(product)}
+          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border transition-colors ${
+            isZero
+              ? 'border-red-500/35 text-red-600 hover:bg-red-500/10 dark:text-red-300'
+              : 'border-amber-500/35 text-amber-600 hover:bg-amber-500/10 dark:text-amber-300'
+          }`}
+          aria-label={`Atualizar estoque de ${product.name}`}
+          title={isZero ? 'Sem estoque' : 'Estoque baixo'}
+        >
+          <AlertTriangle className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CellEditor({ product, column, quantity, tracksStock, onInlineEdit }) {
+  const fieldKey = column.key;
+  const label = column.label;
+  const type = column.type;
+
   if (fieldKey === 'last_sale_at') {
     return (
       <div className="min-w-0">
@@ -302,15 +360,22 @@ function CellEditor({
   }
 
   if (fieldKey === 'sale_price' || fieldKey === 'cost_price') {
+    const hasCostPrice =
+      product.cost_price !== null &&
+      product.cost_price !== '' &&
+      Number.isFinite(Number(product.cost_price));
+    const unitProfit =
+      Number(product.sale_price || 0) - Number(product.cost_price || 0);
+
     return (
-      <div>
+      <div className="min-w-0">
         <label className="relative block">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">
             R$
           </span>
           <InlineField
             aria-label={`${label} de ${product.name}`}
-            className={`${fieldClass} pl-7 pr-1 font-bold tabular-nums`}
+            className={`${inputClass} pl-7 pr-2 font-bold tabular-nums`}
             type="number"
             min="0"
             step="0.01"
@@ -322,7 +387,7 @@ function CellEditor({
         </label>
         {fieldKey === 'sale_price' && hasCostPrice && (
           <span
-            className={`mt-0.5 block truncate px-1.5 text-[10px] font-bold ${
+            className={`mt-0.5 block truncate px-2 text-[10px] font-bold ${
               unitProfit >= 0
                 ? 'text-emerald-600 dark:text-emerald-300'
                 : 'text-red-600 dark:text-red-300'
@@ -340,7 +405,7 @@ function CellEditor({
     return (
       <InlineField
         aria-label={`${label} de ${product.name}`}
-        className={`${fieldClass} font-bold tabular-nums ${
+        className={`${inputClass} font-bold tabular-nums ${
           tracksStock && quantity <= 0
             ? 'text-red-600 dark:text-red-300'
             : ''
@@ -349,9 +414,7 @@ function CellEditor({
         min="0"
         step="any"
         value={product[fieldKey] ?? ''}
-        onCommit={(value) =>
-          onInlineEdit(product.id, fieldKey, value, type)
-        }
+        onCommit={(value) => onInlineEdit(product.id, fieldKey, value, type)}
       />
     );
   }
@@ -360,11 +423,9 @@ function CellEditor({
     return (
       <InlineSelect
         aria-label={`${label} de ${product.name}`}
-        className={fieldClass}
+        className={inputClass}
         value={product.status || 'ativo'}
-        onCommit={(value) =>
-          onInlineEdit(product.id, fieldKey, value, type)
-        }
+        onCommit={(value) => onInlineEdit(product.id, fieldKey, value, type)}
       >
         <option value="ativo">Ativo</option>
         <option value="inativo">Inativo</option>
@@ -376,11 +437,9 @@ function CellEditor({
     return (
       <InlineSelect
         aria-label={`${label} de ${product.name}`}
-        className={fieldClass}
+        className={inputClass}
         value={product.unit || 'unidade'}
-        onCommit={(value) =>
-          onInlineEdit(product.id, fieldKey, value, type)
-        }
+        onCommit={(value) => onInlineEdit(product.id, fieldKey, value, type)}
       >
         <option value="unidade">Unidade</option>
         <option value="peso">Peso</option>
@@ -391,12 +450,10 @@ function CellEditor({
   return (
     <InlineField
       aria-label={`${label} de ${product.name}`}
-      className={`${fieldClass} truncate`}
+      className={`${inputClass} truncate`}
       type={type}
       value={product[fieldKey] ?? ''}
-      onCommit={(value) =>
-        onInlineEdit(product.id, fieldKey, value, type)
-      }
+      onCommit={(value) => onInlineEdit(product.id, fieldKey, value, type)}
     />
   );
 }
@@ -479,7 +536,7 @@ function ActionButton({
       onClick={onClick}
       aria-label={label}
       title={title}
-      className={`grid h-7 w-7 place-items-center rounded-md border transition disabled:cursor-wait disabled:opacity-50 ${
+      className={`grid h-8 w-8 place-items-center rounded-lg border bg-card transition-colors disabled:cursor-wait disabled:opacity-50 ${
         destructive
           ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
           : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'

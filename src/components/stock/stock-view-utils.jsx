@@ -2,7 +2,12 @@ import React from 'react';
 import { Package } from 'lucide-react';
 import { TABLE_COLUMNS } from '@/lib/stock-helpers';
 
-export function StockEmptyState({ hasFilters, onClearFilters, table = false }) {
+export function StockEmptyState({
+  hasFilters,
+  onClearFilters,
+  table = false,
+  colSpan = TABLE_COLUMNS.length + 2,
+}) {
   const content = (
     <>
       <Package className="mx-auto h-10 w-10 text-muted-foreground/25" />
@@ -25,7 +30,7 @@ export function StockEmptyState({ hasFilters, onClearFilters, table = false }) {
   if (table) {
     return (
       <tr>
-        <td colSpan={TABLE_COLUMNS.length + 2} className="p-8 text-center sm:p-12">
+        <td colSpan={colSpan} className="p-8 text-center sm:p-12">
           {content}
         </td>
       </tr>
