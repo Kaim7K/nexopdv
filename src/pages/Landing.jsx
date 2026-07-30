@@ -36,12 +36,6 @@ const HERO_BADGES = [
   { label: '100% na nuvem', Icon: ShieldCheck },
 ];
 
-const TRUST_ITEMS = [
-  'Super econômico',
-  'Bompreço',
-  'Atacadão São João',
-  'Mercado Novo Lar',
-];
 
 const FEATURE_CARDS = [
   {
@@ -542,19 +536,10 @@ export default function Landing() {
           id="inicio"
           className="relative isolate overflow-hidden bg-[#031b15] pt-24 text-white"
         >
-          <img
-            src={APP_IMAGES.reports}
-            alt=""
-            aria-hidden="true"
-            width="1700"
-            height="980"
-            loading="eager"
-            className="absolute inset-0 -z-30 h-full w-full object-cover object-top opacity-20"
-          />
-          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_70%_45%,rgba(24,201,135,0.22),transparent_36%),linear-gradient(180deg,rgba(3,27,21,0.94),rgba(3,27,21,0.98))]" />
+          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_42%,rgba(24,201,135,0.18),transparent_34%),linear-gradient(180deg,rgba(3,27,21,1),rgba(3,27,21,0.98))]" />
           <div className="absolute bottom-0 left-0 right-0 -z-10 h-px bg-emerald-300/25" />
 
-          <div className="mx-auto grid min-h-[720px] max-w-7xl items-center gap-10 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
+          <div className="mx-auto grid min-h-[640px] max-w-7xl items-center gap-10 px-4 pb-14 pt-8 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-emerald-200">
                 <Store className="h-3.5 w-3.5" />
@@ -595,24 +580,7 @@ export default function Landing() {
             <ProductMockup />
           </div>
         </section>
-
-        <section className="relative z-10 -mt-10 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-5 rounded-xl border border-white/10 bg-[#05251d] p-5 text-white shadow-[0_28px_80px_rgba(3,27,21,0.3)] sm:p-7 lg:grid-cols-[1.05fr_2fr_1fr]">
-            <p className="text-sm font-semibold leading-6 text-emerald-50/80">
-              A confiança de quem move o Brasil.
-            </p>
-            <div className="grid gap-3 text-sm font-black text-white/90 sm:grid-cols-2 lg:grid-cols-4">
-              {TRUST_ITEMS.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
-            </div>
-            <strong className="text-sm text-[#18c987] lg:text-right">
-              + de 5.000 mercadinhos
-            </strong>
-          </div>
-        </section>
-
-        <section id="recursos" className="bg-[#f7faf8] py-16 sm:py-20">
+        <section id="recursos" className="scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader
               eyebrow="Feito para a rotina do seu mercado"
@@ -630,7 +598,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="produto" className="bg-white py-16 sm:py-20 lg:py-24">
+        <section id="produto" className="scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20">
           <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-6 lg:px-8">
             {SHOWCASES.map((item) => (
               <Showcase key={item.title} item={item} />
@@ -638,7 +606,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="planos" className="bg-[#f7faf8] py-16 sm:py-20 lg:py-24">
+        <section id="planos" className="scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-6xl rounded-2xl border border-emerald-100 bg-white/75 px-4 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.06)] sm:px-8 lg:px-12">
             <SectionHeader
               eyebrow="Planos para cada momento"
@@ -662,7 +630,7 @@ export default function Landing() {
 
         <section
           id="duvidas"
-          className="bg-[#031b15] py-16 text-white sm:py-20 lg:py-24"
+          className="scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20"
         >
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:px-8">
             <div>
