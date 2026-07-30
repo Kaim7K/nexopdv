@@ -11,7 +11,7 @@ function SearchField({ value, onChange }) {
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
         className={`${controlClass} w-full pl-9 sm:pl-10`}
-        placeholder="Produto, categoria ou código"
+        placeholder="Produto, categoria ou codigo"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -28,6 +28,7 @@ function CategorySelect({ value, onChange, categories }) {
       onChange={(event) => onChange(event.target.value)}
     >
       <option value="">Todas as categorias</option>
+      <option value="__uncategorized__">Sem categoria</option>
       {categories.map((item) => (
         <option key={item}>{item}</option>
       ))}
@@ -50,7 +51,7 @@ function AdvancedFilters({
   return (
     <>
       <label className="sr-only" htmlFor="min-price">
-        Preço mínimo
+        Preco minimo
       </label>
       <input
         id="min-price"
@@ -58,12 +59,12 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preço mínimo"
+        placeholder="Preco minimo"
         value={minPrice}
         onChange={(event) => onMinPriceChange(event.target.value)}
       />
       <label className="sr-only" htmlFor="max-price">
-        Preço máximo
+        Preco maximo
       </label>
       <input
         id="max-price"
@@ -71,7 +72,7 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preço máximo"
+        placeholder="Preco maximo"
         value={maxPrice}
         onChange={(event) => onMaxPriceChange(event.target.value)}
       />
@@ -97,15 +98,15 @@ function AdvancedFilters({
         <option value="without">Somente sem imagem</option>
       </select>
       <select
-        aria-label="Quantidade por página"
+        aria-label="Quantidade por pagina"
         className={controlClass}
         value={pageSize}
         onChange={(event) => onPageSizeChange(Number(event.target.value))}
       >
-        <option value="20">20 por página</option>
-        <option value="50">50 por página</option>
-        <option value="100">100 por página</option>
-        <option value="200">200 por página</option>
+        <option value="20">20 por pagina</option>
+        <option value="50">50 por pagina</option>
+        <option value="100">100 por pagina</option>
+        <option value="200">200 por pagina</option>
       </select>
     </>
   );
@@ -193,7 +194,7 @@ export default function StockFilters({
         <details className="group rounded-lg border border-border bg-background">
           <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-bold marker:hidden">
             <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> Filtros avançados
+              <SlidersHorizontal className="h-4 w-4" /> Filtros avancados
             </span>
             <span className="text-xs text-muted-foreground group-open:hidden">
               abrir

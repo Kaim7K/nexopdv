@@ -152,7 +152,7 @@ export async function downloadSaleReceiptPdf(sale, config = {}, { onLogoError } 
   } else {
     for (const item of items) {
       const amount = item.unit === 'peso'
-        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
         : `${Number(item.quantity || 0)}x`;
       const nameLines = doc.splitTextToSize(String(item.product_name || 'Produto'), 34);
       const blockHeight = Math.max(10, nameLines.length * 3.4 + 2.4);
@@ -295,7 +295,7 @@ function buildSaleReceiptHtml(sale, config = {}) {
   const itemHtml = items.length
     ? items.map((item) => {
       const quantityLabel = item.unit === 'peso'
-        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+        ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
         : `${Number(item.quantity || 0).toLocaleString('pt-BR')} un`;
       return `
         <div class="r-item">
@@ -541,7 +541,7 @@ export async function downloadDailySalesReportPdf({ sales, summary, filters, con
       for (const item of sale.items || []) {
         ensureSpace(8);
         const quantity = item.unit === 'peso'
-          ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+          ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
           : `${Number(item.quantity || 0).toLocaleString('pt-BR')}x`;
         const nameLines = doc.splitTextToSize(`${quantity}  ${item.product_name || 'Produto'}`, 118);
         doc.setFont('helvetica', 'normal');

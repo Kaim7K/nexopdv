@@ -110,7 +110,7 @@ export default function SaleItemsList({
             </p>
             <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
               {item.unit === 'peso'
-                ? `Peso: ${Number(item.weight || 0).toFixed(3)} kg`
+                ? `Peso: ${Number(item.weight || 0).toFixed(2)} kg`
                 : `Quantidade: ${item.quantity || 1}`}
             </p>
           </div>

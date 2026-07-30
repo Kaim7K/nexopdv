@@ -347,7 +347,7 @@ export default function Fiados() {
                     <div key={`${item.product_id || item.product_name || index}-${index}`} className="grid grid-cols-[auto_1fr_auto] gap-2 rounded-xl border border-border px-3 py-2.5 text-sm">
                       <span className="font-bold tabular-nums text-muted-foreground">
                         {item.unit === 'peso'
-                          ? `${Number(item.weight || 0).toFixed(3)}kg`
+                          ? `${Number(item.weight || 0).toFixed(2)}kg`
                           : `${Number(item.quantity || 0)}x`}
                       </span>
                       <div className="min-w-0">

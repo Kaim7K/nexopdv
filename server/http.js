@@ -12,7 +12,6 @@ export function assertSameOriginRequest(req) {
 
   const origin = req.headers.origin;
   if (!origin) return;
-  if (/^chrome-extension:\/\//i.test(origin)) return;
   const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim();
   const host = forwardedHost || String(req.headers.host || '').trim();
   if (!host) return;

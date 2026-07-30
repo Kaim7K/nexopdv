@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Copy,
@@ -24,14 +24,14 @@ const visibleColumns = [
 ];
 
 const columnWidths = {
-  barcode: 'w-[138px]',
-  internal_code: 'w-[128px]',
-  sale_price: 'w-[112px]',
+  barcode: 'w-[132px]',
+  internal_code: 'w-[132px]',
+  sale_price: 'w-[104px]',
   cost_price: 'w-[112px]',
-  quantity: 'w-[96px]',
-  unit: 'w-[112px]',
-  last_sale_at: 'w-[148px]',
-  status: 'w-[112px]',
+  quantity: 'w-[104px]',
+  unit: 'w-[104px]',
+  last_sale_at: 'w-[150px]',
+  status: 'w-[100px]',
 };
 
 const fieldClass =
@@ -54,16 +54,16 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1180px] border-separate border-spacing-0 text-sm xl:table">
+    <table className="hidden w-full min-w-[1340px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
-        <col className="w-[340px]" />
+        <col className="w-[360px]" />
         {visibleColumns.map(([key, , , visibility]) => (
           <col
             key={key}
             className={`${columnWidths[key] || 'w-[120px]'} ${visibility}`}
           />
         ))}
-        <col className="w-[122px]" />
+        <col className="w-[110px]" />
       </colgroup>
       <thead className="sticky top-0 z-20 bg-card/95 text-card-foreground backdrop-blur">
         <tr>
@@ -138,24 +138,24 @@ export default function StockTable({
                     )}
                   </button>
                   <div className="min-w-0 flex-1">
-                    <input
+                    <InlineField
                       aria-label={`Produto ${product.name}`}
                       className={`${fieldClass} px-1 font-bold`}
                       type="text"
                       value={product.name ?? ''}
-                      onChange={(event) =>
-                        onInlineEdit(product.id, 'name', event.target.value, 'text')
+                      onCommit={(value) =>
+                        onInlineEdit(product.id, 'name', value, 'text')
                       }
                     />
-                    <select
+                    <InlineSelect
                       aria-label={`Categoria de ${product.name}`}
                       className="mt-0.5 h-6 w-full rounded-sm border border-transparent bg-transparent px-1 text-xs text-muted-foreground outline-none hover:bg-muted/35 focus:border-accent/40 focus:bg-background"
                       value={product.category || ''}
-                      onChange={(event) =>
+                      onCommit={(value) =>
                         onInlineEdit(
                           product.id,
                           'category',
-                          event.target.value,
+                          value,
                           'text',
                         )
                       }
@@ -166,7 +166,7 @@ export default function StockTable({
                           {option}
                         </option>
                       ))}
-                    </select>
+                    </InlineSelect>
                   </div>
                   {tracksStock && (isZero || isLow) && (
                     <button
@@ -308,15 +308,15 @@ function CellEditor({
           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">
             R$
           </span>
-          <input
+          <InlineField
             aria-label={`${label} de ${product.name}`}
             className={`${fieldClass} pl-7 pr-1 font-bold tabular-nums`}
             type="number"
             min="0"
             step="0.01"
             value={product[fieldKey] ?? ''}
-            onChange={(event) =>
-              onInlineEdit(product.id, fieldKey, event.target.value, type)
+            onCommit={(value) =>
+              onInlineEdit(product.id, fieldKey, value, type)
             }
           />
         </label>
@@ -338,7 +338,7 @@ function CellEditor({
 
   if (fieldKey === 'quantity') {
     return (
-      <input
+      <InlineField
         aria-label={`${label} de ${product.name}`}
         className={`${fieldClass} font-bold tabular-nums ${
           tracksStock && quantity <= 0
@@ -349,8 +349,8 @@ function CellEditor({
         min="0"
         step="any"
         value={product[fieldKey] ?? ''}
-        onChange={(event) =>
-          onInlineEdit(product.id, fieldKey, event.target.value, type)
+        onCommit={(value) =>
+          onInlineEdit(product.id, fieldKey, value, type)
         }
       />
     );
@@ -358,46 +358,109 @@ function CellEditor({
 
   if (fieldKey === 'status') {
     return (
-      <select
+      <InlineSelect
         aria-label={`${label} de ${product.name}`}
         className={fieldClass}
         value={product.status || 'ativo'}
-        onChange={(event) =>
-          onInlineEdit(product.id, fieldKey, event.target.value, type)
+        onCommit={(value) =>
+          onInlineEdit(product.id, fieldKey, value, type)
         }
       >
         <option value="ativo">Ativo</option>
         <option value="inativo">Inativo</option>
-      </select>
+      </InlineSelect>
     );
   }
 
   if (fieldKey === 'unit') {
     return (
-      <select
+      <InlineSelect
         aria-label={`${label} de ${product.name}`}
         className={fieldClass}
         value={product.unit || 'unidade'}
-        onChange={(event) =>
-          onInlineEdit(product.id, fieldKey, event.target.value, type)
+        onCommit={(value) =>
+          onInlineEdit(product.id, fieldKey, value, type)
         }
       >
         <option value="unidade">Unidade</option>
         <option value="peso">Peso</option>
-      </select>
+      </InlineSelect>
     );
   }
 
   return (
-    <input
+    <InlineField
       aria-label={`${label} de ${product.name}`}
       className={`${fieldClass} truncate`}
       type={type}
       value={product[fieldKey] ?? ''}
-      onChange={(event) =>
-        onInlineEdit(product.id, fieldKey, event.target.value, type)
+      onCommit={(value) =>
+        onInlineEdit(product.id, fieldKey, value, type)
       }
     />
+  );
+}
+
+function InlineField({ value, onCommit, ...props }) {
+  const [draft, setDraft] = useState(value ?? '');
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  const commit = () => {
+    if (String(draft ?? '') !== String(value ?? '')) onCommit(draft);
+  };
+
+  return (
+    <input
+      {...props}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          event.currentTarget.blur();
+        }
+        if (event.key === 'Escape') {
+          setDraft(value ?? '');
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
+function InlineSelect({ value, onCommit, children, ...props }) {
+  const [draft, setDraft] = useState(value ?? '');
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  const commit = () => {
+    if (String(draft ?? '') !== String(value ?? '')) onCommit(draft);
+  };
+
+  return (
+    <select
+      {...props}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.currentTarget.blur();
+        }
+        if (event.key === 'Escape') {
+          setDraft(value ?? '');
+          event.currentTarget.blur();
+        }
+      }}
+    >
+      {children}
+    </select>
   );
 }
 

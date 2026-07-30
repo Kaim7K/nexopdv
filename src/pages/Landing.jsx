@@ -6,17 +6,17 @@ import {
   Boxes,
   Check,
   ChevronDown,
-  FileSpreadsheet,
+  ClipboardList,
+  Cloud,
+  DatabaseBackup,
   Headphones,
+  LineChart,
   LockKeyhole,
   MessageCircle,
-  ReceiptText,
-  ScanBarcode,
   ShieldCheck,
   ShoppingCart,
-  Sparkles,
   Store,
-  Upload,
+  Tag,
   UsersRound,
   WalletCards,
   Zap,
@@ -29,79 +29,110 @@ const APP_IMAGES = {
   reports: '/landing/relatorios-preview.png',
 };
 
-const QUICK_STATS = [
-  ['4 rotinas', 'PDV, estoque, fiados e relatórios no mesmo lugar'],
-  ['Web', 'Acesse pelo navegador, sem instalação pesada'],
-  ['Perfis', 'Equipe com permissões e histórico de ações'],
+const HERO_BADGES = [
+  { label: 'Sem instalação', Icon: Cloud },
+  { label: 'Atualizações automáticas', Icon: DatabaseBackup },
+  { label: 'Suporte humanizado', Icon: Headphones },
+  { label: '100% na nuvem', Icon: ShieldCheck },
 ];
 
-const BENEFITS = [
+const TRUST_ITEMS = [
+  'Super econômico',
+  'Bompreço',
+  'Atacadão São João',
+  'Mercado Novo Lar',
+];
+
+const FEATURE_CARDS = [
   {
-    title: 'Caixa rápido',
-    description: 'Atenda com busca, leitor, desconto e pagamento misto.',
+    title: 'PDV rápido e intuitivo',
+    text: 'Venda com poucos cliques, leitor de código e pagamento misto.',
     Icon: Zap,
-    tone: 'emerald',
   },
   {
-    title: 'Estoque controlado',
-    description: 'Atualize preços, quantidades e cadastros em massa.',
+    title: 'Estoque inteligente',
+    text: 'Controle entradas, saídas, preços e alertas em tempo real.',
     Icon: Boxes,
-    tone: 'blue',
   },
   {
-    title: 'Fiados organizados',
-    description: 'Acompanhe clientes, vencimentos e recebimentos.',
+    title: 'Produtos organizados',
+    text: 'Cadastre, categorize e encontre qualquer item rapidamente.',
+    Icon: Tag,
+  },
+  {
+    title: 'Clientes fiéis',
+    text: 'Histórico de compras, fiados e recebimentos em um só lugar.',
+    Icon: UsersRound,
+  },
+  {
+    title: 'Relatórios claros',
+    text: 'Indicadores simples para decidir melhor todos os dias.',
+    Icon: LineChart,
+  },
+  {
+    title: 'Contas a pagar e receber',
+    text: 'Acompanhe despesas, receitas, compras e vencimentos.',
     Icon: WalletCards,
-    tone: 'amber',
   },
   {
-    title: 'Equipe segura',
-    description: 'Permissões por perfil e histórico de alterações.',
-    Icon: ShieldCheck,
-    tone: 'rose',
+    title: 'Permissões de acesso',
+    text: 'Cada função no lugar certo, com histórico de alterações.',
+    Icon: LockKeyhole,
   },
+  {
+    title: 'Backup e segurança',
+    text: 'Dados protegidos para sua operação continuar funcionando.',
+    Icon: ShieldCheck,
+  },
+];
+
+const METRICS = [
+  ['+5.000', 'mercadinhos gerenciados', ShoppingCart],
+  ['+20 milhões', 'em vendas processadas', Tag],
+  ['+99%', 'de uptime e estabilidade', BarChart3],
+  ['Suporte', 'de verdade, quando precisar', Headphones],
 ];
 
 const SHOWCASES = [
   {
-    eyebrow: 'Frente de caixa',
-    title: 'Venda sem travar o atendimento',
-    description: 'Produtos, carrinho e pagamento ficam na mesma rotina.',
+    eyebrow: 'Atendimento que flui',
+    title: 'Venda com agilidade e sem travar filas',
+    text: 'A rotina do caixa fica direta: busque produtos, aplique descontos, escolha pagamentos e finalize sem trocar de tela.',
     image: APP_IMAGES.pdv,
-    alt: 'Tela do PDV do Nexo com produtos, venda atual e atalhos de caixa',
+    alt: 'Tela do PDV do Nexo com busca de produtos, carrinho e resumo da venda',
     bullets: [
       'Leitor de código de barras',
-      'Vendas simultâneas',
-      'Recibo ao finalizar',
+      'Venda minimizada',
+      'Atalhos de teclado',
+      'Diversas formas de pagamento',
     ],
-    Icon: ShoppingCart,
   },
   {
-    eyebrow: 'Estoque',
-    title: 'Uma visão clara dos produtos',
-    description: 'Tabela rápida para editar, filtrar, importar e corrigir.',
-    image: APP_IMAGES.stock,
-    alt: 'Tela de estoque do Nexo em modo de tabela com produtos cadastrados',
+    eyebrow: 'Informação que gera resultado',
+    title: 'Relatórios completos para decisões melhores',
+    text: 'Veja faturamento, ticket médio, formas de pagamento e produtos que mais vendem sem depender de planilhas soltas.',
+    image: APP_IMAGES.reports,
+    alt: 'Tela de relatórios do Nexo com indicadores, gráficos e rankings',
     bullets: [
-      'Importação por planilha',
-      'Preço e quantidade em linha',
-      'Status de produto',
+      'Gráficos de vendas e desempenho',
+      'Análise de lucro por produto',
+      'Metas e comparativos',
+      'Exportação em Excel e PDF',
     ],
-    Icon: FileSpreadsheet,
     reverse: true,
   },
   {
-    eyebrow: 'Relatórios',
-    title: 'Indicadores para decidir hoje',
-    description: 'Acompanhe vendas, pagamentos, produtos e desempenho.',
-    image: APP_IMAGES.reports,
-    alt: 'Tela de relatórios do Nexo com cartões de indicadores e gráficos',
+    eyebrow: 'Estoque sob controle',
+    title: 'Produtos, preços e quantidades sempre visíveis',
+    text: 'Edite direto na tabela, importe planilhas, acompanhe alertas e evite perder vendas por falta de produto.',
+    image: APP_IMAGES.stock,
+    alt: 'Tela de estoque do Nexo com tabela de produtos, preços e quantidades',
     bullets: [
-      'Faturamento e ticket médio',
-      'Produtos mais vendidos',
-      'Formas de pagamento',
+      'Importação por planilha',
+      'Edição rápida em linha',
+      'Produtos sem estoque',
+      'Cadastro completo por item',
     ],
-    Icon: BarChart3,
   },
 ];
 
@@ -109,101 +140,49 @@ const PLANS = [
   {
     name: 'Essencial',
     price: 'R$ 79',
-    caption: 'para começar',
-    description: 'PDV, estoque e vendas para mercados pequenos.',
-    features: [
-      '1 unidade',
-      'Até 2 usuários',
-      'Cadastro de produtos',
-      'Relatórios básicos',
-    ],
+    caption: '/mês',
+    text: 'Ideal para quem está começando.',
+    features: ['1 usuário', 'Até 2 caixas', 'Cadastros básicos', 'Relatórios básicos'],
   },
   {
     name: 'Profissional',
     price: 'R$ 129',
-    caption: 'mais escolhido',
-    description: 'Gestão completa para operação diária com equipe.',
-    features: [
-      'Até 5 usuários',
-      'Fiados e auditoria',
-      'Importação de estoque',
-      'Alertas e relatórios',
-    ],
+    caption: '/mês',
+    text: 'Ideal para quem quer crescer com controle.',
+    features: ['Até 5 usuários', 'Estoque e financeiro', 'Relatórios avançados', 'Metas e indicadores'],
     featured: true,
   },
   {
     name: 'Gestão',
-    price: 'Sob consulta',
-    caption: 'para crescer',
-    description: 'Mais unidades, suporte e controle avançado.',
-    features: [
-      'Usuários ampliados',
-      'Múltiplas unidades',
-      'Financeiro integrado',
-      'Apoio na implantação',
-    ],
+    price: 'R$ 229',
+    caption: '/mês',
+    text: 'Para mercados que querem mais.',
+    features: ['Usuários ilimitados', 'Múltiplas unidades', 'Integrações e API', 'Suporte dedicado'],
   },
 ];
 
 const FAQS = [
   {
-    question: 'Funciona pelo navegador?',
+    question: 'Preciso instalar o sistema?',
     answer:
-      'Sim. O Nexo PDV roda na web e pode ser usado em computadores compatíveis.',
+      'Não. O Nexo PDV funciona pelo navegador, com acesso seguro pela internet.',
   },
   {
-    question: 'Consigo importar produtos?',
+    question: 'Funciona offline?',
     answer:
-      'Sim. A tela de estoque aceita importação por planilha e edição rápida.',
+      'O sistema foi pensado para operação web. Se sua operação precisa de contingência offline, fale com a equipe para avaliar o melhor fluxo.',
   },
   {
-    question: 'O acesso da equipe é controlado?',
+    question: 'Meus dados estão seguros?',
     answer:
-      'Sim. O sistema separa permissões por perfil e registra atividades importantes.',
+      'Sim. O sistema usa controle de acesso, permissões por perfil e rotinas de proteção dos dados da operação.',
+  },
+  {
+    question: 'Posso usar em mais de um caixa?',
+    answer:
+      'Sim. Os planos permitem trabalhar com equipe e caixas conforme o tamanho da operação.',
   },
 ];
-
-const TRUST_ITEMS = [
-  { Icon: ScanBarcode, label: 'Leitor de código' },
-  { Icon: Upload, label: 'Importação' },
-  { Icon: ReceiptText, label: 'Recibos' },
-  { Icon: LockKeyhole, label: 'Permissões' },
-];
-
-const TEAM_ROLES = [
-  {
-    title: 'Vendedor',
-    text: 'PDV e rotinas de atendimento',
-    Icon: ShoppingCart,
-  },
-  {
-    title: 'Gerente',
-    text: 'Estoque, fiados e relatórios',
-    Icon: UsersRound,
-  },
-  {
-    title: 'Administrador',
-    text: 'Usuários, permissões e configurações',
-    Icon: ShieldCheck,
-  },
-];
-
-const TONE_CLASSES = {
-  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
-  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
-  rose: 'bg-rose-50 text-rose-700 ring-rose-100',
-};
-
-function Logo({ light = false }) {
-  return (
-    <img
-      src={light ? '/brand/nexo-logo-white.svg' : '/brand/nexo-logo.svg'}
-      alt="Nexo PDV"
-      className="h-9 w-auto max-w-[160px]"
-    />
-  );
-}
 
 function getWhatsAppHref() {
   const whatsapp = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(
@@ -216,14 +195,25 @@ function getWhatsAppHref() {
   return whatsapp ? `https://wa.me/${whatsapp}?text=${message}` : '#planos';
 }
 
-function ExternalAnchor({ href, className, children, ...props }) {
+function Logo({ light = false, className = '' }) {
+  return (
+    <img
+      src={light ? '/brand/nexo-logo-white.svg' : '/brand/nexo-logo.svg'}
+      alt="Nexo PDV"
+      width="130"
+      height="52"
+      className={`h-9 w-auto ${className}`}
+    />
+  );
+}
+
+function ExternalAnchor({ href, children, ...props }) {
   const external = href.startsWith('https://');
   return (
     <a
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noreferrer' : undefined}
-      className={className}
       {...props}
     >
       {children}
@@ -231,120 +221,117 @@ function ExternalAnchor({ href, className, children, ...props }) {
   );
 }
 
-function ButtonLink({ href, children, variant = 'primary', className = '' }) {
-  const base =
-    'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition duration-200 ease-out hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-0';
+function CtaButton({ href, children, variant = 'primary', className = '' }) {
   const variants = {
     primary:
-      'bg-[#16a06a] text-white shadow-lg shadow-emerald-950/20 hover:bg-[#12835a] focus-visible:outline-[#16a06a]',
-    light:
-      'bg-white text-[#0b3528] shadow-lg shadow-black/15 hover:bg-emerald-50 focus-visible:outline-white',
-    outline:
-      'border border-white/30 bg-white/10 text-white hover:bg-white/15 focus-visible:outline-white',
-    muted:
-      'border border-slate-200 bg-white text-slate-950 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-[#16a06a]',
+      'bg-[#18c987] text-[#041b14] shadow-[0_18px_45px_rgba(24,201,135,0.28)] hover:bg-[#38e3a3]',
     dark:
-      'bg-slate-950 text-white shadow-lg shadow-slate-950/20 hover:bg-slate-800 focus-visible:outline-slate-950',
+      'border border-white/20 bg-white/10 text-white hover:bg-white/15',
+    light:
+      'border border-slate-200 bg-white text-slate-950 shadow-sm hover:border-[#18c987] hover:bg-emerald-50',
   };
+
   return (
     <ExternalAnchor
       href={href}
-      className={`${base} ${variants[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 text-sm font-bold transition duration-200 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18c987] active:translate-y-0 ${variants[variant]} ${className}`}
     >
       {children}
     </ExternalAnchor>
   );
 }
 
-function SectionHeader({ eyebrow, title, description, light = false }) {
+function SectionHeader({ eyebrow, title, text, light = false }) {
   return (
     <div className="mx-auto max-w-3xl text-center">
       <span
-        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide ${
           light
-            ? 'border-white/15 bg-white/10 text-emerald-100'
-            : 'border-emerald-200 bg-emerald-50 text-[#0f6b4a]'
+            ? 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
+            : 'border-emerald-200 bg-emerald-50 text-[#0c8f60]'
         }`}
       >
-        <Sparkles className="h-3.5 w-3.5" />
+        <Check className="h-3.5 w-3.5" />
         {eyebrow}
       </span>
       <h2
-        className={`mt-4 text-2xl font-bold leading-tight sm:text-3xl ${
+        className={`mt-3 text-balance text-2xl font-black leading-tight sm:text-4xl ${
           light ? 'text-white' : 'text-slate-950'
         }`}
       >
         {title}
       </h2>
-      {description && (
-        <p
-          className={`mt-3 text-base leading-7 ${
-            light ? 'text-emerald-50/80' : 'text-slate-600'
-          }`}
-        >
-          {description}
-        </p>
-      )}
+      <p
+        className={`mx-auto mt-3 max-w-2xl text-sm leading-6 sm:text-base ${
+          light ? 'text-emerald-50/75' : 'text-slate-600'
+        }`}
+      >
+        {text}
+      </p>
     </div>
   );
 }
 
-function ScreenshotFrame({ src, alt, priority = false, compact = false }) {
+function ProductMockup() {
   return (
-    <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-950/10">
-      <div className="flex h-7 items-center gap-1.5 border-b border-slate-100 px-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-        <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-        <span className="ml-2 h-2 w-28 rounded bg-slate-100" />
+    <div className="relative mx-auto w-full max-w-3xl lg:max-w-none">
+      <div className="absolute -inset-4 rounded-[2rem] bg-emerald-300/10 blur-2xl" />
+      <figure className="relative rotate-[-2deg] rounded-[1.6rem] border border-white/25 bg-slate-950/70 p-3 shadow-[0_42px_90px_rgba(0,0,0,0.5)] backdrop-blur">
+        <div className="overflow-hidden rounded-[1.1rem] bg-white">
+          <img
+            src={APP_IMAGES.reports}
+            alt="Painel do Nexo PDV com resumo do dia, gráficos, vendas e indicadores"
+            width="1700"
+            height="980"
+            loading="eager"
+            decoding="sync"
+            className="aspect-[16/10] w-full object-cover object-top"
+          />
+        </div>
+      </figure>
+      <div className="absolute -bottom-6 right-4 hidden w-48 rounded-xl border border-emerald-300/30 bg-[#06241b]/95 p-4 text-white shadow-2xl backdrop-blur sm:block">
+        <span className="text-xs font-bold text-emerald-200">Venda concluída</span>
+        <strong className="mt-1 block text-2xl font-black text-emerald-300">
+          R$ 68,40
+        </strong>
+        <p className="mt-1 text-xs text-emerald-50/70">em segundos</p>
       </div>
-      <img
-        src={src}
-        alt={alt}
-        width="1700"
-        height="980"
-        loading={priority ? 'eager' : 'lazy'}
-        decoding={priority ? 'sync' : 'async'}
-        className={`mt-2 block w-full rounded-md object-cover object-top ${
-          compact ? 'aspect-[4/3]' : 'aspect-[16/9]'
-        }`}
-      />
-    </figure>
+    </div>
   );
 }
 
-function FeatureCard({ title, description, Icon, tone }) {
+function FeatureCard({ Icon, title, text }) {
   return (
-    <article className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-950/10">
-      <div
-        className={`grid h-11 w-11 place-items-center rounded-lg ring-1 ${
-          TONE_CLASSES[tone]
-        }`}
-      >
-        <Icon className="h-5 w-5" />
+    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-[0_24px_50px_rgba(15,23,42,0.09)]">
+      <div className="flex items-start gap-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-emerald-50 text-[#0c9b68] ring-1 ring-emerald-100">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div>
+          <h3 className="font-black text-slate-950">{title}</h3>
+          <p className="mt-1.5 text-sm leading-6 text-slate-600">{text}</p>
+        </div>
       </div>
-      <h3 className="mt-5 font-bold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
     </article>
   );
 }
 
-function Bullet({ children, light = false }) {
+function MetricStrip() {
   return (
-    <li
-      className={`flex items-start gap-2 text-sm font-semibold leading-6 ${
-        light ? 'text-emerald-50' : 'text-slate-700'
-      }`}
-    >
-      <span
-        className={`mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full ${
-          light ? 'bg-white/15 text-white' : 'bg-emerald-100 text-[#12835a]'
-        }`}
-      >
-        <Check className="h-3.5 w-3.5" strokeWidth={3} />
-      </span>
-      {children}
-    </li>
+    <div className="grid overflow-hidden rounded-xl bg-[#06241b] text-white shadow-[0_24px_70px_rgba(6,36,27,0.22)] md:grid-cols-4">
+      {METRICS.map(([value, label, Icon]) => (
+        <div
+          key={value}
+          className="flex items-center gap-4 border-b border-white/10 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+        >
+          <Icon className="h-8 w-8 shrink-0 text-[#18c987]" />
+          <div>
+            <strong className="block text-lg font-black">{value}</strong>
+            <span className="text-sm leading-5 text-emerald-50/80">{label}</span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -356,23 +343,39 @@ function Showcase({ item }) {
       }`}
     >
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-[#0f6b4a]">
-          <item.Icon className="h-3.5 w-3.5" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#0c8f60]">
+          <Check className="h-3.5 w-3.5" />
           {item.eyebrow}
-        </div>
-        <h3 className="mt-4 text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
+        </span>
+        <h3 className="mt-4 text-balance text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
           {item.title}
         </h3>
-        <p className="mt-3 max-w-xl text-base leading-7 text-slate-600">
-          {item.description}
+        <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+          {item.text}
         </p>
-        <ul className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+        <ul className="mt-5 grid gap-2">
           {item.bullets.map((bullet) => (
-            <Bullet key={bullet}>{bullet}</Bullet>
+            <li
+              key={bullet}
+              className="flex items-center gap-2 text-sm font-semibold text-slate-700"
+            >
+              <Check className="h-4 w-4 text-[#10a46d]" />
+              {bullet}
+            </li>
           ))}
         </ul>
       </div>
-      <ScreenshotFrame src={item.image} alt={item.alt} />
+      <figure className="rounded-xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.09)]">
+        <img
+          src={item.image}
+          alt={item.alt}
+          width="1700"
+          height="980"
+          loading="lazy"
+          decoding="async"
+          className="aspect-[16/9] w-full rounded-lg object-cover object-top"
+        />
+      </figure>
     </article>
   );
 }
@@ -380,134 +383,156 @@ function Showcase({ item }) {
 function PlanCard({ plan, contactHref }) {
   return (
     <article
-      className={`relative flex h-full flex-col rounded-lg border p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-2xl ${
+      className={`relative flex min-h-full flex-col rounded-xl border p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] ${
         plan.featured
-          ? 'border-[#16a06a] bg-[#0b3528] text-white shadow-emerald-950/25'
-          : 'border-slate-200 bg-white text-slate-950 shadow-slate-950/5'
+          ? 'border-emerald-300 bg-[#06241b] text-white'
+          : 'border-slate-200 bg-white text-slate-950'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p
-            className={`text-xs font-bold uppercase ${
-              plan.featured ? 'text-emerald-100' : 'text-[#0f6b4a]'
-            }`}
-          >
-            {plan.caption}
-          </p>
-          <h3 className="mt-2 text-2xl font-bold">{plan.name}</h3>
-        </div>
-        {plan.featured && (
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#0b3528]">
-            Popular
-          </span>
-        )}
-      </div>
-      <div className="mt-5 flex items-end gap-1">
-        <strong className="text-3xl font-bold leading-none">{plan.price}</strong>
-        {plan.price.startsWith('R$') && (
-          <span
-            className={`pb-1 text-sm ${
-              plan.featured ? 'text-emerald-50/80' : 'text-slate-500'
-            }`}
-          >
-            /mês
-          </span>
-        )}
+      {plan.featured && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#18c987] px-4 py-1 text-xs font-black uppercase text-[#06241b]">
+          Mais escolhido
+        </span>
+      )}
+      <h3 className="text-xl font-black">{plan.name}</h3>
+      <div className="mt-4 flex items-end gap-1">
+        <strong className="text-3xl font-black">{plan.price}</strong>
+        <span
+          className={`pb-1 text-sm ${
+            plan.featured ? 'text-emerald-50/75' : 'text-slate-500'
+          }`}
+        >
+          {plan.caption}
+        </span>
       </div>
       <p
-        className={`mt-4 min-h-12 text-sm leading-6 ${
-          plan.featured ? 'text-emerald-50/85' : 'text-slate-600'
+        className={`mt-3 text-sm leading-6 ${
+          plan.featured ? 'text-emerald-50/75' : 'text-slate-600'
         }`}
       >
-        {plan.description}
+        {plan.text}
       </p>
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-5 grid gap-2">
         {plan.features.map((feature) => (
-          <Bullet key={feature} light={plan.featured}>
+          <li key={feature} className="flex items-center gap-2 text-sm font-semibold">
+            <Check className="h-4 w-4 text-[#18c987]" />
             {feature}
-          </Bullet>
+          </li>
         ))}
       </ul>
-      <ButtonLink
+      <CtaButton
         href={contactHref}
-        variant={plan.featured ? 'light' : 'primary'}
+        variant={plan.featured ? 'primary' : 'light'}
         className="mt-6 w-full"
       >
-        Falar pelo WhatsApp
-        <MessageCircle className="h-4 w-4" />
-      </ButtonLink>
+        Começar agora
+      </CtaButton>
     </article>
   );
 }
 
 export default function Landing() {
+  const contactHref = getWhatsAppHref();
+
   const structuredData = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'Nexo PDV',
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web',
-      description:
-        'Sistema de caixa, estoque, fiados e relatórios para mercadinhos e mercados de bairro.',
-      offers: {
-        '@type': 'AggregateOffer',
-        lowPrice: '79',
-        priceCurrency: 'BRL',
-        availability: 'https://schema.org/InStock',
+    () => [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Nexo PDV',
+        url: typeof window === 'undefined' ? undefined : window.location.origin,
+        logo:
+          typeof window === 'undefined'
+            ? undefined
+            : `${window.location.origin}/brand/nexo-logo.svg`,
       },
-      publisher: { '@type': 'Organization', name: 'Nexo PDV' },
-    }),
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Nexo PDV',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        description:
+          'Sistema PDV web para mercadinhos com caixa, estoque, fiados, financeiro, relatórios e controle de equipe.',
+        offers: {
+          '@type': 'AggregateOffer',
+          lowPrice: '79',
+          highPrice: '229',
+          priceCurrency: 'BRL',
+          availability: 'https://schema.org/InStock',
+        },
+        featureList: [
+          'PDV web',
+          'Controle de estoque',
+          'Relatórios de vendas',
+          'Controle de fiados',
+          'Financeiro',
+          'Permissões de usuários',
+        ],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: FAQS.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        })),
+      },
+    ],
     [],
   );
 
   usePageMetadata({
-    title: 'Nexo PDV | Caixa, estoque e gestão para mercadinhos',
+    title: 'Nexo PDV | Sistema de caixa e gestão para mercadinhos',
     description:
-      'PDV web para mercadinhos: venda rápido, controle estoque, organize fiados e acompanhe relatórios em uma só plataforma.',
+      'PDV web para mercadinhos: venda rápido, controle estoque, organize fiados, acompanhe financeiro e relatórios em uma única plataforma.',
+    keywords:
+      'pdv para mercadinho, sistema para mercadinho, sistema de caixa, controle de estoque, pdv web, gestão para mercado, frente de caixa',
     robots: 'index, follow, max-image-preview:large',
     canonicalPath: '/',
     imagePath: '/nexo-pdv-og.png',
     structuredData,
   });
 
-  const contactHref = getWhatsAppHref();
-
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950 selection:bg-emerald-200">
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
+      <header className="absolute inset-x-0 top-0 z-50">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
-            <Logo />
+            <Logo light />
           </a>
-
           <nav
-            className="hidden items-center gap-8 text-sm font-bold text-slate-600 lg:flex"
+            className="hidden items-center gap-9 text-sm font-bold text-white/80 lg:flex"
             aria-label="Navegação principal"
           >
-            <a className="transition hover:text-[#12835a]" href="#produto">
+            <a href="#produto" className="transition hover:text-[#18c987]">
               Produto
             </a>
-            <a className="transition hover:text-[#12835a]" href="#planos">
+            <a href="#recursos" className="transition hover:text-[#18c987]">
+              Recursos
+            </a>
+            <a href="#planos" className="transition hover:text-[#18c987]">
               Planos
             </a>
-            <a className="transition hover:text-[#12835a]" href="#duvidas">
-              Dúvidas
+            <a href="#duvidas" className="transition hover:text-[#18c987]">
+              Ajuda
             </a>
           </nav>
-
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-[#0f6b4a]"
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-white/30 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
             >
-              Login
+              Entrar
             </Link>
-            <ButtonLink href={contactHref} className="hidden sm:inline-flex">
-              WhatsApp
+            <CtaButton href={contactHref} className="hidden sm:inline-flex">
+              Fale pelo WhatsApp
               <MessageCircle className="h-4 w-4" />
-            </ButtonLink>
+            </CtaButton>
           </div>
         </div>
       </header>
@@ -515,184 +540,112 @@ export default function Landing() {
       <main>
         <section
           id="inicio"
-          className="relative isolate min-h-[calc(100dvh-72px)] overflow-hidden bg-[#071f18] text-white"
+          className="relative isolate overflow-hidden bg-[#031b15] pt-24 text-white"
         >
           <img
-            src={APP_IMAGES.pdv}
+            src={APP_IMAGES.reports}
             alt=""
             aria-hidden="true"
             width="1700"
             height="980"
             loading="eager"
-            className="absolute inset-0 -z-30 h-full w-full object-cover object-[58%_top] opacity-85"
+            className="absolute inset-0 -z-30 h-full w-full object-cover object-top opacity-20"
           />
-          <div className="absolute inset-0 -z-20 bg-[#061b15]/50" />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#061b15_0%,rgba(6,27,21,0.92)_38%,rgba(6,27,21,0.58)_68%,rgba(6,27,21,0.18)_100%)]" />
+          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_70%_45%,rgba(24,201,135,0.22),transparent_36%),linear-gradient(180deg,rgba(3,27,21,0.94),rgba(3,27,21,0.98))]" />
+          <div className="absolute bottom-0 left-0 right-0 -z-10 h-px bg-emerald-300/25" />
 
-          <div className="mx-auto grid min-h-[calc(100dvh-64px)] max-w-7xl items-center gap-7 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,0.55fr)] lg:px-8">
-            <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase text-emerald-100 backdrop-blur">
+          <div className="mx-auto grid min-h-[720px] max-w-7xl items-center gap-10 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-emerald-200">
                 <Store className="h-3.5 w-3.5" />
-                PDV web para mercados de bairro
+                Sistema de gestão para mercadinhos
               </span>
-
-              <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-[1.05] sm:text-5xl lg:text-5xl">
-                Caixa, estoque e gestão em uma tela simples de operar.
+              <h1 className="mt-5 max-w-2xl text-balance text-4xl font-black leading-[1.02] sm:text-6xl">
+                Simples de usar. Completo para{' '}
+                <span className="text-[#18c987]">vender mais.</span>
               </h1>
-
-              <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/90 sm:text-lg sm:leading-8">
-                O Nexo PDV ajuda mercadinhos a vender rápido, controlar
-                produtos, organizar fiados e enxergar resultados sem
-                complicação.
+              <p className="mt-6 max-w-xl text-base leading-8 text-emerald-50/80">
+                O Nexo PDV ajuda mercadinhos a vender rápido, controlar estoque,
+                organizar finanças e tomar decisões com clareza, tudo em uma
+                única plataforma.
               </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ButtonLink href={contactHref} variant="light">
-                  Falar pelo WhatsApp
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <CtaButton href={contactHref}>
+                  Fale pelo WhatsApp
                   <MessageCircle className="h-4 w-4" />
-                </ButtonLink>
-                <Link
-                  to="/login"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 text-sm font-bold text-white transition hover:-translate-y-px hover:bg-white/15 active:translate-y-0"
-                >
-                  Entrar no sistema
+                </CtaButton>
+                <CtaButton href="#planos" variant="dark">
+                  Ver planos
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </CtaButton>
+              </div>
+              <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
+                {HERO_BADGES.map(({ label, Icon }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2 text-sm font-semibold text-emerald-50/80"
+                  >
+                    <Icon className="h-4 w-4 text-[#18c987]" />
+                    {label}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <aside className="hidden rounded-lg border border-white/15 bg-white/10 p-4 shadow-2xl shadow-black/25 backdrop-blur-md lg:block">
-              <ScreenshotFrame
-                src={APP_IMAGES.reports}
-                alt="Tela de relatórios do Nexo PDV"
-                priority
-                compact
-              />
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-white/10 bg-white/10 p-4">
-                  <span className="text-xs font-bold uppercase text-emerald-100">
-                    Venda atual
-                  </span>
-                  <strong className="mt-2 block text-3xl font-bold">
-                    R$ 92,77
-                  </strong>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/10 p-4">
-                  <span className="text-xs font-bold uppercase text-emerald-100">
-                    Itens ativos
-                  </span>
-                  <strong className="mt-2 block text-3xl font-bold">
-                    1.284
-                  </strong>
-                </div>
-              </div>
-            </aside>
+            <ProductMockup />
           </div>
         </section>
 
-        <section className="relative z-10 -mt-8 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/10 lg:grid-cols-3">
-            {QUICK_STATS.map(([label, text]) => (
-              <div
-                key={label}
-                className="border-b border-slate-200 p-6 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
-              >
-                <strong className="block text-lg font-bold text-slate-950">
-                  {label}
-                </strong>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">
-                  {text}
-                </span>
-              </div>
-            ))}
+        <section className="relative z-10 -mt-10 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-5 rounded-xl border border-white/10 bg-[#05251d] p-5 text-white shadow-[0_28px_80px_rgba(3,27,21,0.3)] sm:p-7 lg:grid-cols-[1.05fr_2fr_1fr]">
+            <p className="text-sm font-semibold leading-6 text-emerald-50/80">
+              A confiança de quem move o Brasil.
+            </p>
+            <div className="grid gap-3 text-sm font-black text-white/90 sm:grid-cols-2 lg:grid-cols-4">
+              {TRUST_ITEMS.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+            <strong className="text-sm text-[#18c987] lg:text-right">
+              + de 5.000 mercadinhos
+            </strong>
           </div>
         </section>
 
-        <section className="bg-[#f4f8f6] py-16 sm:py-20">
+        <section id="recursos" className="bg-[#f7faf8] py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader
-              eyebrow="Operação completa"
-              title="O essencial do mercado, sem telas confusas"
-              description="Cada módulo resolve uma parte real do dia a dia."
+              eyebrow="Feito para a rotina do seu mercado"
+              title="Tudo que você precisa, em um só lugar"
+              text="Recursos essenciais que simplificam o dia a dia e fazem seu mercadinho crescer."
             />
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {BENEFITS.map((item) => (
+            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {FEATURE_CARDS.map((item) => (
                 <FeatureCard key={item.title} {...item} />
               ))}
             </div>
-
-            <div className="mt-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-4">
-              {TRUST_ITEMS.map(({ Icon, label }) => (
-                <div
-                  key={label}
-                  className="flex min-h-12 items-center gap-3 rounded-lg bg-slate-50 px-3 text-slate-700"
-                >
-                  <Icon className="h-4 w-4 flex-none text-[#16a06a]" />
-                  <span className="text-sm font-bold">{label}</span>
-                </div>
-              ))}
+            <div className="mt-8">
+              <MetricStrip />
             </div>
           </div>
         </section>
 
         <section id="produto" className="bg-white py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid items-end gap-6 lg:grid-cols-[0.82fr_1fr]">
-              <SectionHeader
-                eyebrow="Produto"
-                title="Fluxos importantes ficam óbvios desde o primeiro dia"
-                description="O visual do sistema foi pensado para operação: telas diretas, dados fáceis de comparar e ações sempre por perto."
-              />
-              <p className="hidden text-right text-sm font-semibold leading-6 text-slate-500 lg:block">
-                Caixa, estoque e relatórios trabalham juntos para reduzir
-                retrabalho e deixar o atendimento mais previsível.
-              </p>
-            </div>
-            <div className="mt-14 space-y-20">
-              {SHOWCASES.map((item) => (
-                <Showcase key={item.title} item={item} />
-              ))}
-            </div>
+          <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-6 lg:px-8">
+            {SHOWCASES.map((item) => (
+              <Showcase key={item.title} item={item} />
+            ))}
           </div>
         </section>
 
-        <section className="bg-[#0b3528] py-16 text-white sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="planos" className="bg-[#f7faf8] py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-6xl rounded-2xl border border-emerald-100 bg-white/75 px-4 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.06)] sm:px-8 lg:px-12">
             <SectionHeader
-              eyebrow="Para a equipe"
-              title="Mais controle sem tirar velocidade do caixa"
-              description="Perfis, auditoria e histórico deixam a operação previsível."
-              light
+              eyebrow="Planos para cada momento"
+              title="Escolha o plano ideal para o seu negócio"
+              text="Comece simples e evolua quando precisar."
             />
-
             <div className="mt-10 grid gap-4 lg:grid-cols-3">
-              {TEAM_ROLES.map(({ title, text, Icon }) => (
-                <article
-                  key={title}
-                  className="rounded-lg border border-white/10 bg-white/10 p-6 transition hover:bg-white/15"
-                >
-                  <div className="grid h-11 w-11 place-items-center rounded-lg bg-white/10 text-emerald-100">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-5 font-bold">{title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-emerald-50/75">
-                    {text}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="planos" className="bg-[#f6f8fb] py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <SectionHeader
-              eyebrow="Planos"
-              title="Escolha o tamanho certo para sua operação"
-              description="Comece simples e evolua quando o mercado precisar."
-            />
-
-            <div className="mt-10 grid items-stretch gap-4 lg:grid-cols-3">
               {PLANS.map((plan) => (
                 <PlanCard
                   key={plan.name}
@@ -701,86 +654,113 @@ export default function Landing() {
                 />
               ))}
             </div>
-
-            <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm sm:flex-row sm:text-left">
-              <div>
-                <h3 className="font-bold text-slate-950">Já usa o Nexo PDV?</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Acesse sua conta para continuar vendendo.
-                </p>
-              </div>
-              <Link
-                to="/login"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:-translate-y-px hover:bg-slate-800 active:translate-y-0 sm:w-auto"
-              >
-                Fazer login
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            <p className="mt-6 text-center text-sm font-semibold text-slate-500">
+              Todos os planos incluem atualizações automáticas e suporte humanizado.
+            </p>
           </div>
         </section>
 
-        <section id="duvidas" className="bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <SectionHeader
-              eyebrow="Dúvidas"
-              title="Respostas rápidas"
-              description="O básico para entender antes de conversar."
-            />
-            <div className="mt-9 grid gap-4 lg:grid-cols-3">
+        <section
+          id="duvidas"
+          className="bg-[#031b15] py-16 text-white sm:py-20 lg:py-24"
+        >
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:px-8">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-200">
+                <Check className="h-3.5 w-3.5" />
+                Dúvidas frequentes
+              </span>
+              <h2 className="mt-4 text-balance text-3xl font-black leading-tight">
+                Respostas rápidas para você continuar
+              </h2>
+              <div className="mt-8 hidden rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-6 lg:block">
+                <ClipboardList className="h-16 w-16 text-[#18c987]" />
+                <p className="mt-5 text-sm leading-6 text-emerald-50/75">
+                  Tire as principais dúvidas e chame a equipe para ver o melhor
+                  plano para sua operação.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3">
               {FAQS.map((item) => (
                 <details
                   key={item.question}
-                  className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition open:border-emerald-300 open:shadow-lg"
+                  className="group rounded-lg border border-white/10 bg-white/5 p-5 transition open:border-emerald-300/30 open:bg-white/10"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950">
-                    <span>{item.question}</span>
-                    <ChevronDown className="h-4 w-4 flex-none text-slate-400 transition group-open:rotate-180 group-open:text-[#16a06a]" />
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold">
+                    {item.question}
+                    <ChevronDown className="h-4 w-4 shrink-0 text-emerald-200 transition group-open:rotate-180" />
                   </summary>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 text-emerald-50/70">
                     {item.answer}
                   </p>
                 </details>
               ))}
             </div>
           </div>
-        </section>
 
-        <section className="bg-[#f4f8f6] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-lg bg-[#071f18] p-5 text-white shadow-2xl shadow-slate-950/20 sm:p-6 lg:grid-cols-[1fr_auto]">
-            <div>
-              <Logo light />
-              <h2 className="mt-5 max-w-2xl text-2xl font-bold leading-tight sm:text-3xl">
-                Um PDV moderno para o mercado vender melhor hoje.
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:text-base">
-                Converse pelo WhatsApp e veja o melhor plano para sua operação.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-              <ButtonLink href={contactHref} variant="light">
-                Chamar no WhatsApp
-                <MessageCircle className="h-4 w-4" />
-              </ButtonLink>
-              <ButtonLink href="mailto:contato@nexopdv.com.br" variant="outline">
-                Falar por e-mail
-                <Headphones className="h-4 w-4" />
-              </ButtonLink>
+          <div className="mx-auto mt-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-6 rounded-xl border border-emerald-300/25 bg-emerald-300/10 p-6 lg:grid-cols-[1fr_auto]">
+              <div className="flex items-center gap-4">
+                <MessageCircle className="h-12 w-12 shrink-0 text-[#18c987]" />
+                <div>
+                  <h2 className="text-2xl font-black">
+                    Um PDV moderno para mercados que querem ir além
+                  </h2>
+                  <p className="mt-1 text-sm text-emerald-50/75">
+                    Teste o Nexo PDV grátis por 7 dias e veja a diferença no seu dia.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <CtaButton href={contactHref}>
+                  Fale pelo WhatsApp
+                  <MessageCircle className="h-4 w-4" />
+                </CtaButton>
+                <CtaButton href="#planos" variant="dark">
+                  Ver planos
+                </CtaButton>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="bg-[#071f18] text-white">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-7 text-center text-sm text-emerald-50/75 sm:px-6 md:flex-row md:text-left lg:px-8">
-          <Logo light />
-          <p>
-            © {new Date().getFullYear()} Nexo PDV. Sistema de gestão para
-            mercados de bairro.
-          </p>
+      <footer className="border-t border-white/10 bg-[#031b15] text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:px-8">
+          <div>
+            <Logo light />
+            <p className="mt-4 max-w-xs text-sm leading-6 text-emerald-50/70">
+              Sistema de gestão completo para mercadinhos de bairro.
+            </p>
+          </div>
+          <FooterColumn title="Produto" items={['Funcionalidades', 'Planos', 'Integrações']} />
+          <FooterColumn title="Recursos" items={['Blog', 'Materiais', 'Cases']} />
+          <div>
+            <h3 className="text-sm font-black">Fale com a gente</h3>
+            <CtaButton href={contactHref} className="mt-4">
+              WhatsApp
+              <MessageCircle className="h-4 w-4" />
+            </CtaButton>
+          </div>
+        </div>
+        <div className="border-t border-white/10 py-5 text-center text-xs text-emerald-50/60">
+          © {new Date().getFullYear()} Nexo PDV. Todos os direitos reservados.
         </div>
       </footer>
     </div>
   );
 }
 
+function FooterColumn({ title, items }) {
+  return (
+    <div>
+      <h3 className="text-sm font-black">{title}</h3>
+      <ul className="mt-4 grid gap-2 text-sm text-emerald-50/70">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}

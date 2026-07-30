@@ -17,7 +17,7 @@ import {
   Trophy,
   Users,
 } from 'lucide-react';
-import { formatCurrency, getPaymentLabel } from '@/lib/helpers';
+import { formatCurrency, formatNumber, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 import RankingList from '@/components/common/RankingList';
 
@@ -33,7 +33,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'Mês' },
+  { key: 'month', label: 'Mes' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -62,6 +62,7 @@ export default function Relatorios() {
   const [customEnd, setCustomEnd] = useState('');
   const [fiados, setFiados] = useState([]);
   const [breakdown, setBreakdown] = useState('hour');
+  const [breakdownMetric, setBreakdownMetric] = useState('revenue');
   const [productRankingSort, setProductRankingSort] = useState('revenue');
   const [sellerRankingSort, setSellerRankingSort] = useState('revenue');
   const [categoryRankingSort, setCategoryRankingSort] = useState('revenue');
@@ -87,7 +88,7 @@ export default function Relatorios() {
       setFiados(fiadoData);
       setProducts(productData);
     } catch (error) {
-      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
+      setLoadError(error.message || 'Nao foi possivel carregar os relatorios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -225,12 +226,12 @@ export default function Relatorios() {
         item.category ||
           item.product_category ||
           item.category_name ||
-          item.product?.category ||
-          item.product?.category_name ||
-          item.product?.product_category ||
-          product?.category ||
-          product?.category_name ||
-          product?.product_category,
+          item.producta.category ||
+          item.producta.category_name ||
+          item.producta.product_category ||
+          producta.category ||
+          producta.category_name ||
+          producta.product_category,
       );
     };
     for (const sale of periodSales) {
@@ -241,12 +242,12 @@ export default function Relatorios() {
         const quantity =
           Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
         productMap[productName].qty += quantity;
-        productMap[productName].revenue += Number(item.subtotal || 0);
+        productMap[productName].revenue += Number(itemesubtotal || 0);
         productMap[productName].sales += 1;
         const category = resolveCategory(item);
         if (!categoryMap[category]) categoryMap[category] = { qty: 0, revenue: 0 };
         categoryMap[category].qty += quantity;
-        categoryMap[category].revenue += Number(item.subtotal || 0);
+        categoryMap[category].revenue += Number(itemesubtotal || 0);
       }
     }
 
@@ -267,7 +268,7 @@ export default function Relatorios() {
 
     const sellerMap = {};
     for (const sale of periodSales) {
-      const seller = sale.seller_name || 'Sem identificação';
+      const seller = sale.seller_name || 'Sem identificacao';
       if (!sellerMap[seller])
         sellerMap[seller] = { count: 0, revenue: 0, items: 0 };
       sellerMap[seller].count += 1;
@@ -321,7 +322,7 @@ export default function Relatorios() {
       .map(([, value]) => value);
 
     const breakdownMap = {};
-    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
     for (const sale of periodSales) {
       const date = new Date(sale.created_date);
       let key;
@@ -460,27 +461,23 @@ export default function Relatorios() {
     if (stats.revenueChange > 0)
       list.push({
         type: 'up',
-        text: `As vendas subiram ${stats.revenueChange.toFixed(1)}% em relação ao período anterior.`,
+        text: `As vendas subiram ${formatNumber(stats.revenueChange)}% em relacao ao periodo anterior.`,
       });
     else if (stats.revenueChange < 0)
       list.push({
         type: 'down',
-        text: `As vendas caíram ${Math.abs(stats.revenueChange).toFixed(1)}% em relação ao período anterior.`,
+        text: `As vendas cairam ${formatNumber(Math.abs(stats.revenueChange))}% em relacao ao periodo anterior.`,
       });
     if (productRankingRows.length)
       list.push({
         type: 'info',
-        text: `O produto com maior faturamento foi ${productRankingRows[0].name}, com ${Number(
-          productRankingRows[0].items,
-        )
-          .toFixed(3)
-          .replace(/\.000$/, '')} vendidos.`,
+        text: `O produto com maior faturamento foi ${productRankingRows[0].name}, com ${formatNumber(productRankingRows[0].items)} vendidos.`,
       });
     if (stats.paymentData.length) {
       const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${topPayment.percentage.toFixed(0)}% do faturamento do período.`,
+        text: `${topPayment.name} representou ${formatNumber(topPayment.percentage)}% do faturamento do periodo.`,
       });
     }
     if (stats.bestBreakdown)
@@ -491,24 +488,24 @@ export default function Relatorios() {
     if (stats.itemsPerSale > 0)
       list.push({
         type: 'info',
-        text: `Cada venda teve em média ${stats.itemsPerSale.toFixed(1).replace('.', ',')} item(ns).`,
+        text: `Cada venda teve em media ${stats.itemsPerSale.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} item(ns).`,
       });
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
-        text: `Há ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste período.`,
+        text: `Ha ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste periodo.`,
       });
     if (stats.cancelled > 0)
       list.push({
         type: 'alert',
-        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no período.`,
+        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no periodo.`,
       });
     return list;
   }, [stats, productRankingRows]);
 
   if (loading)
     return (
-      <LoadingState className="min-h-[60vh]" label="Carregando relatórios..." />
+      <LoadingState className="min-h-[60vh]" label="Carregando relatorios..." />
     );
   if (loadError && !sales.length)
     return (
@@ -521,10 +518,10 @@ export default function Relatorios() {
     <div className="page-shell">
       <div className="mb-3">
         <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
+          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negocio
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Relatórios gerenciais
+          Relatorios gerenciais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Acompanhe vendas, pagamentos, produtos, equipe e fiados.
@@ -571,7 +568,7 @@ export default function Relatorios() {
       </div>
       {!customRangeValid && (
         <div className="mb-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          Informe um período válido: a data inicial deve ser anterior ou igual à
+          Informe um periodo valido: a data inicial deve ser anterior ou igual à
           data final.
         </div>
       )}
@@ -586,7 +583,7 @@ export default function Relatorios() {
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
         <StatCard
           icon={Receipt}
-          label="Ticket médio"
+          label="Ticket medio"
           value={formatCurrency(stats.avgTicket)}
         />
         <StatCard
@@ -610,7 +607,7 @@ export default function Relatorios() {
           value={formatCurrency(stats.totalDiscount)}
           hint={
             stats.grossRevenue > 0
-              ? `${((stats.totalDiscount / stats.grossRevenue) * 100).toFixed(1)}% do bruto`
+              ? `${formatNumber((stats.totalDiscount / stats.grossRevenue) * 100)}% do bruto`
               : 'Sem descontos'
           }
         />
@@ -618,9 +615,9 @@ export default function Relatorios() {
           icon={PackageCheck}
           label="Itens vendidos"
           value={Number(stats.totalItems).toLocaleString('pt-BR', {
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 2,
           })}
-          hint={`${stats.itemsPerSale.toFixed(1).replace('.', ',')} por venda`}
+          hint={`${stats.itemsPerSale.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} por venda`}
         />
         <MiniMetric
           icon={Trophy}
@@ -636,7 +633,25 @@ export default function Relatorios() {
 
       <section className="mb-4 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
         <div className="border-b border-border p-3 sm:p-4">
-          <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-bold">Estatisticas de faturamento</h3>
+            <div className="inline-flex overflow-hidden rounded-lg border border-border bg-background text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setBreakdownMetric('revenue')}
+                className={`px-3 py-1.5 transition ${breakdownMetric === 'revenue' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              >
+                Faturamento
+              </button>
+              <button
+                type="button"
+                onClick={() => setBreakdownMetric('sales')}
+                className={`border-l border-border px-3 py-1.5 transition ${breakdownMetric === 'sales' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              >
+                Vendas
+              </button>
+            </div>
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
               <button
@@ -661,7 +676,7 @@ export default function Relatorios() {
               {stats.breakdownData.map((row) => (
                 <article
                   key={row.key}
-                  className="rounded-xl border border-border bg-muted/15 p-3"
+                  className={`rounded-xl border p-3 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
                 >
                   <strong className="block text-sm">{row.label}</strong>
                   <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -678,7 +693,7 @@ export default function Relatorios() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Ticket médio</dt>
+                      <dt className="text-muted-foreground">Ticket medio</dt>
                       <dd className="mt-1 font-bold tabular-nums">
                         {formatCurrency(row.average)}
                       </dd>
@@ -696,12 +711,15 @@ export default function Relatorios() {
                     </th>
                     <th className="px-4 py-3">Faturamento</th>
                     <th className="px-4 py-3">Vendas</th>
-                    <th className="px-4 py-3">Ticket médio</th>
+                    <th className="px-4 py-3">Ticket medio</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.breakdownData.map((row) => (
-                    <tr key={row.key} className="border-t border-border/70">
+                    <tr
+                      key={row.key}
+                      className={`border-t border-border/70 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
+                    >
                       <td className="px-4 py-3 font-bold">{row.label}</td>
                       <td className="px-4 py-3 font-semibold">
                         {formatCurrency(row.revenue)}
@@ -717,26 +735,26 @@ export default function Relatorios() {
             </div>
           </>
         ) : (
-          <ChartEmpty text="Sem vendas no período selecionado." />
+          <ChartEmpty text="Sem vendas no periodo selecionado." />
         )}
       </section>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
           <h3 className="mb-3 text-sm font-bold">
-            Faturamento por {period === 'year' ? 'mês' : 'dia'}
+            Faturamento por {period === 'year' ? 'mes' : 'dia'}
           </h3>
           {stats.dailyData.length ? (
             <Suspense fallback={<ChartLoading />}>
               <DailyRevenueChart data={stats.dailyData} />
             </Suspense>
           ) : (
-            <ChartEmpty text="Sem vendas no período selecionado." />
+            <ChartEmpty text="Sem vendas no periodo selecionado." />
           )}
         </section>
 
         <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
-          <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
+          <h3 className="mb-3 text-sm font-bold">Formes de pagamento</h3>
           {stats.paymentData.length ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
               <Suspense fallback={<ChartLoading />}>
@@ -745,7 +763,7 @@ export default function Relatorios() {
               <PaymentLegend rows={stats.paymentData} />
             </div>
           ) : (
-            <ChartEmpty text="Sem pagamentos no período selecionado." />
+            <ChartEmpty text="Sem pagamentos no periodo selecionado." />
           )}
         </section>
       </div>
@@ -760,14 +778,14 @@ export default function Relatorios() {
             value:
               productRankingSort === 'items'
                 ? Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })
                 : formatCurrency(row.revenue),
             detail:
               productRankingSort === 'items'
                 ? `${formatCurrency(row.revenue)} de faturamento`
                 : `${Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })} vendidos`,
             percent:
               productRankingSort === 'items'
@@ -784,14 +802,14 @@ export default function Relatorios() {
             value:
               sellerRankingSort === 'items'
                 ? Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })
                 : formatCurrency(row.revenue),
             detail:
               sellerRankingSort === 'items'
                 ? `${formatCurrency(row.revenue)} de faturamento · ${row.sales} vendas`
                 : `${Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })} itens · ${formatCurrency(row.average)} ticket`,
             percent:
               sellerRankingSort === 'items'
@@ -811,14 +829,14 @@ export default function Relatorios() {
             value:
               categoryRankingSort === 'items'
                 ? Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })
                 : formatCurrency(row.revenue),
             detail:
               categoryRankingSort === 'items'
                 ? `${formatCurrency(row.revenue)} de faturamento`
                 : `${Number(row.items).toLocaleString('pt-BR', {
-                    maximumFractionDigits: 3,
+                    maximumFractionDigits: 2,
                   })} itens`,
             percent:
               categoryRankingSort === 'items'
@@ -831,7 +849,7 @@ export default function Relatorios() {
 
       <section className="rounded-xl border border-accent/25 bg-accent/5 p-3 sm:p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Lightbulb className="h-5 w-5 text-accent" /> Insights do período
+          <Lightbulb className="h-5 w-5 text-accent" /> Insights do periodo
         </h3>
         <div className="space-y-2">
           {insights.map((insight, index) => (
@@ -864,7 +882,7 @@ export default function Relatorios() {
           ))}
           {!insights.length && (
             <p className="text-sm text-muted-foreground">
-              Sem insights para este período.
+              Sem insights para este periodo.
             </p>
           )}
         </div>
@@ -914,7 +932,7 @@ function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
           ) : (
             <TrendingDown className="h-3.5 w-3.5" />
           )}
-          {Math.abs(change).toFixed(1)}%
+          {formatNumber(Math.abs(change))}%
         </div>
       )}
     </div>
@@ -940,6 +958,19 @@ function MiniMetric({ icon: Icon, label, value, hint }) {
   );
 }
 
+function getBreakdownTone(row, rows, metric) {
+  const values = rows.map((item) => Number(item[metric] || 0));
+  const best = Math.max(...values);
+  const worst = Math.min(...values);
+  const value = Number(row[metric] || 0);
+  if (!values.length || best === worst) return 'border-border bg-muted/15';
+  if (value === best)
+    return 'border-emerald-500/35 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100';
+  if (value === worst)
+    return 'border-red-500/35 bg-red-500/10 text-red-950 dark:text-red-100';
+  return 'border-border bg-card';
+}
+
 function PaymentLegend({ rows }) {
   return (
     <div className="space-y-2">
@@ -959,7 +990,7 @@ function PaymentLegend({ rows }) {
             />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {row.percentage.toFixed(1).replace('.', ',')}% do faturamento
+            {row.percentage.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do faturamento
           </p>
         </article>
       ))}
@@ -972,7 +1003,7 @@ function ExecutiveSummary({ stats }) {
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
     ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendencias'],
   ];
   return (
     <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
@@ -1018,7 +1049,7 @@ function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
         </span>
       </span>
       <div className="sr-only">
-        Participação: {Number(row.percent || 0).toFixed(1)}%
+        Participacao: {formatNumber(row.percent || 0)}%
       </div>
       <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
         <div

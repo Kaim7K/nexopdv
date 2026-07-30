@@ -155,7 +155,10 @@ export default function Estoque() {
               .toLowerCase()
               .includes(searchText),
           )) &&
-        (!category || product.category === category) &&
+        (!category ||
+          (category === '__uncategorized__'
+            ? !String(product.category || '').trim()
+            : product.category === category)) &&
         (min === null || Number(product.sale_price || 0) >= min) &&
         (max === null || Number(product.sale_price || 0) <= max) &&
         (imageFilter === 'all' ||

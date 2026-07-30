@@ -161,7 +161,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               <div className="space-y-2">
                 {sale.items.map((item, index) => (
                   <div key={`${item.product_id}-${index}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
-                    <span className="font-bold tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(3)}kg` : `${item.quantity}x`}</span>
+                    <span className="font-bold tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(2)}kg` : `${item.quantity}x`}</span>
                     <span className="truncate">{item.product_name}</span>
                     <span className="font-semibold tabular-nums">{formatCurrency(item.subtotal)}</span>
                   </div>

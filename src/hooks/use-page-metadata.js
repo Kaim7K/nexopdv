@@ -27,6 +27,7 @@ function setCanonical(url) {
 export function usePageMetadata({
   title,
   description = '',
+  keywords = '',
   robots = 'noindex, nofollow',
   canonicalPath = '',
   imagePath = '',
@@ -36,9 +37,13 @@ export function usePageMetadata({
     if (title) document.title = title;
     upsertMeta('meta[name="robots"]', { name: 'robots', content: robots });
     upsertMeta('meta[name="description"]', { name: 'description', content: description });
+    if (keywords) upsertMeta('meta[name="keywords"]', { name: 'keywords', content: keywords });
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
+    upsertMeta('meta[property="og:locale"]', { property: 'og:locale', content: 'pt_BR' });
+    upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'Nexo PDV' });
     upsertMeta('meta[property="og:title"]', { property: 'og:title', content: title || 'Nexo PDV' });
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
+    upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: title || 'Nexo PDV' });
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
 
@@ -61,5 +66,5 @@ export function usePageMetadata({
       script.textContent = JSON.stringify(structuredData);
       document.head.appendChild(script);
     }
-  }, [canonicalPath, description, imagePath, robots, structuredData, title]);
+  }, [canonicalPath, description, imagePath, keywords, robots, structuredData, title]);
 }

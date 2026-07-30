@@ -1,9 +1,14 @@
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 const currencyInputFormatter = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const numberFormatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
@@ -19,6 +24,11 @@ export const PAYMENT_METHODS = [
 export const formatCurrency = value => {
   const number = Number(value);
   return currencyFormatter.format(Number.isFinite(number) ? number : 0);
+};
+
+export const formatNumber = value => {
+  const number = Number(value);
+  return numberFormatter.format(Number.isFinite(number) ? number : 0);
 };
 
 export const parseCurrencyDigits = value => {

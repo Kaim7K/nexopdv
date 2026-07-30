@@ -5,8 +5,6 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -14,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatCurrency } from '@/lib/helpers';
+import { formatCurrency, formatNumber } from '@/lib/helpers';
 
 const CHART_COLORS = [
   'hsl(var(--chart-1))',
@@ -35,7 +33,7 @@ const TOOLTIP_STYLE = {
 export function BreakdownChart({ data }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ left: 8, right: 16 }}>
+      <BarChart data={data} margin={{ left: 8, right: 16 }}>
         <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
         <XAxis
           dataKey="label"
@@ -44,7 +42,7 @@ export function BreakdownChart({ data }) {
         />
         <YAxis
           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-          tickFormatter={(value) => `R$ ${Number(value).toFixed(0)}`}
+          tickFormatter={(value) => `R$ ${formatNumber(value)}`}
           axisLine={false}
           tickLine={false}
         />
@@ -52,17 +50,14 @@ export function BreakdownChart({ data }) {
           formatter={(value) => formatCurrency(value)}
           contentStyle={TOOLTIP_STYLE}
         />
-        <Line
-          type="monotone"
+        <Bar
           dataKey="revenue"
           name="Faturamento"
-          stroke="hsl(var(--chart-1))"
-          strokeWidth={2.5}
-          dot={{ r: 4, fill: 'hsl(var(--chart-1))' }}
-          activeDot={{ r: 6 }}
+          fill="hsl(var(--chart-1))"
+          radius={[6, 6, 0, 0]}
         />
         <Legend />
-      </LineChart>
+      </BarChart>
     </ResponsiveContainer>
   );
 }
@@ -84,8 +79,8 @@ export function DailyRevenueChart({ data }) {
           tickLine={{ stroke: 'hsl(var(--border))' }}
           tickFormatter={(value) =>
             Number(value) >= 1000
-              ? `R$${(Number(value) / 1000).toFixed(1)}k`
-              : `R$${Number(value).toFixed(0)}`
+              ? `R$ ${formatNumber(Number(value) / 1000)} mil`
+              : `R$ ${formatNumber(value)}`
           }
         />
         <Tooltip
@@ -111,7 +106,7 @@ export function PaymentChart({ data }) {
           cx="50%"
           cy="50%"
           outerRadius={86}
-          label={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+          label={({ value }) => formatCurrency(value)}
           labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
         >
           {data.map((item, index) => (

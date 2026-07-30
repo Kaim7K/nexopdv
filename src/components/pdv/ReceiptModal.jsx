@@ -78,7 +78,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
   const receiptItems = useMemo(() => (sale.items || []).map((item, index) => ({
     key: `${item.product_id || item.product_name || 'item'}-${index}`,
     quantityLabel: item.unit === 'peso'
-      ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`
+      ? `${Number(item.weight || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
       : `${Number(item.quantity || 0)} un`,
     name: item.product_name || 'Produto',
     unitPrice: Number(item.unit_price || 0),
