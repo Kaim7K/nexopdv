@@ -84,6 +84,8 @@ const PAYMENT_ICONS = {
   fiado: CalendarClock,
   outros: Wallet,
 };
+const roundDisplayMoney = (value) =>
+  Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
 export default function HistoricoCaixas() {
   const requestSequence = useRef(0);
@@ -451,6 +453,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const [editForm, setEditForm] = useState({
     opening_amount: "",
     closing_amount: "",
+    closing_entry: "",
     closing_expense: "",
   });
   const [saving, setSaving] = useState(false);
@@ -479,16 +482,31 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const cashReceived = Number(
     summary.payments?.dinheiro ?? summary.cash_sales ?? 0,
   );
-  const expectedBeforeExpense = Number(summary.expected_cash || 0);
   const closingExpense = Number(
     session.closing_expense ?? summary.closing_expense ?? 0,
   );
-  const expectedAfterExpense = expectedBeforeExpense - closingExpense;
+  const closingEntry = Number(
+    session.closing_entry ?? summary.closing_entry ?? 0,
+  );
+  const summaryClosingEntry = Number(summary.closing_entry || 0);
+  const summaryClosingExpense = Number(summary.closing_expense || 0);
+  const hasStoredClosingSummary =
+    summary.expected_cash_before_expense !== undefined ||
+    summary.closing_entry !== undefined ||
+    summary.closing_expense !== undefined;
+  const expectedBeforeExpense = Number(
+    summary.expected_cash_before_expense ??
+      (hasStoredClosingSummary
+        ? Number(summary.expected_cash || 0) -
+          summaryClosingEntry +
+          summaryClosingExpense
+        : Number(summary.expected_cash || 0)),
+  );
+  const expectedAfterExpense = roundDisplayMoney(
+    expectedBeforeExpense + closingEntry - closingExpense,
+  );
   const declaredCash = Number(session.closing_amount ?? expectedAfterExpense);
-  const cashDifference =
-    session.difference !== null && session.difference !== undefined
-      ? Number(session.difference)
-      : declaredCash - expectedAfterExpense;
+  const cashDifference = declaredCash - expectedAfterExpense;
   const hasDifference = Math.abs(cashDifference) >= 0.005;
   const differenceLabel = !hasDifference
     ? "Caixa conferido"
@@ -516,6 +534,11 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
           ),
         ),
       ),
+      closing_entry: formatCurrencyInput(
+        String(
+          Math.round(Number(session.closing_entry || summary.closing_entry || 0) * 100),
+        ),
+      ),
       closing_expense: formatCurrencyInput(
         String(
           Math.round(Number(session.closing_expense || summary.closing_expense || 0) * 100),
@@ -526,10 +549,12 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     session.id,
     session.opening_amount,
     session.closing_amount,
+    session.closing_entry,
     session.closing_expense,
     session.status,
     summary.expected_cash,
     summary.closing_expense,
+    summary.closing_entry,
   ]);
   const saveMovement = async (event) => {
     event.preventDefault();
@@ -604,6 +629,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
         status: "fechado",
         opening_amount: parseCurrencyDigits(editForm.opening_amount),
         closing_amount: parseCurrencyDigits(editForm.closing_amount),
+        closing_entry: parseCurrencyDigits(editForm.closing_entry),
         closing_expense: parseCurrencyDigits(editForm.closing_expense),
       });
       toast.success("Caixa atualizado.");
@@ -760,6 +786,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     </div>
                     <CashFormulaRow label="Valor inicial" value={openingAmount} />
                     <CashFormulaRow label="Recebido em dinheiro" value={cashReceived} positive />
+                    <CashFormulaRow label="Entrada no fechamento" value={closingEntry} positive />
                     <CashFormulaRow label="Despesa no fechamento" value={closingExpense} negative />
                     <CashFormulaRow
                       label="Esperado no caixa"
@@ -841,7 +868,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                       Edite apenas os valores físicos usados no fechamento do caixa.
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Filter label="Valor inicial do caixa">
                       <input
                         className="field"
@@ -869,6 +896,22 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                           setEditForm((current) => ({
                             ...current,
                             closing_amount: formatCurrencyInput(
+                              e.target.value.replace(/\D/g, ""),
+                            ),
+                          }))
+                        }
+                      />
+                    </Filter>
+                    <Filter label="Entrada no fechamento">
+                      <input
+                        className="field"
+                        type="text"
+                        inputMode="numeric"
+                        value={editForm.closing_entry}
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            closing_entry: formatCurrencyInput(
                               e.target.value.replace(/\D/g, ""),
                             ),
                           }))
@@ -960,103 +1003,52 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </button>
                 </form>
               )}
-              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(22rem,1.15fr)]">
-                <section className="rounded-2xl border border-border bg-card p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="font-black">Entradas e retiradas</h3>
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
-                      {summary.movements?.length || 0}
-                    </span>
+              <section className="rounded-2xl border border-border bg-card p-4">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-black">Vendas vinculadas</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {linkedSales.length} de {summary.sales?.length || 0} venda(s)
+                    </p>
                   </div>
-                  {summary.movements?.length ? (
-                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                      {summary.movements.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
-                        >
-                          <span
-                            className={
-                              item.type === "entrada"
-                                ? "text-emerald-600"
-                                : "text-amber-600"
-                            }
-                          >
-                            {item.type === "entrada" ? (
-                              <PlusCircle className="h-4 w-4" />
-                            ) : (
-                              <MinusCircle className="h-4 w-4" />
-                            )}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <strong className="block text-sm capitalize leading-tight">
-                              {item.type}
-                            </strong>
-                            <p className="truncate text-[11px] text-muted-foreground">
-                              {item.note || "Sem observação"} ·{" "}
-                              {formatDate(item.created_at || item.created_date)}
-                            </p>
-                          </div>
-                          <strong className="text-sm tabular-nums">
-                            {formatCurrency(item.amount)}
-                          </strong>
-                        </div>
+                  <label className="relative block sm:w-64">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={salePaymentFilter}
+                      onChange={(event) => setSalePaymentFilter(event.target.value)}
+                      className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                      aria-label="Filtrar vendas por pagamento"
+                    >
+                      {PAYMENT_FILTERS.map((payment) => (
+                        <option key={payment.method || "todos"} value={payment.method}>
+                          {payment.method ? `Pagamento: ${payment.label}` : "Todos os pagamentos"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {summary.sales?.length ? (
+                  linkedSales.length ? (
+                    <div className="grid max-h-96 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
+                      {linkedSales.map((sale) => (
+                        <LinkedSaleButton
+                          key={sale.id}
+                          sale={sale}
+                          onClick={() => openSaleDetail(sale)}
+                        />
                       ))}
                     </div>
                   ) : (
                     <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                      Nenhuma entrada ou retirada avulsa.
+                      Nenhuma venda encontrada para este pagamento.
                     </div>
-                  )}
-                </section>
-
-                <section className="rounded-2xl border border-border bg-card p-4">
-                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="font-black">Vendas vinculadas</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {linkedSales.length} de {summary.sales?.length || 0} venda(s)
-                      </p>
-                    </div>
-                    <label className="relative block sm:w-56">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <select
-                        value={salePaymentFilter}
-                        onChange={(event) => setSalePaymentFilter(event.target.value)}
-                        className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                        aria-label="Filtrar vendas por pagamento"
-                      >
-                        {PAYMENT_FILTERS.map((payment) => (
-                          <option key={payment.method || "todos"} value={payment.method}>
-                            {payment.method ? `Pagamento: ${payment.label}` : "Todos os pagamentos"}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  )
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
+                    Nenhuma venda vinculada a este caixa.
                   </div>
-                  {summary.sales?.length ? (
-                    linkedSales.length ? (
-                      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                        {linkedSales.map((sale) => (
-                          <LinkedSaleButton
-                            key={sale.id}
-                            sale={sale}
-                            onClick={() => openSaleDetail(sale)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                        Nenhuma venda encontrada para este pagamento.
-                      </div>
-                    )
-                  ) : (
-                    <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                      Nenhuma venda vinculada a este caixa.
-                    </div>
-                  )}
-                </section>
-              </div>
+                )}
+              </section>
             </>
           )}
         </div>

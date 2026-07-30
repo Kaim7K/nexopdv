@@ -53,9 +53,10 @@ async function loadLogoForPdf(source) {
 
 function calculateSaleTotals(sale) {
   const subtotal = Number(sale.subtotal ?? (sale.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0));
+  const rawDiscount = Math.max(0, Number(sale.discount_value || 0));
   const discount = sale.discount_type === 'percentual'
     ? subtotal * Math.min(100, Math.max(0, Number(sale.discount_value || 0))) / 100
-    : Math.max(0, Number(sale.discount_value || 0));
+    : Math.min(rawDiscount, subtotal);
   return { subtotal, discount, total: Number(sale.total ?? Math.max(0, subtotal - discount)) };
 }
 

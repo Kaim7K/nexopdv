@@ -178,10 +178,15 @@ export default function Relatorios() {
       (sum, sale) => sum + Number(sale.subtotal || sale.total || 0),
       0,
     );
-    const totalDiscount = periodSales.reduce(
-      (sum, sale) => sum + Number(sale.discount_value || 0),
-      0,
-    );
+    const totalDiscount = periodSales.reduce((sum, sale) => {
+      const subtotal = Number(sale.subtotal || sale.total || 0);
+      const rawDiscount = Math.max(0, Number(sale.discount_value || 0));
+      const discount =
+        sale.discount_type === 'percentual'
+          ? (subtotal * Math.min(rawDiscount, 100)) / 100
+          : Math.min(rawDiscount, subtotal);
+      return sum + discount;
+    }, 0);
     const prevRevenue = prevPeriodSales.reduce(
       (sum, sale) => sum + Number(sale.total || 0),
       0,
@@ -257,9 +262,17 @@ export default function Relatorios() {
 
     const paymentMap = {};
     for (const sale of periodSales) {
-      for (const payment of sale.payments || [])
+      let changeToDiscount = Math.max(0, Number(sale.change_amount || 0));
+      for (const payment of sale.payments || []) {
+        const rawAmount = Math.max(0, Number(payment.amount || 0));
+        const changeDiscount =
+          payment.method === 'dinheiro' && changeToDiscount > 0
+            ? Math.min(rawAmount, changeToDiscount)
+            : 0;
+        changeToDiscount = Math.max(0, changeToDiscount - changeDiscount);
         paymentMap[payment.method] =
-          Number(paymentMap[payment.method] || 0) + Number(payment.amount || 0);
+          Number(paymentMap[payment.method] || 0) + rawAmount - changeDiscount;
+      }
     }
     const paymentData = Object.entries(paymentMap)
       .map(([method, value]) => ({

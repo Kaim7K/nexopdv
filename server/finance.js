@@ -2019,22 +2019,37 @@ async function loadReconciliation(sql, marketId, query) {
       fiado: 0,
       outros: 0,
     };
-    for (const sale of sessionSales)
-      for (const payment of sale.data?.payments || [])
+    for (const sale of sessionSales) {
+      let changeToDiscount = round(Number(sale.data?.change_amount || 0));
+      for (const payment of sale.data?.payments || []) {
+        const method =
+          payments[payment.method] === undefined ? "outros" : payment.method;
+        const rawAmount = round(Number(payment.amount || 0));
+        const changeDiscount =
+          method === "dinheiro" && changeToDiscount > 0
+            ? Math.min(rawAmount, changeToDiscount)
+            : 0;
+        changeToDiscount = round(changeToDiscount - changeDiscount);
         payments[
-          payments[payment.method] === undefined ? "outros" : payment.method
-        ] += Number(payment.amount || 0);
+          method
+        ] += rawAmount - changeDiscount;
+      }
+    }
     const entries = sessionMovements
         .filter((item) => item.data?.type === "entrada")
         .reduce((sum, item) => sum + Number(item.data?.amount || 0), 0),
       withdrawals = sessionMovements
         .filter((item) => item.data?.type === "retirada")
         .reduce((sum, item) => sum + Number(item.data?.amount || 0), 0);
+    const closingEntry = round(Number(session.closing_entry || 0));
+    const closingExpense = round(Number(session.closing_expense || 0));
     const expectedCash = round(
         Number(session.opening_amount || 0) +
           payments.dinheiro +
           entries -
-          withdrawals,
+          withdrawals -
+          closingExpense +
+          closingEntry,
       ),
       declared =
         session.closing_amount === null || session.closing_amount === undefined
@@ -2053,6 +2068,8 @@ async function loadReconciliation(sql, marketId, query) {
       ),
       entries: round(entries),
       withdrawals: round(withdrawals),
+      closing_entry: closingEntry,
+      closing_expense: closingExpense,
       expected_cash: expectedCash,
       declared_cash: declared,
       difference,

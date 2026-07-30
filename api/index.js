@@ -366,6 +366,9 @@ async function getCashSessionSummary(sql, marketId, session) {
     cash_sales: cashSales,
     entries,
     withdrawals,
+    expected_cash_before_expense: roundMoney(
+      openingAmount + cashSales + entries - withdrawals,
+    ),
     expected_cash: roundMoney(
       openingAmount + cashSales + entries - withdrawals,
     ),
@@ -1191,6 +1194,15 @@ async function routeHandler(req, res) {
           withdrawals: Number(summary.withdrawals || 0),
           payments: summary.payments || {},
           final_amount: session.closing_amount ?? summary.expected_cash ?? 0,
+          difference:
+            session.status === 'fechado' &&
+            session.closing_amount !== null &&
+            session.closing_amount !== undefined
+              ? roundMoney(
+                  Number(session.closing_amount || 0) -
+                    Number(summary.expected_cash || 0),
+                )
+              : null,
         });
       }
       const [operatorRows, unitRows] = await Promise.all([
@@ -1234,6 +1246,7 @@ async function routeHandler(req, res) {
         'status',
         'opening_amount',
         'closing_amount',
+        'closing_entry',
         'closing_expense',
       ]);
       const invalidFields = Object.keys(req.body || {}).filter(
@@ -1291,6 +1304,12 @@ async function routeHandler(req, res) {
           : req.body.closing_expense === undefined
             ? roundMoney(Number(current.closing_expense || 0))
             : roundMoney(Number(req.body.closing_expense));
+      const closingEntry =
+        nextStatus === 'aberto'
+          ? 0
+          : req.body.closing_entry === undefined
+            ? roundMoney(Number(current.closing_entry || 0))
+            : roundMoney(Number(req.body.closing_entry));
       if (
         closingAmount !== null &&
         (!Number.isFinite(closingAmount) ||
@@ -1309,9 +1328,20 @@ async function routeHandler(req, res) {
           message: 'Informe uma despesa de fechamento válida.',
         });
 
+      if (
+        !Number.isFinite(closingEntry) ||
+        closingEntry < 0 ||
+        closingEntry > 10_000_000
+      )
+        return send(res, 400, {
+          message: 'Informe uma entrada de fechamento v?lida.',
+        });
+
       const baseExpectedCash = roundMoney(Number(summary.expected_cash || 0));
       const adjustedExpectedCash = roundMoney(
-        baseExpectedCash - (nextStatus === 'aberto' ? 0 : closingExpense),
+        baseExpectedCash +
+          (nextStatus === 'aberto' ? 0 : closingEntry) -
+          (nextStatus === 'aberto' ? 0 : closingExpense),
       );
       const update =
         nextStatus === 'aberto'
@@ -1320,6 +1350,7 @@ async function routeHandler(req, res) {
               opening_amount: openingAmount,
               closed_at: null,
               closing_amount: null,
+              closing_entry: null,
               closing_expense: null,
               difference: null,
             }
@@ -1328,6 +1359,7 @@ async function routeHandler(req, res) {
               opening_amount: openingAmount,
               closed_at: current.closed_at || new Date().toISOString(),
               closing_amount: closingAmount,
+              closing_entry: closingEntry || null,
               closing_expense: closingExpense || null,
               difference:
                 closingAmount === null
@@ -1335,7 +1367,9 @@ async function routeHandler(req, res) {
                   : roundMoney(closingAmount - adjustedExpectedCash),
               summary: {
                 ...summary,
+                closing_entry: closingEntry || 0,
                 closing_expense: closingExpense || 0,
+                expected_cash_before_expense: baseExpectedCash,
                 expected_cash: adjustedExpectedCash,
               },
             };
@@ -1361,6 +1395,7 @@ async function routeHandler(req, res) {
               next_status: nextStatus,
               opening_amount: openingAmount,
               closing_amount: closingAmount,
+              closing_entry: nextStatus === 'aberto' ? 0 : closingEntry || 0,
               closing_expense: nextStatus === 'aberto' ? 0 : closingExpense || 0,
             },
           })}::jsonb
@@ -1612,6 +1647,12 @@ async function routeHandler(req, res) {
         req.body.closing_expense === null
           ? 0
           : roundMoney(Number(req.body.closing_expense));
+      const closingEntry =
+        req.body.closing_entry === '' ||
+        req.body.closing_entry === undefined ||
+        req.body.closing_entry === null
+          ? 0
+          : roundMoney(Number(req.body.closing_entry));
       if (
         closingAmount !== null &&
         (!Number.isFinite(closingAmount) ||
@@ -1628,6 +1669,14 @@ async function routeHandler(req, res) {
       )
         return send(res, 400, {
           message: 'Informe uma despesa de fechamento válida.',
+        });
+      if (
+        !Number.isFinite(closingEntry) ||
+        closingEntry < 0 ||
+        closingEntry > 10_000_000
+      )
+        return send(res, 400, {
+          message: 'Informe uma entrada de fechamento v?lida.',
         });
       const closedAt = new Date().toISOString();
       const [defaultAccount] = await sql`
@@ -1652,12 +1701,13 @@ async function routeHandler(req, res) {
         ...summarySnapshot
       } = summary;
       const adjustedExpectedCash = roundMoney(
-        Number(summary.expected_cash || 0) - closingExpense,
+        Number(summary.expected_cash || 0) + closingEntry - closingExpense,
       );
       const update = {
         status: 'fechado',
         closed_at: closedAt,
         closing_amount: closingAmount,
+        closing_entry: closingEntry || null,
         closing_expense: closingExpense || null,
         difference:
           closingAmount === null
@@ -1665,7 +1715,9 @@ async function routeHandler(req, res) {
             : roundMoney(closingAmount - adjustedExpectedCash),
         summary: {
           ...summarySnapshot,
+          closing_entry: closingEntry || 0,
           closing_expense: closingExpense || 0,
+          expected_cash_before_expense: Number(summary.expected_cash || 0),
           expected_cash: adjustedExpectedCash,
         },
       };
@@ -1739,6 +1791,7 @@ async function routeHandler(req, res) {
           details: {
             ...summarySnapshot,
             closing_amount: closingAmount,
+            closing_entry: closingEntry || 0,
             closing_expense: closingExpense || 0,
             difference: update.difference,
           },
@@ -1747,11 +1800,15 @@ async function routeHandler(req, res) {
       return send(res, 200, {
         session: recordFromRow(row),
         summary: {
-          ...summary,
+          ...summarySnapshot,
           sales: cashSalesDetail,
           movements: cashMovementsDetail,
           filters: { ...(cashFilters || {}), to: closedAt },
           closing_amount: closingAmount,
+          closing_entry: closingEntry || 0,
+          closing_expense: closingExpense || 0,
+          expected_cash_before_expense: Number(summary.expected_cash || 0),
+          expected_cash: adjustedExpectedCash,
           difference: update.difference,
         },
       });
@@ -2456,6 +2513,29 @@ async function routeHandler(req, res) {
       ORDER BY created_date DESC
       LIMIT ${pageSize} OFFSET ${offset}
     `;
+    const summaryRows = await sql`
+      SELECT id, data - 'items' AS data, created_date, updated_date
+      FROM nexo.records
+      WHERE market_id=${user.market_id}
+        AND entity='sales'
+        AND data->>'status'=ANY(ARRAY['concluida','cancelada'])
+        AND (${from === null} OR created_date >= ${from})
+        AND (${to === null} OR created_date < ${to})
+        AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
+        AND (${status === ''} OR data->>'status'=${status})
+        AND (${payment === ''} OR EXISTS (
+          SELECT 1 FROM jsonb_array_elements(COALESCE(data->'payments','[]'::jsonb)) AS payment_item
+          WHERE payment_item->>'method'=${payment}
+        ))
+        AND (${query === ''} OR lower(COALESCE(data->>'sale_number','')) LIKE ${queryPattern}
+          OR lower(COALESCE(data->>'seller_name','')) LIKE ${queryPattern}
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(COALESCE(data->'payments','[]'::jsonb)) AS search_payment
+            WHERE lower(COALESCE(search_payment->>'method','')) LIKE ${queryPattern}
+          )
+        )
+      LIMIT 50000
+    `;
     const sales = rows.map(recordFromRow);
     const total = Number(rows[0]?.total_count || 0);
     const includeSellers =
@@ -2475,6 +2555,7 @@ async function routeHandler(req, res) {
       page_size: pageSize,
       total,
       page_count: Math.max(1, Math.ceil(total / pageSize)),
+      summary: summarizeSales(summaryRows.map(recordFromRow)),
       sellers,
     });
   }
@@ -2493,7 +2574,7 @@ async function routeHandler(req, res) {
       !from ||
       !to ||
       to <= from ||
-      to.getTime() - from.getTime() > 27 * 60 * 60 * 1000
+      to.getTime() - from.getTime() > 32 * 24 * 60 * 60 * 1000
     ) {
       return send(res, 400, {
         message: 'Informe um único dia e um intervalo de horário válido.',

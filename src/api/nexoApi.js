@@ -332,12 +332,13 @@ export const nexoApi = {
         method: 'PATCH',
         body: { status: 'aberto' },
       }),
-    close: (closingAmount, closingExpense = null) =>
+    close: (closingAmount, closingExpense = null, closingEntry = null) =>
       request('/cash/close', {
         method: 'POST',
         body: {
           closing_amount: closingAmount,
           closing_expense: closingExpense,
+          closing_entry: closingEntry,
         },
       }),
     updateSettings: (requireCashRegister) =>

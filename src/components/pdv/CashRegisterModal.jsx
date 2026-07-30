@@ -31,6 +31,7 @@ export default function CashRegisterModal({
   const modalRef = useModalBehavior({ onClose, disabled: processing || reporting });
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
+  const [closingEntry, setClosingEntry] = useState('');
   const [closingExpense, setClosingExpense] = useState('');
   const summary = cashState?.summary || {};
   const paymentEntries = useMemo(
@@ -43,9 +44,11 @@ export default function CashRegisterModal({
   const expectedCash = useMemo(
     () =>
       isClosingMode
-        ? Number(summary.expected_cash || 0) - parseCurrencyDigits(closingExpense)
+        ? Number(summary.expected_cash || 0) +
+          parseCurrencyDigits(closingEntry) -
+          parseCurrencyDigits(closingExpense)
         : Number(summary.expected_cash || 0),
-    [summary.expected_cash, closingExpense, isClosingMode],
+    [summary.expected_cash, closingEntry, closingExpense, isClosingMode],
   );
 
   const submit = (event) => {
@@ -58,6 +61,7 @@ export default function CashRegisterModal({
     else
       onCloseCash({
         closingAmount: parseCurrencyDigits(closingAmount),
+        closingEntry: parseCurrencyDigits(closingEntry),
         closingExpense: parseCurrencyDigits(closingExpense),
       });
   };
@@ -190,6 +194,33 @@ export default function CashRegisterModal({
 
               {!isClosedMode && (
                 <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm font-bold sm:col-span-2">
+                    Entrada no fechamento{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (opcional)
+                    </span>
+                    <div className="relative mt-2">
+                      <Banknote className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={formatCurrencyInput(closingEntry)}
+                        onChange={(event) =>
+                          setClosingEntry(
+                            event.target.value.replace(/\D/g, ''),
+                          )
+                        }
+                        className="h-11 w-full rounded-xl border border-border bg-background pl-16 pr-3 text-sm font-bold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <span className="mt-1.5 block text-xs font-normal text-muted-foreground">
+                      Use para informar dinheiro adicionado ao caixa no fechamento.
+                    </span>
+                  </label>
                   <label className="block text-sm font-bold sm:col-span-2">
                     Despesa no fechamento{' '}
                     <span className="font-normal text-muted-foreground">

@@ -431,12 +431,13 @@ export default function PDV() {
     setCashModal(cashState.session ? 'close' : 'open');
   };
 
-  const handleCloseCash = async ({ closingAmount, closingExpense }) => {
+  const handleCloseCash = async ({ closingAmount, closingExpense, closingEntry }) => {
     setCashProcessing(true);
     try {
       const result = await nexoApi.cash.close(
         closingAmount,
         closingExpense,
+        closingEntry,
       );
       setCashState((previous) => ({
         ...previous,
