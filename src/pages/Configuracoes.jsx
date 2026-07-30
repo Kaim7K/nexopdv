@@ -713,6 +713,35 @@ export default function Configuracoes() {
           </label>
         </section>
 
+        {user?.role === 'admin' && (
+          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
+            <h2 className="flex items-center gap-2 font-bold">
+              <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Controle o acesso dos vendedores ao PDV.
+            </p>
+            <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3">
+              <span>
+                <strong className="block text-sm">
+                  Exigir abertura para vendedores
+                </strong>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Administradores nÃ£o sÃ£o bloqueados.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={requireCashRegister}
+                onChange={(event) =>
+                  setRequireCashRegister(event.target.checked)
+                }
+                className="h-5 w-5 accent-[var(--market-primary)]"
+              />
+            </label>
+          </section>
+        )}
+
         <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -803,34 +832,6 @@ export default function Configuracoes() {
           </div>
         </section>
 
-        {user?.role === 'admin' && (
-          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
-            <h2 className="flex items-center gap-2 font-bold">
-              <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Controle o acesso dos vendedores ao PDV.
-            </p>
-            <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3">
-              <span>
-                <strong className="block text-sm">
-                  Exigir abertura para vendedores
-                </strong>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Administradores não são bloqueados.
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                checked={requireCashRegister}
-                onChange={(event) =>
-                  setRequireCashRegister(event.target.checked)
-                }
-                className="h-5 w-5 accent-[var(--market-primary)]"
-              />
-            </label>
-          </section>
-        )}
         {canUseStockAlerts && ['admin', 'gerente'].includes(user?.role) && (
           <StockAlertSettings />
         )}

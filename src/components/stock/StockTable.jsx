@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
-  AlertTriangle,
   Copy,
   Package,
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { formatCurrency, formatDateTime } from '@/lib/helpers';
+import { formatDateTime } from '@/lib/helpers';
 import {
   getStockState,
   StockEmptyState,
@@ -17,69 +16,49 @@ const TABLE_COLUMNS = [
     key: 'name',
     label: 'Produto',
     sortKey: 'name',
-    width: 'w-[340px]',
+    width: 'w-[300px]',
     sticky: 'left',
+  },
+  {
+    key: 'category',
+    label: 'Categoria',
+    sortKey: 'category',
+    width: 'w-[190px]',
+    type: 'text',
   },
   {
     key: 'barcode',
     label: 'Cod. barras',
     sortKey: 'barcode',
-    width: 'w-[118px]',
-    visibility: 'hidden 2xl:table-cell',
-    type: 'text',
-  },
-  {
-    key: 'internal_code',
-    label: 'Cod. interno',
-    sortKey: 'internal_code',
-    width: 'w-[118px]',
-    visibility: 'hidden 2xl:table-cell',
+    width: 'w-[150px]',
     type: 'text',
   },
   {
     key: 'sale_price',
     label: 'Venda',
     sortKey: 'sale_price',
-    width: 'w-[112px]',
-    type: 'number',
-  },
-  {
-    key: 'cost_price',
-    label: 'Custo',
-    sortKey: 'cost_price',
-    width: 'w-[112px]',
-    visibility: 'hidden 2xl:table-cell',
+    width: 'w-[120px]',
     type: 'number',
   },
   {
     key: 'quantity',
     label: 'Estoque',
     sortKey: 'quantity',
-    width: 'w-[112px]',
+    width: 'w-[110px]',
     type: 'number',
-  },
-  {
-    key: 'unit',
-    label: 'Unidade',
-    sortKey: 'unit',
-    width: 'w-[116px]',
-    visibility: 'hidden min-[1320px]:table-cell',
-    type: 'text',
   },
   {
     key: 'last_sale_at',
     label: 'Ultima venda',
     sortKey: 'last_sale_at',
     width: 'w-[150px]',
-    visibility: 'hidden min-[1320px]:table-cell',
     type: 'date',
   },
   {
     key: 'status',
     label: 'Status',
     sortKey: 'status',
-    width: 'w-[112px]',
-    visibility: 'hidden 2xl:table-cell',
+    width: 'w-[128px]',
     type: 'text',
   },
   {
@@ -91,10 +70,10 @@ const TABLE_COLUMNS = [
 ];
 
 const inputClass =
-  'h-8 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-sm outline-none transition-colors hover:border-border hover:bg-background/80 focus:border-accent/45 focus:bg-background focus:ring-2 focus:ring-accent/15';
+  'h-8 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-sm shadow-none outline-none transition-colors focus:border-accent/45 focus:bg-background focus:ring-2 focus:ring-accent/15';
 
 const cellClass =
-  'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/35';
+  'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/25';
 
 export default function StockTable({
   products,
@@ -113,7 +92,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1290px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+    <table className="hidden w-full min-w-[1224px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col
@@ -223,8 +202,6 @@ function ProductRow({
       >
         <ProductIdentity
           product={product}
-          categories={categories}
-          stock={stock}
           onEdit={onEdit}
           onInlineEdit={onInlineEdit}
         />
@@ -236,6 +213,7 @@ function ProductRow({
             column={column}
             quantity={quantity}
             tracksStock={tracksStock}
+            categories={categories}
             onInlineEdit={onInlineEdit}
           />
         </td>
@@ -273,9 +251,7 @@ function ProductRow({
   );
 }
 
-function ProductIdentity({ product, categories, stock, onEdit, onInlineEdit }) {
-  const { tracksStock, isZero, isLow } = stock;
-
+function ProductIdentity({ product, onEdit, onInlineEdit }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
       <button
@@ -304,42 +280,19 @@ function ProductIdentity({ product, categories, stock, onEdit, onInlineEdit }) {
           value={product.name ?? ''}
           onCommit={(value) => onInlineEdit(product.id, 'name', value, 'text')}
         />
-        <InlineSelect
-          aria-label={`Categoria de ${product.name}`}
-          className={`${inputClass} mt-0.5 h-7 px-1.5 text-xs text-muted-foreground`}
-          value={product.category || ''}
-          onCommit={(value) =>
-            onInlineEdit(product.id, 'category', value, 'text')
-          }
-        >
-          <option value="">Sem categoria</option>
-          {categories.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </InlineSelect>
       </div>
-      {tracksStock && (isZero || isLow) && (
-        <button
-          type="button"
-          onClick={() => onEdit(product)}
-          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border transition-colors ${
-            isZero
-              ? 'border-red-500/35 text-red-600 hover:bg-red-500/10 dark:text-red-300'
-              : 'border-amber-500/35 text-amber-600 hover:bg-amber-500/10 dark:text-amber-300'
-          }`}
-          aria-label={`Atualizar estoque de ${product.name}`}
-          title={isZero ? 'Sem estoque' : 'Estoque baixo'}
-        >
-          <AlertTriangle className="h-3.5 w-3.5" />
-        </button>
-      )}
     </div>
   );
 }
 
-function CellEditor({ product, column, quantity, tracksStock, onInlineEdit }) {
+function CellEditor({
+  product,
+  column,
+  quantity,
+  tracksStock,
+  categories,
+  onInlineEdit,
+}) {
   const fieldKey = column.key;
   const label = column.label;
   const type = column.type;
@@ -359,14 +312,27 @@ function CellEditor({ product, column, quantity, tracksStock, onInlineEdit }) {
     );
   }
 
-  if (fieldKey === 'sale_price' || fieldKey === 'cost_price') {
-    const hasCostPrice =
-      product.cost_price !== null &&
-      product.cost_price !== '' &&
-      Number.isFinite(Number(product.cost_price));
-    const unitProfit =
-      Number(product.sale_price || 0) - Number(product.cost_price || 0);
+  if (fieldKey === 'category') {
+    return (
+      <InlineSelect
+        aria-label={`Categoria de ${product.name}`}
+        className={`${inputClass} text-muted-foreground`}
+        value={product.category || ''}
+        onCommit={(value) =>
+          onInlineEdit(product.id, 'category', value, 'text')
+        }
+      >
+        <option value="">Sem categoria</option>
+        {categories.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </InlineSelect>
+    );
+  }
 
+  if (fieldKey === 'sale_price' || fieldKey === 'cost_price') {
     return (
       <div className="min-w-0">
         <label className="relative block">
@@ -385,18 +351,6 @@ function CellEditor({ product, column, quantity, tracksStock, onInlineEdit }) {
             }
           />
         </label>
-        {fieldKey === 'sale_price' && hasCostPrice && (
-          <span
-            className={`mt-0.5 block truncate px-2 text-[10px] font-bold ${
-              unitProfit >= 0
-                ? 'text-emerald-600 dark:text-emerald-300'
-                : 'text-red-600 dark:text-red-300'
-            }`}
-          >
-            {unitProfit >= 0 ? '+ ' : '- '}
-            {formatCurrency(Math.abs(unitProfit))}
-          </span>
-        )}
       </div>
     );
   }
