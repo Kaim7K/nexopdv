@@ -494,8 +494,8 @@ export default function Landing() {
 
   return (
     <div className="h-dvh overflow-y-auto overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
-      <header className="absolute inset-x-0 top-0 z-50">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
             <Logo light />
           </a>
@@ -519,11 +519,11 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-white/30 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
+              className="inline-flex min-h-9 items-center justify-center rounded-md border border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
             >
               Entrar
             </Link>
-            <CtaButton href={contactHref} className="hidden sm:inline-flex">
+            <CtaButton href={contactHref} className="hidden !min-h-9 sm:inline-flex">
               Fale pelo WhatsApp
               <MessageCircle className="h-4 w-4" />
             </CtaButton>
@@ -534,7 +534,7 @@ export default function Landing() {
       <main>
         <section
           id="inicio"
-          className="relative isolate overflow-hidden bg-[#031b15] pt-24 text-white"
+          className="relative isolate overflow-hidden bg-[#031b15] pt-8 text-white"
         >
           <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_42%,rgba(24,201,135,0.18),transparent_34%),linear-gradient(180deg,rgba(3,27,21,1),rgba(3,27,21,0.98))]" />
           <div className="absolute bottom-0 left-0 right-0 -z-10 h-px bg-emerald-300/25" />
