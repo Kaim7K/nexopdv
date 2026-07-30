@@ -639,22 +639,6 @@ export default function Relatorios() {
         <div className="border-b border-border p-3 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-bold">Estatisticas de faturamento</h3>
-            <div className="inline-flex overflow-hidden rounded-lg border border-border bg-background text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setBreakdownMetric('revenue')}
-                className={`px-3 py-1.5 transition ${breakdownMetric === 'revenue' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-              >
-                Faturamento
-              </button>
-              <button
-                type="button"
-                onClick={() => setBreakdownMetric('sales')}
-                className={`border-l border-border px-3 py-1.5 transition ${breakdownMetric === 'sales' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-              >
-                Vendas
-              </button>
-            </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
@@ -675,6 +659,27 @@ export default function Relatorios() {
               <Suspense fallback={<ChartLoading height="h-[280px]" />}>
                 <BreakdownChart data={stats.breakdownData} />
               </Suspense>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/25 px-3 py-2 sm:px-4">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Destacar melhor/pior por
+              </span>
+              <div className="inline-flex overflow-hidden rounded-lg border border-border bg-background text-xs font-bold shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setBreakdownMetric('revenue')}
+                  className={`px-3 py-1.5 transition ${breakdownMetric === 'revenue' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                >
+                  Faturamento
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBreakdownMetric('sales')}
+                  className={`border-l border-border px-3 py-1.5 transition ${breakdownMetric === 'sales' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                >
+                  Vendas
+                </button>
+              </div>
             </div>
             <div className="grid gap-2 border-t border-border p-3 lg:hidden">
               {stats.breakdownData.map((row) => (
