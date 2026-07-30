@@ -227,7 +227,7 @@ export default function Layout() {
   const brandName = config.nome_mercado || user.market_name || 'Nexo PDV';
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[#061f18] md:gap-3 md:p-3">
+    <div className="flex h-dvh overflow-hidden bg-background md:gap-3 md:p-3 dark:bg-background">
       <a
         href="#main-content"
         className="fixed left-3 top-3 z-[70] -translate-y-20 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-lg transition focus:translate-y-0"
@@ -344,7 +344,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background md:rounded-xl md:border md:border-white/10 md:shadow-[0_24px_70px_rgba(0,0,0,0.18)]">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background md:rounded-xl md:border md:border-border md:shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:md:shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
         <header className="sticky top-0 z-30 flex min-h-[44px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2 py-1 shadow-sm backdrop-blur md:hidden">
           <button
             ref={mobileMenuButtonRef}
