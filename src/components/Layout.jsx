@@ -227,7 +227,7 @@ export default function Layout() {
   const brandName = config.nome_mercado || user.market_name || 'Nexo PDV';
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-[#061f18] md:gap-3 md:p-3">
       <a
         href="#main-content"
         className="fixed left-3 top-3 z-[70] -translate-y-20 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-lg transition focus:translate-y-0"
@@ -248,9 +248,9 @@ export default function Layout() {
         ref={mobileNavRef}
         id="main-navigation"
         aria-label="Menu principal"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(264px,calc(100vw-2.25rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:w-56 md:translate-x-0 md:shadow-none xl:w-60 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(264px,calc(100vw-2.25rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:h-full md:w-56 md:translate-x-0 md:overflow-hidden md:rounded-xl md:border md:border-sidebar-border/80 md:shadow-[0_24px_70px_rgba(0,0,0,0.22)] xl:w-60 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="relative flex min-h-[64px] items-center border-b border-sidebar-border px-4 xl:min-h-[72px] xl:px-5">
+        <div className="relative flex min-h-[64px] items-center border-b border-sidebar-border/70 px-4 xl:min-h-[68px] xl:px-5">
           <button
             type="button"
             aria-label="Fechar menu"
@@ -292,7 +292,7 @@ export default function Layout() {
                 onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()}
                 onFocus={() => ROUTE_PREFETCHERS[item.path]?.()}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex min-h-10 items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 xl:min-h-11 xl:gap-3 xl:px-3 xl:text-sm ${active ? 'border-sidebar-primary/35 bg-sidebar-accent font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
+                className={`group flex min-h-10 items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 xl:min-h-10 xl:gap-3 xl:px-3 xl:text-sm ${active ? 'border-sidebar-primary/30 bg-sidebar-primary/15 font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
               >
                 <item.icon
                   className={`h-[18px] w-[18px] flex-none transition ${active ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'}`}
@@ -344,7 +344,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background md:rounded-xl md:border md:border-white/10 md:shadow-[0_24px_70px_rgba(0,0,0,0.18)]">
         <header className="sticky top-0 z-30 flex min-h-[44px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2 py-1 shadow-sm backdrop-blur md:hidden">
           <button
             ref={mobileMenuButtonRef}
@@ -370,7 +370,7 @@ export default function Layout() {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 overscroll-contain overflow-auto bg-muted/25 outline-none"
+          className="min-w-0 flex-1 overscroll-contain overflow-auto bg-muted/25 outline-none md:rounded-xl"
         >
           {user.platform_notice && (
             <div
