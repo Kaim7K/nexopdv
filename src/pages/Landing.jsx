@@ -493,7 +493,7 @@ export default function Landing() {
   });
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
+    <div className="h-dvh overflow-y-auto overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
