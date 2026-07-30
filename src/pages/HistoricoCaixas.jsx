@@ -8,13 +8,18 @@ import React, {
 import {
   Banknote,
   CalendarRange,
+  CalendarClock,
+  CreditCard,
   Eye,
   FilterX,
   MinusCircle,
   PlusCircle,
+  QrCode,
   ReceiptText,
+  Search,
   SlidersHorizontal,
   Trash2,
+  Wallet,
   X,
 } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
@@ -59,6 +64,25 @@ const PAYMENT_LABELS = {
   credito: "Crédito",
   outros: "Outros",
   fiado: "Fiado",
+};
+
+const PAYMENT_FILTERS = [
+  { method: "", label: "Todos" },
+  { method: "dinheiro", label: "Dinheiro" },
+  { method: "pix", label: "Pix" },
+  { method: "debito", label: "Débito" },
+  { method: "credito", label: "Crédito" },
+  { method: "fiado", label: "Fiado" },
+  { method: "outros", label: "Outros" },
+];
+
+const PAYMENT_ICONS = {
+  dinheiro: Banknote,
+  pix: QrCode,
+  debito: CreditCard,
+  credito: CreditCard,
+  fiado: CalendarClock,
+  outros: Wallet,
 };
 
 export default function HistoricoCaixas() {
@@ -418,6 +442,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const [editing, setEditing] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [selectedSaleLoading, setSelectedSaleLoading] = useState(false);
+  const [salePaymentFilter, setSalePaymentFilter] = useState("");
   const [movement, setMovement] = useState({
     type: "entrada",
     amount: "",
@@ -438,6 +463,17 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   const canDelete = currentUser.role === "admin" && session.status === "fechado";
   const canManageClosed = currentUser.role === "admin" && session.status === "fechado";
   const paymentEntries = Object.entries(summary.payments || {});
+  const linkedSales = useMemo(
+    () =>
+      (summary.sales || []).filter(
+        (sale) =>
+          !salePaymentFilter ||
+          (sale.payments || []).some(
+            (payment) => payment.method === salePaymentFilter,
+          ),
+      ),
+    [summary.sales, salePaymentFilter],
+  );
   const openingAmount = Number(summary.opening_amount ?? session.opening_amount ?? 0);
   const totalSales = Number(summary.total || 0);
   const cashReceived = Number(
@@ -468,6 +504,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
 
   useEffect(() => {
     setEditing(false);
+    setSalePaymentFilter("");
     setEditForm({
       opening_amount: formatCurrencyInput(
         String(Math.round(Number(session.opening_amount || 0) * 100)),
@@ -923,79 +960,102 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </button>
                 </form>
               )}
-              <div className="grid gap-4 xl:grid-cols-2">
-              <section className="rounded-2xl border border-border bg-card p-4">
-                <h3 className="mb-3 font-black">Entradas e retiradas</h3>
-                {summary.movements?.length ? (
-                  <div className="space-y-2">
-                    {summary.movements.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 rounded-xl border border-border p-3"
-                      >
-                        <span
-                          className={
-                            item.type === "entrada"
-                              ? "text-emerald-600"
-                              : "text-amber-600"
-                          }
+              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(22rem,1.15fr)]">
+                <section className="rounded-2xl border border-border bg-card p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="font-black">Entradas e retiradas</h3>
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                      {summary.movements?.length || 0}
+                    </span>
+                  </div>
+                  {summary.movements?.length ? (
+                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                      {summary.movements.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
                         >
-                          {item.type === "entrada" ? (
-                            <PlusCircle className="h-5 w-5" />
-                          ) : (
-                            <MinusCircle className="h-5 w-5" />
-                          )}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <strong className="block text-sm capitalize">
-                            {item.type}
+                          <span
+                            className={
+                              item.type === "entrada"
+                                ? "text-emerald-600"
+                                : "text-amber-600"
+                            }
+                          >
+                            {item.type === "entrada" ? (
+                              <PlusCircle className="h-4 w-4" />
+                            ) : (
+                              <MinusCircle className="h-4 w-4" />
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <strong className="block text-sm capitalize leading-tight">
+                              {item.type}
+                            </strong>
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {item.note || "Sem observação"} ·{" "}
+                              {formatDate(item.created_at || item.created_date)}
+                            </p>
+                          </div>
+                          <strong className="text-sm tabular-nums">
+                            {formatCurrency(item.amount)}
                           </strong>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {item.note || "Sem observação"} ·{" "}
-                            {formatDate(item.created_at || item.created_date)}
-                          </p>
                         </div>
-                        <strong>{formatCurrency(item.amount)}</strong>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma entrada ou retirada avulsa.
-                  </p>
-                )}
-              </section>
-              <section className="rounded-2xl border border-border bg-card p-4">
-                <h3 className="mb-3 font-black">Vendas vinculadas</h3>
-                {summary.sales?.length ? (
-                  <div className="space-y-2">
-                    {summary.sales.map((sale) => (
-                      <button
-                        key={sale.id}
-                        type="button"
-                        onClick={() => openSaleDetail(sale)}
-                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:bg-muted/25"
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
+                      Nenhuma entrada ou retirada avulsa.
+                    </div>
+                  )}
+                </section>
+
+                <section className="rounded-2xl border border-border bg-card p-4">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="font-black">Vendas vinculadas</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {linkedSales.length} de {summary.sales?.length || 0} venda(s)
+                      </p>
+                    </div>
+                    <label className="relative block sm:w-56">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <select
+                        value={salePaymentFilter}
+                        onChange={(event) => setSalePaymentFilter(event.target.value)}
+                        className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                        aria-label="Filtrar vendas por pagamento"
                       >
-                        <div className="min-w-0">
-                          <strong className="block truncate">
-                            Venda #{sale.sale_number}
-                          </strong>
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            {formatDate(sale.created_date)} · {sale.status}
-                          </p>
-                        </div>
-                        <strong className="flex-none tabular-nums">
-                          {formatCurrency(sale.total)}
-                        </strong>
-                      </button>
-                    ))}
+                        {PAYMENT_FILTERS.map((payment) => (
+                          <option key={payment.method || "todos"} value={payment.method}>
+                            {payment.method ? `Pagamento: ${payment.label}` : "Todos os pagamentos"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma venda vinculada a este caixa.
-                  </p>
-                )}
-              </section>
+                  {summary.sales?.length ? (
+                    linkedSales.length ? (
+                      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                        {linkedSales.map((sale) => (
+                          <LinkedSaleButton
+                            key={sale.id}
+                            sale={sale}
+                            onClick={() => openSaleDetail(sale)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
+                        Nenhuma venda encontrada para este pagamento.
+                      </div>
+                    )
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
+                      Nenhuma venda vinculada a este caixa.
+                    </div>
+                  )}
+                </section>
               </div>
             </>
           )}
@@ -1010,6 +1070,61 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
       </section>
     </div>
   );
+}
+
+function LinkedSaleButton({ sale, onClick }) {
+  const payments = sale.payments || [];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 text-left text-sm transition hover:border-accent/40 hover:bg-muted/25"
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <strong className="truncate leading-tight">Venda #{sale.sale_number}</strong>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+            {sale.status}
+          </span>
+        </div>
+        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="truncate">{formatDate(sale.created_date)}</span>
+          <SalePaymentSummary payments={payments} />
+        </div>
+      </div>
+      <strong className="text-sm tabular-nums">{formatCurrency(sale.total)}</strong>
+    </button>
+  );
+}
+
+function SalePaymentSummary({ payments }) {
+  if (!payments.length) return <span>Sem pagamento</span>;
+  return (
+    <>
+      {payments.slice(0, 3).map((payment, index) => (
+        <span
+          key={`${payment.method}-${index}`}
+          className="inline-flex max-w-36 items-center gap-1 truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground"
+          title={PAYMENT_LABELS[payment.method] || payment.method}
+        >
+          <PaymentIcon method={payment.method} className="h-3 w-3 flex-none" />
+          <span className="truncate">
+            {PAYMENT_LABELS[payment.method] || payment.method}
+          </span>
+        </span>
+      ))}
+      {payments.length > 3 && (
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+          +{payments.length - 3}
+        </span>
+      )}
+    </>
+  );
+}
+
+function PaymentIcon({ method, className }) {
+  const Icon = PAYMENT_ICONS[method] || Wallet;
+  return <Icon className={className} aria-hidden="true" />;
 }
 
 function CashSaleDetailModal({ sale, loading, onClose }) {
