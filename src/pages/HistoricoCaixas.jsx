@@ -506,6 +506,9 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
     expectedBeforeExpense + closingEntry - closingExpense,
   );
   const declaredCash = Number(session.closing_amount ?? expectedAfterExpense);
+  const valueWithoutCashDrawer = roundDisplayMoney(
+    declaredCash - openingAmount + closingEntry,
+  );
   const cashDifference = declaredCash - expectedAfterExpense;
   const hasDifference = Math.abs(cashDifference) >= 0.005;
   const differenceLabel = !hasDifference
@@ -740,7 +743,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     {summary.sales_count || 0} venda(s)
                   </span>
                 </div>
-                <dl className="grid gap-2 sm:grid-cols-3">
+                <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   <ValueCard
                     label="Total vendido"
                     value={formatCurrency(totalSales)}
@@ -755,6 +758,11 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     label="Outras formas"
                     value={formatCurrency(totalSales - cashReceived)}
                     hint="Pix, cartão, fiado"
+                  />
+                  <ValueCard
+                    label="Valor sem caixa"
+                    value={formatCurrency(valueWithoutCashDrawer)}
+                    hint="Dinheiro contado - caixa inicial + entradas"
                   />
                 </dl>
               </section>
@@ -791,6 +799,11 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     <CashFormulaRow
                       label="Esperado no caixa"
                       value={expectedAfterExpense}
+                      total
+                    />
+                    <CashFormulaRow
+                      label="Valor sem caixa"
+                      value={valueWithoutCashDrawer}
                       total
                     />
                   </dl>
