@@ -192,9 +192,17 @@ function summarizeSales(sales) {
           0,
         )
       : 0;
+    let changeToDiscount = roundMoney(Number(sale.change_amount || 0));
     for (const payment of sale.payments || []) {
+      const rawAmount = roundMoney(Number(payment.amount || 0));
+      const discount =
+        payment.method === 'dinheiro' && changeToDiscount > 0
+          ? Math.min(rawAmount, changeToDiscount)
+          : 0;
+      const netAmount = roundMoney(rawAmount - discount);
+      changeToDiscount = roundMoney(changeToDiscount - discount);
       payments[payment.method] = roundMoney(
-        Number(payments[payment.method] || 0) + Number(payment.amount || 0),
+        Number(payments[payment.method] || 0) + netAmount,
       );
     }
   }
