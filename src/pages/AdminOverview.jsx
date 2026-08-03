@@ -71,7 +71,7 @@ export default function AdminOverview() {
     ...(data.market_growth || []).map((item) => Number(item.markets || 0)),
   );
   return (
-    <div className="page-shell space-y-6">
+    <div className="page-shell space-y-3 sm:space-y-4">
       <header>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <Gauge className="h-3.5 w-3.5" /> Super Admin
@@ -90,7 +90,7 @@ export default function AdminOverview() {
         {cards.map(([label, value, Icon, hint]) => (
           <article
             key={label}
-            className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+            className="mobile-dense-section"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -101,16 +101,16 @@ export default function AdminOverview() {
                   {value ?? 0}
                 </strong>
               </div>
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
-                <Icon className="h-5 w-5" />
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent sm:h-10 sm:w-10">
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </span>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">{hint}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
           </article>
         ))}
       </section>
-      <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <section className="grid gap-3 lg:grid-cols-[2fr_1fr]">
+        <article className="mobile-dense-section">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-black">Novos mercadinhos</h2>
@@ -121,7 +121,7 @@ export default function AdminOverview() {
             <Activity className="h-5 w-5 text-accent" />
           </div>
           <div
-            className="mt-6 flex h-48 items-end gap-2"
+            className="mt-4 flex h-36 items-end gap-1.5 sm:h-44 sm:gap-2"
             aria-label="Gráfico de novos cadastros"
           >
             {(data.market_growth || []).map((item) => (
@@ -146,7 +146,7 @@ export default function AdminOverview() {
             ))}
           </div>
         </article>
-        <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <article className="mobile-dense-section">
           <h2 className="font-black">Movimentação recente</h2>
           <dl className="mt-5 space-y-4">
             <Row label="Novos cadastros (30 dias)" value={m.new_markets} />

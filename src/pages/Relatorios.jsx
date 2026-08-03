@@ -33,7 +33,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'Mes' },
+  { key: 'month', label: 'M?s' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -478,12 +478,12 @@ export default function Relatorios() {
     if (stats.revenueChange > 0)
       list.push({
         type: 'up',
-        text: `As vendas subiram ${formatNumber(stats.revenueChange)}% em relacao ao periodo anterior.`,
+        text: `As vendas subiram ${formatNumber(stats.revenueChange)}% em relação ao período anterior.`,
       });
     else if (stats.revenueChange < 0)
       list.push({
         type: 'down',
-        text: `As vendas cairam ${formatNumber(Math.abs(stats.revenueChange))}% em relacao ao periodo anterior.`,
+        text: `As vendas caíram ${formatNumber(Math.abs(stats.revenueChange))}% em relação ao período anterior.`,
       });
     if (productRankingRows.length)
       list.push({
@@ -494,7 +494,7 @@ export default function Relatorios() {
       const topPayment = stats.paymentData[0];
       list.push({
         type: 'info',
-        text: `${topPayment.name} representou ${formatNumber(topPayment.percentage)}% do faturamento do periodo.`,
+        text: `${topPayment.name} representou ${formatNumber(topPayment.percentage)}% do faturamento do período.`,
       });
     }
     if (stats.bestBreakdown)
@@ -510,12 +510,12 @@ export default function Relatorios() {
     if (stats.pendingFiado > 0)
       list.push({
         type: 'alert',
-        text: `Ha ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste periodo.`,
+        text: `Há ${formatCurrency(stats.pendingFiado)} em fiados pendentes neste período.`,
       });
     if (stats.cancelled > 0)
       list.push({
         type: 'alert',
-        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no periodo.`,
+        text: `Foram registradas ${stats.cancelled} venda(s) cancelada(s) no período.`,
       });
     return list;
   }, [stats, productRankingRows]);
@@ -533,26 +533,26 @@ export default function Relatorios() {
 
   return (
     <div className="page-shell">
-      <div className="mb-3">
+      <div className="mb-2">
         <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negocio
+          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Relatorios gerenciais
+          Relatórios gerenciais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Acompanhe vendas, pagamentos, produtos, equipe e fiados.
         </p>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-1.5 sm:gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-1.5 sm:mb-3 sm:gap-2">
         {PERIODS.map((item) => (
           <button
             type="button"
             key={item.key}
             aria-pressed={period === item.key}
             onClick={() => setPeriod(item.key)}
-            className={`min-h-9 rounded-lg px-3 text-sm font-semibold transition sm:min-h-10 sm:rounded-xl sm:px-4 ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}
+            className={`min-h-8 rounded-lg px-3 text-xs font-bold transition sm:min-h-9 sm:text-sm ${period === item.key ? 'bg-accent text-accent-foreground' : 'border border-border bg-card text-card-foreground hover:bg-muted'}`}
           >
             {item.label}
           </button>
@@ -585,12 +585,12 @@ export default function Relatorios() {
       </div>
       {!customRangeValid && (
         <div className="mb-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          Informe um periodo valido: a data inicial deve ser anterior ou igual à
+          Informe um período válido: a data inicial deve ser anterior ou igual à
           data final.
         </div>
       )}
 
-      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="mb-2 grid grid-cols-2 gap-1.5 sm:mb-3 sm:gap-2 md:grid-cols-4">
         <StatCard
           icon={DollarSign}
           label="Faturamento"
@@ -600,7 +600,7 @@ export default function Relatorios() {
         <StatCard icon={ShoppingCart} label="Vendas" value={stats.totalSales} />
         <StatCard
           icon={Receipt}
-          label="Ticket medio"
+          label="Ticket médio"
           value={formatCurrency(stats.avgTicket)}
         />
         <StatCard
@@ -611,7 +611,7 @@ export default function Relatorios() {
         />
       </div>
 
-      <section className="mb-3 grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3 lg:grid-cols-4">
+      <section className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-border bg-card p-2 text-card-foreground shadow-sm shadow-black/[0.025] sm:gap-2 sm:p-2.5 lg:grid-cols-4">
         <MiniMetric
           icon={ChartNoAxesColumnIncreasing}
           label="Bruto vendido"
@@ -648,12 +648,12 @@ export default function Relatorios() {
         />
       </section>
 
-      <section className="mb-4 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
-        <div className="border-b border-border p-3 sm:p-4">
+      <section className="mb-3 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
+        <div className="border-b border-border p-2.5 sm:p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-bold">Estatisticas de faturamento</h3>
+            <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-4">
+          <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-4">
             {BREAKDOWNS.map((item) => (
               <button
                 type="button"
@@ -668,7 +668,7 @@ export default function Relatorios() {
         </div>
         {stats.breakdownData.length ? (
           <>
-            <div className="p-3 sm:p-4">
+            <div className="p-2.5 sm:p-3">
               <Suspense fallback={<ChartLoading height="h-[280px]" />}>
                 <BreakdownChart data={stats.breakdownData} />
               </Suspense>
@@ -694,7 +694,7 @@ export default function Relatorios() {
                 </button>
               </div>
             </div>
-            <div className="grid gap-2 border-t border-border p-3 lg:hidden">
+            <div className="grid gap-2 border-t border-border p-2 lg:hidden">
               {stats.breakdownData.map((row) => (
                 <article
                   key={row.key}
@@ -715,7 +715,7 @@ export default function Relatorios() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Ticket medio</dt>
+                      <dt className="text-muted-foreground">Ticket médio</dt>
                       <dd className="mt-1 font-bold tabular-nums">
                         {formatCurrency(row.average)}
                       </dd>
@@ -733,7 +733,7 @@ export default function Relatorios() {
                     </th>
                     <th className="px-4 py-3">Faturamento</th>
                     <th className="px-4 py-3">Vendas</th>
-                    <th className="px-4 py-3">Ticket medio</th>
+                    <th className="px-4 py-3">Ticket médio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -757,12 +757,12 @@ export default function Relatorios() {
             </div>
           </>
         ) : (
-          <ChartEmpty text="Sem vendas no periodo selecionado." />
+          <ChartEmpty text="Sem vendas no período selecionado." />
         )}
       </section>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
+      <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <section className="rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3">
           <h3 className="mb-3 text-sm font-bold">
             Faturamento por {period === 'year' ? 'mes' : 'dia'}
           </h3>
@@ -771,12 +771,12 @@ export default function Relatorios() {
               <DailyRevenueChart data={stats.dailyData} />
             </Suspense>
           ) : (
-            <ChartEmpty text="Sem vendas no periodo selecionado." />
+            <ChartEmpty text="Sem vendas no período selecionado." />
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-3 text-card-foreground sm:p-4">
-          <h3 className="mb-3 text-sm font-bold">Formes de pagamento</h3>
+        <section className="rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3">
+          <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
           {stats.paymentData.length ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
               <Suspense fallback={<ChartLoading />}>
@@ -785,7 +785,7 @@ export default function Relatorios() {
               <PaymentLegend rows={stats.paymentData} />
             </div>
           ) : (
-            <ChartEmpty text="Sem pagamentos no periodo selecionado." />
+            <ChartEmpty text="Sem pagamentos no período selecionado." />
           )}
         </section>
       </div>
@@ -871,7 +871,7 @@ export default function Relatorios() {
 
       <section className="rounded-xl border border-accent/25 bg-accent/5 p-3 sm:p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <Lightbulb className="h-5 w-5 text-accent" /> Insights do periodo
+          <Lightbulb className="h-5 w-5 text-accent" /> Insights do período
         </h3>
         <div className="space-y-2">
           {insights.map((insight, index) => (
@@ -904,7 +904,7 @@ export default function Relatorios() {
           ))}
           {!insights.length && (
             <p className="text-sm text-muted-foreground">
-              Sem insights para este periodo.
+              Sem insights para este período.
             </p>
           )}
         </div>

@@ -210,7 +210,7 @@ export default function AdminMercados() {
 
   return (
     <div className="page-shell">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Store className="h-3.5 w-3.5" /> Administração geral
@@ -225,13 +225,13 @@ export default function AdminMercados() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm hover:bg-accent/90"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm hover:bg-accent/90"
         >
           <Plus className="h-4 w-4" /> Novo mercado
         </button>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div className="mb-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
         <label className="relative">
           <span className="sr-only">Pesquisar mercados</span>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -239,7 +239,7 @@ export default function AdminMercados() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Pesquisar por nome ou identificador"
-            className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </label>
         <span className="text-sm font-medium text-muted-foreground">
@@ -261,7 +261,7 @@ export default function AdminMercados() {
           role="status"
           aria-live="polite"
           aria-busy="true"
-          className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"
+          className="mobile-app-surface py-8 text-center text-muted-foreground sm:py-12"
         >
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />
           Carregando mercados...
@@ -269,25 +269,25 @@ export default function AdminMercados() {
       ) : loadError && !markets.length ? (
         <ErrorState description={loadError} onRetry={load} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center">
-          <Store className="mx-auto h-11 w-11 text-muted-foreground/25" />
+        <div className="mobile-app-surface border-dashed py-8 text-center sm:py-12">
+          <Store className="mx-auto h-9 w-9 text-muted-foreground/25 sm:h-11 sm:w-11" />
           <h2 className="mt-3 font-bold">Nenhum mercado encontrado</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Altere a pesquisa ou cadastre um novo cliente.
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {filtered.map((market) => {
             const updating = updatingIds.has(market.id);
             return (
               <article
-                className={`rounded-2xl border border-border bg-card p-5 shadow-sm transition ${updating ? 'opacity-75' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
+                className={`mobile-dense-section transition ${updating ? 'opacity-75' : 'hover:border-accent/35'}`}
                 key={market.id}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-2xl"
+                    className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl"
                     style={{ background: market.primary_color || '#16a06a' }}
                   >
                     {market.logo_url ? (
@@ -328,7 +328,7 @@ export default function AdminMercados() {
                   </select>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-3 sm:mt-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-black">Módulos habilitados</h3>
                     <span className="text-xs text-muted-foreground">
@@ -336,7 +336,7 @@ export default function AdminMercados() {
                       {MARKET_MODULES.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
                     {MARKET_MODULES.map((module) => {
                       const checked = (market.enabled_modules || []).includes(
                         module.key,
@@ -368,7 +368,7 @@ export default function AdminMercados() {
                   </div>
                 </div>
 
-                <details className="mt-4 rounded-xl border border-border bg-muted/10 p-3">
+                <details className="mt-3 rounded-xl border border-border bg-muted/10 p-2.5 sm:p-3">
                   <summary className="cursor-pointer text-sm font-bold">
                     Recursos específicos{' '}
                     <span className="font-normal text-muted-foreground">
@@ -408,8 +408,8 @@ export default function AdminMercados() {
                   </div>
                 </details>
 
-                <div className="mt-5 border-t border-border pt-4">
-                  <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 border-t border-border pt-3 sm:mt-4 sm:pt-4">
+                  <div className="mb-3 grid gap-2 sm:mb-4 sm:grid-cols-2">
                     <label className="text-xs font-bold text-muted-foreground">
                       Plano contratado
                       <select
@@ -437,7 +437,7 @@ export default function AdminMercados() {
                         ))}
                       </select>
                     </label>
-                    <div className="rounded-xl border border-border bg-muted/25 p-3">
+                    <div className="rounded-xl border border-border bg-muted/25 p-2.5 sm:p-3">
                       <span className="text-xs text-muted-foreground">
                         Uso atual
                       </span>
@@ -452,7 +452,7 @@ export default function AdminMercados() {
                     </div>
                   </div>
                   <label
-                    className={`mb-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3 ${updating ? 'pointer-events-none opacity-60' : ''}`}
+                    className={`mb-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-2.5 sm:mb-4 sm:p-3 ${updating ? 'pointer-events-none opacity-60' : ''}`}
                   >
                     <span className="flex min-w-0 items-start gap-3">
                       <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
@@ -514,14 +514,14 @@ export default function AdminMercados() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="my-auto grid max-h-[calc(100dvh-1rem)] w-full max-w-2xl gap-4 overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-2xl sm:max-h-[92dvh] sm:grid-cols-2 sm:p-6"
+            className="my-auto grid max-h-[calc(100dvh-0.75rem)] w-full max-w-2xl gap-3 overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl sm:max-h-[92dvh] sm:grid-cols-2 sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-market-title"
           >
             <div className="flex items-start justify-between gap-4 sm:col-span-2">
               <div>
-                <h2 id="new-market-title" className="text-xl font-black">
+                <h2 id="new-market-title" className="text-lg font-black sm:text-xl">
                   Novo mercado
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -546,7 +546,7 @@ export default function AdminMercados() {
                 autoFocus
                 value={form.name}
                 onChange={(event) => updateForm('name', event.target.value)}
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
               />
             </label>
             <label className="text-sm font-semibold">
@@ -558,7 +558,7 @@ export default function AdminMercados() {
                   setSlugTouched(true);
                   updateForm('slug', event.target.value);
                 }}
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 font-mono text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
                 placeholder="mercado-exemplo"
               />
               <span className="mt-1 block text-xs font-normal text-muted-foreground">
@@ -573,7 +573,7 @@ export default function AdminMercados() {
                 onChange={(event) =>
                   updateForm('admin_name', event.target.value)
                 }
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
               />
             </label>
             <label className="text-sm font-semibold">
@@ -587,7 +587,7 @@ export default function AdminMercados() {
                 onChange={(event) =>
                   updateForm('admin_email', event.target.value)
                 }
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
               />
             </label>
             <label className="text-sm font-semibold sm:col-span-2">
@@ -601,7 +601,7 @@ export default function AdminMercados() {
                 onChange={(event) =>
                   updateForm('admin_password', event.target.value)
                 }
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
               />
               <span className="mt-1 block text-xs font-normal text-muted-foreground">
                 Mínimo de 8 caracteres.
@@ -716,7 +716,7 @@ export default function AdminMercados() {
             aria-labelledby="market-detail-title"
             className="flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"
           >
-            <header className="flex items-start justify-between border-b border-border p-5">
+            <header className="flex items-start justify-between border-b border-border p-3 sm:p-5">
               <div>
                 <h2 id="market-detail-title" className="text-xl font-black">
                   {detail.market?.name}
@@ -734,7 +734,7 @@ export default function AdminMercados() {
                 <X className="h-5 w-5" />
               </button>
             </header>
-            <div className="flex-1 space-y-5 overflow-y-auto p-5">
+            <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-5 sm:p-5">
               {detailLoading ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
                   Carregando dados completos...

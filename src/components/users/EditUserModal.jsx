@@ -41,10 +41,10 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
-      <form ref={modalRef} onSubmit={save} className="my-auto max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
-        <div className="mb-5 flex items-start justify-between gap-4">
+      <form ref={modalRef} onSubmit={save} className="my-auto max-h-[calc(100dvh-0.75rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-5" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+        <div className="mb-3 flex items-start justify-between gap-4 sm:mb-5">
           <div>
-            <h2 id="edit-user-title" className="text-xl font-black">Editar usuário</h2>
+            <h2 id="edit-user-title" className="text-lg font-black sm:text-xl">Editar usuário</h2>
             <p className="mt-1 truncate text-sm text-muted-foreground">{user.email}</p>
           </div>
           <button type="button" disabled={saving} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Fechar">
@@ -52,18 +52,18 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-muted/25 p-3">
+        <div className="rounded-xl border border-border bg-muted/25 p-2.5 sm:p-3">
           <ImageUploadField value={form.photo_url} onChange={value => setForm(previous => ({ ...previous, photo_url: value }))} kind="user" scopeId={user.id} label="Foto do usuário" name={form.full_name || user.email} previewClassName="h-20 w-20 rounded-full" objectFit="cover" />
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:mt-4 sm:grid-cols-2 sm:gap-4">
           <label className="text-sm font-semibold sm:col-span-2">
             Nome completo <span className="text-destructive">*</span>
-            <input required autoFocus value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+            <input required autoFocus value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11" />
           </label>
           <label className="text-sm font-semibold">
             Perfil
-            <select value={form.role} disabled={!canChangeRole} onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60">
+            <select value={form.role} disabled={!canChangeRole} onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))} className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60 sm:h-11">
               <option value="vendedor">Vendedor</option>
               <option value="gerente">Gerente</option>
               <option value="admin">Administrador</option>
@@ -71,7 +71,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
           </label>
           <div>
             <span className="text-sm font-semibold">Status do acesso</span>
-            <button type="button" disabled={!canChangeStatus} onClick={() => setForm(previous => ({ ...previous, active: !previous.active }))} className={`mt-1.5 flex h-11 w-full items-center justify-between rounded-xl border px-3 text-sm font-bold transition ${form.active ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-border bg-muted text-muted-foreground'} disabled:cursor-not-allowed disabled:opacity-60`} aria-pressed={form.active}>
+            <button type="button" disabled={!canChangeStatus} onClick={() => setForm(previous => ({ ...previous, active: !previous.active }))} className={`mt-1.5 flex h-10 w-full items-center justify-between rounded-xl border px-3 text-sm font-bold transition sm:h-11 ${form.active ? 'border-emerald-300 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-border bg-muted text-muted-foreground'} disabled:cursor-not-allowed disabled:opacity-60`} aria-pressed={form.active}>
               <span>{form.active ? 'Ativo' : 'Inativo'}</span>
               <Power className="h-4 w-4" />
             </button>
@@ -79,9 +79,9 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button type="button" disabled={saving} onClick={onClose} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50">Cancelar</button>
-          <button type="submit" disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:justify-end">
+          <button type="button" disabled={saving} onClick={onClose} className="min-h-10 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50 sm:min-h-11">Cancelar</button>
+          <button type="submit" disabled={saving} className="min-h-10 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11">
             {saving ? 'Salvando...' : 'Salvar alterações'}
           </button>
         </div>

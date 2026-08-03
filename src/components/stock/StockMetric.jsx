@@ -25,18 +25,18 @@ export default function StockMetric({
     <Component
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:rounded-2xl sm:p-4 ${borderClass} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
+      className={`min-w-0 rounded-xl border bg-card p-2 text-left shadow-sm shadow-black/[0.025] transition sm:p-2.5 ${borderClass} ${onClick ? 'hover:border-accent/40 hover:bg-muted/20' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
     >
-      <span className="line-clamp-1 text-[11px] font-semibold text-muted-foreground sm:text-xs">
+      <span className="line-clamp-1 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-[11px] sm:leading-4">
         {label}
       </span>
       <strong
-        className={`mt-0.5 block text-xl font-bold tabular-nums sm:mt-1 sm:text-2xl ${valueClass}`}
+        className={`mt-0.5 block truncate text-lg font-bold tabular-nums sm:text-xl ${valueClass}`}
       >
         {value}
       </strong>
       {hint && (
-        <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
+        <span className="mt-0.5 line-clamp-1 text-[10px] leading-3 text-muted-foreground sm:block sm:text-[11px] sm:leading-4">
           {hint}
         </span>
       )}

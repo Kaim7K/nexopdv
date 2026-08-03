@@ -442,7 +442,7 @@ export default function Configuracoes() {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-12">
-        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-7">
+        <section className="mobile-dense-section lg:col-span-7">
           <div className="mb-3">
             <h2 className="flex items-center gap-2 font-bold">
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
@@ -552,7 +552,7 @@ export default function Configuracoes() {
         </section>
 
         {canUseLogo && (
-          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-5">
+          <section className="mobile-dense-section lg:col-span-5">
             <h2 className="font-bold">Logo do mercado</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Use uma imagem nítida com fundo transparente quando possível.
@@ -572,7 +572,7 @@ export default function Configuracoes() {
         )}
 
         {canCustomizeSidebar && (
-          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-12">
+          <section className="mobile-dense-section lg:col-span-12">
             <div className="grid gap-5 lg:grid-cols-[1fr_420px] lg:items-center">
               <div>
                 <h2 className="flex items-center gap-2 font-bold">
@@ -667,7 +667,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
+        <section className="mobile-dense-section lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <Layers className="h-5 w-5 text-accent" /> Vendas abertas
           </h2>
@@ -690,7 +690,7 @@ export default function Configuracoes() {
           </label>
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
+        <section className="mobile-dense-section lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <PackageSearch className="h-5 w-5 text-accent" /> Estoque baixo
           </h2>
@@ -714,7 +714,7 @@ export default function Configuracoes() {
         </section>
 
         {user?.role === 'admin' && (
-          <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-4">
+          <section className="mobile-dense-section lg:col-span-4">
             <h2 className="flex items-center gap-2 font-bold">
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
             </h2>
@@ -727,7 +727,7 @@ export default function Configuracoes() {
                   Exigir abertura para vendedores
                 </strong>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Administradores nÃ£o sÃ£o bloqueados.
+                  Administradores não são bloqueados.
                 </span>
               </span>
               <input
@@ -742,7 +742,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section className="rounded-xl border border-border bg-card p-3 shadow-sm sm:rounded-2xl sm:p-5 lg:col-span-8">
+        <section className="mobile-dense-section lg:col-span-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 font-bold">

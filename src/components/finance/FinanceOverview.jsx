@@ -57,9 +57,9 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
     },
   ];
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <section aria-labelledby="financial-summary-title">
-        <div className="mb-3">
+        <div className="mb-2">
           <h3 id="financial-summary-title" className="text-base font-bold">
             Como está o seu financeiro
           </h3>
@@ -67,7 +67,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             Os quatro números mais importantes do período selecionado.
           </p>
         </div>
-        <div className="grid gap-1.5 sm:gap-2.5 lg:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-1.5 sm:gap-2 lg:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <MetricCard
               key={card.label}
@@ -79,7 +79,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
       </section>
 
       <div className="grid grid-cols-2 gap-2 text-xs no-print sm:flex sm:flex-wrap sm:items-center">
-        <h3 className="sr-only">Acoes financeiras rapidas</h3>
+        <h3 className="sr-only">Ações financeiras rápidas</h3>
         <span className="col-span-2 text-[11px] font-semibold text-muted-foreground sm:col-auto">
           Atalhos
         </span>
@@ -140,7 +140,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         </section>
       )}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
+      <section className="grid gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
         <ChartCard title="Entradas, saídas e lucro">
           <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
             Acompanhe a evolução diária sem confundir faturamento com saldo.
@@ -154,7 +154,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           <p className="mt-1 text-[11px] text-muted-foreground">
             Valores pendentes que afetam seu saldo.
           </p>
-          <div className="mt-3 space-y-2">
+          <div className="mt-2 space-y-1.5">
             <FinancialPositionRow
               label="Contas a pagar"
               value={summary.payable}
@@ -193,8 +193,8 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
         </summary>
         {analyticsOpen && (
-          <div className="space-y-3 border-t border-border p-3 sm:p-4">
-            <section className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-3 border-t border-border p-2.5 sm:p-3">
+            <section className="grid gap-2 sm:grid-cols-3">
               <MetricCard
                 label="Faturamento bruto"
                 value={formatCurrency(summary.gross_revenue)}
@@ -211,7 +211,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
                 help="Dinheiro com disponibilidade imediata"
               />
             </section>
-            <section className="grid gap-4 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
+            <section className="grid gap-3 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
               <ChartCard title="Despesas por categoria">
                 <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
                   <ExpenseCategoryChart
@@ -219,7 +219,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
                   />
                 </Suspense>
               </ChartCard>
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-3 lg:grid-cols-2">
                 <SimpleRanking
                   title="Formas de pagamento"
                   items={Object.entries(data?.payments || {}).map(
@@ -259,11 +259,11 @@ function FinancialPositionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-2 rounded-xl border border-border p-2.5 text-left transition hover:border-accent/40 hover:bg-accent/5"
+      className="flex w-full items-center justify-between gap-2 rounded-xl border border-border p-2 text-left transition hover:border-accent/40 hover:bg-accent/5 sm:p-2.5"
     >
       <span className="min-w-0">
         <strong className="block text-xs">{label}</strong>
-        <span className="mt-0.5 block text-[10px] text-muted-foreground">
+        <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
           {help}
         </span>
       </span>
@@ -292,7 +292,7 @@ function MetricCard({
     neutral: 'bg-muted text-muted-foreground',
   }[tone];
   return (
-    <article className="surface-card flex items-center gap-2.5 p-2.5 sm:block sm:p-3">
+    <article className="surface-card flex min-w-0 items-center gap-2 p-2 sm:block sm:p-2.5">
       {Icon && (
         <span
           className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:hidden ${iconTone}`}
@@ -310,7 +310,7 @@ function MetricCard({
                 <Icon className="h-4 w-4" />
               </span>
             )}
-            <p className="truncate text-xs font-semibold text-muted-foreground">
+            <p className="truncate text-[11px] font-semibold text-muted-foreground sm:text-xs">
               {label}
             </p>
           </div>
@@ -325,10 +325,10 @@ function MetricCard({
           )}
         </div>
         <div className="mt-0.5 flex items-baseline justify-between gap-2 sm:block">
-          <strong className="block break-words text-base tabular-nums sm:mt-1.5 sm:text-lg">
+          <strong className="block break-words text-base tabular-nums sm:mt-1 sm:text-lg">
             {value}
           </strong>
-          <p className="line-clamp-1 text-[10px] leading-4 text-muted-foreground sm:mt-2 sm:text-[11px]">
+          <p className="hidden line-clamp-1 text-[10px] leading-4 text-muted-foreground min-[380px]:block sm:mt-1 sm:text-[11px]">
             {help}
           </p>
         </div>
@@ -338,8 +338,8 @@ function MetricCard({
 }
 function ChartCard({ title, children }) {
   return (
-    <section className="surface-card min-w-0 p-4">
-      <h3 className="mb-4 text-sm font-bold">{title}</h3>
+    <section className="surface-card min-w-0 p-2.5 sm:p-3">
+      <h3 className="mb-3 text-sm font-bold">{title}</h3>
       {children}
     </section>
   );
@@ -382,4 +382,3 @@ function SimpleRanking({ title, items }) {
     />
   );
 }
-

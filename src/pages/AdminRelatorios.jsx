@@ -67,7 +67,7 @@ export default function AdminRelatorios() {
     URL.revokeObjectURL(url);
   };
   return (
-    <div className="page-shell space-y-6">
+    <div className="page-shell space-y-3 sm:space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -82,17 +82,17 @@ export default function AdminRelatorios() {
           type="button"
           onClick={exportCsv}
           disabled={!data?.usage?.length}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
         >
           <Download className="h-4 w-4" /> Exportar CSV
         </button>
       </header>
-      <section className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:p-4">
+      <section className="grid gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:gap-3">
         <button
           type="button"
           onClick={applyToday}
           disabled={loading}
-          className="mt-auto inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+          className="mt-auto inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
         >
           Hoje
         </button>
@@ -120,7 +120,7 @@ export default function AdminRelatorios() {
           type="button"
           onClick={load}
           disabled={loading}
-          className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
+          className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />{" "}
           Atualizar
@@ -140,7 +140,7 @@ export default function AdminRelatorios() {
               {error}
             </div>
           )}
-          <section className="grid gap-4 lg:grid-cols-2">
+          <section className="grid gap-3 lg:grid-cols-2">
             <ReportCard
               title="Novos mercadinhos por período"
               columns={["Período", "Cadastros"]}
@@ -191,11 +191,11 @@ export default function AdminRelatorios() {
 }
 function ReportCard({ title, columns, rows }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <h2 className="border-b border-border p-4 font-black">{title}</h2>
+    <section className="mobile-app-surface overflow-hidden">
+      <h2 className="border-b border-border p-3 font-black sm:p-4">{title}</h2>
       {rows.length ? (
         <>
-          <div className="grid gap-2 p-3 lg:hidden">
+          <div className="grid gap-2 p-2.5 lg:hidden">
             {rows.map((row, index) => (
               <article
                 key={index}

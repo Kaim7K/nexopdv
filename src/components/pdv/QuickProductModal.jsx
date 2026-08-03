@@ -82,14 +82,14 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         aria-describedby="quick-product-description"
         className="flex h-dvh w-full max-w-sm flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-w-md sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2.5 sm:px-5 sm:py-4">
           <div>
             <h2 id="quick-product-title" className="text-base font-black sm:text-lg">
               Produto não encontrado
             </h2>
             <p
               id="quick-product-description"
-              className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm"
+              className="mt-1 text-xs leading-4 text-muted-foreground sm:text-sm sm:leading-5"
             >
               Cadastre somente o essencial e continue a venda sem sair do PDV.
             </p>
@@ -105,7 +105,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+        <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-5">
           <label className="block text-sm font-semibold">
             Código de barras
             <span className="relative mt-1.5 block">
@@ -114,7 +114,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
                 value={barcode || ''}
                 readOnly
                 aria-readonly="true"
-                className="h-11 w-full rounded-xl border border-border bg-muted pl-10 pr-3 font-mono text-sm text-muted-foreground"
+                className="h-10 w-full rounded-xl border border-border bg-muted pl-10 pr-3 font-mono text-sm text-muted-foreground sm:h-11"
               />
             </span>
           </label>
@@ -131,14 +131,14 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
                 autoComplete="off"
                 placeholder="Ex.: Leite integral 1 L"
                 disabled={saving}
-                className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60 sm:h-12 sm:text-base"
               />
               <button
                 type="button"
                 onClick={handleStandardizeName}
                 disabled={saving}
                 title="Padronizar nome"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50 sm:h-12"
               >
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Padronizar</span>
@@ -155,18 +155,18 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
               onChange={(event) => setSalePrice(event.target.value.replace(/\D/g, ''))}
               disabled={saving}
               placeholder="0,00"
-              className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+              className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60 sm:h-12 sm:text-base"
             />
           </label>
 
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-xs leading-5 text-muted-foreground">
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-2.5 text-xs leading-5 text-muted-foreground sm:p-3">
             Custo, categoria, estoque e imagem poderão ser preenchidos depois na
             tela completa do produto. Os padrões do mercadinho serão aplicados
             agora.
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border px-4 py-4 sm:flex-row sm:px-5">
+        <div className="flex flex-col-reverse gap-2 border-t border-border px-3 py-3 sm:flex-row sm:px-5 sm:py-4">
           <button
             type="button"
             onClick={onClose}
@@ -178,7 +178,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
           <button
             type="submit"
             disabled={saving || !name.trim()}
-            className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:min-h-12"
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />

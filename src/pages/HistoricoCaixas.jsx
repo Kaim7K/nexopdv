@@ -173,7 +173,7 @@ export default function HistoricoCaixas() {
   );
 
   return (
-    <div className="page-shell space-y-3 sm:space-y-5">
+    <div className="page-shell space-y-2.5 sm:space-y-4">
       <PageHeader
         icon={Banknote}
         eyebrow="Operação financeira"
@@ -182,7 +182,7 @@ export default function HistoricoCaixas() {
       />
 
       <FilterPanel aria-label="Filtros do historico">
-        <div className="grid gap-2 sm:hidden">
+        <div className="grid gap-1.5 sm:hidden">
           <div className="grid grid-cols-2 gap-2">
             <Filter label="De">
               <input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
@@ -191,13 +191,13 @@ export default function HistoricoCaixas() {
               <input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" />
             </Filter>
           </div>
-          <details className="group rounded-lg border border-border bg-background">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-bold marker:hidden">
-              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filtros avancados</span>
+          <details className="group mobile-secondary-panel">
+            <summary className="mobile-secondary-summary">
+              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filtros avançados</span>
               <span className="text-xs text-muted-foreground group-open:hidden">abrir</span>
               <span className="hidden text-xs text-muted-foreground group-open:inline">fechar</span>
             </summary>
-            <div className="grid gap-2 border-t border-border p-2">
+            <div className="grid gap-1.5 border-t border-border p-1.5">
               <Filter label="Operador">
                 <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
                   <option value="">Todos</option>
@@ -217,7 +217,7 @@ export default function HistoricoCaixas() {
                   {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select>
               </Filter>
-              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
+              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
                 <FilterX className="h-4 w-4" /> Limpar
               </button>
             </div>
@@ -254,7 +254,7 @@ export default function HistoricoCaixas() {
 
       {data.items.length > 0 && (
         <section
-          className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
+          className="grid grid-cols-2 gap-1.5 sm:grid-cols-2 sm:gap-2 xl:grid-cols-4"
           aria-label="Resumo do período exibido"
         >
           <MetricCard
@@ -373,7 +373,7 @@ export default function HistoricoCaixas() {
             {data.items.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:rounded-2xl sm:p-3.5"
+            className="rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] sm:p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -385,7 +385,7 @@ export default function HistoricoCaixas() {
                     </div>
                     <Status value={item.status} />
                   </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
+                  <dl className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
                     <Value
                       label="Valor inicial"
                       value={formatCurrency(item.opening_amount)}
@@ -406,7 +406,7 @@ export default function HistoricoCaixas() {
                   <button
                     type="button"
                     onClick={() => openDetail(item)}
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted"
+                    className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted"
                   >
                     <Eye className="h-4 w-4" /> Ver resumo completo
                   </button>

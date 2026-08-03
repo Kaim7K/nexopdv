@@ -88,7 +88,7 @@ export default function AdminConfiguracoes() {
       </div>
     );
   return (
-    <form onSubmit={save} className="page-shell space-y-5">
+    <form onSubmit={save} className="page-shell space-y-3 sm:space-y-5">
       <header>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <Blocks className="h-3.5 w-3.5" /> Governança
@@ -286,7 +286,7 @@ export default function AdminConfiguracoes() {
           />
         </Field>
       </Section>
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <section className="mobile-dense-section">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <ServerCog className="h-5 w-5" />
@@ -300,7 +300,7 @@ export default function AdminConfiguracoes() {
           </div>
         </div>
         {logs.length ? (
-          <div className="mt-4 max-h-80 divide-y divide-border overflow-y-auto rounded-xl border border-border">
+          <div className="mt-3 max-h-72 divide-y divide-border overflow-y-auto rounded-xl border border-border sm:mt-4 sm:max-h-80">
             {logs.map((item) => (
               <div
                 key={`${item.source}-${item.id}`}
@@ -330,7 +330,7 @@ export default function AdminConfiguracoes() {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground shadow-lg disabled:opacity-50"
+          className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground shadow-lg disabled:opacity-50 sm:min-h-12 sm:px-5"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -345,10 +345,10 @@ export default function AdminConfiguracoes() {
 }
 function Section({ icon: Icon, title, description, children }) {
   return (
-    <section className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm sm:grid-cols-2">
+    <section className="mobile-dense-section grid gap-3 sm:grid-cols-2 sm:gap-4">
       <div className="flex items-start gap-3 sm:col-span-2">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
-          <Icon className="h-5 w-5" />
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent sm:h-10 sm:w-10">
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
         </span>
         <div>
           <h2 className="font-black">{title}</h2>
@@ -371,7 +371,7 @@ function Field({ label, children, wide = false }) {
 }
 function Toggle({ label, checked, onChange }) {
   return (
-    <label className="flex min-h-12 cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/20 p-3 text-sm font-bold">
+    <label className="flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-2.5 text-sm font-bold sm:min-h-12 sm:gap-4 sm:p-3">
       <span>{label}</span>
       <input
         type="checkbox"

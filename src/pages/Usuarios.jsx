@@ -119,7 +119,7 @@ export default function Usuarios() {
 
   return (
     <div className="page-shell !max-w-6xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Users className="h-3.5 w-3.5" /> Equipe e acessos
@@ -130,7 +130,7 @@ export default function Usuarios() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-sm transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground shadow-sm transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-10 sm:px-4"
         >
           <UserPlus className="h-4 w-4" /> Novo funcionário
         </button>
@@ -144,7 +144,7 @@ export default function Usuarios() {
             value={search}
             onChange={event => setSearch(event.target.value)}
             placeholder="Pesquisar por nome, e-mail ou perfil"
-            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11 sm:rounded-xl sm:pl-10 sm:pr-4"
+            className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10 sm:pl-10 sm:pr-4"
           />
         </label>
         <div className="text-sm font-medium text-muted-foreground">
@@ -153,14 +153,14 @@ export default function Usuarios() {
       </div>
 
       {loading ? (
-        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground sm:rounded-2xl sm:p-10">
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card p-5 text-center text-sm text-muted-foreground sm:p-6">
           <div className="mx-auto mb-2 h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" />
           Carregando usuários...
         </div>
       ) : loadError && !users.length ? (
         <ErrorState description={loadError} onRetry={load} />
       ) : filteredUsers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center sm:rounded-2xl sm:p-10">
+        <div className="rounded-xl border border-dashed border-border bg-card p-5 text-center sm:p-6">
           <Users className="mx-auto h-9 w-9 text-muted-foreground/30" />
           <h2 className="mt-2 font-bold">Nenhum usuário encontrado</h2>
           <p className="mt-1 text-sm text-muted-foreground">Revise a pesquisa ou cadastre um novo funcionário.</p>
@@ -173,9 +173,9 @@ export default function Usuarios() {
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
-              <article key={item.id} className="rounded-xl border border-border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:p-4">
+              <article key={item.id} className="rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] transition hover:border-accent/30 hover:bg-muted/15 sm:p-3">
                 <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-xl bg-secondary text-secondary-foreground sm:h-12 sm:w-12 sm:rounded-2xl">
+                  <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-lg bg-secondary text-secondary-foreground sm:h-11 sm:w-11">
                     {item.photo_url ? (
                       <img src={item.photo_url} alt={`Foto de ${item.full_name || item.email}`} className="h-full w-full object-cover" loading="lazy" />
                     ) : isManager ? <Shield className="h-5 w-5" /> : <User className="h-5 w-5" />}
@@ -248,7 +248,7 @@ export default function Usuarios() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="my-auto w-full max-w-lg rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6"
+            className="my-auto w-full max-w-lg rounded-xl border border-border bg-card p-3 text-card-foreground shadow-2xl sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-user-title"

@@ -227,7 +227,7 @@ export default function AdminPlanos() {
     [subscriptions, payments],
   );
   return (
-    <div className="page-shell space-y-6">
+    <div className="page-shell space-y-3 sm:space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -248,7 +248,7 @@ export default function AdminPlanos() {
             setForm(EMPTY);
             setOpen(true);
           }}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
         >
           <Plus className="h-4 w-4" /> Novo plano
         </button>
@@ -271,11 +271,11 @@ export default function AdminPlanos() {
           <section>
             <h2 className="mb-3 text-lg font-black">Catálogo de planos</h2>
             {plans.length ? (
-              <div className="grid gap-4 lg:grid-cols-3">
+              <div className="grid gap-3 lg:grid-cols-3">
                 {plans.map((plan) => (
                   <article
                     key={plan.id}
-                    className="rounded-2xl border border-border bg-card p-5 shadow-sm"
+                    className="mobile-dense-section"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -291,13 +291,13 @@ export default function AdminPlanos() {
                         {plan.active ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
-                    <strong className="mt-5 block text-2xl font-black">
+                    <strong className="mt-3 block text-xl font-black sm:text-2xl">
                       {formatCurrency(plan.monthly_price)}
                       <span className="text-xs font-normal text-muted-foreground">
                         /mês
                       </span>
                     </strong>
-                    <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <Info label="Teste" value={`${plan.trial_days} dias`} />
                       <Info
                         label="Usuários"
@@ -312,12 +312,12 @@ export default function AdminPlanos() {
                         value={plan.unit_limit || 'Ilimitado'}
                       />
                     </dl>
-                    <p className="mt-4 text-xs text-muted-foreground">
+                    <p className="mt-3 text-xs text-muted-foreground">
                       {plan.subscription_count} assinatura(s) ·{' '}
                       {(plan.enabled_modules || []).length} módulo(s) ·{' '}
                       {(plan.enabled_features || []).length} recurso(s)
                     </p>
-                    <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => edit(plan)}
@@ -364,7 +364,7 @@ export default function AdminPlanos() {
           <section>
             <h2 className="mb-3 text-lg font-black">Assinaturas</h2>
             {subscriptions.length ? (
-              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="mobile-app-surface overflow-hidden">
                 <div className="divide-y divide-border">
                   {subscriptions.map((item) => (
                     <article
@@ -427,7 +427,7 @@ export default function AdminPlanos() {
               />
             )}
           </section>
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <section className="mobile-dense-section">
             <h2 className="text-lg font-black">Histórico de pagamentos</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Mensalidades, vencimentos, inadimplência, pagamentos e estornos.
@@ -508,7 +508,7 @@ export default function AdminPlanos() {
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-auto h-11 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50"
+                className="mt-auto h-10 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-50 sm:h-11"
               >
                 Registrar
               </button>
@@ -600,7 +600,7 @@ export default function AdminPlanos() {
             onSubmit={submit}
             role="dialog"
             aria-modal="true"
-            className="my-auto grid max-h-[94dvh] w-full max-w-2xl gap-4 overflow-y-auto rounded-2xl border border-border bg-card p-5 sm:grid-cols-2"
+            className="my-auto grid max-h-[94dvh] w-full max-w-2xl gap-3 overflow-y-auto rounded-2xl border border-border bg-card p-3 sm:grid-cols-2 sm:p-5"
           >
             <div className="flex items-start justify-between sm:col-span-2">
               <div>

@@ -28,7 +28,7 @@ const TABLE_COLUMNS = [
   },
   {
     key: 'barcode',
-    label: 'Cod. barras',
+    label: 'Cód. barras',
     sortKey: 'barcode',
     width: 'w-[150px]',
     type: 'text',
@@ -49,7 +49,7 @@ const TABLE_COLUMNS = [
   },
   {
     key: 'last_sale_at',
-    label: 'Ultima venda',
+    label: 'Última venda',
     sortKey: 'last_sale_at',
     width: 'w-[150px]',
     type: 'date',
@@ -63,7 +63,7 @@ const TABLE_COLUMNS = [
   },
   {
     key: 'actions',
-    label: 'Acoes',
+    label: 'Ações',
     width: 'w-[116px]',
     sticky: 'right',
   },
@@ -73,7 +73,7 @@ const inputClass =
   'h-8 w-full min-w-0 rounded-md border !border-transparent !bg-transparent px-2 text-sm !shadow-none outline-none transition-colors hover:!border-transparent hover:!bg-transparent focus:!border-accent/45 focus:!bg-background focus:!shadow-none focus:!ring-2 focus:!ring-accent/15';
 
 const cellClass =
-  'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/25';
+  'border-b border-border/70 bg-card px-3 py-2 align-middle transition-colors group-hover:bg-muted/20';
 
 export default function StockTable({
   products,
@@ -92,7 +92,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1224px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+    <table className="hidden w-full min-w-[1160px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col
@@ -101,7 +101,7 @@ export default function StockTable({
           />
         ))}
       </colgroup>
-      <thead className="sticky top-0 z-40 bg-card">
+      <thead className="sticky top-0 z-40 bg-card shadow-[0_1px_0_hsl(var(--border))]">
         <tr>
           {TABLE_COLUMNS.map((column) => (
             <HeaderCell
@@ -306,7 +306,7 @@ function CellEditor({
             : 'Nunca vendido'}
         </span>
         <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
-          {product.last_sale_at ? 'Ultima saida' : 'Sem vendas'}
+          {product.last_sale_at ? 'Última saída' : 'Sem vendas'}
         </span>
       </div>
     );

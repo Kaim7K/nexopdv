@@ -17,7 +17,7 @@ export default function ProductSearch({
         onChange={(e) => onQueryChange(e.target.value)}
         onFocus={onFocus}
         placeholder="Buscar por nome, similares, código de barras ou código interno..."
-        className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-10 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent sm:h-auto sm:rounded-xl sm:py-3 sm:pl-11 sm:pr-24"
+        className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-10 text-sm shadow-none transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent sm:h-10 sm:rounded-xl sm:pl-11 sm:pr-24"
         autoComplete="off"
       />
       <div className="absolute right-2 flex items-center gap-1.5 sm:right-3">

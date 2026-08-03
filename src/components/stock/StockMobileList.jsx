@@ -19,7 +19,7 @@ export default function StockMobileList({
   onClearFilters,
 }) {
   return (
-    <div className="space-y-2 p-2 xl:hidden">
+    <div className="space-y-1.5 p-1.5 xl:hidden">
       {products.map((product) => {
         const { quantity, tracksStock, isZero, isLow, isDirty } = getStockState(
           product,
@@ -32,18 +32,18 @@ export default function StockMobileList({
             ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200'
             : tracksStock && isLow
               ? 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-200'
-              : 'border-border bg-muted/30 text-foreground';
+              : 'border-border bg-card text-foreground';
 
         return (
           <article
             key={product.id}
-            className={`rounded-xl border p-2.5 shadow-sm ${badgeClass}`}
+            className={`rounded-xl border p-2 shadow-sm shadow-black/[0.025] ${badgeClass}`}
           >
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-2">
               <button
                 type="button"
                 onClick={() => onEdit(product)}
-                className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white"
+                className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white"
                 aria-label={`Editar ${product.name}`}
               >
                 {product.image_url ? (
@@ -59,13 +59,13 @@ export default function StockMobileList({
                 )}
               </button>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-bold leading-4 break-words">
+                <p className="line-clamp-1 break-words text-sm font-bold leading-4">
                   {product.name}
                 </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                   {product.category || 'Sem categoria'}
                 </p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
                   <span className="rounded-full border border-border bg-background px-2 py-0.5">
                     {tracksStock ? `Estoque: ${quantity}` : 'Sem controle'}
                   </span>
@@ -76,12 +76,9 @@ export default function StockMobileList({
                     {product.status === 'inativo' ? 'Inativo' : 'Ativo'}
                   </span>
                 </div>
-                <div className="mt-1.5 grid gap-0.5 text-[11px] leading-4 text-muted-foreground">
+                <div className="mt-1 grid gap-0.5 text-[10px] leading-4 text-muted-foreground">
                   <span className="truncate">
                     Código de barras: {product.barcode || '-'}
-                  </span>
-                  <span className="truncate">
-                    Código interno: {product.internal_code || '-'}
                   </span>
                   <span className="truncate">
                     Última venda:{' '}
@@ -92,18 +89,18 @@ export default function StockMobileList({
                 </div>
               </div>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => onEdit(product)}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
+                className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => onDuplicate(product)}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
+                className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
               >
                 Duplicar
               </button>
@@ -112,7 +109,7 @@ export default function StockMobileList({
                   type="button"
                   disabled={deletingId === product.id}
                   onClick={() => onDelete(product)}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-destructive/25 bg-card px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
+                  className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-destructive/25 bg-card px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
                 >
                   Excluir
                 </button>

@@ -1,10 +1,19 @@
 {
-  "baseUrl": "https://nexopdvnovo.vercel.app",
-  "generatedAt": "2026-07-29T17:50:15.819Z",
+  "baseUrl": "http://127.0.0.1:5173",
+  "generatedAt": "2026-08-03T22:44:23.067Z",
   "loggedIn": false,
   "routes": [
     "/",
-    "/login"
+    "/login",
+    "/pdv",
+    "/estoque",
+    "/vendas",
+    "/caixas",
+    "/fiados",
+    "/relatorios",
+    "/financeiro",
+    "/usuarios",
+    "/configuracoes"
   ],
   "viewports": [
     {
@@ -48,19 +57,79 @@
       "height": 1080
     }
   ],
-  "consoleErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
   "results": [
     {
       "route": "/",
       "viewport": "360x780",
       "screenshot": "artifacts\\responsive-screenshots\\mobile-360__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 360,
       "bodyWidth": 353,
       "horizontalOverflow": false,
-      "scrollHeight": 8741,
+      "scrollHeight": 780,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 353,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 353,
+          "height": 7338,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 353,
+          "height": 991,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 353,
+          "height": 1882,
+          "top": 1056
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 353,
+          "height": 1901,
+          "top": 2938
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 353,
+          "height": 1563,
+          "top": 4839
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 353,
+          "height": 1000,
+          "top": 6403
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -74,19 +143,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 780,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "360x780",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-360__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 360,
+      "bodyWidth": 353,
+      "horizontalOverflow": false,
+      "scrollHeight": 780,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 353,
+          "height": 780,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "390x844",
       "screenshot": "artifacts\\responsive-screenshots\\mobile-390__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 390,
       "bodyWidth": 383,
       "horizontalOverflow": false,
-      "scrollHeight": 8778,
+      "scrollHeight": 844,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 383,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 383,
+          "height": 7259,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 383,
+          "height": 978,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 383,
+          "height": 1786,
+          "top": 1043
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 383,
+          "height": 1952,
+          "top": 2829
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 383,
+          "height": 1563,
+          "top": 4781
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 383,
+          "height": 980,
+          "top": 6344
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -100,19 +444,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 844,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "390x844",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-390__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 390,
+      "bodyWidth": 383,
+      "horizontalOverflow": false,
+      "scrollHeight": 844,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 383,
+          "height": 844,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "430x932",
       "screenshot": "artifacts\\responsive-screenshots\\mobile-430__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 430,
       "bodyWidth": 423,
       "horizontalOverflow": false,
-      "scrollHeight": 8809,
+      "scrollHeight": 932,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 423,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 423,
+          "height": 7214,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 423,
+          "height": 1003,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 423,
+          "height": 1786,
+          "top": 1068
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 423,
+          "height": 1961,
+          "top": 2854
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 423,
+          "height": 1539,
+          "top": 4815
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 423,
+          "height": 924,
+          "top": 6354
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -126,19 +745,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 932,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "430x932",
+      "screenshot": "artifacts\\responsive-screenshots\\mobile-430__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 430,
+      "bodyWidth": 423,
+      "horizontalOverflow": false,
+      "scrollHeight": 932,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 423,
+          "height": 932,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "768x1024",
       "screenshot": "artifacts\\responsive-screenshots\\tablet-768__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 768,
       "bodyWidth": 761,
       "horizontalOverflow": false,
-      "scrollHeight": 8320,
+      "scrollHeight": 1024,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 761,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 761,
+          "height": 6904,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 761,
+          "height": 1122,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 761,
+          "height": 1027,
+          "top": 1187
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 761,
+          "height": 2405,
+          "top": 2214
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 761,
+          "height": 1555,
+          "top": 4619
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 761,
+          "height": 795,
+          "top": 6174
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -152,19 +1046,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 1024,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "768x1024",
+      "screenshot": "artifacts\\responsive-screenshots\\tablet-768__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 768,
+      "bodyWidth": 761,
+      "horizontalOverflow": false,
+      "scrollHeight": 1024,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 761,
+          "height": 1024,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "1024x768",
       "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 1024,
       "bodyWidth": 1017,
       "horizontalOverflow": false,
-      "scrollHeight": 5346,
+      "scrollHeight": 768,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 1017,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1017,
+          "height": 4569,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1017,
+          "height": 859,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 1017,
+          "height": 959,
+          "top": 924
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 1017,
+          "height": 1234,
+          "top": 1883
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 1017,
+          "height": 823,
+          "top": 3117
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 1017,
+          "height": 694,
+          "top": 3940
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -178,19 +1347,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 768,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "1024x768",
+      "screenshot": "artifacts\\responsive-screenshots\\notebook-1024__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1024,
+      "bodyWidth": 1017,
+      "horizontalOverflow": false,
+      "scrollHeight": 768,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1017,
+          "height": 768,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "1366x900",
       "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 1366,
       "bodyWidth": 1359,
       "horizontalOverflow": false,
-      "scrollHeight": 5450,
+      "scrollHeight": 900,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 1359,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1359,
+          "height": 4174,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1359,
+          "height": 687,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 1359,
+          "height": 735,
+          "top": 752
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 1359,
+          "height": 1290,
+          "top": 1487
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 1359,
+          "height": 823,
+          "top": 2777
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 1359,
+          "height": 638,
+          "top": 3600
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -204,19 +1648,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 900,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "1366x900",
+      "screenshot": "artifacts\\responsive-screenshots\\laptop-1366__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1366,
+      "bodyWidth": 1359,
+      "horizontalOverflow": false,
+      "scrollHeight": 900,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1359,
+          "height": 900,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "1440x1000",
       "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 1440,
       "bodyWidth": 1433,
       "horizontalOverflow": false,
-      "scrollHeight": 5550,
+      "scrollHeight": 1000,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 1433,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1433,
+          "height": 4174,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1433,
+          "height": 687,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 1433,
+          "height": 735,
+          "top": 752
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 1433,
+          "height": 1290,
+          "top": 1487
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 1433,
+          "height": 823,
+          "top": 2777
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 1433,
+          "height": 638,
+          "top": 3600
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -230,19 +1949,294 @@
       "horizontalOverflow": false,
       "scrollHeight": 1000,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "1440x1000",
+      "screenshot": "artifacts\\responsive-screenshots\\desktop-1440__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1440,
+      "bodyWidth": 1433,
+      "horizontalOverflow": false,
+      "scrollHeight": 1000,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1433,
+          "height": 1000,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     },
     {
       "route": "/",
       "viewport": "1920x1080",
       "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__landing.png",
-      "title": "Nexo PDV | Caixa, estoque e gestão para mercadinhos",
+      "title": "Nexo PDV | Sistema de caixa e gestão para mercadinhos",
       "url": "/",
       "viewportWidth": 1920,
       "bodyWidth": 1913,
       "horizontalOverflow": false,
-      "scrollHeight": 5630,
+      "scrollHeight": 1080,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "header",
+          "className": "sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-b",
+          "text": "ProdutoRecursosPlanosAjudaEntrarFale pelo WhatsApp",
+          "width": 1913,
+          "height": 65,
+          "top": 0
+        },
+        {
+          "tag": "main",
+          "className": "",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1913,
+          "height": 4174,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "relative isolate overflow-hidden bg-[#031b15] pt-8 text-white",
+          "text": "Sistema de gestão para mercadinhosSimples de usar. Completo para vender mais.O N",
+          "width": 1913,
+          "height": 687,
+          "top": 65
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16",
+          "text": "Feito para a rotina do seu mercadoTudo que você precisa, em um só lugarRecursos ",
+          "width": 1913,
+          "height": 735,
+          "top": 752
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20",
+          "text": "Atendimento que fluiVenda com agilidade e sem travar filasA rotina do caixa fica",
+          "width": 1913,
+          "height": 1290,
+          "top": 1487
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20",
+          "text": "Planos para cada momentoEscolha o plano ideal para o seu negócioComece simples e",
+          "width": 1913,
+          "height": 823,
+          "top": 2777
+        },
+        {
+          "tag": "section",
+          "className": "scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20",
+          "text": "Dúvidas frequentesRespostas rápidas para você continuarTire as principais dúvida",
+          "width": 1913,
+          "height": 638,
+          "top": 3600
+        }
+      ],
       "appCrashed": false
     },
     {
@@ -256,6 +2250,223 @@
       "horizontalOverflow": false,
       "scrollHeight": 1080,
       "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/pdv",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__pdv.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/estoque",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__estoque.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/vendas",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__vendas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/caixas",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__caixas.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/fiados",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__fiados.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/relatorios",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__relatorios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/financeiro",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__financeiro.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/usuarios",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__usuarios.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
+      "appCrashed": false
+    },
+    {
+      "route": "/configuracoes",
+      "viewport": "1920x1080",
+      "screenshot": "artifacts\\responsive-screenshots\\ultrawide-1920__configuracoes.png",
+      "title": "Entrar | Nexo PDV",
+      "url": "/login",
+      "viewportWidth": 1920,
+      "bodyWidth": 1913,
+      "horizontalOverflow": false,
+      "scrollHeight": 1080,
+      "overflowing": [],
+      "oversized": [
+        {
+          "tag": "main",
+          "className": "relative grid min-h-dvh place-items-center overflow-hidden bg-background px-4 py-6 sm:px-6 sm:py-8",
+          "text": "Nexo PDVAcesse sua contaE-mailSenhaContate o administrador para redefinirEntrar©",
+          "width": 1913,
+          "height": 1080,
+          "top": 0
+        }
+      ],
       "appCrashed": false
     }
   ]

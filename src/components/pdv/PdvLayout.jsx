@@ -145,8 +145,8 @@ export function PdvProductPanel({
   productsLoading,
 }) {
   return (
-    <div className="flex h-[28%] min-h-[150px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
-      <div className="flex-shrink-0 p-2 pb-1 sm:p-3 sm:pb-2">
+    <div className="flex h-[26%] min-h-[132px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
+      <div className="flex-shrink-0 p-1.5 pb-1 sm:p-3 sm:pb-2">
         <div className="relative" ref={searchContainerRef}>
           <ProductSearch
             query={searchQuery}
@@ -164,9 +164,9 @@ export function PdvProductPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden px-2 pb-2 sm:px-3 sm:pb-3">
+      <div className="flex-1 overflow-hidden px-1.5 pb-1.5 sm:px-3 sm:pb-3">
         <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:rounded-xl">
-          <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-[11px] font-semibold sm:px-4 sm:py-2.5 sm:text-xs">
+          <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold sm:px-4 sm:py-2 sm:text-xs">
             <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" /> Produtos
           </div>
           <ProductGrid

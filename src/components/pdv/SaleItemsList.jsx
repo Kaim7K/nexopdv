@@ -15,8 +15,8 @@ export default function SaleItemsList({
 }) {
   if (!items.length) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center p-4 text-center text-muted-foreground sm:p-8">
-        <Package className="mb-2 h-8 w-8 text-muted-foreground/20 sm:mb-3 sm:h-12 sm:w-12" />
+      <div className="flex flex-1 flex-col items-center justify-center p-3 text-center text-muted-foreground sm:p-6">
+        <Package className="mb-2 h-7 w-7 text-muted-foreground/20 sm:h-10 sm:w-10" />
         <p className="text-xs font-semibold sm:text-sm">Nenhum produto adicionado</p>
         <p className="mt-1 text-[11px] sm:text-xs">
           Busque ou escaneie produtos para iniciar a venda.
@@ -38,7 +38,7 @@ export default function SaleItemsList({
       {items.map((item, index) => (
         <div
           key={`${item.product_id}-${index}`}
-          className="grid grid-cols-[1fr_auto] gap-2 border-b border-border px-2.5 py-2 transition-colors hover:bg-muted/30 sm:px-4 sm:py-3 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
+          className="grid grid-cols-[1fr_auto] gap-1.5 border-b border-border px-2.5 py-1.5 transition-colors hover:bg-muted/30 sm:px-4 sm:py-2.5 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
         >
           <div className="order-2 lg:order-1">
             {item.unit === 'peso' ? (
@@ -52,7 +52,7 @@ export default function SaleItemsList({
                   onChange={(event) =>
                     onUpdateWeight(index, event.target.value)
                   }
-                  className="h-10 w-20 rounded-lg border border-border bg-background px-2 text-center text-base font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="h-9 w-20 rounded-lg border border-border bg-background px-2 text-center text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <span className="text-xs font-medium text-muted-foreground">
                   kg
@@ -133,7 +133,7 @@ export default function SaleItemsList({
                       parseCurrencyDigits(event.target.value),
                     )
                   }
-                  className="h-10 w-24 rounded-lg border border-amber-300 bg-amber-50 px-2 text-right text-sm font-semibold tabular-nums text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400/30 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
+                  className="h-9 w-24 rounded-lg border border-amber-300 bg-amber-50 px-2 text-right text-sm font-semibold tabular-nums text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400/30 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
                 />
                 <Pencil className="h-4 w-4 text-amber-600" />
               </div>

@@ -39,7 +39,7 @@ export function PageHeader({
 export function FilterPanel({ children, className = '', ...props }) {
   return (
     <section
-      className={`mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-3 sm:p-3 ${className}`}
+      className={`mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.025] sm:mb-3 sm:p-3 ${className}`}
       {...props}
     >
       {children}
@@ -69,23 +69,23 @@ export function MetricCard({
     <Component
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`min-w-0 rounded-xl border bg-card p-2.5 text-left shadow-sm transition sm:p-3 ${toneMap[tone] || toneMap.default} ${onClick ? 'hover:-translate-y-0.5 hover:shadow-md' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
+      className={`min-w-0 rounded-xl border bg-card p-2 text-left shadow-sm shadow-black/[0.025] transition sm:p-2.5 ${toneMap[tone] || toneMap.default} ${onClick ? 'hover:border-accent/40 hover:bg-muted/20' : ''} ${active ? 'ring-2 ring-accent/25' : ''}`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="line-clamp-2 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-xs sm:leading-4">
+        <span className="line-clamp-2 text-[10px] font-semibold leading-3 text-muted-foreground sm:text-[11px] sm:leading-4">
           {label}
         </span>
         {Icon && (
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground sm:h-8 sm:w-8">
-            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground sm:h-7 sm:w-7">
+            <Icon className="h-3.5 w-3.5" />
           </span>
         )}
       </div>
-      <strong className="mt-0.5 block truncate text-base font-black tabular-nums sm:mt-1 sm:text-xl xl:text-2xl">
+      <strong className="mt-0.5 block truncate text-base font-black tabular-nums sm:text-lg xl:text-xl">
         {value}
       </strong>
       {hint && (
-        <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
+        <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:block sm:text-[11px]">
           {hint}
         </span>
       )}

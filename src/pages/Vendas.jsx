@@ -5,10 +5,12 @@ import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import PaginationControls from '@/components/common/PaginationControls';
 import {
+  ChevronDown,
   Download,
   History,
   Loader2,
   Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   formatCurrency,
@@ -79,6 +81,7 @@ export default function Vendas() {
   const [reportEnd, setReportEnd] = useState('23:59');
   const [reportSeller, setReportSeller] = useState('');
   const [reportPayment, setReportPayment] = useState('');
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const requestSequence = useRef(0);
 
   const receiptConfig = useMemo(
@@ -164,6 +167,12 @@ export default function Vendas() {
   const hasFilters = Boolean(
     search || reportPayment || reportSeller || filterStatus,
   );
+  const activeFilterCount = [
+    search,
+    reportPayment,
+    reportSeller,
+    filterStatus,
+  ].filter(Boolean).length;
   const clearFilters = () => {
     setSearch('');
     setReportPayment('');
@@ -349,34 +358,34 @@ export default function Vendas() {
         </div>
       </div>
 
-      <section className="mb-3 grid gap-2 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:p-3" aria-label="Filtros de vendas">
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <section className="mb-3 grid gap-2 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:gap-3 sm:p-3" aria-label="Filtros de vendas">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-4">
           <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
-          <SaleMetric label="Vendas conclu?das" value={metrics.sales_count || 0} />
-          <SaleMetric label="Ticket m?dio" value={formatCurrency(metrics.average_ticket)} />
+          <SaleMetric label="Vendas concluídas" value={metrics.sales_count || 0} />
+          <SaleMetric label="Ticket médio" value={formatCurrency(metrics.average_ticket)} />
           <SaleMetric label="Canceladas" value={metrics.cancelled_count || 0} muted />
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="grid grid-cols-4 gap-1.5">
           {[
             ['hoje', 'Hoje'],
             ['ontem', 'Ontem'],
             ['semana', 'Semana'],
-            ['mes', 'M?s'],
+            ['mes', 'Mês'],
           ].map(([range, label]) => (
             <button
               key={range}
               type="button"
               onClick={() => applyQuickRange(range)}
-              className="min-h-9 rounded-lg border border-border px-3 text-xs font-bold transition hover:border-accent hover:bg-accent/5"
+              className="min-h-8 rounded-lg border border-border px-2 text-xs font-bold transition hover:border-accent hover:bg-accent/5 sm:min-h-9 sm:px-3"
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_140px_140px_110px_110px_180px_180px_auto]">
-          <label className="relative md:col-span-2 xl:col-span-1">
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto]">
+          <label className="relative">
             <span className="sr-only">Buscar vendas</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -385,10 +394,32 @@ export default function Vendas() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="N?mero, vendedor ou pagamento"
+              placeholder="Número, vendedor ou pagamento"
               className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
             />
           </label>
+          <button
+            type="button"
+            onClick={() => setAdvancedFiltersOpen((open) => !open)}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted sm:min-h-11 lg:hidden"
+            aria-expanded={advancedFiltersOpen}
+            aria-controls="sales-advanced-filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[10px] text-accent-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`h-4 w-4 transition ${advancedFiltersOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        <div
+          id="sales-advanced-filters"
+          className={`${advancedFiltersOpen ? 'grid' : 'hidden lg:grid'} gap-2 md:grid-cols-2 xl:grid-cols-[140px_140px_110px_110px_180px_180px_auto]`}
+        >
           <input
             aria-label="Data inicial"
             type="date"
@@ -412,7 +443,7 @@ export default function Vendas() {
             className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           />
           <input
-            aria-label="Hor?rio inicial"
+            aria-label="Horário inicial"
             type="time"
             value={reportStart}
             onChange={(event) => {
@@ -422,7 +453,7 @@ export default function Vendas() {
             className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           />
           <input
-            aria-label="Hor?rio final"
+            aria-label="Horário final"
             type="time"
             value={reportEnd}
             onChange={(event) => {
@@ -471,7 +502,7 @@ export default function Vendas() {
             className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
           >
             <option value="">Todos os status</option>
-            <option value="concluida">Conclu?das</option>
+            <option value="concluida">Concluídas</option>
             <option value="cancelada">Canceladas</option>
           </select>
         </div>
@@ -496,7 +527,7 @@ export default function Vendas() {
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
             >
               {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {reporting ? 'Gerando...' : 'Baixar relat?rio'}
+              {reporting ? 'Gerando...' : 'Baixar relatório'}
             </button>
           )}
         </div>
@@ -523,8 +554,8 @@ export default function Vendas() {
       ) : loadError && !sales.length ? (
         <ErrorState description={loadError} onRetry={() => loadSales()} />
       ) : sales.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center">
-          <History className="mx-auto h-11 w-11 text-muted-foreground/25" />
+        <div className="mobile-app-surface border-dashed py-8 text-center sm:py-12">
+          <History className="mx-auto h-9 w-9 text-muted-foreground/25 sm:h-11 sm:w-11" />
           <h2 className="mt-3 font-bold">Nenhuma venda encontrada</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Altere os filtros para procurar outros registros.
@@ -661,9 +692,11 @@ export default function Vendas() {
 
 function SaleMetric({ label, value, muted = false }) {
   return (
-    <div className="rounded-lg border border-border bg-background px-3 py-2">
-      <p className="text-[11px] font-bold uppercase text-muted-foreground">{label}</p>
-      <strong className={`mt-1 block text-base font-black tabular-nums ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
+    <div className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 sm:px-3 sm:py-2">
+      <p className="truncate text-[10px] font-bold uppercase leading-3 text-muted-foreground sm:text-[11px]">
+        {label}
+      </p>
+      <strong className={`mt-0.5 block truncate text-sm font-black tabular-nums sm:text-base ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
         {value}
       </strong>
     </div>
@@ -676,7 +709,7 @@ function LoadingState() {
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"
+      className="mobile-app-surface py-8 text-center text-muted-foreground sm:py-12"
     >
       <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" />
       <p className="text-sm">Carregando vendas...</p>

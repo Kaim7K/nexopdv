@@ -2,7 +2,7 @@ import React from 'react';
 import { FilterX, LayoutGrid, List, Search, SlidersHorizontal } from 'lucide-react';
 
 const controlClass =
-  'h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11 sm:rounded-xl';
+  'h-9 min-w-0 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10';
 
 function SearchField({ value, onChange }) {
   return (
@@ -11,7 +11,7 @@ function SearchField({ value, onChange }) {
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
         className={`${controlClass} w-full pl-9 sm:pl-10`}
-        placeholder="Produto, categoria ou codigo"
+        placeholder="Produto, categoria ou código"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -51,7 +51,7 @@ function AdvancedFilters({
   return (
     <>
       <label className="sr-only" htmlFor="min-price">
-        Preco minimo
+        Preço mínimo
       </label>
       <input
         id="min-price"
@@ -59,12 +59,12 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preco minimo"
+        placeholder="Preço mínimo"
         value={minPrice}
         onChange={(event) => onMinPriceChange(event.target.value)}
       />
       <label className="sr-only" htmlFor="max-price">
-        Preco maximo
+        Preço máximo
       </label>
       <input
         id="max-price"
@@ -72,7 +72,7 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preco maximo"
+        placeholder="Preço máximo"
         value={maxPrice}
         onChange={(event) => onMaxPriceChange(event.target.value)}
       />
@@ -98,15 +98,15 @@ function AdvancedFilters({
         <option value="without">Somente sem imagem</option>
       </select>
       <select
-        aria-label="Quantidade por pagina"
+        aria-label="Quantidade por página"
         className={controlClass}
         value={pageSize}
         onChange={(event) => onPageSizeChange(Number(event.target.value))}
       >
-        <option value="20">20 por pagina</option>
-        <option value="50">50 por pagina</option>
-        <option value="100">100 por pagina</option>
-        <option value="200">200 por pagina</option>
+        <option value="20">20 por página</option>
+        <option value="50">50 por página</option>
+        <option value="100">100 por página</option>
+        <option value="200">200 por página</option>
       </select>
     </>
   );
@@ -114,18 +114,18 @@ function AdvancedFilters({
 
 function ViewModeControl({ viewMode, onViewModeChange }) {
   return (
-    <div className="inline-flex min-w-0 overflow-hidden rounded-lg border border-border bg-background sm:rounded-xl">
+    <div className="inline-flex min-w-0 overflow-hidden rounded-lg border border-border bg-background">
       <button
         type="button"
         onClick={() => onViewModeChange('table')}
-        className={`inline-flex min-h-10 items-center gap-2 px-3 text-sm font-semibold sm:min-h-11 ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+        className={`inline-flex min-h-9 items-center gap-2 px-3 text-xs font-bold sm:min-h-10 sm:text-sm ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
       >
         <List className="h-4 w-4" /> Tabela
       </button>
       <button
         type="button"
         onClick={() => onViewModeChange('grid')}
-        className={`inline-flex min-h-10 items-center gap-2 border-l border-border px-3 text-sm font-semibold sm:min-h-11 ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+        className={`inline-flex min-h-9 items-center gap-2 border-l border-border px-3 text-xs font-bold sm:min-h-10 sm:text-sm ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
       >
         <LayoutGrid className="h-4 w-4" /> Grade
       </button>
@@ -169,32 +169,32 @@ export default function StockFilters({
 
   return (
     <section
-      className="mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-3 sm:p-3"
+      className="mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.025] sm:mb-3 sm:p-2.5"
       aria-label="Filtros do estoque"
     >
-      <div className="space-y-2 sm:hidden">
+      <div className="space-y-1.5 sm:hidden">
         <SearchField value={search} onChange={onSearchChange} />
         <CategorySelect
           value={category}
           onChange={onCategoryChange}
           categories={categories}
         />
-        <div className="flex items-stretch justify-between gap-2">
+        <div className="flex items-stretch justify-between gap-1.5">
           <ViewModeControl viewMode={viewMode} onViewModeChange={onViewModeChange} />
           {hasFilters && (
             <button
               type="button"
               onClick={onClearFilters}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
             >
               <FilterX className="h-4 w-4" /> Limpar
             </button>
           )}
         </div>
-        <details className="group rounded-lg border border-border bg-background">
-          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-bold marker:hidden">
+        <details className="group mobile-secondary-panel">
+          <summary className="mobile-secondary-summary">
             <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> Filtros avancados
+              <SlidersHorizontal className="h-4 w-4" /> Filtros avançados
             </span>
             <span className="text-xs text-muted-foreground group-open:hidden">
               abrir
@@ -203,7 +203,7 @@ export default function StockFilters({
               fechar
             </span>
           </summary>
-          <div className="grid gap-2 border-t border-border p-2">
+          <div className="grid gap-1.5 border-t border-border p-1.5">
             <AdvancedFilters {...advancedProps} />
           </div>
         </details>
@@ -226,7 +226,7 @@ export default function StockFilters({
           <button
             type="button"
             onClick={onClearFilters}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
           >
             <FilterX className="h-4 w-4" /> Limpar
           </button>

@@ -146,19 +146,19 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-0 backdrop-blur-sm sm:p-5" role="presentation">
       <div ref={modalRef} tabIndex={-1} className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2.5 sm:px-5 sm:py-3">
           <div>
-            <h2 id="payment-title" className="text-lg font-black sm:text-xl">Forma de pagamento</h2>
-            <p className="text-xs text-muted-foreground">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
+            <h2 id="payment-title" className="text-base font-black sm:text-xl">Forma de pagamento</h2>
+            <p className="hidden text-xs text-muted-foreground sm:block">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
           </div>
           <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="grid flex-1 overscroll-contain overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="space-y-3 border-b border-border p-4 lg:border-b-0 lg:border-r lg:p-5">
-            <div className="max-h-44 overflow-y-auto rounded-xl border border-border bg-muted/20 p-3 sm:max-h-52">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
-              <div className="space-y-2">
+          <section className="space-y-2 border-b border-border p-3 lg:border-b-0 lg:border-r lg:p-5">
+            <div className="max-h-36 overflow-y-auto rounded-xl border border-border bg-muted/20 p-2.5 sm:max-h-52 sm:p-3">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
+              <div className="space-y-1.5">
                 {sale.items.map((item, index) => (
                   <div key={`${item.product_id}-${index}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
                     <span className="font-bold tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(2)}kg` : `${item.quantity}x`}</span>
@@ -169,23 +169,23 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               </div>
             </div>
 
-            <div className="space-y-2.5 rounded-xl border border-border bg-background p-3.5 sm:p-4">
+            <div className="space-y-2 rounded-xl border border-border bg-background p-3 sm:p-4">
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold tabular-nums">{formatCurrency(subtotal)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Desconto</span><span className="font-semibold tabular-nums">{formatCurrency(discount)}</span></div>
-              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3">
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2.5 sm:p-3">
                 <div className="flex items-end justify-between gap-4">
                   <span className="font-bold text-emerald-700 dark:text-emerald-300">Total</span>
-                  <span className="text-2xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-3xl">{formatCurrency(total)}</span>
+                  <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-3xl">{formatCurrency(total)}</span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-muted/40 p-3">
+                <div className="rounded-xl bg-muted/40 p-2.5 sm:p-3">
                   <span className="text-xs text-muted-foreground">Pago</span>
-                  <p className="mt-1 text-lg font-black tabular-nums sm:text-xl">{formatCurrency(paidAmount)}</p>
+                  <p className="mt-0.5 text-base font-black tabular-nums sm:text-xl">{formatCurrency(paidAmount)}</p>
                 </div>
-                <div className="rounded-xl bg-muted/40 p-3">
+                <div className="rounded-xl bg-muted/40 p-2.5 sm:p-3">
                   <span className="text-xs text-muted-foreground">{hasFiado ? 'Saldo fiado' : 'Restante'}</span>
-                  <p className={`mt-1 text-lg font-black tabular-nums sm:text-xl ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
+                  <p className={`mt-0.5 text-base font-black tabular-nums sm:text-xl ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
                 </div>
               </div>
               {change > 0 && (
@@ -197,18 +197,18 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
             </div>
           </section>
 
-          <section className="space-y-3 p-4 lg:p-5">
+          <section className="space-y-2.5 p-3 lg:p-5">
             {!hasFiado && (
               <div>
-                <h3 className="mb-3 text-sm font-bold">Escolha a forma de pagamento</h3>
+                <h3 className="mb-2 text-sm font-bold">Escolha a forma de pagamento</h3>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {PAYMENT_METHODS.map(method => {
                     const Icon = METHOD_ICONS[method.method];
                     const disabled = method.method !== 'fiado' && remaining <= 0;
                     return (
-                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-14 flex-col items-center justify-center gap-1.5 rounded-xl border p-2 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 sm:min-h-16 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
+                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border p-2 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 sm:min-h-16 sm:gap-1.5 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
                         <Icon className="h-5 w-5" />
-                        <span className="text-sm font-bold">{method.label}</span>
+                        <span className="text-xs font-bold sm:text-sm">{method.label}</span>
                         {method.method === 'debito' && (
                           <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700 dark:bg-black/20 dark:text-sky-200">
                             Débito
@@ -230,8 +230,8 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               <div className="space-y-3">
                 <h3 className="text-sm font-bold">Valores informados</h3>
                 {payments.map((payment, index) => (
-                  <div key={`${payment.method}-${index}`} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2.5 sm:gap-3 sm:p-3">
-                    <span className="w-24 truncate text-sm font-semibold sm:w-32">{getPaymentLabel(payment.method)}</span>
+                  <div key={`${payment.method}-${index}`} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2 sm:gap-3 sm:p-3">
+                    <span className="w-20 truncate text-xs font-semibold sm:w-32 sm:text-sm">{getPaymentLabel(payment.method)}</span>
                     {payment.method === 'fiado' ? (
                       <span className="flex-1 text-right text-lg font-black text-orange-600 tabular-nums dark:text-orange-400 sm:text-xl">{formatCurrency(debtAmount)}</span>
                     ) : (
@@ -245,30 +245,30 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                           min="0"
                           value={payment.amount}
                           onChange={event => updateAmount(index, event.target.value)}
-                          className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-right text-lg font-black tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:h-12 sm:text-xl"
+                          className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-right text-base font-black tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:h-12 sm:text-xl"
                         />
                       </label>
                     )}
-                    <button type="button" aria-label="Remover pagamento" onClick={() => removePayment(index)} className="grid h-10 w-10 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
+                    <button type="button" aria-label="Remover pagamento" onClick={() => removePayment(index)} className="grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10 sm:h-10 sm:w-10"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
               </div>
             )}
 
             {showFiadoForm && (
-              <div className="space-y-3 rounded-xl border border-orange-400/50 bg-orange-500/10 p-4">
+              <div className="space-y-2 rounded-xl border border-orange-400/50 bg-orange-500/10 p-3 sm:p-4">
                 <div className="text-sm font-bold text-orange-700 dark:text-orange-300">Dados da venda fiado</div>
-                <label className="block"><span className="sr-only">Nome do responsável</span><input type="text" autoComplete="name" placeholder="Nome do responsável *" value={fiadoData.responsible_name} onChange={event => setFiadoData({ ...fiadoData, responsible_name: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
-                <label className="block"><span className="sr-only">Telefone</span><input type="tel" autoComplete="tel" inputMode="tel" placeholder="Telefone (opcional)" value={fiadoData.phone} onChange={event => setFiadoData({ ...fiadoData, phone: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
-                <label className="block"><span className="sr-only">Observação do fiado</span><input type="text" placeholder="Observação (opcional)" value={fiadoData.observation} onChange={event => setFiadoData({ ...fiadoData, observation: event.target.value })} className="h-11 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
+                <label className="block"><span className="sr-only">Nome do responsável</span><input type="text" autoComplete="name" placeholder="Nome do responsável *" value={fiadoData.responsible_name} onChange={event => setFiadoData({ ...fiadoData, responsible_name: event.target.value })} className="h-10 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:h-11" /></label>
+                <label className="block"><span className="sr-only">Telefone</span><input type="tel" autoComplete="tel" inputMode="tel" placeholder="Telefone (opcional)" value={fiadoData.phone} onChange={event => setFiadoData({ ...fiadoData, phone: event.target.value })} className="h-10 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:h-11" /></label>
+                <label className="block"><span className="sr-only">Observação do fiado</span><input type="text" placeholder="Observação (opcional)" value={fiadoData.observation} onChange={event => setFiadoData({ ...fiadoData, observation: event.target.value })} className="h-10 w-full rounded-lg border border-orange-400/50 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:h-11" /></label>
               </div>
             )}
 
-            <label className="block"><span className="sr-only">Observação da venda</span><input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
+            <label className="block"><span className="sr-only">Observação da venda</span><input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:h-11" /></label>
           </section>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border bg-card px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:px-5 sm:py-3">
+        <div className="flex flex-col gap-2 border-t border-border bg-card px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 sm:flex-row sm:px-5 sm:py-3">
           <button type="button" onClick={onDiscard} disabled={completing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Descartar</button>
           <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-4 w-4" /> Minimizar</button>
           <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:text-base"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>

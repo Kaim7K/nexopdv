@@ -39,7 +39,7 @@ export default function ProdutoDetalhe() {
 
   return (
     <div className="page-shell max-w-4xl">
-      <Link to="/estoque" className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+      <Link to="/estoque" className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar ao estoque
       </Link>
 
@@ -49,9 +49,9 @@ export default function ProdutoDetalhe() {
         <EmptyState icon={Package} title="Produto não encontrado" description="O item pode ter sido removido ou o endereço está incorreto." />
       ) : (
         <>
-          <section className="surface-card mb-5 p-4 sm:p-6" aria-labelledby="product-title">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="grid aspect-square w-28 flex-none place-items-center overflow-hidden rounded-2xl border border-border bg-white sm:w-32">
+          <section className="surface-card mb-3 p-3 sm:p-4" aria-labelledby="product-title">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+              <div className="grid aspect-square w-24 flex-none place-items-center overflow-hidden rounded-xl border border-border bg-white sm:w-28">
                 {product.image_url ? (
                   <img src={product.image_url} alt={`Imagem de ${product.name}`} className="h-full w-full object-contain p-2" decoding="async" referrerPolicy="no-referrer" />
                 ) : (
@@ -67,12 +67,12 @@ export default function ProdutoDetalhe() {
                     <h1 id="product-title" className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">{product.name}</h1>
                     <p className="mt-1 text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
                   </div>
-                  <button type="button" onClick={() => setShowEdit(true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90 sm:w-auto">
+                  <button type="button" onClick={() => setShowEdit(true)} className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 sm:min-h-10 sm:px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90 sm:w-auto">
                     <Edit className="h-4 w-4" aria-hidden="true" /> Editar produto
                   </button>
                 </div>
 
-                <dl className="mt-5 grid gap-x-6 gap-y-4 border-t border-border pt-5 text-sm sm:grid-cols-2">
+                <dl className="mt-3 grid gap-x-5 gap-y-2.5 border-t border-border pt-3 text-sm sm:grid-cols-2">
                   <Detail label="Unidade" value={product.unit || 'Não informada'} />
                   <Detail label="Estoque" value={`${Number(product.quantity || 0).toLocaleString('pt-BR')} ${product.unit === 'peso' ? 'kg' : 'un.'}`} alert={Number(product.quantity || 0) <= 0} />
                   <Detail label="Preço de venda" value={formatCurrency(product.sale_price)} emphasis />
@@ -84,17 +84,17 @@ export default function ProdutoDetalhe() {
             </div>
           </section>
 
-          <section className="surface-card p-4 sm:p-6" aria-labelledby="audit-title">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent"><History className="h-5 w-5" aria-hidden="true" /></div>
+          <section className="surface-card p-3 sm:p-4" aria-labelledby="audit-title">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent"><History className="h-5 w-5" aria-hidden="true" /></div>
               <div><h2 id="audit-title" className="font-bold">Histórico de alterações</h2><p className="text-xs text-muted-foreground">Até 50 registros mais recentes</p></div>
             </div>
             {!audits.length ? (
               <EmptyState className="min-h-40 border-0 bg-muted/20" icon={History} title="Nenhuma alteração registrada" description="As próximas mudanças neste produto aparecerão aqui." />
             ) : (
-              <ol className="space-y-3">
+              <ol className="space-y-2">
                 {audits.map(audit => (
-                  <li key={audit.id} className="relative rounded-xl border border-border bg-muted/15 p-4 pl-5 before:absolute before:bottom-4 before:left-0 before:top-4 before:w-1 before:rounded-r before:bg-accent/60">
+                  <li key={audit.id} className="relative rounded-lg border border-border bg-muted/15 p-3 pl-4 before:absolute before:bottom-4 before:left-0 before:top-4 before:w-1 before:rounded-r before:bg-accent/60">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <strong className="text-sm">{audit.field_changed}</strong>
                       <time className="text-xs text-muted-foreground" dateTime={audit.created_date}>{formatDateTime(audit.created_date)}</time>

@@ -95,7 +95,7 @@ export default function AuditoriaGeral() {
 
   return (
     <div className="page-shell !max-w-6xl">
-      <div className="mb-6">
+      <div className="mb-3">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <ScrollText className="h-3.5 w-3.5" /> Rastreabilidade
         </div>
@@ -103,27 +103,27 @@ export default function AuditoriaGeral() {
         <p className="mt-1 text-sm text-muted-foreground">Consulte alterações, vendas, cancelamentos e ações da equipe.</p>
       </div>
 
-      <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Filtros da auditoria">
+      <section className="mb-3 rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.025]" aria-label="Filtros da auditoria">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(250px,1fr)_190px_190px_150px_auto]">
           <label className="relative sm:col-span-2 lg:col-span-1">
             <span className="sr-only">Buscar na auditoria</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Descrição, usuário ou detalhe" className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Descrição, usuário ou detalhe" className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10" />
           </label>
-          <select aria-label="Filtrar por tipo" value={filterType} onChange={event => setFilterType(event.target.value)} className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+          <select aria-label="Filtrar por tipo" value={filterType} onChange={event => setFilterType(event.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10">
             <option value="">Todos os tipos</option>
             {actionTypes.map(type => <option key={type} value={type}>{humanize(type)}</option>)}
           </select>
-          <select aria-label="Filtrar por usuário" value={filterUser} onChange={event => setFilterUser(event.target.value)} className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+          <select aria-label="Filtrar por usuário" value={filterUser} onChange={event => setFilterUser(event.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10">
             <option value="">Todos os usuários</option>
             {users.map(name => <option key={name} value={name}>{name}</option>)}
           </select>
-          <select aria-label="Filtrar por categoria" value={filterCategory} onChange={event => setFilterCategory(event.target.value)} className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+          <select aria-label="Filtrar por categoria" value={filterCategory} onChange={event => setFilterCategory(event.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10">
             <option value="">Todas categorias</option>
             <option value="Geral">Geral</option>
             <option value="Produto">Produto</option>
           </select>
-          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-3 text-sm font-bold hover:bg-muted"><FilterX className="h-4 w-4" /> Limpar</button>}
+          {hasFilters && <button type="button" onClick={clearFilters} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted sm:min-h-10"><FilterX className="h-4 w-4" /> Limpar</button>}
         </div>
       </section>
 
@@ -133,18 +133,18 @@ export default function AuditoriaGeral() {
       </div>
 
       {loading ? (
-        <div role="status" aria-live="polite" aria-busy="true" className="rounded-2xl border border-border bg-card py-16 text-center text-muted-foreground"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando auditoria...</p></div>
+        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card py-6 text-center text-muted-foreground sm:py-8"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando auditoria...</p></div>
       ) : loadError && !allEntries.length ? (
         <ErrorState description={loadError} onRetry={loadAudits} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center"><ScrollText className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
+        <div className="rounded-xl border border-dashed border-border bg-card py-6 text-center sm:py-8"><ScrollText className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="max-h-[calc(100vh-270px)] divide-y divide-border overflow-y-auto">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/[0.025]">
+          <div className="max-h-[calc(100dvh-230px)] divide-y divide-border overflow-y-auto">
             {visibleEntries.map(entry => {
               const details = formatAuditDetails(entry.details);
               return (
-                <article key={entry.id} className="grid gap-3 p-4 transition hover:bg-muted/25 sm:grid-cols-[1fr_auto] sm:items-start">
+                <article key={entry.id} className="grid gap-2 p-2.5 transition hover:bg-muted/25 sm:p-3 sm:grid-cols-[1fr_auto] sm:items-start">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${typeColor(entry.type)}`}>{humanize(entry.type)}</span>
