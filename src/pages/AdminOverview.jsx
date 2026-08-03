@@ -74,13 +74,13 @@ export default function AdminOverview() {
     <div className="page-shell space-y-3 sm:space-y-4">
       <header>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <Gauge className="h-3.5 w-3.5" /> Super Admin
+          <Gauge className="h-3.5 w-3.5" /> Resumo da plataforma
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
           Visão geral da plataforma
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Saúde comercial e uso consolidado do Nexo PDV.
+          Veja clientes ativos, faturamento e uso do Nexo PDV.
         </p>
       </header>
       <section

@@ -248,7 +248,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
   );
 }
 
-function Meta({ label, value, icon: Icon }) {
+function Meta({ label, value, icon: Icon = null }) {
   return (
     <div className="r-meta">
       <span className="r-label">{label}</span>

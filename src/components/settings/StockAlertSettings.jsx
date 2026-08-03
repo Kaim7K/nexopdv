@@ -76,7 +76,7 @@ export default function StockAlertSettings() {
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 lg:col-span-12" aria-labelledby="stock-alert-title">
+    <section id="config-restock" className="scroll-mt-14 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:col-span-12" aria-labelledby="stock-alert-title">
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(560px,650px)] 2xl:items-start">
         <div className="min-w-0"><h2 id="stock-alert-title" className="flex items-center gap-2 font-bold"><Mail className="h-5 w-5 shrink-0 text-accent" /> Relatório de reposição</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">Envia somente quando houver produtos que precisam de reposição. Horário de Salvador/Bahia.</p></div>
         <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1.35fr)_minmax(140px,.8fr)_minmax(150px,.85fr)]">

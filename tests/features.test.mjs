@@ -76,9 +76,9 @@ assert.match(
   'O estoque deve permitir excluir produtos.',
 );
 assert.match(
-  `${stock}\n${stockTable}`,
-  /Atualizar estoque/,
-  'Produtos zerados devem permitir atualização.',
+  stockTable,
+  /fieldKey === 'quantity'/,
+  'Produtos zerados devem permitir edição da quantidade.',
 );
 assert.match(
   users,

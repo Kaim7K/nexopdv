@@ -25,7 +25,8 @@ assert.match(form, /openGoogleImages/, 'O cadastro completo deve abrir o Google 
 assert.match(form, /Buscar no Google Imagens/, 'O cadastro deve exibir a ação de pesquisa.');
 assert.match(quickModal, /nexoApi\.products\.quickCreate/, 'O cadastro rápido deve usar a operação atômica própria do PDV.');
 assert.match(quickModal, /Código de barras[\s\S]*Nome do produto/, 'O cadastro rápido deve manter somente os campos essenciais.');
-assert.doesNotMatch(quickModal, /Google Imagens|URL da imagem|Preço de venda/, 'Imagem e preço devem permanecer na tela completa de produtos.');
+assert.match(quickModal, /Preço de venda/, 'O cadastro rápido deve permitir informar o preço necessário para concluir a venda.');
+assert.doesNotMatch(quickModal, /Google Imagens|URL da imagem/, 'A imagem deve permanecer na tela completa de produtos.');
 assert.match(api, /searchProductImages/, 'A API deve usar o serviço atual de pesquisa de imagens.');
 assert.doesNotMatch(api + env, /GOOGLE_CSE_ID|GOOGLE_CSE_API_KEY/, 'A busca não deve exigir credenciais do Google.');
 assert.doesNotMatch(vercel, /cse\.google\.com/, 'A CSP não deve carregar o mecanismo antigo do Google.');

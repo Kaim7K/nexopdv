@@ -7,6 +7,7 @@ import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ErrorState } from '@/components/common/PageState';
 import {
   FilterPanel,
@@ -22,6 +23,7 @@ const SETTLEMENT_METHODS = [
 ];
 
 export default function Fiados() {
+  const confirm = useConfirm();
   const { user } = /** @type {any} */ (useOutletContext());
   const isGerente = user.role === 'gerente' || user.role === 'admin';
   const [fiados, setFiados] = useState([]);
@@ -176,9 +178,12 @@ export default function Fiados() {
 
   const handleReopen = async (item) => {
     if (!isGerente || processing) return;
-    const confirmed = window.confirm(
-      `Desfazer a quitação do fiado #${item.sale_number} de ${item.responsible_name}?`,
-    );
+    const confirmed = await confirm({
+      title: 'Desfazer quitação?',
+      description: `A venda fiada #${item.sale_number}, de ${item.responsible_name}, voltará a aparecer como pendente.`,
+      confirmLabel: 'Desfazer quitação',
+      cancelLabel: 'Manter quitada',
+    });
     if (!confirmed) return;
     setProcessing(true);
     try {
@@ -205,9 +210,13 @@ export default function Fiados() {
 
   const handleDelete = async (item) => {
     if (!isGerente || processing) return;
-    const confirmed = window.confirm(
-      `Excluir definitivamente o fiado #${item.sale_number} de ${item.responsible_name}?`,
-    );
+    const confirmed = await confirm({
+      title: 'Excluir venda fiada?',
+      description: `A venda fiada #${item.sale_number}, de ${item.responsible_name}, será excluída definitivamente. Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Excluir definitivamente',
+      cancelLabel: 'Voltar',
+      tone: 'destructive',
+    });
     if (!confirmed) return;
     setProcessing(true);
     try {
@@ -229,15 +238,15 @@ export default function Fiados() {
       <PageHeader
         icon={HandCoins}
         eyebrow="Contas a receber"
-        title="Vendas fiado"
+        title="Vendas fiadas"
         description="Acompanhe pendências e registre os recebimentos."
         tone="orange"
       />
 
       <div className="mb-2 grid grid-cols-3 gap-1.5 sm:mb-3 sm:gap-2">
-        <MetricCard label="Total pendente" value={formatCurrency(totals.pending)} tone="orange" />
-        <MetricCard label="Pendências" value={totals.pendingCount} />
-        <MetricCard label="Total quitado" value={formatCurrency(totals.settled)} tone="green" />
+        <MetricCard icon={HandCoins} label="Total pendente" value={formatCurrency(totals.pending)} tone="orange" />
+        <MetricCard icon={Clock} label="Pendências" value={totals.pendingCount} />
+        <MetricCard icon={Check} label="Total quitado" value={formatCurrency(totals.settled)} tone="green" />
       </div>
 
       <FilterPanel aria-label="Filtros de fiados">
@@ -294,7 +303,7 @@ export default function Fiados() {
                       {pending && canManage(item) && (
                         <>
                           <button type="button" onClick={() => setSettleFiado(item)} className="min-h-10 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700">Quitar</button>
-                          <button type="button" onClick={() => setCancelFiado(item)} className="grid h-10 w-10 place-items-center rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => setCancelFiado(item)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-4 w-4" /> Cancelar</button>
                         </>
                       )}
                       {settled && isGerente && (

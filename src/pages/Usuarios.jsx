@@ -166,15 +166,15 @@ export default function Usuarios() {
           <p className="mt-1 text-sm text-muted-foreground">Revise a pesquisa ou cadastre um novo funcionário.</p>
         </div>
       ) : (
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredUsers.map(item => {
             const isActive = item.active !== false;
             const isManager = ['admin', 'gerente'].includes(item.role);
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
-              <article key={item.id} className="rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] transition hover:border-accent/30 hover:bg-muted/15 sm:p-3">
-                <div className="flex items-start gap-2.5 sm:gap-3">
+              <article key={item.id} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] transition hover:border-accent/30 hover:bg-muted/15 sm:p-3">
+                <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
                   <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-lg bg-secondary text-secondary-foreground sm:h-11 sm:w-11">
                     {item.photo_url ? (
                       <img src={item.photo_url} alt={`Foto de ${item.full_name || item.email}`} className="h-full w-full object-cover" loading="lazy" />
@@ -184,15 +184,15 @@ export default function Usuarios() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <h2 className="truncate font-bold">{item.full_name || item.email}</h2>
-                        <div className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                          <Mail className="h-3.5 w-3.5 flex-none" /> {item.email}
+                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                          <Mail className="h-3.5 w-3.5 flex-none" /> <span className="min-w-0 truncate">{item.email}</span>
                         </div>
                       </div>
                       <span className={`flex-none rounded-full px-2 py-1 text-[11px] font-bold ${isActive ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'}`}>
                         {isActive ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
-                    <div className="mt-2.5 flex items-center justify-between gap-2 sm:mt-3">
+                    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 sm:mt-3">
                       <span className="rounded-lg bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-secondary-foreground">
                         {ROLE_LABELS[item.role] || item.role}
                       </span>

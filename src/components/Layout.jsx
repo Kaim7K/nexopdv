@@ -331,7 +331,7 @@ export default function Layout() {
             </div>
           </div>
           <div className="mt-2 flex gap-1">
-            <ThemeToggle className="flex-none" />
+            <ThemeToggle showLabel />
             <button
               type="button"
               onClick={handleLogout}
@@ -353,9 +353,10 @@ export default function Layout() {
             aria-controls="main-navigation"
             aria-expanded={mobileMenu}
             onClick={() => setMobileMenu(true)}
-            className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Menu className="h-5 w-5" />
+            <span>Menu</span>
           </button>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-black leading-4">

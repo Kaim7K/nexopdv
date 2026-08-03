@@ -231,7 +231,7 @@ export default function AdminPlanos() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <CreditCard className="h-3.5 w-3.5" /> Comercial
+            <CreditCard className="h-3.5 w-3.5" /> Planos e cobranças
           </div>
           <h1 className="text-2xl font-black sm:text-3xl">
             Planos e assinaturas

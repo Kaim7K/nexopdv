@@ -145,7 +145,7 @@ export function PdvProductPanel({
   productsLoading,
 }) {
   return (
-    <div className="flex h-[26%] min-h-[132px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
+    <div className="flex h-[32%] min-h-[210px] max-h-[280px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:max-h-none md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
       <div className="flex-shrink-0 p-1.5 pb-1 sm:p-3 sm:pb-2">
         <div className="relative" ref={searchContainerRef}>
           <ProductSearch

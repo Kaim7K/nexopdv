@@ -1,8 +1,29 @@
 import React, { forwardRef } from 'react';
 import { ChevronDown, Download, Plus, Save, Trash2, Upload } from 'lucide-react';
 
+/**
+ * @typedef {Object} StockActionsProps
+ * @property {boolean} loading
+ * @property {boolean} exporting
+ * @property {boolean} importing
+ * @property {boolean} saving
+ * @property {number} dirtyCount
+ * @property {boolean} canDeleteInactive
+ * @property {boolean} deletingInactive
+ * @property {number} inactiveCount
+ * @property {() => void} onExport
+ * @property {(event: any) => void} onImport
+ * @property {() => void} onSave
+ * @property {() => void} onDeleteInactive
+ * @property {() => void} onCreate
+ */
+
+/** @type {React.ForwardRefExoticComponent<StockActionsProps & React.RefAttributes<HTMLInputElement>>} */
 const StockActionsToolbar = forwardRef(function StockActionsToolbar(
-  {
+  props,
+  fileRef,
+) {
+  const {
     loading,
     exporting,
     importing,
@@ -16,9 +37,10 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
     onSave,
     onDeleteInactive,
     onCreate,
-  },
-  fileRef,
-) {
+  } = props;
+  const openFilePicker = () => {
+    if (fileRef && typeof fileRef === 'object') fileRef.current?.click();
+  };
   const exportLabel = exporting ? 'Gerando...' : 'Baixar Excel';
   const importLabel = importing ? 'Importando...' : 'Importar';
   const saveLabel = saving
@@ -73,7 +95,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
           </SecondaryButton>
           <SecondaryButton
             icon={Upload}
-            onClick={() => fileRef.current?.click()}
+            onClick={openFilePicker}
             disabled={importing || loading}
           >
             {importLabel}
@@ -101,7 +123,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
         </SecondaryButton>
         <SecondaryButton
           icon={Upload}
-          onClick={() => fileRef.current?.click()}
+          onClick={openFilePicker}
           disabled={importing || loading}
         >
           {importLabel}
@@ -128,7 +150,7 @@ function SecondaryButton({
   onClick,
   disabled = false,
   destructive = false,
-  title,
+  title = undefined,
 }) {
   return (
     <button

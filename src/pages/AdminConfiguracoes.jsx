@@ -91,14 +91,13 @@ export default function AdminConfiguracoes() {
     <form onSubmit={save} className="page-shell space-y-3 sm:space-y-5">
       <header>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <Blocks className="h-3.5 w-3.5" /> Governança
+          <Blocks className="h-3.5 w-3.5" /> Configurações da plataforma
         </div>
         <h1 className="text-2xl font-black sm:text-3xl">
           Configurações gerais
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          E-mails, notificações, planos, segurança, integrações e comunicação
-          operacional.
+          Ajuste e-mails, notificações, segurança, integrações e avisos do sistema.
         </p>
       </header>
       <Section

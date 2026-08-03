@@ -49,8 +49,14 @@ import {
   ModalActions,
   ReferenceCards,
 } from '@/components/finance/FinanceUi';
-import FinanceOverview from '@/components/finance/FinanceOverview';
-import TransactionList from '@/components/finance/TransactionList';
+import FinanceOverview, {
+  ChartCard,
+  ChartSkeleton,
+  MetricCard,
+} from '@/components/finance/FinanceOverview';
+import TransactionList, {
+  StatusBadge,
+} from '@/components/finance/TransactionList';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
@@ -198,11 +204,11 @@ export default function Financeiro() {
       <header className="page-header mb-0">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <WalletCards className="h-3.5 w-3.5" /> Gestão financeira
+            <WalletCards className="h-3.5 w-3.5" /> Dinheiro do mercado
           </div>
           <h1 className="page-title">Financeiro</h1>
           <p className="page-subtitle">
-            Receitas, despesas, contas e lucro com origem rastreável no PDV.
+            Veja quanto entrou, quanto saiu, as contas e o saldo disponível.
           </p>
           <p className="sr-only">O que você quer fazer?</p>
           <p className="sr-only">Ver análises detalhadas</p>
@@ -2635,4 +2641,3 @@ function downloadCsv(rows, name) {
   anchor.click();
   URL.revokeObjectURL(url);
 }
-

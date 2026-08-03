@@ -176,12 +176,12 @@ export default function HistoricoCaixas() {
     <div className="page-shell space-y-2.5 sm:space-y-4">
       <PageHeader
         icon={Banknote}
-        eyebrow="Operação financeira"
+        eyebrow="Abertura e fechamento"
         title="Histórico de caixas"
-          description="Aberturas, vendas, movimentações, conferência e fechamento por operador."
+        description="Consulte o que entrou, o valor contado e quem abriu ou fechou cada caixa."
       />
 
-      <FilterPanel aria-label="Filtros do historico">
+      <FilterPanel aria-label="Filtros do histórico">
         <div className="grid gap-1.5 sm:hidden">
           <div className="grid grid-cols-2 gap-2">
             <Filter label="De">

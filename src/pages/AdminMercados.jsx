@@ -213,13 +213,13 @@ export default function AdminMercados() {
       <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <Store className="h-3.5 w-3.5" /> Administração geral
+            <Store className="h-3.5 w-3.5" /> Clientes e lojas
           </div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
             Mercados
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Clientes, identidade visual e módulos habilitados.
+            Cadastre mercados e escolha as funções disponíveis para cada cliente.
           </p>
         </div>
         <button

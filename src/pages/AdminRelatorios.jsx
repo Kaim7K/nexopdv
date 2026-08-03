@@ -71,7 +71,7 @@ export default function AdminRelatorios() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <BarChart3 className="h-3.5 w-3.5" /> Inteligência da plataforma
+            <BarChart3 className="h-3.5 w-3.5" /> Resultados da plataforma
           </div>
           <h1 className="text-2xl font-black sm:text-3xl">Relatórios</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -118,7 +118,7 @@ export default function AdminRelatorios() {
         </label>
         <button
           type="button"
-          onClick={load}
+          onClick={() => load()}
           disabled={loading}
           className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
         >

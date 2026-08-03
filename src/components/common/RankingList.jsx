@@ -11,7 +11,7 @@ export default function RankingList({
   containerClassName = 'rounded-xl border border-border bg-card p-4 text-card-foreground',
   headerClassName = 'mb-3 flex flex-wrap items-center justify-between gap-2',
   listClassName = 'space-y-2',
-  modalListClassName,
+  modalListClassName = '',
   modalMaxWidth = 'max-w-2xl',
 }) {
   const [open, setOpen] = useState(false);

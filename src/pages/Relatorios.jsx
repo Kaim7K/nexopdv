@@ -33,7 +33,7 @@ const BREAKDOWNS = [
   { key: 'hour', label: 'Hora' },
   { key: 'day', label: 'Dia' },
   { key: 'weekday', label: 'Dia da semana' },
-  { key: 'month', label: 'M?s' },
+  { key: 'month', label: 'Mês' },
 ];
 
 const BreakdownChart = lazy(() =>
@@ -535,7 +535,7 @@ export default function Relatorios() {
     <div className="page-shell">
       <div className="mb-2">
         <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <BarChart3 className="h-3.5 w-3.5" /> Desempenho do negócio
+          <BarChart3 className="h-3.5 w-3.5" /> Resultados do mercado
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
           Relatórios gerenciais
@@ -694,7 +694,7 @@ export default function Relatorios() {
                 </button>
               </div>
             </div>
-            <div className="grid gap-2 border-t border-border p-2 lg:hidden">
+            <div className="grid max-h-[22rem] gap-2 overflow-y-auto overscroll-contain border-t border-border p-2 lg:hidden">
               {stats.breakdownData.map((row) => (
                 <article
                   key={row.key}
@@ -724,9 +724,9 @@ export default function Relatorios() {
                 </article>
               ))}
             </div>
-            <div className="hidden overflow-x-auto border-t border-border lg:block">
+            <div className="hidden max-h-[28rem] overflow-auto overscroll-contain border-t border-border lg:block">
               <table className="w-full min-w-[620px] text-left text-sm">
-                <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
+                <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-muted-foreground shadow-[0_1px_0_hsl(var(--border))]">
                   <tr>
                     <th className="px-4 py-3">
                       {BREAKDOWNS.find((item) => item.key === breakdown)?.label}

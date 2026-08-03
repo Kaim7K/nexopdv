@@ -80,6 +80,7 @@ const FEATURE_CARDS = [
   },
 ];
 
+/** @type {Array<[string, string, React.ElementType]>} */
 const METRICS = [
   ['+5.000', 'mercadinhos gerenciados', ShoppingCart],
   ['+20 milhões', 'em vendas processadas', Tag],

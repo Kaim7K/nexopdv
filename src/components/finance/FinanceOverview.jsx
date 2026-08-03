@@ -277,7 +277,7 @@ function FinancialPositionRow({
   );
 }
 
-function MetricCard({
+export function MetricCard({
   label,
   value,
   help,
@@ -336,7 +336,7 @@ function MetricCard({
     </article>
   );
 }
-function ChartCard({ title, children }) {
+export function ChartCard({ title, children }) {
   return (
     <section className="surface-card min-w-0 p-2.5 sm:p-3">
       <h3 className="mb-3 text-sm font-bold">{title}</h3>
@@ -344,7 +344,7 @@ function ChartCard({ title, children }) {
     </section>
   );
 }
-function ChartSkeleton({ height = 'h-[220px] sm:h-[240px]' }) {
+export function ChartSkeleton({ height = 'h-[220px] sm:h-[240px]' }) {
   return (
     <div
       role="status"

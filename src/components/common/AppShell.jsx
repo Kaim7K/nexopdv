@@ -10,7 +10,7 @@ const toneClasses = {
 };
 
 export function PageHeader({
-  icon: Icon,
+  icon: Icon = null,
   eyebrow,
   title,
   description,
@@ -54,7 +54,7 @@ export function MetricCard({
   icon: Icon,
   tone = 'default',
   active = false,
-  onClick,
+  onClick = null,
 }) {
   const toneMap = {
     default: 'border-border text-foreground',

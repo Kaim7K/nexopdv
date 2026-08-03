@@ -418,7 +418,7 @@ export default function Configuracoes() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <Store className="h-3.5 w-3.5" /> Identidade e operação
+            <Store className="h-3.5 w-3.5" /> Seu mercado
           </div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Configurações
@@ -441,8 +441,32 @@ export default function Configuracoes() {
         </button>
       </div>
 
+      <label className="sticky top-1 z-20 mb-3 block rounded-xl border border-border bg-card/95 p-1.5 shadow-sm backdrop-blur sm:hidden">
+        <span className="sr-only">Ir para uma configuração</span>
+        <select
+          defaultValue=""
+          onChange={(event) => {
+            const target = document.getElementById(event.target.value);
+            target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            event.target.value = '';
+          }}
+          className="h-9 w-full rounded-lg border-0 bg-transparent px-2 text-sm font-bold outline-none focus:ring-2 focus:ring-accent/20"
+        >
+          <option value="" disabled>Ir para uma configuração...</option>
+          <option value="config-market">Dados do mercado</option>
+          {canUseLogo && <option value="config-logo">Logo do mercado</option>}
+          {canCustomizeSidebar && <option value="config-sidebar">Cores da barra lateral</option>}
+          <option value="config-sales">Vendas abertas</option>
+          <option value="config-stock">Estoque baixo</option>
+          {user?.role === 'admin' && <option value="config-cash">Abertura de caixa</option>}
+          <option value="config-categories">Categorias de produtos</option>
+          {canUseStockAlerts && ['admin', 'gerente'].includes(user?.role) && <option value="config-restock">Relatório de reposição</option>}
+          {user?.role === 'admin' && <option value="config-reset">Zerar dados</option>}
+        </select>
+      </label>
+
       <div className="grid gap-3 lg:grid-cols-12">
-        <section className="mobile-dense-section lg:col-span-7">
+        <section id="config-market" className="mobile-dense-section scroll-mt-14 lg:col-span-7">
           <div className="mb-3">
             <h2 className="flex items-center gap-2 font-bold">
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
@@ -552,7 +576,7 @@ export default function Configuracoes() {
         </section>
 
         {canUseLogo && (
-          <section className="mobile-dense-section lg:col-span-5">
+          <section id="config-logo" className="mobile-dense-section scroll-mt-14 lg:col-span-5">
             <h2 className="font-bold">Logo do mercado</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Use uma imagem nítida com fundo transparente quando possível.
@@ -572,7 +596,7 @@ export default function Configuracoes() {
         )}
 
         {canCustomizeSidebar && (
-          <section className="mobile-dense-section lg:col-span-12">
+          <section id="config-sidebar" className="mobile-dense-section scroll-mt-14 lg:col-span-12">
             <div className="grid gap-5 lg:grid-cols-[1fr_420px] lg:items-center">
               <div>
                 <h2 className="flex items-center gap-2 font-bold">
@@ -667,7 +691,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section className="mobile-dense-section lg:col-span-4">
+        <section id="config-sales" className="mobile-dense-section scroll-mt-14 lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <Layers className="h-5 w-5 text-accent" /> Vendas abertas
           </h2>
@@ -690,7 +714,7 @@ export default function Configuracoes() {
           </label>
         </section>
 
-        <section className="mobile-dense-section lg:col-span-4">
+        <section id="config-stock" className="mobile-dense-section scroll-mt-14 lg:col-span-4">
           <h2 className="flex items-center gap-2 font-bold">
             <PackageSearch className="h-5 w-5 text-accent" /> Estoque baixo
           </h2>
@@ -714,7 +738,7 @@ export default function Configuracoes() {
         </section>
 
         {user?.role === 'admin' && (
-          <section className="mobile-dense-section lg:col-span-4">
+          <section id="config-cash" className="mobile-dense-section scroll-mt-14 lg:col-span-4">
             <h2 className="flex items-center gap-2 font-bold">
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
             </h2>
@@ -742,7 +766,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section className="mobile-dense-section lg:col-span-8">
+        <section id="config-categories" className="mobile-dense-section scroll-mt-14 lg:col-span-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 font-bold">
@@ -839,6 +863,7 @@ export default function Configuracoes() {
 
       {user?.role === 'admin' && (
         <section
+          id="config-reset"
           className="mt-6 rounded-2xl border border-destructive/30 bg-card p-5 shadow-sm sm:p-6"
           aria-labelledby="reset-data-title"
         >

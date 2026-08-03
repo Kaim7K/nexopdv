@@ -97,7 +97,7 @@ export default function AuditoriaGeral() {
     <div className="page-shell !max-w-6xl">
       <div className="mb-3">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-          <ScrollText className="h-3.5 w-3.5" /> Rastreabilidade
+          <ScrollText className="h-3.5 w-3.5" /> Histórico de ações
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Auditoria geral</h1>
         <p className="mt-1 text-sm text-muted-foreground">Consulte alterações, vendas, cancelamentos e ações da equipe.</p>

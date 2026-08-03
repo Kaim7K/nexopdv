@@ -199,7 +199,7 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
     </>
   );
 }
-function StatusBadge({ status }) {
+export function StatusBadge({ status }) {
   return (
     <span
       className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${status === 'paid' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : status === 'overdue' ? 'bg-destructive/10 text-destructive' : status === 'cancelled' || status === 'reversed' ? 'bg-muted text-muted-foreground' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}
