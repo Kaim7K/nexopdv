@@ -67,7 +67,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             Os quatro números mais importantes do período selecionado.
           </p>
         </div>
-        <div className="grid gap-1.5 sm:gap-2 lg:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <MetricCard
               key={card.label}
@@ -80,7 +80,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
 
       <div className="grid grid-cols-2 gap-2 text-xs no-print sm:flex sm:flex-wrap sm:items-center">
         <h3 className="sr-only">Ações financeiras rápidas</h3>
-        <span className="col-span-2 text-[11px] font-semibold text-muted-foreground sm:col-auto">
+        <span className="sr-only">
           Atalhos
         </span>
         <button
@@ -292,10 +292,10 @@ export function MetricCard({
     neutral: 'bg-muted text-muted-foreground',
   }[tone];
   return (
-    <article className="surface-card flex min-w-0 items-center gap-2 p-2 sm:block sm:p-2.5">
+    <article className="surface-card flex min-w-0 items-center gap-2 p-2 shadow-none sm:block sm:p-2.5">
       {Icon && (
         <span
-          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:hidden ${iconTone}`}
+          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg sm:hidden ${iconTone}`}
         >
           <Icon className="h-4 w-4" />
         </span>
@@ -310,7 +310,7 @@ export function MetricCard({
                 <Icon className="h-4 w-4" />
               </span>
             )}
-            <p className="truncate text-[11px] font-semibold text-muted-foreground sm:text-xs">
+            <p className="truncate text-[10px] font-bold uppercase text-muted-foreground sm:text-xs">
               {label}
             </p>
           </div>
@@ -325,10 +325,10 @@ export function MetricCard({
           )}
         </div>
         <div className="mt-0.5 flex items-baseline justify-between gap-2 sm:block">
-          <strong className="block break-words text-base tabular-nums sm:mt-1 sm:text-lg">
+          <strong className="block break-words text-sm tabular-nums min-[380px]:text-base sm:mt-1 sm:text-lg">
             {value}
           </strong>
-          <p className="hidden line-clamp-1 text-[10px] leading-4 text-muted-foreground min-[380px]:block sm:mt-1 sm:text-[11px]">
+          <p className="hidden line-clamp-1 text-[10px] leading-4 text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
             {help}
           </p>
         </div>

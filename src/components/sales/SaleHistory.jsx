@@ -23,7 +23,7 @@ export function SaleCard({
   onDelete,
 }) {
   return (
-    <article className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:p-3">
+    <article className="rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.02] sm:p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-black sm:text-base">
@@ -36,9 +36,9 @@ export function SaleCard({
         </div>
         <SaleStatus sale={sale} />
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto] items-end gap-2 rounded-lg bg-muted/30 px-2.5 py-2 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2">
+      <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg bg-muted/25 px-2.5 py-1.5 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2">
         <div className="min-w-0">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
             Pagamento
           </span>
           <strong className="mt-0.5 block truncate text-xs sm:text-sm">
@@ -46,7 +46,7 @@ export function SaleCard({
           </strong>
         </div>
         <div className="text-right">
-          <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
             Total
           </span>
           <strong className="block text-base font-black tabular-nums sm:text-base">
@@ -64,13 +64,15 @@ export function SaleCard({
           </span>
         )}
       </div>
-      <button
-        type="button"
-        onClick={onDetails}
-        className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-xs font-bold hover:bg-muted sm:mt-3 sm:min-h-10 sm:rounded-xl sm:text-sm"
-      >
-        <Eye className="h-4 w-4" /> Ver detalhes
-      </button>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={onDetails}
+          className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted sm:min-h-10 sm:rounded-xl sm:text-sm"
+        >
+          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Ver detalhes
+        </button>
+      </div>
     </article>
   );
 }

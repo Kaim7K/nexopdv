@@ -188,7 +188,7 @@
   }
 
   .surface-card {
-    @apply rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.03] transition-colors sm:rounded-lg;
+    @apply rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.02] transition-colors sm:rounded-lg;
   }
 
   .empty-state {
@@ -251,11 +251,11 @@
   }
 
   .mobile-app-surface {
-    @apply rounded-xl border border-border/80 bg-card shadow-sm shadow-black/[0.025];
+    @apply rounded-xl border border-border/80 bg-card shadow-sm shadow-black/[0.015];
   }
 
   .mobile-dense-section {
-    @apply rounded-xl border border-border/80 bg-card p-3 shadow-sm shadow-black/[0.025] sm:p-4;
+    @apply rounded-xl border border-border/80 bg-card p-2.5 shadow-sm shadow-black/[0.015] sm:p-4;
   }
 }
 
@@ -304,7 +304,7 @@
   }
 
   .page-shell {
-    @apply px-2.5 py-2.5;
+    @apply px-2.5 py-2;
   }
 
   .page-shell .page-title,
@@ -324,6 +324,7 @@
   .page-shell section,
   .page-shell article {
     border-radius: 0.65rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.045) !important;
   }
 
   .page-shell > :where(div, header, section):not(:last-child),
@@ -368,14 +369,14 @@
   }
 
   .page-shell :where(input:not([type='checkbox']):not([type='radio']), select) {
-    height: 2.25rem !important;
-    min-height: 2.25rem !important;
+    height: 2.125rem !important;
+    min-height: 2.125rem !important;
     border-radius: 0.65rem !important;
     font-size: 0.8125rem !important;
   }
 
   .page-shell :where(button) {
-    min-height: 2.25rem;
+    min-height: 2.125rem;
     border-radius: 0.65rem;
   }
 
@@ -404,12 +405,12 @@
   }
 
   .page-shell :where(.shadow-lg, .shadow-md, .shadow-sm) {
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05) !important;
   }
 
   .page-shell :where(.field) {
-    height: 2.25rem !important;
-    min-height: 2.25rem !important;
+    height: 2.125rem !important;
+    min-height: 2.125rem !important;
   }
 
   .empty-state,
