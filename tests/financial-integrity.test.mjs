@@ -11,6 +11,23 @@ const [migration, api, finance, db, paymentModal, financeUi] = await Promise.all
   read('src/components/finance/FinanceUi.jsx'),
 ]);
 
+const migrationStatements = migration
+  .split(/^\s*-- statement-breakpoint\s*$/m)
+  .map(statement => statement.trim())
+  .filter(Boolean);
+assert.equal(
+  migrationStatements.length,
+  8,
+  'A migracao financeira deve enviar cada comando separadamente para a Neon.',
+);
+for (const statement of migrationStatements) {
+  assert.equal(
+    (statement.match(/;/g) || []).length,
+    1,
+    'Cada instrucao preparada da migracao deve conter somente um comando SQL.',
+  );
+}
+
 assert.match(db, /CURRENT_SCHEMA_VERSION = 16/, 'A aplicação deve exigir a migração de integridade financeira.');
 assert.match(migration, /cash_close/, 'Fechamentos precisam ter uma origem financeira válida.');
 assert.match(migration, /nexo_sales_client_operation_uidx/, 'Vendas devem rejeitar repetição da mesma operação.');
