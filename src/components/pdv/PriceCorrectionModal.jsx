@@ -30,7 +30,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="presentation"
     >
       <div
@@ -39,9 +39,9 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="price-correction-title"
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl sm:max-w-lg"
+        className="w-full overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-lg sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3.5 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 sm:px-5">
           <div>
             <h2 id="price-correction-title" className="text-lg font-bold">
               Corrigir valor do produto

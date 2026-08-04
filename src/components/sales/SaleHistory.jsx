@@ -214,7 +214,7 @@ export function SaleDetailModal({
   if (loading || sale._loading)
     return (
       <div
-        className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+        className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4 backdrop-blur-[2px]"
         role="presentation"
       >
         <div className="rounded-xl border border-border bg-card px-5 py-4 text-center shadow-2xl">
@@ -230,27 +230,30 @@ export function SaleDetailModal({
       : formatCurrency(totals.discount);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="flex h-dvh w-full max-w-lg flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-2xl sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
+        className="flex max-h-[96dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sale-detail-title"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-4 py-3">
-          <div>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/80 bg-card px-3 py-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><ReceiptText className="h-5 w-5" /></span>
+          <div className="min-w-0">
             <h2 id="sale-detail-title" className="text-lg font-black">
               Venda #{sale.sale_number}
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {formatDateTime(sale.created_date)}
             </p>
+          </div>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -289,7 +292,7 @@ export function SaleDetailModal({
             </button>
           </div>
         </div>
-        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-3 text-sm sm:p-5">
+        <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/10 p-3 text-sm sm:p-4">
           <div className="grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
             <Info
               label="Vendedor"
@@ -394,14 +397,14 @@ export function ConfirmSaleAction({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
       role="presentation"
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-4 text-card-foreground shadow-2xl sm:p-5"
+        className="w-full rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="sale-action-title"

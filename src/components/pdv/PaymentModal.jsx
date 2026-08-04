@@ -153,9 +153,9 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-0 backdrop-blur-sm sm:p-5" role="presentation">
-      <div ref={modalRef} tabIndex={-1} className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
-        <div className="flex items-center justify-between border-b border-border px-3 py-2.5 sm:px-5 sm:py-3">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/75 p-0 backdrop-blur-[2px] sm:items-center sm:p-5" role="presentation">
+      <div ref={modalRef} tabIndex={-1} className="flex max-h-[97dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.3)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.38)]" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-3 py-2.5 sm:px-5 sm:py-3">
           <div>
             <h2 id="payment-title" className="text-base font-black sm:text-xl">Forma de pagamento</h2>
             <p className="hidden text-xs text-muted-foreground sm:block">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>

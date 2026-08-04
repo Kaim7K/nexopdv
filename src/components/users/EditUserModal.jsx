@@ -40,8 +40,8 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
-      <form ref={modalRef} onSubmit={save} className="my-auto max-h-[calc(100dvh-0.75rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-3 text-card-foreground shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-5" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+    <div className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
+      <form ref={modalRef} onSubmit={save} className="max-h-[96dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:max-w-lg sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
         <div className="mb-3 flex items-start justify-between gap-4 sm:mb-5">
           <div>
             <h2 id="edit-user-title" className="text-lg font-black sm:text-xl">Editar usuário</h2>

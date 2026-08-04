@@ -71,7 +71,7 @@ export default function CashRegisterModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid items-end bg-black/60 p-0 backdrop-blur-sm sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-[70] grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
       role="presentation"
       onMouseDown={(event) =>
         event.target === event.currentTarget && !processing && onClose?.()
@@ -80,12 +80,12 @@ export default function CashRegisterModal({
       <form
         ref={modalRef}
         onSubmit={submit}
-        className="max-h-dvh w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl"
+        className="max-h-[96dvh] w-full max-w-lg overflow-y-auto rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-modal-title"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-muted/15 p-4">
           <div className="flex items-start gap-3">
             <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-accent/10 text-accent">
               {isOpenMode ? (

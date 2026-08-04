@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Archive, Ban, Check, Clock, HandCoins, Phone, RotateCcw, Search, X } from 'lucide-react';
+import { Archive, Ban, Banknote, Check, Clock, CreditCard, HandCoins, Phone, QrCode, RotateCcw, Search, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
@@ -15,11 +15,12 @@ import {
   PageHeader,
 } from '@/components/common/AppShell';
 
+/** @type {Array<[string, string, React.ElementType]>} */
 const SETTLEMENT_METHODS = [
-  ['dinheiro', 'Dinheiro'],
-  ['pix', 'Pix'],
-  ['debito', 'Débito'],
-  ['credito', 'Crédito'],
+  ['dinheiro', 'Dinheiro', Banknote],
+  ['pix', 'Pix', QrCode],
+  ['debito', 'Débito', CreditCard],
+  ['credito', 'Crédito', CreditCard],
 ];
 
 export default function Fiados() {
@@ -298,10 +299,10 @@ export default function Fiados() {
       )}
 
       {settleFiado && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="settle-title">
+        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
+          <div ref={debtModalRef} tabIndex={-1} className="max-h-[94dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="dialog" aria-modal="true" aria-labelledby="settle-title">
             <ModalHeader id="settle-title" title="Quitar fiado" subtitle={`${settleFiado.responsible_name} · ${formatCurrency(settleFiado.total_amount)}`} onClose={() => setSettleFiado(null)} disabled={processing} />
-            <section className="mt-4 rounded-2xl border border-border bg-background p-4">
+            <section className="mt-4 rounded-xl border border-border/80 bg-muted/10 p-3">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-black">Itens da venda</h3>
                 <span className="text-xs font-semibold text-muted-foreground">
@@ -347,15 +348,15 @@ export default function Fiados() {
             </section>
             <p className="mt-5 text-sm font-semibold">Selecione a forma de recebimento:</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {SETTLEMENT_METHODS.map(([method, label]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className="min-h-12 rounded-xl border border-border bg-background text-sm font-bold transition hover:border-accent hover:bg-accent/5 disabled:opacity-50">{label}</button>)}
+              {SETTLEMENT_METHODS.map(([method, label, Icon]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border/80 bg-background text-sm font-bold transition hover:border-accent hover:bg-accent/5 disabled:opacity-50"><Icon className="h-4 w-4 text-muted-foreground" />{label}</button>)}
             </div>
           </div>
         </div>
       )}
 
       {cancelFiado && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
+        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
+          <div ref={debtModalRef} tabIndex={-1} className="w-full rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
             <ModalHeader id="cancel-fiado-title" title="Cancelar fiado" subtitle={`${cancelFiado.responsible_name} · ${formatCurrency(cancelFiado.total_amount)}`} onClose={() => setCancelFiado(null)} disabled={processing} />
             <div className="mt-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">O registro deixará de aparecer como pendente. Esta ação ficará registrada na auditoria.</div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" disabled={processing} onClick={() => setCancelFiado(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button><button type="button" disabled={processing} onClick={handleCancel} className="min-h-11 rounded-xl bg-destructive px-5 text-sm font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">{processing ? 'Cancelando...' : 'Confirmar cancelamento'}</button></div>
@@ -373,5 +374,5 @@ function StatusBadge({ status }) {
 }
 
 function ModalHeader({ id, title, subtitle, onClose, disabled }) {
-  return <div className="flex items-start justify-between gap-4"><div><h2 id={id} className="text-xl font-black">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{subtitle}</p></div><button type="button" disabled={disabled} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label="Fechar"><X className="h-5 w-5" /></button></div>;
+  return <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><HandCoins className="h-5 w-5" /></span><div className="min-w-0"><h2 id={id} className="truncate text-lg font-black">{title}</h2><p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p></div></div><button type="button" disabled={disabled} onClick={onClose} className="grid h-9 w-9 flex-none place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Fechar"><X className="h-5 w-5" /></button></div>;
 }

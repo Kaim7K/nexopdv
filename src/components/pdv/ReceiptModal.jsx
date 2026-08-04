@@ -139,9 +139,9 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
   }, [sale, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[90dvh]">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4 no-print">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="flex max-h-[96dvh] w-full max-w-2xl flex-col rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[90dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
+        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 no-print sm:px-5">
           <div>
             <h2 id="receipt-modal-title" className="text-lg font-bold">Recibo da venda</h2>
             <p className="text-xs text-muted-foreground">Visualização organizada para impressão e PDF</p>

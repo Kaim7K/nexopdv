@@ -708,7 +708,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   };
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-0 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:p-4"
       role="presentation"
     >
       <section
@@ -717,20 +717,25 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-detail-title"
-        className="flex h-dvh w-full max-w-4xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+        className="flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-[20px] sm:border sm:border-border/80 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
       >
-        <header className="relative flex flex-col gap-2 border-b border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
-          <div className="min-w-0 pr-11 sm:pr-0">
+        <header className="relative flex flex-col gap-3 border-b border-border/80 bg-muted/15 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <div className="flex min-w-0 items-center gap-3 pr-11 sm:pr-0">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+              <Banknote className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="cash-detail-title" className="truncate text-lg font-black sm:text-xl">
+              <h2 id="cash-detail-title" className="truncate text-base font-black sm:text-lg">
                 Caixa de {session.seller_name}
               </h2>
               <Status value={session.status} />
             </div>
-            <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {session.unit_name || "Unidade principal"} · aberto em{" "}
               {formatDate(session.opened_at)}
             </p>
+            </div>
           </div>
           <div className="grid w-full grid-cols-3 items-center gap-2 sm:flex sm:w-auto sm:flex-none sm:pr-11">
             {canManageClosed && !editing && (
@@ -776,12 +781,12 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             </button>
           </div>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+        <div className="flex-1 space-y-3 overflow-y-auto bg-muted/10 p-3 sm:p-4">
           {loading ? (
             <LoadingState label="Carregando movimentação completa..." />
           ) : (
             <>
-              <section className="rounded-2xl border border-border bg-muted/10 p-4">
+              <section className="rounded-xl border border-border/80 bg-card p-3">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div>
                     <h3 className="font-black">Resumo do turno</h3>
@@ -793,7 +798,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     {summary.sales_count || 0} venda(s)
                   </span>
                 </div>
-                <dl className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                   <ValueCard
                     label="Total vendido"
                     value={formatCurrency(totalSales)}
@@ -817,7 +822,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </dl>
               </section>
 
-              <section className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+              <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.045] p-3 sm:p-4">
                 <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
                   <div>
                     <h3 className="font-black">Conferência do dinheiro</h3>
@@ -889,7 +894,9 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-border bg-card p-4">
+              <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+                <div className="space-y-3">
+              <section className="rounded-xl border border-border/80 bg-card p-3">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-black">Distribuição dos pagamentos</h3>
                   {canMove && (
@@ -925,7 +932,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   )}
                 </div>
               </section>
-              <section className="rounded-2xl border border-border bg-card p-4">
+              <section className="rounded-xl border border-border/80 bg-card p-3">
                 <div className="mb-3">
                   <h3 className="font-black">Entradas, retiradas e ajustes</h3>
                   <p className="text-xs text-muted-foreground">
@@ -1120,7 +1127,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </button>
                 </form>
               )}
-              <section className="rounded-2xl border border-border bg-card p-4">
+                </div>
+              <section className="rounded-xl border border-border/80 bg-card p-3 xl:sticky xl:top-0">
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-black">Vendas vinculadas</h3>
@@ -1166,6 +1174,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                   </div>
                 )}
               </section>
+              </div>
             </>
           )}
         </div>
@@ -1261,20 +1270,20 @@ function CashSaleDetailModal({ sale, loading, onClose }) {
   const change = Number(sale.change_amount || Math.max(0, received - totals.total));
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-0 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-[60] grid items-end bg-slate-950/75 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
       role="presentation"
       onClick={onClose}
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card shadow-2xl sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"
+        className="flex max-h-[96dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.3)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.38)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-sale-detail-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-muted/15 p-4">
           <div className="min-w-0">
             <h2 id="cash-sale-detail-title" className="truncate text-lg font-black">
               Venda #{sale.sale_number}
@@ -1292,7 +1301,7 @@ function CashSaleDetailModal({ sale, loading, onClose }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+        <div className="flex-1 overflow-y-auto bg-muted/10 p-4 sm:p-5">
           {loading ? (
             <LoadingState label="Carregando venda..." />
           ) : (
@@ -1419,10 +1428,11 @@ function CashFormulaRow({
 
 function ValueCard({ label, value, hint = null }) {
   return (
-    <div className="rounded-xl border border-border bg-muted/20 p-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-lg font-black tabular-nums">{value}</dd>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+    <div className="relative overflow-hidden rounded-lg border border-border/80 bg-background px-3 py-2.5 pl-4">
+      <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-emerald-500" />
+      <dt className="text-[11px] font-semibold text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 text-base font-black tabular-nums sm:text-lg">{value}</dd>
+      {hint && <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{hint}</p>}
     </div>
   );
 }

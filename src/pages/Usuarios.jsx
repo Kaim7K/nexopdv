@@ -241,14 +241,14 @@ export default function Usuarios() {
 
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
           onMouseDown={event => event.target === event.currentTarget && !saving && setShowCreate(false)}
           role="presentation"
         >
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="my-auto w-full max-w-lg rounded-xl border border-border bg-card p-3 text-card-foreground shadow-2xl sm:p-5"
+            className="max-h-[96dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-lg sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-user-title"

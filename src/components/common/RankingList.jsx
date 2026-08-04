@@ -71,7 +71,7 @@ function RankingModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-3"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       onClick={onClose}
     >
       <section
@@ -80,10 +80,10 @@ function RankingModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${title} completo`}
-        className={`flex max-h-[92dvh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-xl border border-border bg-card text-card-foreground shadow-2xl sm:max-h-[88dvh] sm:rounded-xl`}
+        className={`flex max-h-[94dvh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[88dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-muted/15 px-4 py-3">
           <div className="min-w-0">
             <h3 className="truncate text-sm font-bold">{title}</h3>
             <p className="text-xs text-muted-foreground">

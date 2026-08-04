@@ -505,7 +505,7 @@ export default function AdminMercados() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
           onMouseDown={(event) =>
             event.target === event.currentTarget && !saving && setOpen(false)
           }
@@ -514,7 +514,7 @@ export default function AdminMercados() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="my-auto grid max-h-[calc(100dvh-0.75rem)] w-full max-w-2xl gap-3 overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl sm:max-h-[92dvh] sm:grid-cols-2 sm:p-5"
+            className="grid max-h-[96dvh] w-full gap-3 overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:max-w-2xl sm:grid-cols-2 sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-market-title"
@@ -707,16 +707,16 @@ export default function AdminMercados() {
         </div>
       )}
       {detail && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4">
           <section
             ref={detailModalRef}
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="market-detail-title"
-            className="flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border"
+            className="flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
           >
-            <header className="flex items-start justify-between border-b border-border p-3 sm:p-5">
+            <header className="flex items-start justify-between border-b border-border/80 bg-muted/15 p-4">
               <div>
                 <h2 id="market-detail-title" className="text-xl font-black">
                   {detail.market?.name}

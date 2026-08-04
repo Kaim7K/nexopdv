@@ -69,7 +69,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="presentation"
     >
       <form
@@ -80,9 +80,9 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         aria-modal="true"
         aria-labelledby="quick-product-title"
         aria-describedby="quick-product-description"
-        className="flex h-dvh w-full max-w-sm flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-w-md sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+        className="flex max-h-[96dvh] w-full flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2.5 sm:px-5 sm:py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-muted/15 px-4 py-3">
           <div>
             <h2 id="quick-product-title" className="text-base font-black sm:text-lg">
               Produto não encontrado

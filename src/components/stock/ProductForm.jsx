@@ -310,7 +310,7 @@ export default function ProductForm({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="presentation"
     >
       <div
@@ -319,9 +319,9 @@ export default function ProductForm({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex h-dvh w-full max-w-2xl flex-col overflow-hidden bg-card text-card-foreground sm:h-auto sm:max-h-[94dvh] sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+        className="flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3.5 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 sm:px-5">
           <div>
             <h2 id={titleId} className="text-lg font-bold">
               {isEditing
@@ -347,7 +347,7 @@ export default function ProductForm({
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain bg-muted/10 p-4 sm:p-5">
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3.5 sm:flex-row">
             <div className="grid h-28 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
               {form.image_url ? (
