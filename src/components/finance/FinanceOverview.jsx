@@ -140,7 +140,34 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         </section>
       )}
 
-      <section className="grid gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
+      <details className="surface-card group overflow-hidden xl:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
+          <span>
+            <strong className="block text-sm">Ver gráfico e compromissos</strong>
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              Evolução do dinheiro e contas pendentes.
+            </span>
+          </span>
+          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+        </summary>
+        <div className="space-y-2.5 border-t border-border p-2.5">
+          <ChartCard title="Entradas, saídas e lucro">
+            <Suspense fallback={<ChartSkeleton height="h-[180px]" />}>
+              <FinanceTrendChart data={data?.series || []} />
+            </Suspense>
+          </ChartCard>
+          <section className="surface-card p-2.5">
+            <h3 className="text-sm font-bold">Próximos compromissos</h3>
+            <div className="mt-2 space-y-1.5">
+              <FinancialPositionRow label="Contas a pagar" value={summary.payable} help="Ainda precisam ser pagas" tone="negative" onClick={() => onNavigate('payables')} />
+              <FinancialPositionRow label="Contas a receber" value={summary.receivable} help="Inclui fiados pendentes" tone="positive" onClick={() => onNavigate('receivables')} />
+              <FinancialPositionRow label="Dinheiro em caixa" value={summary.cash_available} help="Caixa físico, carteira e cofre" onClick={() => onNavigate('accounts')} />
+            </div>
+          </section>
+        </div>
+      </details>
+
+      <section className="hidden gap-3 xl:grid xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
         <ChartCard title="Entradas, saídas e lucro">
           <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
             Acompanhe a evolução diária sem confundir faturamento com saldo.

@@ -30,9 +30,14 @@ const TOOLTIP_STYLE = {
   boxShadow: '0 12px 30px rgb(0 0 0 / 0.16)',
 };
 
+const compactChartHeight = (desktopHeight) =>
+  typeof window !== 'undefined' && window.innerWidth < 640
+    ? Math.min(210, desktopHeight)
+    : desktopHeight;
+
 export function BreakdownChart({ data }) {
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={compactChartHeight(280)}>
       <BarChart data={data} margin={{ left: 8, right: 16 }}>
         <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
         <XAxis
@@ -64,7 +69,7 @@ export function BreakdownChart({ data }) {
 
 export function DailyRevenueChart({ data }) {
   return (
-    <ResponsiveContainer width="100%" height={270}>
+    <ResponsiveContainer width="100%" height={compactChartHeight(270)}>
       <BarChart data={data}>
         <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
         <XAxis
@@ -97,7 +102,7 @@ export function DailyRevenueChart({ data }) {
 
 export function PaymentChart({ data }) {
   return (
-    <ResponsiveContainer width="100%" height={270}>
+    <ResponsiveContainer width="100%" height={compactChartHeight(270)}>
       <PieChart>
         <Pie
           data={data}

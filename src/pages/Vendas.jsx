@@ -358,15 +358,15 @@ export default function Vendas() {
         </div>
       </div>
 
-      <section className="mb-3 grid gap-2 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:gap-3 sm:p-3" aria-label="Filtros de vendas">
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-4">
+      <section className="mb-3 grid gap-1.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:gap-3 sm:p-3" aria-label="Filtros de vendas">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2">
           <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
-          <SaleMetric label="Vendas concluídas" value={metrics.sales_count || 0} />
-          <SaleMetric label="Ticket médio" value={formatCurrency(metrics.average_ticket)} />
+          <SaleMetric label="Vendas" value={metrics.sales_count || 0} />
+          <SaleMetric label="Ticket" value={formatCurrency(metrics.average_ticket)} />
           <SaleMetric label="Canceladas" value={metrics.cancelled_count || 0} muted />
         </div>
 
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1">
           {[
             ['hoje', 'Hoje'],
             ['ontem', 'Ontem'],
@@ -377,14 +377,14 @@ export default function Vendas() {
               key={range}
               type="button"
               onClick={() => applyQuickRange(range)}
-              className="min-h-8 rounded-lg border border-border px-2 text-xs font-bold transition hover:border-accent hover:bg-accent/5 sm:min-h-9 sm:px-3"
+              className="min-h-8 rounded-lg border border-border px-1.5 text-xs font-bold transition hover:border-accent hover:bg-accent/5 sm:min-h-9 sm:px-3"
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 sm:grid-cols-[minmax(220px,1fr)_auto]">
           <label className="relative">
             <span className="sr-only">Buscar vendas</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -394,19 +394,19 @@ export default function Vendas() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Número, vendedor ou pagamento"
+              placeholder="Buscar venda"
               className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
             />
           </label>
           <button
             type="button"
             onClick={() => setAdvancedFiltersOpen((open) => !open)}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted sm:min-h-11 lg:hidden"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted sm:min-h-11 lg:hidden"
             aria-expanded={advancedFiltersOpen}
             aria-controls="sales-advanced-filters"
           >
             <SlidersHorizontal className="h-4 w-4" />
-            Filtros
+            <span className="hidden min-[380px]:inline">Filtros</span>
             {activeFilterCount > 0 && (
               <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[10px] text-accent-foreground">
                 {activeFilterCount}
@@ -507,13 +507,13 @@ export default function Vendas() {
           </select>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             {hasFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="min-h-10 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted"
+                className="min-h-9 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted"
               >
                 Limpar filtros
               </button>
@@ -524,7 +524,7 @@ export default function Vendas() {
               type="button"
               disabled={reporting}
               onClick={downloadReport}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
             >
               {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               {reporting ? 'Gerando...' : 'Baixar relatório'}

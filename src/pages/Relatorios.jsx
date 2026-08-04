@@ -668,7 +668,7 @@ export default function Relatorios() {
         </div>
         {stats.breakdownData.length ? (
           <>
-            <div className="p-2.5 sm:p-3">
+            <div className="p-2 sm:p-3">
               <Suspense fallback={<ChartLoading height="h-[280px]" />}>
                 <BreakdownChart data={stats.breakdownData} />
               </Suspense>
@@ -694,14 +694,14 @@ export default function Relatorios() {
                 </button>
               </div>
             </div>
-            <div className="grid max-h-[22rem] gap-2 overflow-y-auto overscroll-contain border-t border-border p-2 lg:hidden">
+            <div className="grid max-h-56 gap-1.5 overflow-y-auto overscroll-contain border-t border-border p-2 lg:hidden">
               {stats.breakdownData.map((row) => (
                 <article
                   key={row.key}
-                  className={`rounded-xl border p-3 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
+                  className={`rounded-lg border p-2.5 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
                 >
                   <strong className="block text-sm">{row.label}</strong>
-                  <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
                     <div>
                       <dt className="text-muted-foreground">Faturamento</dt>
                       <dd className="mt-1 font-bold tabular-nums">
