@@ -189,7 +189,7 @@ export default function HistoricoCaixas() {
         <div className="grid gap-1.5 sm:hidden">
           <div className="grid grid-cols-2 gap-2">
             <Filter label="De">
-              <input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
+              <input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
             </Filter>
             <Filter label="At?">
               <input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" />
@@ -229,7 +229,7 @@ export default function HistoricoCaixas() {
         </div>
 
         <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-6">
-          <Filter label="De"><input type="date" value={filters.from} max={filters.to || undefined} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
+          <Filter label="De"><input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
           <Filter label="At?"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
           <Filter label="Operador">
             <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">

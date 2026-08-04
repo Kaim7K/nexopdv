@@ -424,7 +424,6 @@ export default function Vendas() {
             aria-label="Data inicial"
             type="date"
             value={reportFrom}
-            max={reportTo || undefined}
             onChange={(event) => {
               const selectedDate = event.target.value;
               setReportFrom(selectedDate);

@@ -384,7 +384,6 @@ function PeriodFilter({ range, setRange, loading, onRefresh }) {
                 type="date"
                 className="field mt-1"
                 value={range.from}
-                max={range.to}
                 onChange={(event) => {
                   setPreset('custom');
                   const selectedDate = event.target.value;
