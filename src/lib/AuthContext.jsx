@@ -12,11 +12,15 @@ import { nexoApi } from '@/api/nexoApi';
 
 const AuthContext = createContext(null);
 const USER_CACHE_KEY = 'nexo:session-user';
-const USER_CACHE_TTL = 60_000;
+const USER_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+function storage() {
+  return typeof window === 'undefined' ? null : window.localStorage;
+}
 
 function readCachedUser() {
   try {
-    const cached = JSON.parse(sessionStorage.getItem(USER_CACHE_KEY) || 'null');
+    const cached = JSON.parse(storage()?.getItem(USER_CACHE_KEY) || 'null');
     return cached && cached.expiresAt > Date.now() ? cached.user : null;
   } catch {
     return null;
@@ -25,8 +29,8 @@ function readCachedUser() {
 
 function cacheUser(user) {
   try {
-    if (user) sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, expiresAt: Date.now() + USER_CACHE_TTL }));
-    else sessionStorage.removeItem(USER_CACHE_KEY);
+    if (user) storage()?.setItem(USER_CACHE_KEY, JSON.stringify({ user, expiresAt: Date.now() + USER_CACHE_TTL }));
+    else storage()?.removeItem(USER_CACHE_KEY);
   } catch { /* cache opcional */ }
 }
 

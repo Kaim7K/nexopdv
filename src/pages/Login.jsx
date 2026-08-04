@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { nexoApi } from "@/api/nexoApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,19 +15,37 @@ export default function Login() {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nexo:remember-email');
+      if (saved) setEmail(saved);
+    } catch {
+      /* opcional */
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const { user } = await nexoApi.auth.login(
-        email.trim().toLowerCase(),
+        normalizedEmail,
         password,
+        remember,
       );
+      try {
+        if (remember) localStorage.setItem('nexo:remember-email', normalizedEmail);
+        else localStorage.removeItem('nexo:remember-email');
+      } catch {
+        /* opcional */
+      }
       window.location.href =
         user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
     } catch (err) {
@@ -50,7 +68,7 @@ export default function Login() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <div className="relative">
@@ -60,6 +78,7 @@ export default function Login() {
             />
             <Input
               id="email"
+              name="email"
               type="email"
               autoComplete="email"
               autoFocus
@@ -88,6 +107,7 @@ export default function Login() {
             />
             <Input
               id="password"
+              name="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="••••••••"
@@ -113,6 +133,21 @@ export default function Login() {
             </button>
           </div>
         </div>
+
+        <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--market-primary)]"
+          />
+          <span>
+            <strong className="block leading-tight">Manter conectado</strong>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Este dispositivo continuará logado por bastante tempo. O navegador também pode oferecer salvar a senha.
+            </span>
+          </span>
+        </label>
 
         <Button
           type="submit"

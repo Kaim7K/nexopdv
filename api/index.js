@@ -701,7 +701,9 @@ async function routeHandler(req, res) {
     await sql`UPDATE nexo.users SET last_login_at = now() WHERE id = ${authenticated.id}`;
     const [sessionPolicy] =
       await sql`SELECT value #>> '{}' AS hours FROM nexo.platform_settings WHERE key='security_session_hours'`;
-    await createSession(authenticated, res, Number(sessionPolicy?.hours || 12));
+    const sessionHours =
+      req.body?.remember === false ? Number(sessionPolicy?.hours || 12) : 24 * 90;
+    await createSession(authenticated, res, sessionHours);
     return send(res, 200, { ok: true, user: publicUser(authenticated) });
   }
   const user = await currentUser(req, sql);

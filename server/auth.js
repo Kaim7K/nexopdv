@@ -16,6 +16,7 @@ const loginSchema = z.object({
     .max(254)
     .transform((value) => value.toLowerCase()),
   password: z.string().min(1).max(256),
+  remember: z.boolean().optional(),
 });
 
 const secret = () => new TextEncoder().encode(getRuntimeConfig().jwtSecret);
@@ -100,7 +101,7 @@ export async function createSession(user, res, sessionHours = 12) {
   const config = getRuntimeConfig();
   const durationSeconds = Math.max(
     3600,
-    Math.min(168 * 3600, Number(sessionHours || 12) * 3600),
+    Math.min(90 * 24 * 3600, Number(sessionHours || 12) * 3600),
   );
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })

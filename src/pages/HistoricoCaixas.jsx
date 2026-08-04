@@ -142,7 +142,11 @@ export default function HistoricoCaixas() {
     load();
   }, [load]);
   const updateFilter = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "from" ? { to: value } : {}),
+    }));
     setPage(1);
   };
   const openDetail = async (item) => {

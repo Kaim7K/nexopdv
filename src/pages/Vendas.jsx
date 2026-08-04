@@ -426,7 +426,9 @@ export default function Vendas() {
             value={reportFrom}
             max={reportTo || undefined}
             onChange={(event) => {
-              setReportFrom(event.target.value);
+              const selectedDate = event.target.value;
+              setReportFrom(selectedDate);
+              setReportTo(selectedDate);
               setPage(1);
             }}
             className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"

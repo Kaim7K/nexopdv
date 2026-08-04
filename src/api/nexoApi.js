@@ -234,8 +234,8 @@ export const nexoApi = {
   cache: { clear: invalidateCache },
   auth: {
     me: () => request('/auth/me', { cacheTTL: 15_000 }),
-    login: (email, password) =>
-      request('/auth/login', { method: 'POST', body: { email, password } }),
+    login: (email, password, remember = true) =>
+      request('/auth/login', { method: 'POST', body: { email, password, remember } }),
     logout: async (redirect) => {
       await request('/auth/logout', { method: 'POST' });
       if (redirect) window.location.href = redirect;

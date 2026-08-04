@@ -50,7 +50,8 @@ assert.match(`${stock}\n${stockMetric}`, /StockMetric\s+label="Sem estoque"[\s\S
 assert.doesNotMatch(stock, /produtos sem estoque[\s\S]{0,300}bg-red-600/i, 'O painel vermelho grande antigo não deve voltar.');
 assert.match(settings, /sidebar_background_color/, 'Configurações deve permitir alterar o fundo da sidebar.');
 assert.match(settings, /isAccentDistinct/, 'O sistema deve impedir combinações sem contraste.');
-assert.match(auth, /sessionStorage/, 'A sessão deve usar cache curto.');
+assert.match(auth, /localStorage/, 'A sessão deve manter cache persistente para evitar deslogar ao fechar a aba.');
+assert.match(api, /24 \* 90/, 'Login com manter conectado deve criar sessão longa.');
 assert.match(layout, /ROUTE_PREFETCHERS/, 'As páginas devem ser pré-carregadas por intenção.');
 assert.match(googleImages, /window\.open/, 'A pesquisa deve abrir no navegador do usuário.');
 assert.match(pdv, /window\.setInterval/, 'O rascunho deve manter heartbeat enquanto a tela está ativa.');

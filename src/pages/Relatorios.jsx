@@ -566,7 +566,10 @@ export default function Relatorios() {
                 aria-label="Data inicial"
                 type="date"
                 value={customStart}
-                onChange={(event) => setCustomStart(event.target.value)}
+                onChange={(event) => {
+                  setCustomStart(event.target.value);
+                  setCustomEnd(event.target.value);
+                }}
                 className="ml-1 min-h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
               />
             </label>

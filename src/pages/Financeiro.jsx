@@ -387,9 +387,11 @@ function PeriodFilter({ range, setRange, loading, onRefresh }) {
                 max={range.to}
                 onChange={(event) => {
                   setPreset('custom');
+                  const selectedDate = event.target.value;
                   setRange((value) => ({
                     ...value,
-                    from: event.target.value,
+                    from: selectedDate,
+                    to: selectedDate,
                   }));
                 }}
               />
