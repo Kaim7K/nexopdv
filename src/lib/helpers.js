@@ -12,6 +12,9 @@ const numberFormatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
+export const roundCurrency = value =>
+  Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
 export const PAYMENT_METHODS = [
   { method: 'dinheiro', label: 'Dinheiro', color: 'bg-green-100 text-green-800 border-green-300' },
   { method: 'debito', label: 'Cartão de Débito', color: 'bg-blue-100 text-blue-800 border-blue-300' },
@@ -114,16 +117,24 @@ export const getPaymentLabel = method => (
 
 export const calculateSaleTotals = sale => {
   const items = sale.items || [];
-  const subtotal = items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+  const subtotal = roundCurrency(
+    items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0),
+  );
   let discount = Math.max(0, Number(sale.discount_value) || 0);
 
   if (sale.discount_type === 'percentual') {
-    discount = subtotal * (Math.min(discount, 100) / 100);
+    discount = roundCurrency(subtotal * (Math.min(discount, 100) / 100));
   }
 
-  discount = Math.min(discount, subtotal);
-  const total = Math.max(0, subtotal - discount);
-  const totalItems = items.reduce((sum, item) => sum + (Number(item.quantity) || (item.weight ? 1 : 0)), 0);
+  discount = roundCurrency(Math.min(discount, subtotal));
+  const total = roundCurrency(Math.max(0, subtotal - discount));
+  const totalItems = roundCurrency(
+    items.reduce(
+      (sum, item) =>
+        sum + (Number(item.quantity) || Number(item.weight) || 0),
+      0,
+    ),
+  );
 
   return { subtotal, discount, total, totalItems };
 };

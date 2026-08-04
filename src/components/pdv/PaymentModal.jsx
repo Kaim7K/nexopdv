@@ -10,7 +10,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
-import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS } from '@/lib/helpers';
+import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS, roundCurrency } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
@@ -63,11 +63,16 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
 
   const { subtotal, discount, total } = calculateSaleTotals(sale);
   const nonFiadoPayments = payments.filter(payment => payment.method !== 'fiado');
-  const paidAmount = nonFiadoPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const remaining = total - paidAmount;
+  const paidAmount = roundCurrency(
+    nonFiadoPayments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0,
+    ),
+  );
+  const remaining = roundCurrency(total - paidAmount);
   const hasFiado = payments.some(payment => payment.method === 'fiado');
-  const debtAmount = Math.max(0, remaining);
-  const change = !hasFiado && remaining < 0 ? Math.abs(remaining) : 0;
+  const debtAmount = roundCurrency(Math.max(0, remaining));
+  const change = !hasFiado && remaining < 0 ? roundCurrency(Math.abs(remaining)) : 0;
 
   useEffect(() => {
     if (focusIndex === null) return;
@@ -84,18 +89,18 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
       setShowFiadoForm(true);
       setPayments(previous => previous.some(payment => payment.method === 'fiado')
         ? previous
-        : [...previous, { method, amount: Math.max(0, remaining) }]);
+        : [...previous, { method, amount: roundCurrency(Math.max(0, remaining)) }]);
       return;
     }
     if (remaining <= 0 && !hasFiado) return;
     const index = payments.length;
-    setPayments(previous => [...previous, { method, amount: remaining > 0 ? remaining : 0 }]);
+    setPayments(previous => [...previous, { method, amount: remaining > 0 ? roundCurrency(remaining) : 0 }]);
     setFocusIndex(index);
   };
 
   const updateAmount = (index, value) => {
     setPayments(previous => previous.map((payment, currentIndex) => currentIndex === index
-      ? { ...payment, amount: Number.parseFloat(value) || 0 }
+      ? { ...payment, amount: roundCurrency(Number.parseFloat(value) || 0) }
       : payment));
   };
 
@@ -117,9 +122,13 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
 
   const normalizedPayments = () => payments.map(payment => payment.method === 'fiado'
     ? { ...payment, amount: debtAmount }
-    : payment);
+    : { ...payment, amount: roundCurrency(payment.amount) });
 
   const handleComplete = () => {
+    if (nonFiadoPayments.some(payment => Number(payment.amount || 0) <= 0)) {
+      toast.error('Informe um valor maior que zero ou remova essa forma de pagamento.');
+      return;
+    }
     if (hasFiado) {
       if (!fiadoData.responsible_name.trim()) {
         toast.error('Nome do responsável é obrigatório para venda fiado.');
@@ -140,7 +149,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
       toast.error(`Pagamento incompleto. Falta ${formatCurrency(remaining)}.`);
       return;
     }
-    completeOnce({ payments, observation, sale_type: 'normal' });
+    completeOnce({ payments: normalizedPayments(), observation, sale_type: 'normal' });
   };
 
   return (

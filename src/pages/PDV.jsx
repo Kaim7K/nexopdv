@@ -823,10 +823,18 @@ export default function PDV() {
   };
 
   const completeSale = async (paymentData) => {
+    const operationId =
+      activeSale.client_operation_id || globalThis.crypto?.randomUUID?.();
+    if (!activeSale.client_operation_id)
+      setActiveSale((current) => ({
+        ...current,
+        client_operation_id: operationId,
+      }));
     try {
       const sale = await nexoApi.sales.complete({
         ...activeSale,
         ...paymentData,
+        client_operation_id: operationId,
       });
       setShowPayment(false);
       setShowReceipt(sale);

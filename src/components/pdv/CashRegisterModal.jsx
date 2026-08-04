@@ -50,6 +50,9 @@ export default function CashRegisterModal({
         : Number(summary.expected_cash || 0),
     [summary.expected_cash, closingEntry, closingExpense, isClosingMode],
   );
+  const countedCash = parseCurrencyDigits(closingAmount);
+  const hasCountedCash = closingAmount !== '';
+  const difference = Math.round((countedCash - expectedCash) * 100) / 100;
 
   const submit = (event) => {
     event.preventDefault();
@@ -68,7 +71,7 @@ export default function CashRegisterModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] grid items-end bg-black/60 p-0 backdrop-blur-sm sm:place-items-center sm:p-4"
       role="presentation"
       onMouseDown={(event) =>
         event.target === event.currentTarget && !processing && onClose?.()
@@ -77,14 +80,14 @@ export default function CashRegisterModal({
       <form
         ref={modalRef}
         onSubmit={submit}
-        className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl"
+        className="max-h-dvh w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-modal-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
           <div className="flex items-start gap-3">
-            <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-accent/10 text-accent">
+            <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-accent/10 text-accent">
               {isOpenMode ? (
                 <LockKeyhole className="h-5 w-5" />
               ) : (
@@ -92,7 +95,7 @@ export default function CashRegisterModal({
               )}
             </div>
             <div>
-              <h2 id="cash-modal-title" className="text-xl font-black">
+              <h2 id="cash-modal-title" className="text-lg font-black">
                 {isOpenMode
                   ? 'Abrir caixa'
                   : isClosedMode
@@ -121,7 +124,7 @@ export default function CashRegisterModal({
           )}
         </div>
 
-        <div className="p-5 sm:p-6">
+        <div className="p-4 sm:p-5">
           {isOpenMode ? (
             <label className="block text-sm font-bold">
               Valor inicial do caixa
@@ -148,7 +151,7 @@ export default function CashRegisterModal({
             </label>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <Metric label="Valor inicial" value={formatCurrency(summary.opening_amount)} />
                 <Metric label="Vendas" value={summary.sales_count || 0} />
                 <Metric label="Faturamento" value={formatCurrency(summary.total)} />
@@ -166,6 +169,18 @@ export default function CashRegisterModal({
                     </strong>
                   </div>
                   <CheckCircle2 className="h-8 w-8 text-accent" />
+                </div>
+                <div className="mt-3 grid gap-1.5 border-t border-accent/15 pt-3 text-xs sm:grid-cols-2">
+                  <Formula label="Valor inicial" value={summary.opening_amount} />
+                  <Formula label="Vendas em dinheiro" value={summary.cash_sales} positive />
+                  <Formula label="Outras entradas" value={summary.entries} positive />
+                  <Formula label="Retiradas" value={summary.withdrawals} negative />
+                  {isClosingMode && parseCurrencyDigits(closingEntry) > 0 && (
+                    <Formula label="Adicionado agora" value={parseCurrencyDigits(closingEntry)} positive />
+                  )}
+                  {isClosingMode && parseCurrencyDigits(closingExpense) > 0 && (
+                    <Formula label="Despesa agora" value={parseCurrencyDigits(closingExpense)} negative />
+                  )}
                 </div>
               </div>
 
@@ -195,7 +210,7 @@ export default function CashRegisterModal({
               {!isClosedMode && (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-sm font-bold sm:col-span-2">
-                    Entrada no fechamento{' '}
+                    Dinheiro adicionado agora{' '}
                     <span className="font-normal text-muted-foreground">
                       (opcional)
                     </span>
@@ -218,11 +233,11 @@ export default function CashRegisterModal({
                       />
                     </div>
                     <span className="mt-1.5 block text-xs font-normal text-muted-foreground">
-                      Use para informar dinheiro adicionado ao caixa no fechamento.
+                      Soma ao valor esperado e fica identificado no fechamento.
                     </span>
                   </label>
                   <label className="block text-sm font-bold sm:col-span-2">
-                    Despesa no fechamento{' '}
+                    Dinheiro retirado para despesa{' '}
                     <span className="font-normal text-muted-foreground">
                       (opcional)
                     </span>
@@ -245,14 +260,11 @@ export default function CashRegisterModal({
                       />
                     </div>
                     <span className="mt-1.5 block text-xs font-normal text-muted-foreground">
-                      Esse valor será lançado no financeiro como despesa.
+                      Reduz o caixa e cria uma despesa vinculada no Financeiro.
                     </span>
                   </label>
                   <label className="block text-sm font-bold sm:col-span-2">
-                    Dinheiro contado no fechamento{' '}
-                    <span className="font-normal text-muted-foreground">
-                      (opcional)
-                    </span>
+                    Dinheiro contado no fechamento
                     <div className="relative mt-2">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
                         R$
@@ -260,6 +272,8 @@ export default function CashRegisterModal({
                       <input
                         type="text"
                         inputMode="numeric"
+                        required
+                        autoFocus
                         value={formatCurrencyInput(closingAmount)}
                         onChange={(event) =>
                           setClosingAmount(event.target.value.replace(/\D/g, ''))
@@ -269,6 +283,20 @@ export default function CashRegisterModal({
                       />
                     </div>
                   </label>
+                  {hasCountedCash && (
+                    <div className={`rounded-xl border px-3 py-2.5 text-sm sm:col-span-2 ${Math.abs(difference) < 0.005 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-amber-500/35 bg-amber-500/10 text-amber-800 dark:text-amber-200'}`}>
+                      <strong className="block">
+                        {Math.abs(difference) < 0.005
+                          ? 'Contagem conferida'
+                          : difference > 0
+                            ? `Sobra de ${formatCurrency(difference)}`
+                            : `Falta de ${formatCurrency(Math.abs(difference))}`}
+                      </strong>
+                      <span className="mt-0.5 block text-xs opacity-80">
+                        Comparação entre o dinheiro contado e o valor esperado acima.
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               {isClosedMode && (
@@ -281,7 +309,7 @@ export default function CashRegisterModal({
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border p-5 sm:flex-row sm:justify-end sm:p-6">
+        <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-border bg-card p-4 sm:flex-row sm:justify-end sm:p-5">
           {onClose && (
             <button
               type="button"
@@ -315,7 +343,7 @@ export default function CashRegisterModal({
           )}
           <button
             type="submit"
-            disabled={processing || reporting || (isOpenMode && openingAmount === '')}
+            disabled={processing || reporting || (isOpenMode && openingAmount === '') || (isClosingMode && !hasCountedCash)}
             className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {processing
@@ -334,12 +362,24 @@ export default function CashRegisterModal({
 
 function Metric({ label, value }) {
   return (
-    <div className="rounded-2xl border border-border bg-muted/20 p-3">
+    <div className="rounded-lg border border-border bg-muted/20 p-2.5">
       <span className="block text-[11px] font-bold text-muted-foreground">
         {label}
       </span>
       <strong className="mt-1 block text-base font-black tabular-nums">
         {value}
+      </strong>
+    </div>
+  );
+}
+
+function Formula({ label, value, positive = false, negative = false }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-card/70 px-2.5 py-1.5">
+      <span className="text-muted-foreground">{label}</span>
+      <strong className="tabular-nums">
+        {positive ? '+ ' : negative ? '- ' : ''}
+        {formatCurrency(Math.abs(Number(value || 0)))}
       </strong>
     </div>
   );

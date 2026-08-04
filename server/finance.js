@@ -486,7 +486,25 @@ async function loadDashboard(sql, marketId, query) {
     sql`SELECT * FROM nexo.finance_settings WHERE market_id=${marketId}`,
     sql`SELECT * FROM nexo.finance_accounts WHERE market_id=${marketId} AND active ORDER BY is_default DESC,name`,
     sql`SELECT * FROM nexo.finance_goals WHERE market_id=${marketId} AND period=${range.to.slice(0, 7)}`,
-    sql`SELECT payment->>'method' AS method,COALESCE(sum(CASE WHEN payment->>'amount' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (payment->>'amount')::numeric ELSE 0 END),0)::numeric AS amount FROM nexo.records sale,jsonb_array_elements(COALESCE(sale.data->'payments','[]'::jsonb)) payment WHERE sale.market_id=${marketId} AND sale.entity='sales' AND sale.data->>'status'='concluida' AND payment->>'method'<>'fiado' GROUP BY payment->>'method'`,
+    sql`
+      SELECT method,COALESCE(sum(received_amount),0)::numeric AS amount
+      FROM (
+        SELECT sale.id,payment->>'method' AS method,
+          GREATEST(0,
+            sum(CASE WHEN payment->>'amount' ~ '^[0-9]+(\\.[0-9]+)?$'
+              THEN (payment->>'amount')::numeric ELSE 0 END)-
+            CASE WHEN payment->>'method'='dinheiro'
+              THEN COALESCE(NULLIF(sale.data->>'change_amount','')::numeric,0)
+              ELSE 0 END
+          ) AS received_amount
+        FROM nexo.records sale,
+          jsonb_array_elements(COALESCE(sale.data->'payments','[]'::jsonb)) payment
+        WHERE sale.market_id=${marketId} AND sale.entity='sales'
+          AND sale.data->>'status'='concluida' AND payment->>'method'<>'fiado'
+        GROUP BY sale.id,payment->>'method',sale.data->>'change_amount'
+      ) sale_receipts
+      GROUP BY method
+    `,
   ]);
   const settings = settingsRows[0] || {};
   const productsById = new Map(
@@ -501,7 +519,6 @@ async function loadDashboard(sql, marketId, query) {
   });
   let fiadoPending = 0;
   let fiadoReceived = 0;
-  const fiadoDaily = new Map();
   for (const row of fiados) {
     const item = row.data || {};
     if (item.status === "pendente")
@@ -510,10 +527,6 @@ async function loadDashboard(sql, marketId, query) {
       const day = dateOnly(item.settlement_date);
       if (day >= range.from && day <= range.to) {
         fiadoReceived += Number(item.total_amount || 0);
-        fiadoDaily.set(
-          day,
-          (fiadoDaily.get(day) || 0) + Number(item.total_amount || 0),
-        );
       }
     }
   }
@@ -546,8 +559,7 @@ async function loadDashboard(sql, marketId, query) {
     const txDay = currentTransactions.daily.get(cursor) || {};
     const revenue = round(
       Number(saleDay.revenue || 0) +
-        Number(txDay.revenue || 0) +
-        Number(fiadoDaily.get(cursor) || 0),
+        Number(txDay.revenue || 0),
     );
     const expense = round(Number(txDay.expense || 0));
     const profit = round(revenue - Number(saleDay.cogs || 0) - expense);
@@ -572,6 +584,10 @@ async function loadDashboard(sql, marketId, query) {
         balance +=
           transaction.type === "revenue"
             ? realized
+            : transaction.type === "adjustment"
+              ? String(transaction.notes || '').startsWith('cash_direction:entrada')
+                ? realized
+                : -realized
             : transaction.type === "transfer" ||
                 transaction.type === "expense" ||
                 transaction.type === "loss"
@@ -834,6 +850,22 @@ async function defaultAccountId(sql, marketId, requested) {
   return account.id;
 }
 
+async function openCashSessionForPayment(sql, user, accountId, method) {
+  if (method !== 'dinheiro' || !accountId) return null;
+  const [account] = await sql`
+    SELECT id FROM nexo.finance_accounts
+    WHERE id=${accountId} AND market_id=${user.market_id} AND active AND type='cash'
+  `;
+  if (!account) return null;
+  const [session] = await sql`
+    SELECT id,data FROM nexo.records
+    WHERE market_id=${user.market_id} AND entity='cash_sessions'
+      AND data->>'seller_id'=${user.id} AND data->>'status'='aberto'
+    ORDER BY created_date DESC LIMIT 1
+  `;
+  return session ? { id: session.id, ...(session.data || {}) } : null;
+}
+
 async function ownedReference(
   sql,
   table,
@@ -1042,6 +1074,15 @@ async function createTransaction(sql, user, source) {
   const paidAmount =
     requestedStatus === "paid" || value.type === "transfer" ? value.amount : 0;
   const status = value.type === "transfer" ? "paid" : requestedStatus;
+  const cashSession =
+    paidAmount > 0 && value.type !== 'transfer'
+      ? await openCashSessionForPayment(
+          sql,
+          user,
+          accountId,
+          value.paymentMethod,
+        )
+      : null;
   const [created] = await sql`
     WITH transaction AS (
       INSERT INTO nexo.finance_transactions(market_id,unit_id,account_id,transfer_account_id,category_id,supplier_id,type,description,amount,paid_amount,issue_date,due_date,settled_at,payment_method,status,origin,attachment_url,notes,created_by)
@@ -1050,6 +1091,18 @@ async function createTransaction(sql, user, source) {
     ),payment AS (
       INSERT INTO nexo.finance_payments(market_id,transaction_id,account_id,amount,paid_at,payment_method,attachment_url,created_by)
       SELECT market_id,id,account_id,amount,COALESCE(settled_at,now()),payment_method,attachment_url,created_by FROM transaction WHERE paid_amount>0 AND type<>'transfer'
+      RETURNING *
+    ),cash_movement AS (
+      INSERT INTO nexo.records(market_id,entity,data)
+      SELECT ${user.market_id},'cash_movements',jsonb_build_object(
+        'cash_session_id',${cashSession?.id || null}::text,
+        'type',CASE WHEN ${value.type}::text='revenue' THEN 'entrada' ELSE 'retirada' END,
+        'amount',payment.amount,'note',${value.description}::text,
+        'status','ativo','origin','financeiro','finance_payment_id',payment.id::text,
+        'finance_transaction_id',payment.transaction_id::text,'operator_id',${user.id}::text,
+        'operator_name',${user.full_name || user.email}::text,'created_at',payment.paid_at
+      ) FROM payment WHERE ${Boolean(cashSession)}
+      ON CONFLICT DO NOTHING
     ),event AS (
       INSERT INTO nexo.finance_transaction_events(market_id,transaction_id,action,new_data,actor_id,actor_name)
       SELECT market_id,id,'created',to_jsonb(transaction),${user.id},${user.full_name || user.email} FROM transaction
@@ -1179,6 +1232,12 @@ async function payTransaction(sql, user, id, source) {
       "INVALID_PAYMENT_METHOD",
       "Forma de pagamento inválida.",
     );
+  const cashSession = await openCashSessionForPayment(
+    sql,
+    user,
+    accountId,
+    method,
+  );
   const attachment = normalizeAttachment(source.attachment_url);
   const nextPaid = round(Number(current.paid_amount) + amount),
     nextStatus =
@@ -1187,6 +1246,17 @@ async function payTransaction(sql, user, id, source) {
     WITH payment AS (
       INSERT INTO nexo.finance_payments(market_id,transaction_id,account_id,amount,paid_at,payment_method,notes,attachment_url,created_by)
       VALUES(${user.market_id},${id},${accountId},${amount},${paidAt},${method},${text(source.notes, 1000)},${attachment},${user.id}) RETURNING *
+    ),cash_movement AS (
+      INSERT INTO nexo.records(market_id,entity,data)
+      SELECT ${user.market_id},'cash_movements',jsonb_build_object(
+        'cash_session_id',${cashSession?.id || null}::text,
+        'type',CASE WHEN ${current.type}::text='revenue' THEN 'entrada' ELSE 'retirada' END,
+        'amount',payment.amount,'note',${current.description}::text,
+        'status','ativo','origin','financeiro','finance_payment_id',payment.id::text,
+        'finance_transaction_id',${id}::text,'operator_id',${user.id}::text,
+        'operator_name',${user.full_name || user.email}::text,'created_at',payment.paid_at
+      ) FROM payment WHERE ${Boolean(cashSession)}
+      ON CONFLICT DO NOTHING
     ),updated AS (
       UPDATE nexo.finance_transactions SET paid_amount=${nextPaid},status=${nextStatus},settled_at=CASE WHEN ${nextStatus}='paid' THEN ${paidAt} ELSE settled_at END,account_id=${accountId},payment_method=COALESCE(${method},payment_method),updated_date=now()
       WHERE id=${id} AND market_id=${user.market_id} RETURNING *
@@ -1232,6 +1302,15 @@ async function cancelTransaction(sql, user, id, reason) {
       UPDATE nexo.finance_transactions SET status=${status},cancelled_by=${user.id},cancelled_at=now(),cancellation_reason=${cancellationReason},updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING *
     ),reversed AS (
       UPDATE nexo.finance_payments SET reversed_at=now(),reversed_by=${user.id},reversal_reason=${cancellationReason} WHERE transaction_id=${id} AND reversed_at IS NULL RETURNING id
+    ),cash_movements AS (
+      UPDATE nexo.records SET data=data||jsonb_build_object(
+        'status','estornado','reversed_at',now(),'reversed_by',${user.id}::text,
+        'reversal_reason',${cancellationReason}::text
+      ),updated_date=now()
+      WHERE market_id=${user.market_id} AND entity='cash_movements'
+        AND data->>'finance_transaction_id'=${id}
+        AND COALESCE(data->>'status','ativo')='ativo'
+      RETURNING id
     ),event AS (
       INSERT INTO nexo.finance_transaction_events(market_id,transaction_id,action,previous_data,new_data,actor_id,actor_name)
       SELECT market_id,id,${status === "reversed" ? "reversed" : "cancelled"},${JSON.stringify(current)}::jsonb,to_jsonb(updated),${user.id},${user.full_name || user.email} FROM updated
@@ -1610,6 +1689,12 @@ async function confirmPurchase(sql, user, id) {
     Number(purchase.total),
     dateOnly(purchase.issue_date),
   );
+  const cashSession = await openCashSessionForPayment(
+    sql,
+    user,
+    purchase.account_id,
+    purchase.payment_method,
+  );
   const [confirmed] = await sql`
     WITH confirmed AS (
       UPDATE nexo.finance_purchases SET status='confirmed',confirmed_by=${user.id},confirmed_at=now(),updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND status='draft' RETURNING *
@@ -1627,6 +1712,18 @@ async function confirmPurchase(sql, user, id) {
     ),payments AS (
       INSERT INTO nexo.finance_payments(market_id,transaction_id,account_id,amount,paid_at,payment_method,attachment_url,created_by)
       SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,attachment_url,created_by FROM bills WHERE paid_amount>0
+      RETURNING *
+    ),cash_movements AS (
+      INSERT INTO nexo.records(market_id,entity,data)
+      SELECT ${user.market_id},'cash_movements',jsonb_build_object(
+        'cash_session_id',${cashSession?.id || null}::text,'type','retirada',
+        'amount',payment.amount,'note',${`Compra #${purchase.purchase_number}`}::text,
+        'status','ativo','origin','compra','finance_payment_id',payment.id::text,
+        'finance_transaction_id',payment.transaction_id::text,'purchase_id',${purchase.id}::text,
+        'purchase_number',${purchase.purchase_number}::text,'operator_id',${user.id}::text,
+        'operator_name',${user.full_name || user.email}::text,'created_at',payment.paid_at
+      ) FROM payments payment WHERE ${Boolean(cashSession)}
+      ON CONFLICT DO NOTHING
     ),events AS (
       INSERT INTO nexo.finance_transaction_events(market_id,transaction_id,action,new_data,actor_id,actor_name)
       SELECT market_id,id,'created_from_purchase',to_jsonb(bills),${user.id},${user.full_name || user.email} FROM bills
@@ -1669,13 +1766,105 @@ async function cancelPurchase(sql, user, id, reason) {
       "CANCELLATION_REASON_REQUIRED",
       "Explique o motivo do cancelamento.",
     );
-  const [purchase] =
-    await sql`UPDATE nexo.finance_purchases SET status='cancelled',cancelled_by=${user.id},cancelled_at=now(),cancellation_reason=${cancellationReason},updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND status='draft' RETURNING *`;
+  const [current] =
+    await sql`SELECT * FROM nexo.finance_purchases WHERE id=${id} AND market_id=${user.market_id}`;
+  if (!current)
+    throw new AppError(404, "PURCHASE_NOT_FOUND", "Compra não encontrada.");
+  if (current.status === "cancelled")
+    throw new AppError(
+      409,
+      "PURCHASE_ALREADY_CANCELLED",
+      "Esta compra já foi cancelada.",
+    );
+  if (current.status === "confirmed") {
+    const [insufficient] = await sql`
+      SELECT product.data->>'name' AS name
+      FROM nexo.finance_purchase_items item
+      JOIN nexo.records product ON product.id=item.product_id
+      WHERE item.purchase_id=${id} AND product.market_id=${user.market_id}
+        AND product.entity='products'
+        AND (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$'
+          THEN (product.data->>'quantity')::numeric ELSE 0 END) < item.quantity
+      LIMIT 1
+    `;
+    if (insufficient)
+      throw new AppError(
+        409,
+        "PURCHASE_STOCK_ALREADY_USED",
+        `Não é possível estornar automaticamente porque parte do estoque de ${insufficient.name || "um produto"} já foi vendida ou ajustada. Corrija o estoque antes de tentar novamente.`,
+      );
+  }
+  const [purchase] = await sql`
+    WITH cancelled AS (
+      UPDATE nexo.finance_purchases
+      SET status='cancelled',cancelled_by=${user.id},cancelled_at=now(),
+          cancellation_reason=${cancellationReason},updated_date=now()
+      WHERE id=${id} AND market_id=${user.market_id}
+        AND status IN ('draft','confirmed')
+      RETURNING *
+    ), stock_source AS (
+      SELECT item.product_id,item.quantity,item.unit_cost
+      FROM nexo.finance_purchase_items item
+      JOIN cancelled ON cancelled.id=item.purchase_id
+      WHERE ${current.status === "confirmed"}
+    ), stock AS (
+      UPDATE nexo.records product
+      SET data=product.data||jsonb_build_object(
+        'quantity',GREATEST(0,
+          (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$'
+            THEN (product.data->>'quantity')::numeric ELSE 0 END)-stock_source.quantity
+        ),
+        'cost_price',CASE
+          WHEN (CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$'
+            THEN (product.data->>'quantity')::numeric ELSE 0 END)-stock_source.quantity > 0
+          THEN GREATEST(0,round((
+            ((CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$'
+              THEN (product.data->>'quantity')::numeric ELSE 0 END)*
+              COALESCE(NULLIF(product.data->>'cost_price','')::numeric,stock_source.unit_cost))-
+            (stock_source.quantity*stock_source.unit_cost)
+          )/((CASE WHEN product.data->>'quantity' ~ '^-?[0-9]+(\.[0-9]+)?$'
+            THEN (product.data->>'quantity')::numeric ELSE 0 END)-stock_source.quantity),4))
+          ELSE 0 END
+      ),updated_date=now()
+      FROM stock_source
+      WHERE product.id=stock_source.product_id AND product.market_id=${user.market_id}
+        AND product.entity='products'
+      RETURNING product.id
+    ), bills AS (
+      UPDATE nexo.finance_transactions
+      SET status='reversed',cancelled_by=${user.id},cancelled_at=now(),
+          cancellation_reason=${cancellationReason},updated_date=now()
+      WHERE market_id=${user.market_id} AND origin='purchase' AND origin_id=${id}
+        AND status NOT IN ('cancelled','reversed')
+      RETURNING *
+    ), payments AS (
+      UPDATE nexo.finance_payments payment
+      SET reversed_at=now(),reversed_by=${user.id},reversal_reason=${cancellationReason}
+      FROM bills WHERE payment.transaction_id=bills.id AND payment.reversed_at IS NULL
+      RETURNING payment.id
+    ), cash_movements AS (
+      UPDATE nexo.records movement
+      SET data=movement.data||jsonb_build_object(
+        'status','estornado','reversed_at',now(),'reversed_by',${user.id}::text,
+        'reversal_reason',${cancellationReason}::text
+      ),updated_date=now()
+      WHERE movement.market_id=${user.market_id} AND movement.entity='cash_movements'
+        AND movement.data->>'finance_transaction_id' IN (SELECT id::text FROM bills)
+      RETURNING movement.id
+    ), events AS (
+      INSERT INTO nexo.finance_transaction_events(
+        market_id,transaction_id,action,new_data,actor_id,actor_name
+      )
+      SELECT market_id,id,'purchase_reversed',to_jsonb(bills),${user.id},${user.full_name || user.email}
+      FROM bills
+    )
+    SELECT * FROM cancelled
+  `;
   if (!purchase)
     throw new AppError(
       409,
-      "PURCHASE_NOT_CANCELLABLE",
-      "Somente compras em rascunho podem ser canceladas. Compras confirmadas exigem estorno auditado dos lançamentos e do estoque.",
+      "PURCHASE_CANCELLATION_CONFLICT",
+      "A compra foi alterada em outra tela. Atualize a página e tente novamente.",
     );
   return {
     ...purchase,
@@ -2009,7 +2198,9 @@ async function loadReconciliation(sql, marketId, query) {
           sale.data?.status === "concluida",
       ),
       sessionMovements = movements.filter(
-        (item) => item.data?.cash_session_id === row.id,
+        (item) =>
+          item.data?.cash_session_id === row.id &&
+          !["cancelado", "estornado"].includes(item.data?.status),
       );
     const payments = {
       dinheiro: 0,

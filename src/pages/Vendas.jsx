@@ -248,7 +248,7 @@ export default function Vendas() {
         toast.success('Venda cancelada e estoque restaurado.');
       } else {
         await nexoApi.sales.delete(currentAction.sale.id);
-        toast.success('Venda excluída definitivamente.');
+        toast.success('Venda arquivada. Histórico financeiro preservado.');
       }
       setPendingAction(null);
       setCancelReason('');
@@ -257,7 +257,7 @@ export default function Vendas() {
     } catch (error) {
       toast.error(
         error.message ||
-          `Erro ao ${currentAction.type === 'cancel' ? 'cancelar' : 'excluir'} venda.`,
+          `Erro ao ${currentAction.type === 'cancel' ? 'cancelar' : 'arquivar'} venda.`,
       );
     } finally {
       setProcessing(false);

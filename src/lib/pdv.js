@@ -122,6 +122,7 @@ export const isPdvDraftExpired = (draft, now = Date.now(), maxInactiveMs = PDV_D
 };
 
 export const createEmptySale = () => ({
+  client_operation_id: globalThis.crypto?.randomUUID?.(),
   items: [],
   payments: [],
   discount_value: 0,

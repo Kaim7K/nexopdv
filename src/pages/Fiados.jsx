@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Ban, Check, Clock, HandCoins, Phone, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Archive, Ban, Check, Clock, HandCoins, Phone, RotateCcw, Search, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
@@ -49,7 +49,7 @@ export default function Fiados() {
     setLoadError('');
     try {
       const data = await nexoApi.entities.FiadoRecord.list('-created_date', 300);
-      setFiados(data);
+      setFiados(data.filter((item) => item.archived !== true));
     } catch (error) {
       setLoadError(error.message || 'Não foi possível carregar os fiados.');
       toast.error(error.message || 'Erro ao carregar fiados.');
@@ -59,17 +59,6 @@ export default function Fiados() {
   };
 
   useEffect(() => { loadFiados(); }, []);
-
-  useEffect(() => {
-    if (!settleFiado && !cancelFiado) return undefined;
-    const closeOnEscape = event => {
-      if (event.key !== 'Escape' || processing) return;
-      setSettleFiado(null);
-      setCancelFiado(null);
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [settleFiado, cancelFiado, processing]);
 
   useEffect(() => {
     if (!settleFiado?.sale_id) {
@@ -129,16 +118,11 @@ export default function Fiados() {
         settled_by_id: user.id,
         settled_by_name: user.full_name || user.email,
       });
-      await nexoApi.entities.GeneralAudit.create({
-        action_type: 'fiado_quitado',
-        entity_type: 'fiado',
-        entity_id: settleFiado.id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        description: `Fiado #${settleFiado.sale_number} (${settleFiado.responsible_name}) quitado - ${formatCurrency(settleFiado.total_amount)}`,
-        details: { method },
-      });
-      toast.success('Fiado quitado.');
+      toast.success(
+        method === 'dinheiro'
+          ? 'Fiado quitado. O recebimento foi enviado ao caixa aberto.'
+          : 'Fiado quitado e recebimento atualizado no Financeiro.',
+      );
       setSettleFiado(null);
       await loadFiados();
     } catch (error) {
@@ -157,16 +141,7 @@ export default function Fiados() {
         settled_by_id: user.id,
         settled_by_name: user.full_name || user.email,
       });
-      await nexoApi.entities.GeneralAudit.create({
-        action_type: 'fiado_cancelado',
-        entity_type: 'fiado',
-        entity_id: cancelFiado.id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        description: `Fiado #${cancelFiado.sale_number} (${cancelFiado.responsible_name}) cancelado`,
-        details: '',
-      });
-      toast.success('Fiado cancelado.');
+      toast.success('Fiado cancelado. Nenhum recebimento foi lançado.');
       setCancelFiado(null);
       await loadFiados();
     } catch (error) {
@@ -190,16 +165,7 @@ export default function Fiados() {
       await nexoApi.entities.FiadoRecord.update(item.id, {
         status: 'pendente',
       });
-      await nexoApi.entities.GeneralAudit.create({
-        action_type: 'fiado_quitacao_desfeita',
-        entity_type: 'fiado',
-        entity_id: item.id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        description: `Quitação do fiado #${item.sale_number} (${item.responsible_name}) desfeita`,
-        details: '',
-      });
-      toast.success('Quitação desfeita.');
+      toast.success('Quitação desfeita e recebimento anterior estornado.');
       await loadFiados();
     } catch (error) {
       toast.error(error.message || 'Erro ao desfazer quitação.');
@@ -211,9 +177,9 @@ export default function Fiados() {
   const handleDelete = async (item) => {
     if (!isGerente || processing) return;
     const confirmed = await confirm({
-      title: 'Excluir venda fiada?',
-      description: `A venda fiada #${item.sale_number}, de ${item.responsible_name}, será excluída definitivamente. Esta ação não pode ser desfeita.`,
-      confirmLabel: 'Excluir definitivamente',
+      title: 'Arquivar venda fiada?',
+      description: `A venda fiada #${item.sale_number}, de ${item.responsible_name}, sairá desta lista. O recebimento, o saldo e a auditoria serão preservados.`,
+      confirmLabel: 'Arquivar registro',
       cancelLabel: 'Voltar',
       tone: 'destructive',
     });
@@ -221,10 +187,10 @@ export default function Fiados() {
     setProcessing(true);
     try {
       await nexoApi.entities.FiadoRecord.delete(item.id);
-      toast.success('Fiado excluído.');
+      toast.success('Fiado arquivado. Os dados financeiros foram preservados.');
       await loadFiados();
     } catch (error) {
-      toast.error(error.message || 'Erro ao excluir fiado.');
+      toast.error(error.message || 'Erro ao arquivar fiado.');
     } finally {
       setProcessing(false);
     }
@@ -312,9 +278,9 @@ export default function Fiados() {
                             <RotateCcw className="h-4 w-4" />
                             Desfazer quitação
                           </button>
-                          <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50" aria-label={`Excluir fiado de ${item.responsible_name}`}>
-                            <Trash2 className="h-4 w-4" />
-                            Excluir
+                          <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-bold text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label={`Arquivar fiado de ${item.responsible_name}`}>
+                            <Archive className="h-4 w-4" />
+                            Arquivar
                           </button>
                         </>
                       )}

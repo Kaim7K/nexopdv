@@ -377,7 +377,10 @@ export const nexoApi = {
     addMovement: (id, data) =>
       request(`/cash/${id}/movements`, {
         method: 'POST',
-        body: data,
+        body: {
+          ...data,
+          operation_id: data.operation_id || crypto.randomUUID(),
+        },
         timeout: 60_000,
       }),
   },

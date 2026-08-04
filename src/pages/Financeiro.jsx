@@ -44,6 +44,7 @@ import {
 import PaginationControls from '@/components/common/PaginationControls';
 import ImageUploadField from '@/components/ImageUploadField';
 import {
+  CancellationModal,
   Field,
   FinanceModal,
   ModalActions,
@@ -64,6 +65,7 @@ import {
   formatDate,
   formatDateTime,
   getPaymentLabel,
+  roundCurrency,
 } from '@/lib/helpers';
 import {
   todayIsoDate,
@@ -496,6 +498,8 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
     [modal, setModal] = useState(false),
     [editing, setEditing] = useState(null),
     [paying, setPaying] = useState(null),
+    [canceling, setCanceling] = useState(null),
+    [cancelling, setCancelling] = useState(false),
     [selected, setSelected] = useState([]);
   const debouncedSearch = useDebouncedValue(search, 280);
   const filters = useMemo(
@@ -529,26 +533,20 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
   useEffect(() => {
     load();
   }, [load]);
-  const cancel = async (item) => {
-    const accepted = await confirm({
-      title: 'Cancelar lançamento?',
-      description:
-        'O original será preservado no histórico. Informe o motivo na próxima etapa.',
-      confirmLabel: 'Continuar',
-      tone: 'destructive',
-    });
-    if (!accepted) return;
-    const reason = window.prompt(
-      'Motivo do cancelamento (mínimo 5 caracteres):',
-    );
-    if (!reason) return;
+  const cancel = (item) => setCanceling(item);
+  const confirmCancellation = async (reason) => {
+    if (!canceling || cancelling) return;
+    setCancelling(true);
     try {
-      await nexoApi.finance.transactions.cancel(item.id, reason);
-      toast.success('Lançamento cancelado.');
+      await nexoApi.finance.transactions.cancel(canceling.id, reason);
+      toast.success('Lançamento cancelado e pagamentos relacionados estornados.');
+      setCanceling(null);
       load();
       refreshAll();
     } catch (cause) {
       toast.error(cause.message);
+    } finally {
+      setCancelling(false);
     }
   };
   const batchPay = async () => {
@@ -689,6 +687,15 @@ function TransactionsPanel({ mode, bootstrap, range, refreshAll }) {
           refreshAll();
         }}
       />
+      <CancellationModal
+        open={Boolean(canceling)}
+        title="Cancelar lançamento?"
+        description="O lançamento continuará no histórico. Pagamentos e movimentações de caixa vinculados serão estornados."
+        subject={canceling ? `${canceling.description} · ${formatCurrency(canceling.amount)}` : ''}
+        saving={cancelling}
+        onClose={() => setCanceling(null)}
+        onConfirm={confirmCancellation}
+      />
     </div>
   );
 }
@@ -786,6 +793,14 @@ function TransactionModal({
             : 'Novo lançamento'
       }
       onClose={onClose}
+      disabled={saving}
+      description={
+        item
+          ? 'Altere os dados do lançamento. Pagamentos vinculados permanecem no histórico.'
+          : initialType === 'expense'
+            ? 'Registre o que saiu do mercado. Se estiver pago em dinheiro, o caixa aberto também será atualizado.'
+            : 'Informe o valor, a origem e a situação deste lançamento financeiro.'
+      }
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1035,7 +1050,12 @@ function PaymentModal({ item, accounts, onClose, onSaved }) {
     }
   };
   return (
-    <FinanceModal title="Registrar pagamento" onClose={onClose}>
+    <FinanceModal
+      title="Registrar pagamento"
+      description="Confirme quanto foi pago, a data, a forma e a conta de onde o dinheiro saiu."
+      onClose={onClose}
+      disabled={saving}
+    >
       <form onSubmit={submit} className="space-y-4">
         <div className="rounded-xl bg-muted/30 p-4">
           <p className="text-sm font-bold">{item.description}</p>
@@ -1541,7 +1561,9 @@ function Purchases({ bootstrap, refreshAll }) {
     [loading, setLoading] = useState(true),
     [open, setOpen] = useState(false),
     [products, setProducts] = useState([]),
-    [productsLoading, setProductsLoading] = useState(false);
+    [productsLoading, setProductsLoading] = useState(false),
+    [canceling, setCanceling] = useState(null),
+    [cancelling, setCancelling] = useState(false);
   const load = () => {
     setLoading(true);
     nexoApi.finance.purchases
@@ -1581,6 +1603,25 @@ function Purchases({ bootstrap, refreshAll }) {
       refreshAll();
     } catch (cause) {
       toast.error(cause.message);
+    }
+  };
+  const cancelPurchase = async (reason) => {
+    if (!canceling || cancelling) return;
+    setCancelling(true);
+    try {
+      await nexoApi.finance.purchases.cancel(canceling.id, reason);
+      toast.success(
+        canceling.status === 'confirmed'
+          ? 'Compra estornada. Estoque, contas, pagamentos e caixa foram atualizados.'
+          : 'Rascunho de compra cancelado.',
+      );
+      setCanceling(null);
+      load();
+      refreshAll();
+    } catch (cause) {
+      toast.error(cause.message);
+    } finally {
+      setCancelling(false);
     }
   };
   return (
@@ -1625,14 +1666,27 @@ function Purchases({ bootstrap, refreshAll }) {
               <strong className="tabular-nums">
                 {formatCurrency(item.total)}
               </strong>
-              {item.status === 'draft' && (
-                <button
-                  type="button"
-                  onClick={() => confirmPurchase(item)}
-                  className="rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground"
-                >
-                  Confirmar
-                </button>
+              {item.status !== 'cancelled' && (
+                <div className="flex flex-wrap gap-2">
+                  {item.status === 'draft' && (
+                    <button
+                      type="button"
+                      onClick={() => confirmPurchase(item)}
+                      className="rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground"
+                    >
+                      Confirmar compra
+                    </button>
+                  )}
+                  {bootstrap.permissions.cancel && (
+                    <button
+                      type="button"
+                      onClick={() => setCanceling(item)}
+                      className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
+                    >
+                      {item.status === 'confirmed' ? 'Estornar compra' : 'Cancelar rascunho'}
+                    </button>
+                  )}
+                </div>
               )}
             </article>
           ))}
@@ -1649,6 +1703,17 @@ function Purchases({ bootstrap, refreshAll }) {
           load();
           refreshAll();
         }}
+      />
+      <CancellationModal
+        open={Boolean(canceling)}
+        title={canceling?.status === 'confirmed' ? 'Estornar compra confirmada?' : 'Cancelar rascunho de compra?'}
+        description={canceling?.status === 'confirmed'
+          ? 'O estoque recebido será retirado, as contas e pagamentos serão estornados e a retirada do caixa será compensada. O histórico será preservado.'
+          : 'O rascunho será cancelado sem alterar estoque, contas ou caixa.'}
+        subject={canceling ? `Compra #${canceling.purchase_number} · ${formatCurrency(canceling.total)}` : ''}
+        saving={cancelling}
+        onClose={() => setCanceling(null)}
+        onConfirm={cancelPurchase}
       />
     </div>
   );
@@ -1684,20 +1749,30 @@ function PurchaseModal({
   if (!open) return null;
   if (productsLoading)
     return (
-      <FinanceModal title="Registrar compra" onClose={onClose} wide>
+      <FinanceModal
+        title="Registrar compra"
+        description="Carregando os produtos disponíveis para montar a compra."
+        onClose={onClose}
+        wide
+      >
         <LoadingState
           className="min-h-48"
           label="Carregando produtos para a compra..."
         />
       </FinanceModal>
     );
-  const total =
+  const subtotal = roundCurrency(
     form.items.reduce(
       (s, i) => s + Number(i.quantity || 0) * Number(i.unit_cost || 0),
       0,
-    ) -
-    Number(form.discount || 0) +
-    Number(form.freight || 0);
+    ),
+  );
+  const total = roundCurrency(
+    Math.max(
+      0,
+      subtotal - Number(form.discount || 0) + Number(form.freight || 0),
+    ),
+  );
   const updateItem = (index, key, value) =>
     setForm((v) => ({
       ...v,
@@ -1739,7 +1814,13 @@ function PurchaseModal({
     }
   };
   return (
-    <FinanceModal title="Registrar compra" onClose={onClose} wide>
+    <FinanceModal
+      title="Registrar compra"
+      description="Salve os produtos e valores como rascunho. O estoque e as contas só mudam após confirmar a compra."
+      onClose={onClose}
+      disabled={saving}
+      wide
+    >
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Fornecedor">

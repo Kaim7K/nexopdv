@@ -30,6 +30,11 @@ import {
   sendStockAlertEmail,
 } from '../server/stock-alerts.js';
 import { handleFinanceRequest } from '../server/finance.js';
+import {
+  buildCashSessionSummary,
+  roundMoney,
+  summarizeSales,
+} from '../server/cash-summary.js';
 
 const ENTITIES = {
   Product: 'products',
@@ -151,9 +156,6 @@ function normalizeImageValue(value) {
   }
   throw new AppError(400, 'INVALID_IMAGE', 'A imagem informada não é válida.');
 }
-const roundMoney = (value) =>
-  Math.round((Number(value) + Number.EPSILON) * 100) / 100;
-
 function parseDateQuery(value, fallback = null) {
   if (!value) return fallback;
   const date = new Date(String(value));
@@ -169,52 +171,6 @@ function recordFromRow(row) {
         updated_date: row.updated_date,
       }
     : null;
-}
-
-function summarizeSales(sales) {
-  const completed = sales.filter((sale) => sale.status === 'concluida');
-  const cancelled = sales.filter((sale) => sale.status === 'cancelada');
-  const payments = {};
-  let total = 0;
-  let discounts = 0;
-  let items = 0;
-  for (const sale of completed) {
-    total += Number(sale.total || 0);
-    const subtotal = Number(sale.subtotal || sale.total || 0);
-    discounts += Math.max(0, subtotal - Number(sale.total || 0));
-    items += Array.isArray(sale.items)
-      ? sale.items.reduce(
-          (sum, item) =>
-            sum +
-            Number(
-              item.unit === 'peso' ? item.weight || 0 : item.quantity || 0,
-            ),
-          0,
-        )
-      : 0;
-    let changeToDiscount = roundMoney(Number(sale.change_amount || 0));
-    for (const payment of sale.payments || []) {
-      const rawAmount = roundMoney(Number(payment.amount || 0));
-      const discount =
-        payment.method === 'dinheiro' && changeToDiscount > 0
-          ? Math.min(rawAmount, changeToDiscount)
-          : 0;
-      const netAmount = roundMoney(rawAmount - discount);
-      changeToDiscount = roundMoney(changeToDiscount - discount);
-      payments[payment.method] = roundMoney(
-        Number(payments[payment.method] || 0) + netAmount,
-      );
-    }
-  }
-  return {
-    total: roundMoney(total),
-    discounts: roundMoney(discounts),
-    sales_count: completed.length,
-    cancelled_count: cancelled.length,
-    average_ticket: completed.length ? roundMoney(total / completed.length) : 0,
-    items_count: roundMoney(items),
-    payments,
-  };
 }
 
 function zonedDateParts(date = new Date()) {
@@ -333,55 +289,167 @@ async function findOpenCashSession(sql, marketId, sellerId) {
   return recordFromRow(rows[0]);
 }
 
+async function getCashSessionsSummaries(sql, marketId, sessions) {
+  const validSessions = (sessions || []).filter(Boolean);
+  if (!validSessions.length) return new Map();
+  const sessionIds = validSessions.map((session) => String(session.id));
+  const [saleRows, movementRows] = await Promise.all([
+    sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${marketId} AND entity='sales' AND data->>'cash_session_id'=ANY(${sessionIds}::text[]) ORDER BY created_date ASC`,
+    sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${marketId} AND entity='cash_movements' AND data->>'cash_session_id'=ANY(${sessionIds}::text[]) ORDER BY created_date ASC`,
+  ]);
+  const salesBySession = new Map();
+  const movementsBySession = new Map();
+  for (const row of saleRows) {
+    const sale = recordFromRow(row);
+    const key = String(sale.cash_session_id || '');
+    salesBySession.set(key, [...(salesBySession.get(key) || []), sale]);
+  }
+  for (const row of movementRows) {
+    const movement = recordFromRow(row);
+    const key = String(movement.cash_session_id || '');
+    movementsBySession.set(key, [
+      ...(movementsBySession.get(key) || []),
+      movement,
+    ]);
+  }
+  return new Map(
+    validSessions.map((session) => [
+      String(session.id),
+      buildCashSessionSummary(
+        session,
+        salesBySession.get(String(session.id)) || [],
+        movementsBySession.get(String(session.id)) || [],
+      ),
+    ]),
+  );
+}
+
 async function getCashSessionSummary(sql, marketId, session) {
   if (!session) return null;
-  const rows = await sql`
-    SELECT id, data, created_date, updated_date
-    FROM nexo.records
-    WHERE market_id=${marketId}
-      AND entity='sales'
-      AND data->>'cash_session_id'=${session.id}
-    ORDER BY created_date ASC
+  const summaries = await getCashSessionsSummaries(sql, marketId, [session]);
+  return summaries.get(String(session.id)) || null;
+}
+
+async function ensureCashFinanceReferences(sql, user) {
+  await sql`
+    INSERT INTO nexo.finance_accounts(market_id,unit_id,name,type,is_default,created_by)
+    SELECT ${user.market_id},${user.unit_id || null},'Caixa principal','cash',true,${user.id}
+    WHERE NOT EXISTS (
+      SELECT 1 FROM nexo.finance_accounts WHERE market_id=${user.market_id}
+    )
+    ON CONFLICT DO NOTHING
   `;
-  const sales = rows.map(recordFromRow);
-  const movementRows =
-    await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${marketId} AND entity='cash_movements' AND data->>'cash_session_id'=${session.id} ORDER BY created_date ASC`;
-  const movements = movementRows.map(recordFromRow);
-  const entries = roundMoney(
-    movements
-      .filter((item) => item.type === 'entrada')
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0),
-  );
-  const withdrawals = roundMoney(
-    movements
-      .filter((item) => item.type === 'retirada')
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0),
-  );
-  const summary = summarizeSales(sales);
-  const openingAmount = roundMoney(Number(session.opening_amount || 0));
-  const cashSales = roundMoney(Number(summary.payments.dinheiro || 0));
-  return {
-    ...summary,
-    opening_amount: openingAmount,
-    cash_sales: cashSales,
-    entries,
-    withdrawals,
-    expected_cash_before_expense: roundMoney(
-      openingAmount + cashSales + entries - withdrawals,
-    ),
-    expected_cash: roundMoney(
-      openingAmount + cashSales + entries - withdrawals,
-    ),
-    opened_at: session.opened_at || session.created_date,
-    sales,
-    movements,
-    filters: {
-      from: new Date(session.opened_at || session.created_date).toISOString(),
-      to: new Date().toISOString(),
-      seller_id: session.seller_id || null,
-      payment: null,
-    },
-  };
+  await sql`
+    INSERT INTO nexo.finance_categories(market_id,name,type,system_key,created_by)
+    SELECT ${user.market_id},'Outras despesas','expense','other_expense',${user.id}
+    WHERE NOT EXISTS (
+      SELECT 1 FROM nexo.finance_categories
+      WHERE market_id=${user.market_id} AND system_key='other_expense'
+    )
+    ON CONFLICT DO NOTHING
+  `;
+  const [[account], [category]] = await Promise.all([
+    sql`SELECT id FROM nexo.finance_accounts WHERE market_id=${user.market_id} AND active ORDER BY is_default DESC,created_date LIMIT 1`,
+    sql`SELECT id FROM nexo.finance_categories WHERE market_id=${user.market_id} AND active AND type IN ('expense','both') ORDER BY CASE WHEN system_key='other_expense' THEN 0 ELSE 1 END,created_date LIMIT 1`,
+  ]);
+  return { accountId: account?.id || null, categoryId: category?.id || null };
+}
+
+function cashClosingExpenseQuery(
+  sqlTag,
+  user,
+  session,
+  amount,
+  occurredAt = new Date().toISOString(),
+  references = {},
+  requiredSessionStatus = null,
+  requiredOperationId = null,
+) {
+  const normalizedAmount = roundMoney(Number(amount || 0));
+  if (normalizedAmount <= 0) {
+    return sqlTag`
+      WITH reversed_transaction AS (
+        UPDATE nexo.finance_transactions
+        SET status='reversed',paid_amount=0,settled_at=NULL,cancelled_by=${user.id},
+            cancelled_at=now(),cancellation_reason='Fechamento de caixa reaberto ou ajustado',updated_date=now()
+        WHERE market_id=${user.market_id} AND origin='cash_close' AND origin_id=${session.id}
+          AND status NOT IN ('cancelled','reversed')
+          AND (${requiredSessionStatus === null} OR EXISTS (
+            SELECT 1 FROM nexo.records cash_session
+            WHERE cash_session.id=${session.id} AND cash_session.market_id=${user.market_id}
+              AND cash_session.entity='cash_sessions'
+              AND cash_session.data->>'status'=${requiredSessionStatus}
+              AND (${requiredOperationId === null} OR cash_session.data->>'financial_operation_id'=${requiredOperationId})
+          ))
+        RETURNING id,market_id
+      ), reversed_payments AS (
+        UPDATE nexo.finance_payments payment
+        SET reversed_at=now(),reversed_by=${user.id},
+            reversal_reason='Fechamento de caixa reaberto ou ajustado'
+        FROM reversed_transaction transaction
+        WHERE payment.transaction_id=transaction.id AND payment.reversed_at IS NULL
+      )
+      INSERT INTO nexo.finance_transaction_events(
+        market_id,transaction_id,action,new_data,actor_id,actor_name
+      )
+      SELECT market_id,id,'reversed',jsonb_build_object('amount',0),${user.id},${user.full_name || user.email}
+      FROM reversed_transaction
+    `;
+  }
+
+  const { accountId, categoryId } = references;
+  if (!accountId)
+    throw new AppError(
+      409,
+      'FINANCE_ACCOUNT_REQUIRED',
+      'Não foi possível vincular a despesa do fechamento a uma conta financeira.',
+    );
+  const description = 'Despesa registrada no fechamento do caixa';
+  return sqlTag`
+    WITH transaction AS (
+      INSERT INTO nexo.finance_transactions(
+        market_id,unit_id,account_id,category_id,supplier_id,type,description,
+        amount,paid_amount,issue_date,due_date,settled_at,payment_method,
+        status,origin,origin_id,notes,created_by
+      ) SELECT
+        ${user.market_id},${session.unit_id || user.unit_id || null},${accountId},${categoryId},NULL,
+        'expense',${description},${normalizedAmount},${normalizedAmount},${occurredAt.slice(0, 10)},
+        ${occurredAt.slice(0, 10)},${occurredAt},'dinheiro','paid','cash_close',${session.id},
+        ${`Caixa ${session.id}`},${user.id}
+      WHERE (${requiredSessionStatus === null} OR EXISTS (
+        SELECT 1 FROM nexo.records cash_session
+        WHERE cash_session.id=${session.id} AND cash_session.market_id=${user.market_id}
+          AND cash_session.entity='cash_sessions'
+          AND cash_session.data->>'status'=${requiredSessionStatus}
+          AND (${requiredOperationId === null} OR cash_session.data->>'financial_operation_id'=${requiredOperationId})
+      ))
+      ON CONFLICT (market_id,origin,origin_id)
+        WHERE origin='cash_close' AND origin_id IS NOT NULL
+      DO UPDATE SET
+        unit_id=excluded.unit_id,account_id=excluded.account_id,category_id=excluded.category_id,
+        amount=excluded.amount,paid_amount=excluded.paid_amount,issue_date=excluded.issue_date,
+        due_date=excluded.due_date,settled_at=excluded.settled_at,payment_method=excluded.payment_method,
+        status='paid',cancelled_by=NULL,cancelled_at=NULL,cancellation_reason=NULL,updated_date=now()
+      RETURNING *
+    ), reversed_payments AS (
+      UPDATE nexo.finance_payments payment
+      SET reversed_at=now(),reversed_by=${user.id},reversal_reason='Valor do fechamento atualizado'
+      FROM transaction
+      WHERE payment.transaction_id=transaction.id AND payment.reversed_at IS NULL
+    ), payment AS (
+      INSERT INTO nexo.finance_payments(
+        market_id,transaction_id,account_id,amount,paid_at,payment_method,notes,created_by
+      )
+      SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,
+             'Pagamento sincronizado com o fechamento do caixa',${user.id}
+      FROM transaction
+    )
+    INSERT INTO nexo.finance_transaction_events(
+      market_id,transaction_id,action,new_data,actor_id,actor_name
+    )
+    SELECT market_id,id,'cash_close_synced',to_jsonb(transaction),${user.id},${user.full_name || user.email}
+    FROM transaction
+  `;
 }
 
 function normalizeProductPayload(data, partial = false) {
@@ -1179,13 +1247,15 @@ async function routeHandler(req, res) {
         ORDER BY COALESCE(NULLIF(data->>'opened_at','')::timestamptz,created_date) DESC
         LIMIT ${pageSize} OFFSET ${offset}
       `;
+      const sessions = rows.map(recordFromRow);
+      const summaries = await getCashSessionsSummaries(
+        sql,
+        user.market_id,
+        sessions,
+      );
       const items = [];
-      for (const row of rows) {
-        const session = recordFromRow(row);
-        const summary =
-          session.status === 'aberto'
-            ? await getCashSessionSummary(sql, user.market_id, session)
-            : session.summary || {};
+      for (const session of sessions) {
+        const summary = summaries.get(String(session.id)) || {};
         items.push({
           ...session,
           summary,
@@ -1271,6 +1341,20 @@ async function routeHandler(req, res) {
       const nextStatus = text(req.body.status, 20) || current.status;
       if (!['aberto', 'fechado'].includes(nextStatus))
         return send(res, 400, { message: 'Status de caixa inválido.' });
+      if (nextStatus === 'aberto') {
+        const [otherOpenSession] = await sql`
+          SELECT id FROM nexo.records
+          WHERE market_id=${user.market_id} AND entity='cash_sessions'
+            AND data->>'seller_id'=${current.seller_id}
+            AND data->>'status'='aberto' AND id<>${current.id}
+          LIMIT 1
+        `;
+        if (otherOpenSession)
+          return send(res, 409, {
+            message:
+              'Este operador já possui outro caixa aberto. Feche-o antes de reabrir este caixa.',
+          });
+      }
 
       const openingAmount =
         req.body.opening_amount === undefined
@@ -1334,10 +1418,14 @@ async function routeHandler(req, res) {
         closingEntry > 10_000_000
       )
         return send(res, 400, {
-          message: 'Informe uma entrada de fechamento v?lida.',
+          message: 'Informe uma entrada de fechamento válida.',
         });
 
-      const baseExpectedCash = roundMoney(Number(summary.expected_cash || 0));
+      const baseExpectedCash = roundMoney(
+        Number(
+          summary.expected_cash_before_expense ?? summary.expected_cash ?? 0,
+        ),
+      );
       const adjustedExpectedCash = roundMoney(
         baseExpectedCash +
           (nextStatus === 'aberto' ? 0 : closingEntry) -
@@ -1374,35 +1462,51 @@ async function routeHandler(req, res) {
               },
             };
 
-      const [updated] =
-        await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(update)}::jsonb,updated_date=now() WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions' RETURNING id,data,created_date,updated_date`;
-      try {
-        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
-          ${user.market_id},
-          'general_audits',
-          ${JSON.stringify({
-            action_type: nextStatus === 'aberto' ? 'caixa_reaberto' : 'caixa_editado',
-            entity_type: 'cash_session',
-            entity_id: path[1],
-            user_id: user.id,
-            user_name: user.full_name || user.email,
-            description:
-              nextStatus === 'aberto'
-                ? `Caixa de ${current.seller_name} reaberto`
-                : `Caixa de ${current.seller_name} editado`,
-            details: {
-              previous_status: current.status,
-              next_status: nextStatus,
-              opening_amount: openingAmount,
-              closing_amount: closingAmount,
-              closing_entry: nextStatus === 'aberto' ? 0 : closingEntry || 0,
-              closing_expense: nextStatus === 'aberto' ? 0 : closingExpense || 0,
-            },
-          })}::jsonb
-        )`;
-      } catch (auditError) {
-        console.error('Falha ao auditar edição de caixa:', auditError?.message);
-      }
+      const occurredAt = current.closed_at || new Date().toISOString();
+      const financialOperationId = randomUUID();
+      update.financial_operation_id = financialOperationId;
+      const financeReferences =
+        nextStatus === 'fechado' && closingExpense > 0
+          ? await ensureCashFinanceReferences(sql, user)
+          : {};
+      const auditPayload = {
+        action_type: nextStatus === 'aberto' ? 'caixa_reaberto' : 'caixa_editado',
+        entity_type: 'cash_session',
+        entity_id: path[1],
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description:
+          nextStatus === 'aberto'
+            ? `Caixa de ${current.seller_name} reaberto`
+            : `Caixa de ${current.seller_name} editado`,
+        details: {
+          previous_status: current.status,
+          next_status: nextStatus,
+          opening_amount: openingAmount,
+          closing_amount: closingAmount,
+          closing_entry: nextStatus === 'aberto' ? 0 : closingEntry || 0,
+          closing_expense: nextStatus === 'aberto' ? 0 : closingExpense || 0,
+        },
+      };
+      const [updatedRows] = await sql.transaction((tx) => [
+        tx`UPDATE nexo.records SET data=data || ${JSON.stringify(update)}::jsonb,updated_date=now() WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'='fechado' RETURNING id,data,created_date,updated_date`,
+        cashClosingExpenseQuery(
+          tx,
+          user,
+          current,
+          nextStatus === 'fechado' ? closingExpense : 0,
+          occurredAt,
+          financeReferences,
+          nextStatus,
+          financialOperationId,
+        ),
+        tx`INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',${JSON.stringify(auditPayload)}::jsonb WHERE EXISTS (SELECT 1 FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'=${nextStatus} AND data->>'financial_operation_id'=${financialOperationId})`,
+      ]);
+      const updated = updatedRows?.[0];
+      if (!updated)
+        return send(res, 409, {
+          message: 'O caixa foi alterado em outra tela. Atualize e tente novamente.',
+        });
       const session = recordFromRow(updated);
       return send(res, 200, {
         session,
@@ -1427,21 +1531,51 @@ async function routeHandler(req, res) {
         return send(res, 409, {
           message: 'Feche o caixa antes de excluí-lo.',
         });
+      const [linkedSales] = await sql`
+        SELECT count(*)::int AS count FROM nexo.records
+        WHERE market_id=${user.market_id} AND entity='sales'
+          AND data->>'cash_session_id'=${session.id}
+      `;
+      if (Number(linkedSales?.count || 0) > 0)
+        return send(res, 409, {
+          message:
+            'Este caixa possui vendas vinculadas e não pode ser excluído. Mantenha-o no histórico para preservar a conferência e a auditoria.',
+        });
 
       const deletedAt = new Date().toISOString();
       const deletedRows = await sql.transaction((tx) => [
+        tx`
+          WITH reversed_transaction AS (
+            UPDATE nexo.finance_transactions
+            SET status='reversed',paid_amount=0,settled_at=NULL,cancelled_by=${user.id},
+                cancelled_at=now(),cancellation_reason='Caixa excluído',updated_date=now()
+            WHERE market_id=${user.market_id} AND (
+              (origin='cash_close' AND origin_id=${session.id}) OR
+              (origin='cash_movement' AND origin_id IN (
+                SELECT id FROM nexo.records WHERE market_id=${user.market_id}
+                  AND entity='cash_movements' AND data->>'cash_session_id'=${session.id}
+              ))
+            )
+              AND status NOT IN ('cancelled','reversed')
+            RETURNING id,market_id
+          ), reversed_payments AS (
+            UPDATE nexo.finance_payments payment
+            SET reversed_at=now(),reversed_by=${user.id},reversal_reason='Caixa excluído'
+            FROM reversed_transaction transaction
+            WHERE payment.transaction_id=transaction.id AND payment.reversed_at IS NULL
+          )
+          INSERT INTO nexo.finance_transaction_events(
+            market_id,transaction_id,action,new_data,actor_id,actor_name
+          )
+          SELECT market_id,id,'cash_session_deleted',jsonb_build_object('cash_session_id',${session.id}::text),
+                 ${user.id},${user.full_name || user.email}
+          FROM reversed_transaction
+        `,
         tx`
           DELETE FROM nexo.records
           WHERE market_id=${user.market_id}
             AND entity='cash_movements'
             AND data->>'cash_session_id'=${session.id}
-        `,
-        tx`
-          DELETE FROM nexo.records
-          WHERE market_id=${user.market_id}
-            AND entity='general_audits'
-            AND data->>'entity_type'='cash_session'
-            AND data->>'entity_id'=${session.id}
         `,
         tx`
           DELETE FROM nexo.records
@@ -1476,8 +1610,8 @@ async function routeHandler(req, res) {
         ok: true,
         deleted: {
           cash_sessions: Number(deletedRows?.[2]?.length || 0),
-          cash_movements: Number(deletedRows?.[0]?.length || 0),
-          general_audits: Number(deletedRows?.[1]?.length || 0),
+          cash_movements: Number(deletedRows?.[1]?.length || 0),
+          general_audits: 0,
         },
       });
     }
@@ -1487,6 +1621,9 @@ async function routeHandler(req, res) {
       const type = text(req.body.type, 20);
       const amount = roundMoney(Number(req.body.amount));
       const note = text(req.body.note, 500);
+      const operationId = isUuid(req.body.operation_id)
+        ? req.body.operation_id
+        : randomUUID();
       if (!['entrada', 'retirada'].includes(type))
         return send(res, 400, { message: 'Selecione entrada ou retirada.' });
       if (!Number.isFinite(amount) || amount <= 0 || amount > 10_000_000)
@@ -1505,12 +1642,78 @@ async function routeHandler(req, res) {
         type,
         amount,
         note,
+        status: 'ativo',
+        origin: 'manual',
+        operation_id: operationId,
         operator_id: user.id,
         operator_name: user.full_name || user.email,
         created_at: new Date().toISOString(),
       };
+      const { accountId } = await ensureCashFinanceReferences(sql, user);
+      if (!accountId)
+        return send(res, 409, {
+          message:
+            'Não foi possível vincular a movimentação à conta Caixa principal.',
+        });
       const [movement] =
-        await sql`WITH movement AS (INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'cash_movements',${JSON.stringify(payload)}::jsonb) RETURNING id,data,created_date,updated_date),audit AS (INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'general_audits',jsonb_build_object('action_type','movimentacao_caixa','entity_type','cash_session','entity_id',${path[1]}::uuid,'user_id',${user.id}::uuid,'user_name',${user.full_name || user.email}::text,'description',${type === 'entrada' ? 'Entrada registrada no caixa' : 'Retirada registrada no caixa'}::text,'details',${JSON.stringify({ type, amount, note })}::jsonb) FROM movement) SELECT * FROM movement`;
+        await sql`
+          WITH existing AS MATERIALIZED (
+            SELECT id,data,created_date,updated_date FROM nexo.records
+            WHERE market_id=${user.market_id} AND entity='cash_movements'
+              AND data->>'operation_id'=${operationId} LIMIT 1
+          ), movement AS (
+            INSERT INTO nexo.records(market_id,entity,data)
+            SELECT ${user.market_id},'cash_movements',${JSON.stringify(payload)}::jsonb
+            WHERE NOT EXISTS (SELECT 1 FROM existing)
+            ON CONFLICT DO NOTHING
+            RETURNING id,data,created_date,updated_date
+          ), finance_transaction AS (
+            INSERT INTO nexo.finance_transactions(
+              market_id,unit_id,account_id,type,description,amount,paid_amount,
+              issue_date,due_date,settled_at,payment_method,status,origin,origin_id,notes,created_by
+            )
+            SELECT ${user.market_id},${user.unit_id || null},${accountId},'adjustment',
+              ${type === 'entrada' ? 'Entrada manual no caixa' : 'Retirada manual do caixa'},
+              ${amount},${amount},current_date,current_date,now(),'dinheiro','paid',
+              'cash_movement',movement.id,${`cash_direction:${type}${note ? ` | ${note}` : ''}`},${user.id}
+            FROM movement
+            ON CONFLICT (market_id,origin,origin_id)
+              WHERE origin='cash_movement' AND origin_id IS NOT NULL
+            DO NOTHING
+            RETURNING *
+          ), finance_payment AS (
+            INSERT INTO nexo.finance_payments(
+              market_id,transaction_id,account_id,amount,paid_at,payment_method,notes,created_by
+            )
+            SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,
+              'Movimentação sincronizada com o caixa',${user.id}
+            FROM finance_transaction
+            RETURNING *
+          ), linked_movement AS (
+            UPDATE nexo.records record
+            SET data=record.data||jsonb_build_object(
+              'finance_transaction_id',finance_transaction.id::text,
+              'finance_payment_id',finance_payment.id::text
+            ),updated_date=now()
+            FROM finance_transaction,finance_payment
+            WHERE record.id=(SELECT id FROM movement LIMIT 1)
+            RETURNING record.id,record.data,record.created_date,record.updated_date
+          ), audit AS (
+            INSERT INTO nexo.records(market_id,entity,data)
+            SELECT ${user.market_id},'general_audits',jsonb_build_object(
+              'action_type','movimentacao_caixa','entity_type','cash_session',
+              'entity_id',${path[1]}::uuid,'user_id',${user.id}::uuid,
+              'user_name',${user.full_name || user.email}::text,
+              'description',${type === 'entrada' ? 'Entrada registrada no caixa' : 'Retirada registrada no caixa'}::text,
+              'details',${JSON.stringify({ type, amount, note, operation_id: operationId })}::jsonb
+            ) FROM movement
+          ), result AS (
+            SELECT * FROM linked_movement
+            UNION ALL SELECT * FROM movement WHERE NOT EXISTS (SELECT 1 FROM linked_movement)
+            UNION ALL SELECT * FROM existing
+          )
+          SELECT * FROM result LIMIT 1
+        `;
       const session = recordFromRow(sessionRow);
       return send(res, 201, {
         movement: recordFromRow(movement),
@@ -1676,24 +1879,9 @@ async function routeHandler(req, res) {
         closingEntry > 10_000_000
       )
         return send(res, 400, {
-          message: 'Informe uma entrada de fechamento v?lida.',
+          message: 'Informe uma entrada de fechamento válida.',
         });
       const closedAt = new Date().toISOString();
-      const [defaultAccount] = await sql`
-        SELECT id
-        FROM nexo.finance_accounts
-        WHERE market_id=${user.market_id} AND active
-        ORDER BY is_default DESC, created_date
-        LIMIT 1
-      `;
-      const [expenseCategory] = await sql`
-        SELECT id
-        FROM nexo.finance_categories
-        WHERE market_id=${user.market_id} AND active
-          AND type IN ('expense', 'both')
-        ORDER BY CASE WHEN system_key='other_expense' THEN 0 ELSE 1 END, created_date
-        LIMIT 1
-      `;
       const {
         sales: cashSalesDetail,
         movements: cashMovementsDetail,
@@ -1703,6 +1891,7 @@ async function routeHandler(req, res) {
       const adjustedExpectedCash = roundMoney(
         Number(summary.expected_cash || 0) + closingEntry - closingExpense,
       );
+      const financialOperationId = randomUUID();
       const update = {
         status: 'fechado',
         closed_at: closedAt,
@@ -1713,6 +1902,7 @@ async function routeHandler(req, res) {
           closingAmount === null
             ? null
             : roundMoney(closingAmount - adjustedExpectedCash),
+        financial_operation_id: financialOperationId,
         summary: {
           ...summarySnapshot,
           closing_entry: closingEntry || 0,
@@ -1721,82 +1911,58 @@ async function routeHandler(req, res) {
           expected_cash: adjustedExpectedCash,
         },
       };
-      const [row] = await sql`
-        UPDATE nexo.records
-        SET data=data || ${JSON.stringify(update)}::jsonb, updated_date=now()
-        WHERE id=${session.id} AND market_id=${user.market_id} AND entity='cash_sessions' AND data->>'status'='aberto'
-        RETURNING id,data,created_date,updated_date
-      `;
+      const financeReferences =
+        closingExpense > 0 ? await ensureCashFinanceReferences(sql, user) : {};
+      const closeAudit = {
+        action_type: 'caixa_fechado',
+        entity_type: 'cash_session',
+        entity_id: session.id,
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Caixa fechado com ${summary.sales_count} venda(s)`,
+        details: {
+          ...summarySnapshot,
+          closing_amount: closingAmount,
+          closing_entry: closingEntry || 0,
+          closing_expense: closingExpense || 0,
+          difference: update.difference,
+          financial_operation_id: financialOperationId,
+        },
+      };
+      const [rowResults] = await sql.transaction((tx) => [
+        tx`
+          UPDATE nexo.records
+          SET data=data || ${JSON.stringify(update)}::jsonb, updated_date=now()
+          WHERE id=${session.id} AND market_id=${user.market_id}
+            AND entity='cash_sessions' AND data->>'status'='aberto'
+          RETURNING id,data,created_date,updated_date
+        `,
+        cashClosingExpenseQuery(
+          tx,
+          user,
+          session,
+          closingExpense,
+          closedAt,
+          financeReferences,
+          'fechado',
+          financialOperationId,
+        ),
+        tx`
+          INSERT INTO nexo.records(market_id,entity,data)
+          SELECT ${user.market_id},'general_audits',${JSON.stringify(closeAudit)}::jsonb
+          WHERE EXISTS (
+            SELECT 1 FROM nexo.records cash_session
+            WHERE cash_session.id=${session.id} AND cash_session.market_id=${user.market_id}
+              AND cash_session.entity='cash_sessions'
+              AND cash_session.data->>'financial_operation_id'=${financialOperationId}
+          )
+        `,
+      ]);
+      const row = rowResults?.[0];
       if (!row)
         return send(res, 409, {
           message: 'O caixa já foi fechado em outra tela.',
         });
-      if (closingExpense > 0 && defaultAccount?.id) {
-        const description = 'Despesa registrada no fechamento do caixa';
-        const notes = `Caixa ${session.id}`;
-        const [expense] = await sql`
-          WITH transaction AS (
-            INSERT INTO nexo.finance_transactions(
-              market_id,unit_id,account_id,category_id,supplier_id,type,description,
-              amount,paid_amount,issue_date,due_date,settled_at,payment_method,
-              status,origin,origin_id,notes,created_by
-            )
-            VALUES(
-              ${user.market_id},
-              ${session.unit_id || user.unit_id || null},
-              ${defaultAccount.id},
-              ${expenseCategory?.id || null},
-              NULL,
-              'expense',
-              ${description},
-              ${closingExpense},
-              ${closingExpense},
-              ${closedAt.slice(0, 10)},
-              ${closedAt.slice(0, 10)},
-              ${closedAt},
-              'dinheiro',
-              'paid',
-              'cash_close',
-              ${session.id},
-              ${notes},
-              ${user.id}
-            )
-            RETURNING *
-          ), payment AS (
-            INSERT INTO nexo.finance_payments(
-              market_id,transaction_id,account_id,amount,paid_at,payment_method,created_by
-            )
-            SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,created_by
-            FROM transaction
-          ), event AS (
-            INSERT INTO nexo.finance_transaction_events(
-              market_id,transaction_id,action,new_data,actor_id,actor_name
-            )
-            SELECT market_id,id,'created',to_jsonb(transaction),${user.id},${user.full_name || user.email}
-            FROM transaction
-          ) SELECT * FROM transaction
-        `;
-        if (!expense) {
-          console.warn('Despesa do fechamento não foi lançada no financeiro.');
-        }
-      }
-      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
-        ${user.market_id},'general_audits',${JSON.stringify({
-          action_type: 'caixa_fechado',
-          entity_type: 'cash_session',
-          entity_id: session.id,
-          user_id: user.id,
-          user_name: user.full_name || user.email,
-          description: `Caixa fechado com ${summary.sales_count} venda(s)`,
-          details: {
-            ...summarySnapshot,
-            closing_amount: closingAmount,
-            closing_entry: closingEntry || 0,
-            closing_expense: closingExpense || 0,
-            difference: update.difference,
-          },
-        })}::jsonb
-      )`;
       return send(res, 200, {
         session: recordFromRow(row),
         summary: {
@@ -2495,6 +2661,7 @@ async function routeHandler(req, res) {
       WHERE market_id=${user.market_id}
         AND entity='sales'
         AND data->>'status'=ANY(ARRAY['concluida','cancelada'])
+        AND COALESCE((data->>'archived')::boolean,false)=false
         AND (${from === null} OR created_date >= ${from})
         AND (${to === null} OR created_date < ${to})
         AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
@@ -2519,6 +2686,7 @@ async function routeHandler(req, res) {
       WHERE market_id=${user.market_id}
         AND entity='sales'
         AND data->>'status'=ANY(ARRAY['concluida','cancelada'])
+        AND COALESCE((data->>'archived')::boolean,false)=false
         AND (${from === null} OR created_date >= ${from})
         AND (${to === null} OR created_date < ${to})
         AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
@@ -2587,6 +2755,7 @@ async function routeHandler(req, res) {
       FROM nexo.records
       WHERE market_id=${user.market_id}
         AND entity='sales'
+        AND COALESCE((data->>'archived')::boolean,false)=false
         AND created_date >= ${from}
         AND created_date < ${to}
         AND (${requestedSeller === ''} OR data->>'seller_id'=${requestedSeller})
@@ -2770,6 +2939,10 @@ async function routeHandler(req, res) {
         message: 'O pagamento é menor que o total da venda.',
       });
     const responsibleName = text(req.body.fiado?.responsible_name, 180);
+    const requestedOperationId = text(req.body.client_operation_id, 64);
+    const clientOperationId = isUuid(requestedOperationId)
+      ? requestedOperationId
+      : randomUUID();
     if (isFiado && !responsibleName)
       return send(res, 400, {
         message: 'Informe o responsável pela venda fiada.',
@@ -2804,6 +2977,7 @@ async function routeHandler(req, res) {
       change_amount: isFiado ? 0 : roundMoney(Math.max(0, paid - total)),
       observation: text(req.body.observation, 1000),
       sale_type: isFiado ? 'fiado' : 'normal',
+      client_operation_id: clientOperationId,
     };
     const fiadoPayload = {
       responsible_name: responsibleName,
@@ -2826,16 +3000,22 @@ async function routeHandler(req, res) {
         sale_type: isFiado ? 'fiado' : 'normal',
       },
     };
-    const [sale] = await sql`
-      WITH sale_number AS (
+    let [sale] = await sql`
+      WITH existing AS MATERIALIZED (
+        SELECT id,data,created_date,updated_date FROM nexo.records
+        WHERE market_id=${user.market_id} AND entity='sales'
+          AND data->>'client_operation_id'=${clientOperationId}
+        LIMIT 1
+      ), sale_number AS (
         UPDATE nexo.markets
         SET next_sale_number = next_sale_number + 1
-        WHERE id = ${user.market_id}
+        WHERE id = ${user.market_id} AND NOT EXISTS (SELECT 1 FROM existing)
         RETURNING next_sale_number - 1 AS value
       ), sale AS (
         INSERT INTO nexo.records(market_id, entity, data)
         SELECT ${user.market_id}, 'sales', ${JSON.stringify(saleData)}::jsonb || jsonb_build_object('sale_number', sale_number.value)
         FROM sale_number
+        ON CONFLICT DO NOTHING
         RETURNING id, data, created_date, updated_date
       ), stock_source AS (
         SELECT
@@ -2872,9 +3052,21 @@ async function routeHandler(req, res) {
         )
         FROM sale
         RETURNING id
+      ), result AS (
+        SELECT id,data,created_date,updated_date FROM sale
+        UNION ALL
+        SELECT id,data,created_date,updated_date FROM existing
       )
-      SELECT id, data, created_date, updated_date FROM sale
+      SELECT id, data, created_date, updated_date FROM result LIMIT 1
     `;
+    if (!sale) {
+      [sale] = await sql`
+        SELECT id,data,created_date,updated_date FROM nexo.records
+        WHERE market_id=${user.market_id} AND entity='sales'
+          AND data->>'client_operation_id'=${clientOperationId}
+        LIMIT 1
+      `;
+    }
     if (!sale)
       throw new AppError(
         409,
@@ -2946,7 +3138,8 @@ async function routeHandler(req, res) {
 
     // Todas as etapas são executadas na mesma transação. O identificador da
     // operação impede que dois cliques restaurem o estoque duas vezes.
-    const [saleRows, restoredRows, fiadoRows] = await sql.transaction((tx) => [
+    const [saleRows, restoredRows, fiadoRows, settlementMovementRows] =
+      await sql.transaction((tx) => [
       tx`
         UPDATE nexo.records
         SET data=data || ${JSON.stringify({
@@ -3012,13 +3205,36 @@ async function routeHandler(req, res) {
         WHERE fiado.market_id=${user.market_id}
           AND fiado.entity='fiado_records'
           AND fiado.data->>'sale_id'=${saleId}
-          AND fiado.data->>'status'='pendente'
+          AND fiado.data->>'status' IN ('pendente','quitado')
           AND EXISTS (
             SELECT 1 FROM nexo.records cancelled_sale
             WHERE cancelled_sale.id=${saleId}
               AND cancelled_sale.data->>'cancellation_operation_id'=${operationId}
           )
         RETURNING fiado.id
+      `,
+      tx`
+        UPDATE nexo.records movement
+        SET data=movement.data || jsonb_build_object(
+          'status','estornado','reversed_at',now(),'reversed_by',${user.id}::text,
+          'reversal_reason','Venda vinculada cancelada'
+        ),updated_date=now()
+        WHERE movement.market_id=${user.market_id}
+          AND movement.entity='cash_movements'
+          AND movement.id IN (
+            SELECT NULLIF(fiado.data->>'settlement_cash_movement_id','')::uuid
+            FROM nexo.records fiado
+            WHERE fiado.market_id=${user.market_id}
+              AND fiado.entity='fiado_records'
+              AND fiado.data->>'sale_id'=${saleId}
+              AND COALESCE(fiado.data->>'settlement_cash_movement_id','')<>''
+          )
+          AND EXISTS (
+            SELECT 1 FROM nexo.records cancelled_sale
+            WHERE cancelled_sale.id=${saleId}
+              AND cancelled_sale.data->>'cancellation_operation_id'=${operationId}
+          )
+        RETURNING movement.id
       `,
       tx`
         INSERT INTO nexo.records(market_id,entity,data)
@@ -3052,22 +3268,23 @@ async function routeHandler(req, res) {
       ...cancelled,
       restored_products: restoredRows?.length || 0,
       fiado_cancelled: Boolean(fiadoRows?.length),
+      settlement_movements_reversed: settlementMovementRows?.length || 0,
     });
   }
   if (path[0] === 'sales' && path[1] && !path[2] && req.method === 'DELETE') {
     if (user.role !== 'admin')
       return send(res, 403, {
-        message: 'Apenas administradores podem excluir vendas.',
+        message: 'Apenas administradores podem arquivar vendas.',
       });
     if (!isUuid(path[1])) return send(res, 400, { message: 'Venda inválida.' });
     const deletionAudit = {
-      action_type: 'venda_excluida',
+      action_type: 'venda_arquivada',
       entity_type: 'sale',
       entity_id: path[1],
       user_id: user.id,
       user_name: user.full_name || user.email,
     };
-    const [removed] = await sql`
+    const [archived] = await sql`
       WITH target AS MATERIALIZED (
         SELECT id, data
         FROM nexo.records
@@ -3075,30 +3292,35 @@ async function routeHandler(req, res) {
           AND market_id=${user.market_id}
           AND entity='sales'
           AND data->>'status'='cancelada'
+          AND COALESCE((data->>'archived')::boolean,false)=false
         FOR UPDATE
       ), audit AS (
         INSERT INTO nexo.records(market_id, entity, data)
         SELECT ${user.market_id}, 'general_audits', ${JSON.stringify(deletionAudit)}::jsonb || jsonb_build_object(
-          'description', 'Venda #' || COALESCE(target.data->>'sale_number', target.id::text) || ' excluída'
+          'description', 'Venda #' || COALESCE(target.data->>'sale_number', target.id::text) || ' arquivada'
         )
         FROM target
         RETURNING id
-      ), deleted AS (
-        DELETE FROM nexo.records sale
-        USING target
+      ), archived AS (
+        UPDATE nexo.records sale
+        SET data=sale.data||jsonb_build_object(
+          'archived',true,'archived_at',now(),'archived_by_id',${user.id}::text,
+          'archived_by_name',${user.full_name || user.email}::text
+        ),updated_date=now()
+        FROM target
         WHERE sale.id=target.id
           AND EXISTS (SELECT 1 FROM audit)
         RETURNING sale.id, sale.data
       )
-      SELECT deleted.id, deleted.data->>'sale_number' AS sale_number
-      FROM deleted
+      SELECT archived.id, archived.data->>'sale_number' AS sale_number
+      FROM archived
     `;
     return send(
       res,
-      removed ? 200 : 409,
-      removed
-        ? { ok: true, id: removed.id, sale_number: removed.sale_number }
-        : { message: 'Cancele a venda antes de excluí-la.' },
+      archived ? 200 : 409,
+      archived
+        ? { ok: true, archived: true, id: archived.id, sale_number: archived.sale_number }
+        : { message: 'Cancele a venda antes de arquivá-la.' },
     );
   }
   if (path[0] === 'stock' && path[1] === 'import' && req.method === 'POST') {
@@ -3388,7 +3610,7 @@ async function routeHandler(req, res) {
       if (!['admin', 'gerente'].includes(user.role))
         return send(res, 403, {
           message:
-            'Apenas administradores e gerentes podem excluir fiados quitados.',
+            'Apenas administradores e gerentes podem arquivar fiados encerrados.',
         });
       if (!isUuid(id))
         return send(res, 400, { message: 'Identificador inválido.' });
@@ -3399,46 +3621,44 @@ async function routeHandler(req, res) {
       `;
       if (!current)
         return send(res, 404, {
-          message: 'Fiado não encontrado ou já excluído.',
+          message: 'Fiado não encontrado ou já arquivado.',
         });
       if (!['quitado', 'cancelado'].includes(current.data.status))
         return send(res, 409, {
-          message: 'Só é possível excluir fiados já quitados ou cancelados.',
+          message: 'Só é possível arquivar fiados já quitados ou cancelados.',
         });
-      const [removed] = await sql`
-        DELETE FROM nexo.records
-        WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records'
-        RETURNING id,data
+      const archivedAt = new Date().toISOString();
+      const [archived] = await sql`
+        WITH archived AS (
+          UPDATE nexo.records
+          SET data=data || jsonb_build_object(
+            'archived',true,'archived_at',${archivedAt}::text,
+            'archived_by_id',${user.id}::text,
+            'archived_by_name',${user.full_name || user.email}::text
+          ),updated_date=now()
+          WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records'
+            AND COALESCE((data->>'archived')::boolean,false)=false
+          RETURNING id,data
+        ), audit AS (
+          INSERT INTO nexo.records(market_id,entity,data)
+          SELECT ${user.market_id},'general_audits',jsonb_build_object(
+            'action_type','fiado_arquivado','entity_type','fiado','entity_id',archived.id,
+            'user_id',${user.id}::text,'user_name',${user.full_name || user.email}::text,
+            'description','Fiado #'||COALESCE(archived.data->>'sale_number','sem número')||' arquivado',
+            'details',jsonb_build_object(
+              'responsible_name',archived.data->>'responsible_name',
+              'status',archived.data->>'status','total_amount',archived.data->'total_amount',
+              'archived_at',${archivedAt}::text
+            )
+          FROM archived
+        )
+        SELECT * FROM archived
       `;
-      if (!removed)
+      if (!archived)
         return send(res, 404, {
-          message: 'Fiado não encontrado ou já excluído.',
+          message: 'Fiado não encontrado ou já arquivado.',
         });
-      try {
-        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
-          ${user.market_id},
-          'general_audits',
-          ${JSON.stringify({
-            action_type: 'fiado_excluido',
-            entity_type: 'fiado',
-            entity_id: removed.id,
-            user_id: user.id,
-            user_name: user.full_name || user.email,
-            description: `Fiado #${text(removed.data?.sale_number, 50) || 'sem número'} excluído`,
-            details: {
-              responsible_name: text(removed.data?.responsible_name, 180),
-              status: removed.data?.status || null,
-              total_amount: Number(removed.data?.total_amount || 0),
-            },
-          })}::jsonb
-        )`;
-      } catch (auditError) {
-        console.error(
-          'Falha ao auditar exclusão de fiado:',
-          auditError?.message,
-        );
-      }
-      return send(res, 200, { ok: true });
+      return send(res, 200, { ok: true, archived: true });
     }
     if (
       table === 'products' &&
@@ -3647,35 +3867,88 @@ async function routeHandler(req, res) {
                 }
               : { cancellation_reason: text(req.body.cancellation_reason, 500) }),
           };
-      const [r] =
-        await sql`UPDATE nexo.records SET data=data || ${JSON.stringify(fiadoUpdate)}::jsonb,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records' RETURNING id,data,created_date,updated_date`;
-      try {
-        if (isReopening) {
-          await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(
-            ${user.market_id},
-            'general_audits',
-            ${JSON.stringify({
-              action_type: 'fiado_quitacao_desfeita',
-              entity_type: 'fiado',
-              entity_id: r.id,
-              user_id: user.id,
-              user_name: user.full_name || user.email,
-              description: `Quitação do fiado #${text(r.data?.sale_number, 50) || 'sem número'} desfeita`,
-              details: {
-                responsible_name: text(r.data?.responsible_name, 180),
-                previous_status: current.data.status || null,
-                status: 'pendente',
-                total_amount: Number(r.data?.total_amount || 0),
-              },
-            })}::jsonb
-          )`;
-        }
-      } catch (auditError) {
-        console.error(
-          'Falha ao auditar reversão de quitação de fiado:',
-          auditError?.message,
-        );
-      }
+      const settlesInCash =
+        req.body.status === 'quitado' &&
+        req.body.settlement_method === 'dinheiro';
+      const openSession = settlesInCash
+        ? await findOpenCashSession(sql, user.market_id, user.id)
+        : null;
+      const settlementAt = fiadoUpdate.settlement_date || new Date().toISOString();
+      const cashMovementPayload = {
+        cash_session_id: openSession?.id || null,
+        type: 'entrada',
+        amount: roundMoney(Number(current.data.total_amount || 0)),
+        note: `Recebimento da venda fiada #${text(current.data.sale_number, 50) || 'sem número'}`,
+        status: 'ativo',
+        origin: 'fiado',
+        fiado_settlement_id: id,
+        sale_id: current.data.sale_id || null,
+        sale_number: current.data.sale_number || null,
+        responsible_name: text(current.data.responsible_name, 180),
+        operator_id: user.id,
+        operator_name: user.full_name || user.email,
+        created_at: settlementAt,
+      };
+      const expectedStatus = isReopening ? 'quitado' : 'pendente';
+      const actionType = isReopening
+        ? 'fiado_quitacao_desfeita'
+        : req.body.status === 'quitado'
+          ? 'fiado_quitado'
+          : 'fiado_cancelado';
+      const actionDescription = isReopening
+        ? `Quitação do fiado #${text(current.data.sale_number, 50) || 'sem número'} desfeita`
+        : req.body.status === 'quitado'
+          ? `Fiado #${text(current.data.sale_number, 50) || 'sem número'} quitado`
+          : `Fiado #${text(current.data.sale_number, 50) || 'sem número'} cancelado`;
+      const [r] = await sql`
+        WITH movement AS (
+          INSERT INTO nexo.records(market_id,entity,data)
+          SELECT ${user.market_id},'cash_movements',${JSON.stringify(cashMovementPayload)}::jsonb
+          WHERE ${Boolean(settlesInCash && openSession)}
+          ON CONFLICT DO NOTHING
+          RETURNING id
+        ), reversed_movement AS (
+          UPDATE nexo.records
+          SET data=data || jsonb_build_object(
+            'status','estornado','reversed_at',now(),'reversed_by',${user.id}::text,
+            'reversal_reason','Quitação da venda fiada desfeita'
+          ),updated_date=now()
+          WHERE ${isReopening} AND market_id=${user.market_id} AND entity='cash_movements'
+            AND id::text=${text(current.data.settlement_cash_movement_id, 64)}
+          RETURNING id
+        ), updated AS (
+          UPDATE nexo.records
+          SET data=data || ${JSON.stringify(fiadoUpdate)}::jsonb ||
+            CASE WHEN ${Boolean(settlesInCash && openSession)} THEN jsonb_build_object(
+              'settlement_cash_session_id',${openSession?.id || null}::text,
+              'settlement_cash_movement_id',(SELECT id::text FROM movement LIMIT 1)
+            ) ELSE jsonb_build_object(
+              'settlement_cash_session_id',NULL,
+              'settlement_cash_movement_id',NULL
+            ) END,
+            updated_date=now()
+          WHERE id=${id} AND market_id=${user.market_id} AND entity='fiado_records'
+            AND data->>'status'=${expectedStatus}
+          RETURNING id,data,created_date,updated_date
+        ), audit AS (
+          INSERT INTO nexo.records(market_id,entity,data)
+          SELECT ${user.market_id},'general_audits',jsonb_build_object(
+            'action_type',${actionType}::text,'entity_type','fiado','entity_id',updated.id,
+            'user_id',${user.id}::uuid,'user_name',${user.full_name || user.email}::text,
+            'description',${actionDescription}::text,'details',jsonb_build_object(
+              'previous_status',${current.data.status || null}::text,
+              'status',updated.data->>'status','total_amount',updated.data->'total_amount',
+              'settlement_method',updated.data->'settlement_method',
+              'cash_session_id',updated.data->'settlement_cash_session_id'
+            )
+          ) FROM updated
+        )
+        SELECT * FROM updated
+      `;
+      if (!r)
+        return send(res, 409, {
+          message: 'Este fiado já foi alterado em outra tela. Atualize a página para conferir o status atual.',
+        });
       return send(res, 200, {
         id: r.id,
         ...r.data,

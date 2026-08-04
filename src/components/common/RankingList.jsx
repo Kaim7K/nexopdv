@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export default function RankingList({
   title,
@@ -65,16 +66,21 @@ function RankingModal({
   listClassName,
   maxWidth,
 }) {
+  const modalRef = useModalBehavior({ onClose });
+
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${title} completo`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3"
+      role="presentation"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-3"
       onClick={onClose}
     >
       <section
-        className={`max-h-[88vh] w-full ${maxWidth} overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl`}
+        ref={modalRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${title} completo`}
+        className={`flex max-h-[92dvh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-xl border border-border bg-card text-card-foreground shadow-2xl sm:max-h-[88dvh] sm:rounded-xl`}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -93,7 +99,7 @@ function RankingModal({
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto p-4">
+        <div className="overscroll-contain overflow-y-auto p-3 sm:p-4">
           <div className={listClassName}>{items.map(renderItem)}</div>
         </div>
       </section>

@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2, Users, X } from 'lucide-react';
 import { EmptyState } from '@/components/common/PageState';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export function ReferenceCards({ items = [], empty, render }) {
   if (!items.length) return <EmptyState icon={Users} title={empty} />;
@@ -47,44 +48,109 @@ export function ModalActions({ saving, onClose, label = 'Salvar' }) {
     </div>
   );
 }
-export function FinanceModal({ title, onClose, children, wide = false }) {
-  useEffect(() => {
-    const close = (e) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', close);
-    const old = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', close);
-      document.body.style.overflow = old;
-    };
-  }, [onClose]);
+export function FinanceModal({ title, description = '', onClose, children, wide = false, disabled = false }) {
+  const modalRef = useModalBehavior({ onClose, disabled });
   return (
     <div
       className="fixed inset-0 z-[80] grid items-end bg-black/55 p-0 sm:place-items-center sm:p-4"
       role="presentation"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onMouseDown={(e) => e.target === e.currentTarget && !disabled && onClose()}
     >
       <section
+        ref={modalRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="finance-modal-title"
-        className={`max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-card p-4 shadow-2xl sm:rounded-2xl sm:p-5 ${wide ? 'sm:max-w-5xl' : 'sm:max-w-2xl'}`}
+        aria-describedby={description ? 'finance-modal-description' : undefined}
+        className={`flex max-h-dvh w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:max-h-[94dvh] sm:rounded-2xl ${wide ? 'sm:max-w-5xl' : 'sm:max-w-2xl'}`}
       >
-        <header className="mb-5 flex items-center justify-between gap-3">
-          <h2 id="finance-modal-title" className="text-lg font-bold">
-            {title}
-          </h2>
+        <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
+          <div className="min-w-0">
+            <h2 id="finance-modal-title" className="text-lg font-bold">{title}</h2>
+            {description && (
+              <p id="finance-modal-description" className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                {description}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
+            disabled={disabled}
             aria-label="Fechar"
-            className="grid h-11 w-11 place-items-center rounded-xl hover:bg-muted"
+            className="grid h-11 w-11 place-items-center rounded-xl hover:bg-muted disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
-        {children}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">{children}</div>
       </section>
     </div>
+  );
+}
+
+export function CancellationModal({
+  open,
+  title,
+  description,
+  subject,
+  saving = false,
+  onClose,
+  onConfirm,
+}) {
+  const [reason, setReason] = useState('');
+  useEffect(() => {
+    if (open) setReason('');
+  }, [open, subject]);
+  if (!open) return null;
+  const valid = reason.trim().length >= 5;
+  return (
+    <FinanceModal
+      title={title}
+      description={description}
+      onClose={onClose}
+      disabled={saving}
+    >
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (valid && !saving) onConfirm(reason.trim());
+        }}
+        className="space-y-4"
+      >
+        {subject && (
+          <div className="rounded-xl border border-border bg-muted/25 px-3 py-2.5 text-sm font-semibold">
+            {subject}
+          </div>
+        )}
+        <label className="block text-sm font-bold">
+          Motivo do cancelamento
+          <textarea
+            autoFocus
+            required
+            minLength={5}
+            maxLength={500}
+            rows={3}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Ex.: lançamento duplicado ou compra devolvida ao fornecedor"
+            className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+          <span className="mt-1 block text-xs font-normal text-muted-foreground">
+            Escreva pelo menos 5 caracteres para manter uma auditoria clara.
+          </span>
+        </label>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">
+            Voltar
+          </button>
+          <button type="submit" disabled={!valid || saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground disabled:opacity-50">
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {saving ? 'Cancelando...' : 'Confirmar cancelamento'}
+          </button>
+        </div>
+      </form>
+    </FinanceModal>
   );
 }

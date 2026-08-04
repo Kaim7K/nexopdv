@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ban, Download, Eye, Loader2, Printer, ReceiptText, Trash2, X } from 'lucide-react';
+import { Archive, Ban, Download, Eye, Loader2, Printer, ReceiptText, X } from 'lucide-react';
 import {
   calculateSaleTotals,
   formatCurrency,
@@ -7,6 +7,7 @@ import {
   formatDiscount,
   getPaymentLabel,
 } from '@/lib/helpers';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 export function SaleCard({
   sale,
@@ -163,10 +164,10 @@ export function SaleActions({
               ? 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-destructive/25 text-sm font-bold text-destructive hover:bg-destructive/10'
               : 'grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10'
           }
-          title="Excluir definitivamente"
+          title="Arquivar venda"
         >
-          <Trash2 className="h-4 w-4" />
-          {mobile && 'Excluir'}
+          <Archive className="h-4 w-4" />
+          {mobile && 'Arquivar'}
         </button>
       )}
     </div>
@@ -208,6 +209,8 @@ export function SaleDetailModal({
   onPrint,
   onClose,
 }) {
+  const modalRef = useModalBehavior({ onClose, disabled: receiptLoading || printing });
+
   if (loading || sale._loading)
     return (
       <div
@@ -232,7 +235,9 @@ export function SaleDetailModal({
       role="presentation"
     >
       <div
-        className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+        ref={modalRef}
+        tabIndex={-1}
+        className="flex h-dvh w-full max-w-lg flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-2xl sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -284,7 +289,7 @@ export function SaleDetailModal({
             </button>
           </div>
         </div>
-        <div className="space-y-4 p-5 text-sm">
+        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-3 text-sm sm:p-5">
           <div className="grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
             <Info
               label="Vendedor"
@@ -385,6 +390,8 @@ export function ConfirmSaleAction({
   onClose,
   onConfirm,
 }) {
+  const modalRef = useModalBehavior({ onClose, disabled: processing });
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
@@ -392,7 +399,9 @@ export function ConfirmSaleAction({
       role="presentation"
     >
       <div
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
+        ref={modalRef}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-xl border border-border bg-card p-4 text-card-foreground shadow-2xl sm:p-5"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="sale-action-title"
@@ -400,7 +409,7 @@ export function ConfirmSaleAction({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="sale-action-title" className="text-xl font-black">
-              {action.type === 'cancel' ? 'Cancelar venda' : 'Excluir venda'}
+              {action.type === 'cancel' ? 'Cancelar venda' : 'Arquivar venda'}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Venda #{action.sale.sale_number} ·{' '}
@@ -441,8 +450,8 @@ export function ConfirmSaleAction({
           </>
         ) : (
           <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            Esta ação é definitiva. O histórico desta venda será removido, mas a
-            auditoria da exclusão será mantida.
+            A venda sairá da lista principal, mas seus vínculos financeiros e a
+            auditoria serão preservados para conferência.
           </div>
         )}
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -464,7 +473,7 @@ export function ConfirmSaleAction({
               ? 'Processando...'
               : action.type === 'cancel'
                 ? 'Confirmar cancelamento'
-                : 'Excluir definitivamente'}
+                : 'Arquivar venda'}
           </button>
         </div>
       </div>
