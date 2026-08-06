@@ -59,7 +59,7 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preço mínimo"
+        placeholder="Preço mín."
         value={minPrice}
         onChange={(event) => onMinPriceChange(event.target.value)}
       />
@@ -72,7 +72,7 @@ function AdvancedFilters({
         type="number"
         min="0"
         step="0.01"
-        placeholder="Preço máximo"
+        placeholder="Preço máx."
         value={maxPrice}
         onChange={(event) => onMaxPriceChange(event.target.value)}
       />
@@ -169,7 +169,7 @@ export default function StockFilters({
 
   return (
     <section
-      className="mb-2.5 rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.025] sm:mb-3 sm:p-2.5"
+      className="filter-surface mb-2.5 sm:mb-3"
       aria-label="Filtros do estoque"
     >
       <div className="space-y-1.5 sm:hidden">
@@ -194,7 +194,7 @@ export default function StockFilters({
         <details className="group mobile-secondary-panel">
           <summary className="mobile-secondary-summary">
             <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> Filtros avançados
+              <SlidersHorizontal className="h-4 w-4" /> Mais filtros
             </span>
             <span className="text-xs text-muted-foreground group-open:hidden">
               abrir

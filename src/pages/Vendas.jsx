@@ -346,20 +346,19 @@ export default function Vendas() {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <History className="h-3.5 w-3.5" /> Histórico e acompanhamento
+            <History className="h-3.5 w-3.5" /> Histórico
           </div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            Histórico de vendas
+            Vendas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {canSeeTeam ? 'Vendas de toda a equipe' : 'Somente suas vendas'} ·{' '}
-            {total} registro{total === 1 ? '' : 's'}
+            {total} registro{total === 1 ? '' : 's'} no período
           </p>
         </div>
       </div>
 
-      <section className="mb-3 grid gap-1.5 rounded-xl border border-border bg-card p-2 shadow-sm sm:mb-4 sm:gap-3 sm:p-3" aria-label="Filtros de vendas">
-        <div className="grid grid-cols-4 gap-1 sm:gap-2">
+      <section className="filter-surface mb-3 grid gap-1.5 sm:mb-4 sm:gap-3" aria-label="Filtros de vendas">
+        <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-2">
           <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
           <SaleMetric label="Vendas" value={metrics.sales_count || 0} />
           <SaleMetric label="Ticket" value={formatCurrency(metrics.average_ticket)} />
@@ -559,7 +558,7 @@ export default function Vendas() {
           <History className="mx-auto h-9 w-9 text-muted-foreground/25 sm:h-11 sm:w-11" />
           <h2 className="mt-3 font-bold">Nenhuma venda encontrada</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Altere os filtros para procurar outros registros.
+            Tente outro período ou limpe os filtros.
           </p>
           {hasFilters && (
             <button
@@ -591,7 +590,7 @@ export default function Vendas() {
               />
             ))}
           </div>
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:block">
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-card shadow-none lg:block">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[920px] text-sm">
                 <thead className="bg-secondary text-xs font-bold text-secondary-foreground">
@@ -693,8 +692,8 @@ export default function Vendas() {
 
 function SaleMetric({ label, value, muted = false }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 sm:px-3 sm:py-2">
-      <p className="truncate text-[10px] font-bold uppercase leading-3 text-muted-foreground sm:text-[11px]">
+    <div className="metric-tile min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2">
+      <p className="truncate text-[10px] font-black uppercase leading-3 text-muted-foreground sm:text-[11px]">
         {label}
       </p>
       <strong className={`mt-0.5 block truncate text-sm font-black tabular-nums sm:text-base ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>

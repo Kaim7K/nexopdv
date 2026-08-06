@@ -194,7 +194,7 @@ export default function Financeiro() {
     availableNav.find((item) => item[0] === active) || availableNav[0];
   const secondaryActive = !PRIMARY_NAV_KEYS.has(active);
   if (loading && !bootstrap)
-    return <LoadingState label="Organizando as informações financeiras..." />;
+    return <LoadingState label="Carregando financeiro..." />;
   if (error && !bootstrap)
     return (
       <div className="page-shell">
@@ -210,7 +210,7 @@ export default function Financeiro() {
           </div>
           <h1 className="page-title">Financeiro</h1>
           <p className="page-subtitle">
-            Veja quanto entrou, quanto saiu, as contas e o saldo disponível.
+            Entradas, saídas, contas e saldo.
           </p>
           <p className="sr-only">O que você quer fazer?</p>
           <p className="sr-only">Ver análises detalhadas</p>
@@ -1189,7 +1189,7 @@ function GenericMovementList({ items }) {
           <strong
             className={`text-base tabular-nums ${item.type === 'revenue' ? 'text-emerald-600' : 'text-destructive'}`}
           >
-            {item.type === 'revenue' ? '+' : '−'}{' '}
+            {item.type === 'revenue' ? '+' : 'âˆ’'}{' '}
             {formatCurrency(item.realized_amount || item.amount)}
           </strong>
         </article>
@@ -2076,7 +2076,7 @@ function Reconciliation({ range }) {
                       className={`block text-sm ${item.has_difference ? 'text-destructive' : ''}`}
                     >
                       {item.difference === null
-                        ? '—'
+                        ? '-'
                         : formatCurrency(item.difference)}
                     </strong>
                   </div>

@@ -92,7 +92,7 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
     background:
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.45) 100%);
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.26) 100%);
     min-width: 320px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -168,7 +168,7 @@
 
 @layer components {
   .field {
-    @apply mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-none outline-none transition duration-150 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60;
+    @apply mt-1.5 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-none outline-none transition duration-150 placeholder:text-muted-foreground/60 hover:border-muted-foreground/30 focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:opacity-60 sm:h-10;
   }
   .page-shell {
     @apply mx-auto w-full max-w-[1440px] px-3 py-3 sm:px-4 sm:py-4 lg:px-5 xl:px-6;
@@ -176,7 +176,7 @@
   }
 
   .page-header {
-    @apply mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-start sm:justify-between;
+    @apply mb-3 flex flex-col gap-2 border-b border-border/70 pb-2.5 sm:mb-4 sm:flex-row sm:items-start sm:justify-between sm:pb-3;
   }
 
   .page-title {
@@ -188,15 +188,15 @@
   }
 
   .surface-card {
-    @apply rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm shadow-black/[0.02] transition-colors sm:rounded-lg;
+    @apply rounded-lg border border-border/80 bg-card text-card-foreground shadow-[0_1px_0_hsl(var(--border)/0.55)] transition-colors;
   }
 
   .empty-state {
-    @apply grid min-h-40 place-items-center rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center shadow-sm shadow-black/[0.02] sm:min-h-48 sm:px-5 sm:py-8 sm:rounded-lg;
+    @apply grid min-h-36 place-items-center rounded-lg border border-dashed border-border bg-card px-4 py-5 text-center shadow-none sm:min-h-44 sm:px-5 sm:py-7;
   }
 
   .loading-state {
-    @apply grid min-h-40 place-items-center rounded-xl border border-border/80 bg-card px-4 py-6 text-center text-sm text-muted-foreground shadow-sm shadow-black/[0.02] sm:min-h-48 sm:px-5 sm:py-8 sm:rounded-lg;
+    @apply grid min-h-36 place-items-center rounded-lg border border-border/80 bg-card px-4 py-5 text-center text-sm text-muted-foreground shadow-none sm:min-h-44 sm:px-5 sm:py-7;
   }
 
   .nexo-toast {
@@ -205,7 +205,7 @@
   }
 
   .page-shell table thead {
-    @apply bg-muted/55 text-xs uppercase tracking-[0.08em] text-muted-foreground;
+    @apply bg-muted/45 text-xs uppercase tracking-[0.06em] text-muted-foreground;
   }
 
   .page-shell table tbody tr {
@@ -239,7 +239,7 @@
   }
 
   .mobile-secondary-panel {
-    @apply rounded-lg border border-border bg-background shadow-sm shadow-black/[0.025];
+    @apply rounded-lg border border-border bg-background shadow-none;
   }
 
   .mobile-secondary-summary {
@@ -251,11 +251,29 @@
   }
 
   .mobile-app-surface {
-    @apply rounded-xl border border-border/80 bg-card shadow-sm shadow-black/[0.015];
+    @apply rounded-lg border border-border/80 bg-card shadow-none;
   }
 
   .mobile-dense-section {
-    @apply rounded-xl border border-border/80 bg-card p-2.5 shadow-sm shadow-black/[0.015] sm:p-4;
+    @apply rounded-lg border border-border/80 bg-card p-2.5 shadow-none sm:p-4;
+  }
+
+  .metric-tile {
+    @apply relative min-w-0 overflow-hidden rounded-lg border border-border/80 bg-card p-2.5 text-left shadow-[0_1px_0_hsl(var(--border)/0.5)] transition-colors sm:p-3;
+  }
+
+  .metric-tile::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-accent/45 opacity-0 transition-opacity;
+  }
+
+  .metric-tile[data-active='true']::before,
+  .metric-tile:hover::before {
+    @apply opacity-100;
+  }
+
+  .filter-surface {
+    @apply rounded-lg border border-border/80 bg-card p-2 shadow-[0_1px_0_hsl(var(--border)/0.5)] sm:p-2.5;
   }
 }
 

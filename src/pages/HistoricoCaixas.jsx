@@ -31,6 +31,8 @@ import {
   LoadingState,
 } from "@/components/common/PageState";
 import PaginationControls from "@/components/common/PaginationControls";
+import { PaymentBadge, StatusBadge } from "@/components/common/visualTokens";
+import { SaleDetailModal } from "@/components/sales/SaleHistory";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
 import { useConfirm } from "@/components/common/ConfirmProvider";
 import {
@@ -56,7 +58,7 @@ const formatDate = (value) =>
         dateStyle: "short",
         timeStyle: "short",
       }).format(new Date(value))
-    : "—";
+    : "-";
 const PAYMENT_LABELS = {
   dinheiro: "Dinheiro",
   pix: "Pix",
@@ -182,7 +184,7 @@ export default function HistoricoCaixas() {
         icon={Banknote}
         eyebrow="Abertura e fechamento"
         title="Histórico de caixas"
-        description="Consulte o que entrou, o valor contado e quem abriu ou fechou cada caixa."
+        description="Aberturas, fechamentos e diferenças de caixa."
       />
 
       <FilterPanel aria-label="Filtros do histórico">
@@ -191,13 +193,13 @@ export default function HistoricoCaixas() {
             <Filter label="De">
               <input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
             </Filter>
-            <Filter label="At?">
+            <Filter label="Até">
               <input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" />
             </Filter>
           </div>
           <details className="group mobile-secondary-panel">
             <summary className="mobile-secondary-summary">
-              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filtros avançados</span>
+              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Mais filtros</span>
               <span className="text-xs text-muted-foreground group-open:hidden">abrir</span>
               <span className="hidden text-xs text-muted-foreground group-open:inline">fechar</span>
             </summary>
@@ -230,7 +232,7 @@ export default function HistoricoCaixas() {
 
         <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-6">
           <Filter label="De"><input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
-          <Filter label="At?"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
+          <Filter label="Até"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
           <Filter label="Operador">
             <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
               <option value="">Todos</option>
@@ -785,9 +787,9 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
               <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div>
-                    <h3 className="font-black">Visão rápida</h3>
+                    <h3 className="font-black">Resumo do caixa</h3>
                     <p className="text-xs text-muted-foreground">
-                      Resultado principal do caixa.
+                      Valores principais para conferência.
                     </p>
                   </div>
                   <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black text-accent">
@@ -818,19 +820,19 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </dl>
               </section>
 
-              <section className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-2.5 sm:p-4">
-                <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+              <section className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-2.5 sm:p-3">
+                <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
                   <div>
                     <h3 className="font-black">Conferência do dinheiro</h3>
                     <p className="text-xs text-muted-foreground">
                       Compare contado, esperado e diferença.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border bg-card p-3 shadow-sm shadow-black/[0.025]">
+                  <div className="rounded-xl border border-border bg-card p-2.5 shadow-none">
                     <p className="text-xs font-bold uppercase text-muted-foreground">
                       Resultado
                     </p>
-                    <strong className={`mt-1 block text-xl font-black tabular-nums ${differenceTone}`}>
+                    <strong className={`mt-0.5 block text-lg font-black tabular-nums ${differenceTone}`}>
                       {differenceLabel}
                     </strong>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -838,7 +840,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     </p>
                   </div>
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-card p-2 text-center text-xs sm:gap-2">
+                <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-card p-1.5 text-center text-xs sm:gap-2">
                   <div className="rounded-lg bg-muted/25 px-2 py-2">
                     <span className="block text-[10px] font-bold uppercase text-muted-foreground">Esperado</span>
                     <strong className="mt-0.5 block text-sm tabular-nums">{formatCurrency(expectedAfterExpense)}</strong>
@@ -957,8 +959,8 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 )}
               </section>
 
-              <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-                <div className="space-y-3">
+              <div className="grid items-start gap-3">
+                <div className="grid items-start gap-3 lg:grid-cols-2">
               <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-black">Pagamentos</h3>
@@ -1191,58 +1193,12 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </form>
               )}
                 </div>
-              <section className="hidden rounded-xl border border-border/80 bg-card p-3 xl:sticky xl:top-0">
-                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-black">Vendas vinculadas</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {linkedSales.length} de {summary.sales?.length || 0} venda(s)
-                    </p>
-                  </div>
-                  <label className="relative block sm:w-64">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      value={salePaymentFilter}
-                      onChange={(event) => setSalePaymentFilter(event.target.value)}
-                      className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                      aria-label="Filtrar vendas por pagamento"
-                    >
-                      {PAYMENT_FILTERS.map((payment) => (
-                        <option key={payment.method || "todos"} value={payment.method}>
-                          {payment.method ? `Pagamento: ${payment.label}` : "Todos os pagamentos"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {summary.sales?.length ? (
-                  linkedSales.length ? (
-                    <div className="grid max-h-96 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
-                      {linkedSales.map((sale) => (
-                        <LinkedSaleButton
-                          key={sale.id}
-                          sale={sale}
-                          onClick={() => openSaleDetail(sale)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                      Nenhuma venda encontrada para este pagamento.
-                    </div>
-                  )
-                ) : (
-                  <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3 py-4 text-sm text-muted-foreground">
-                    Nenhuma venda vinculada a este caixa.
-                  </div>
-                )}
-              </section>
               </div>
             </>
           )}
         </div>
         {selectedSale && (
-          <CashSaleDetailModal
+          <SaleDetailModal
             sale={selectedSale}
             loading={selectedSaleLoading || selectedSale._loading}
             onClose={() => setSelectedSale(null)}
@@ -1283,16 +1239,12 @@ function SalePaymentSummary({ payments }) {
   return (
     <>
       {payments.slice(0, 3).map((payment, index) => (
-        <span
+        <PaymentBadge
           key={`${payment.method}-${index}`}
-          className="inline-flex max-w-36 items-center gap-1 truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground"
-          title={PAYMENT_LABELS[payment.method] || payment.method}
-        >
-          <PaymentIcon method={payment.method} className="h-3 w-3 flex-none" />
-          <span className="truncate">
-            {PAYMENT_LABELS[payment.method] || payment.method}
-          </span>
-        </span>
+          method={payment.method}
+          compact
+          className="max-w-36"
+        />
       ))}
       {payments.length > 3 && (
         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
@@ -1440,14 +1392,7 @@ function Filter({ label, children }) {
   );
 }
 function Status({ value }) {
-  const open = value === "aberto";
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${open ? "bg-blue-500/10 text-blue-700 dark:text-blue-300" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`}
-    >
-      {open ? "Em andamento" : "Fechado"}
-    </span>
-  );
+  return <StatusBadge status={value} />;
 }
 function Value({ label, value }) {
   return (

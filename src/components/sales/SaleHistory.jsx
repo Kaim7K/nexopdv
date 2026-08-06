@@ -1,5 +1,6 @@
 import React from 'react';
 import { Archive, Ban, Download, Eye, Loader2, Printer, ReceiptText, X } from 'lucide-react';
+import { PaymentBadge, StatusBadge } from '@/components/common/visualTokens';
 import {
   calculateSaleTotals,
   formatCurrency,
@@ -41,9 +42,9 @@ export function SaleCard({
           <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
             Pagamento
           </span>
-          <strong className="mt-0.5 block truncate text-xs sm:text-sm">
-            {paymentNames(sale)}
-          </strong>
+          <span className="mt-1 flex min-w-0 flex-wrap gap-1">
+            <SalePayments sale={sale} compact />
+          </span>
         </div>
         <div className="text-right">
           <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
@@ -176,7 +177,7 @@ export function SaleActions({
   );
 }
 
-export function SaleStatus({ sale }) {
+function LegacySaleStatus({ sale }) {
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${sale.status === 'concluida' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}
@@ -185,6 +186,11 @@ export function SaleStatus({ sale }) {
     </span>
   );
 }
+
+export function SaleStatus({ sale }) {
+  return <StatusBadge status={sale.status} />;
+}
+
 export function SaleType({ sale }) {
   return (
     <span
@@ -202,13 +208,35 @@ export function paymentNames(sale) {
   );
 }
 
+export function SalePayments({ sale, compact = false }) {
+  const payments = sale.payments || [];
+  if (!payments.length)
+    return <span className="text-xs text-muted-foreground">Sem pagamento</span>;
+  return (
+    <>
+      {payments.slice(0, 3).map((payment, index) => (
+        <PaymentBadge
+          key={`${payment.method}-${index}`}
+          method={payment.method}
+          compact={compact}
+        />
+      ))}
+      {payments.length > 3 && (
+        <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
+          +{payments.length - 3}
+        </span>
+      )}
+    </>
+  );
+}
+
 export function SaleDetailModal({
   sale,
   loading,
-  receiptLoading,
-  printing,
-  onReceipt,
-  onPrint,
+  receiptLoading = false,
+  printing = false,
+  onReceipt = null,
+  onPrint = null,
   onClose,
 }) {
   const modalRef = useModalBehavior({ onClose, disabled: receiptLoading || printing });
@@ -245,49 +273,53 @@ export function SaleDetailModal({
         aria-modal="true"
         aria-labelledby="sale-detail-title"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/80 bg-card px-3 py-3 sm:px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><ReceiptText className="h-5 w-5" /></span>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/80 bg-card px-3 py-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 sm:h-10 sm:w-10"><ReceiptText className="h-5 w-5" /></span>
           <div className="min-w-0">
-            <h2 id="sale-detail-title" className="text-lg font-black">
+            <h2 id="sale-detail-title" className="truncate text-base font-black sm:text-lg">
               Venda #{sale.sale_number}
             </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
               {formatDateTime(sale.created_date)}
             </p>
           </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={receiptLoading}
-              onClick={onReceipt}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/25 px-3 text-xs font-bold text-accent hover:bg-accent/10 disabled:opacity-50"
-            >
-              {receiptLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}{' '}
-              Recibo
-            </button>
-            <button
-              type="button"
-              disabled={printing}
-              onClick={onPrint}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground hover:bg-muted disabled:opacity-50"
-            >
-              {printing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Printer className="h-4 w-4" />
-              )}{' '}
-              Imprimir
-            </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {onReceipt && (
+              <button
+                type="button"
+                disabled={receiptLoading}
+                onClick={onReceipt}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-accent/25 px-2.5 text-xs font-bold text-accent hover:bg-accent/10 disabled:opacity-50 sm:min-h-10 sm:gap-2 sm:px-3"
+              >
+                {receiptLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}{' '}
+                <span className="hidden min-[430px]:inline">Recibo</span>
+              </button>
+            )}
+            {onPrint && (
+              <button
+                type="button"
+                disabled={printing}
+                onClick={onPrint}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border px-2.5 text-xs font-bold text-muted-foreground hover:bg-muted disabled:opacity-50 sm:min-h-10 sm:gap-2 sm:px-3"
+              >
+                {printing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4" />
+                )}{' '}
+                <span className="hidden min-[430px]:inline">Imprimir</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
-              className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground sm:h-10 sm:w-10"
               aria-label="Fechar detalhes"
             >
               <X className="h-5 w-5" />
@@ -376,13 +408,44 @@ export function SaleDetailModal({
   );
 }
 
+function visualInfoValue(label, value) {
+  if (React.isValidElement(value)) return value;
+  const raw = String(value || '');
+  if (label === 'Status') {
+    const text = raw.toLowerCase();
+    const status = text.includes('cancel') ? 'cancelada' : 'concluida';
+    return <StatusBadge status={status} />;
+  }
+  if (label === 'Pagamento') {
+    const text = raw
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    const method = text.includes('pix')
+      ? 'pix'
+      : text.includes('debito')
+        ? 'debito'
+        : text.includes('credito')
+          ? 'credito'
+          : text.includes('fiado')
+            ? 'fiado'
+            : text.includes('dinheiro')
+              ? 'dinheiro'
+              : 'outros';
+    return <PaymentBadge method={method} />;
+  }
+  return value;
+}
+
 function Info({ label, value }) {
   return (
     <div>
       <span className="block text-xs font-semibold text-muted-foreground">
         {label}
       </span>
-      <span className="mt-0.5 block font-semibold">{value}</span>
+      <span className="mt-0.5 block font-semibold">
+        {visualInfoValue(label, value)}
+      </span>
     </div>
   );
 }

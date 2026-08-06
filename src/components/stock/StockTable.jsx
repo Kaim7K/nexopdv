@@ -16,21 +16,21 @@ const TABLE_COLUMNS = [
     key: 'name',
     label: 'Produto',
     sortKey: 'name',
-    width: 'w-[300px]',
+    width: 'w-[250px]',
     sticky: 'left',
   },
   {
     key: 'category',
     label: 'Categoria',
     sortKey: 'category',
-    width: 'w-[190px]',
+    width: 'w-[135px]',
     type: 'text',
   },
   {
     key: 'barcode',
     label: 'Cód. barras',
     sortKey: 'barcode',
-    width: 'w-[150px]',
+    width: 'w-[120px]',
     type: 'text',
   },
   {
@@ -44,27 +44,27 @@ const TABLE_COLUMNS = [
     key: 'quantity',
     label: 'Estoque',
     sortKey: 'quantity',
-    width: 'w-[110px]',
+    width: 'w-[95px]',
     type: 'number',
   },
   {
     key: 'last_sale_at',
     label: 'Última venda',
     sortKey: 'last_sale_at',
-    width: 'w-[150px]',
+    width: 'w-[170px]',
     type: 'date',
   },
   {
     key: 'status',
     label: 'Status',
     sortKey: 'status',
-    width: 'w-[128px]',
+    width: 'w-[100px]',
     type: 'text',
   },
   {
     key: 'actions',
     label: 'Ações',
-    width: 'w-[116px]',
+    width: 'w-[120px]',
     sticky: 'right',
   },
 ];
@@ -92,7 +92,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1160px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+    <table className="hidden w-full min-w-[1110px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col
@@ -225,14 +225,14 @@ function ProductRow({
             title="Editar"
             onClick={() => onEdit(product)}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </ActionButton>
           <ActionButton
             label={`Duplicar ${product.name}`}
             title="Duplicar"
             onClick={() => onDuplicate(product)}
           >
-            <Copy className="h-3.5 w-3.5" />
+            <Copy className="h-4 w-4" />
           </ActionButton>
           {canDelete && (
             <ActionButton
@@ -242,7 +242,7 @@ function ProductRow({
               title="Excluir"
               onClick={() => onDelete(product)}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </ActionButton>
           )}
         </div>
@@ -490,7 +490,7 @@ function ActionButton({
       onClick={onClick}
       aria-label={label}
       title={title}
-      className={`grid h-8 w-8 place-items-center rounded-lg border bg-card !shadow-none transition-colors disabled:cursor-wait disabled:opacity-50 ${
+      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border bg-card !shadow-none transition-colors active:scale-95 disabled:cursor-wait disabled:opacity-50 ${
         destructive
           ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
           : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'

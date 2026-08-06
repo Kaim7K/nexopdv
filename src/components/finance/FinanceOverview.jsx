@@ -29,7 +29,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
     {
       label: 'Receita líquida',
       value: summary.net_revenue,
-      help: 'O que entrou após descontos e cancelamentos',
+      help: 'Entradas confirmadas',
       change: data?.comparison?.revenue,
       icon: ArrowUpCircle,
       tone: 'positive',
@@ -37,21 +37,21 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
     {
       label: 'Despesas',
       value: summary.expenses,
-      help: 'Tudo o que saiu para manter o mercado',
+      help: 'Saídas confirmadas',
       icon: ArrowDownCircle,
       tone: 'negative',
     },
     {
       label: 'Lucro estimado',
       value: summary.estimated_profit,
-      help: 'O que restou após custos, taxas e despesas',
+      help: 'Receita - despesas',
       icon: TrendingUp,
       tone: 'info',
     },
     {
       label: 'Saldo disponível',
       value: summary.financial_balance,
-      help: 'Total atual das contas financeiras',
+      help: 'Disponível agora',
       icon: WalletCards,
       tone: 'neutral',
     },
@@ -61,10 +61,10 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
       <section aria-labelledby="financial-summary-title">
         <div className="mb-2">
           <h3 id="financial-summary-title" className="text-base font-bold">
-            Como está o seu financeiro
+            Resumo financeiro
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Os quatro números mais importantes do período selecionado.
+            Período selecionado.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-2 xl:grid-cols-4">
@@ -89,14 +89,14 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           disabled={!canCreate}
           className="min-h-9 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 font-bold text-accent transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Registrar entrada
+          Nova entrada
         </button>
         <button
           type="button"
           onClick={() => onNavigate('cashflow')}
           className="min-h-9 rounded-lg border border-border bg-card px-3 font-bold text-accent transition hover:border-accent/30 hover:bg-accent/5"
         >
-          Fluxo de caixa
+          Ver fluxo
         </button>
       </div>
 
@@ -111,7 +111,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             </span>
             <div>
               <h3 id="financial-alerts-title" className="text-sm font-bold">
-                Pontos que precisam de atenção
+                Atenção
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 {data.alerts.length}{' '}
@@ -143,9 +143,9 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
       <details className="surface-card group overflow-hidden xl:hidden">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
-            <strong className="block text-sm">Ver gráfico e compromissos</strong>
+            <strong className="block text-sm">Gráfico e compromissos</strong>
             <span className="mt-0.5 block text-[11px] text-muted-foreground">
-              Evolução do dinheiro e contas pendentes.
+              Tendência e pendências.
             </span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
@@ -170,7 +170,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
       <section className="hidden gap-3 xl:grid xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
         <ChartCard title="Entradas, saídas e lucro">
           <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
-            Acompanhe a evolução diária sem confundir faturamento com saldo.
+            Evolução diária do dinheiro.
           </p>
           <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
             <FinanceTrendChart data={data?.series || []} />
@@ -179,7 +179,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         <section className="surface-card p-3 sm:p-4">
           <h3 className="text-sm font-bold">Próximos compromissos</h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Valores pendentes que afetam seu saldo.
+            Pendências que afetam o saldo.
           </p>
           <div className="mt-2 space-y-1.5">
             <FinancialPositionRow
@@ -212,9 +212,9 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
       >
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
-            <strong className="block text-sm">Ver análises detalhadas</strong>
+            <strong className="block text-sm">Análises detalhadas</strong>
             <span className="mt-0.5 block text-[11px] text-muted-foreground">
-              Margem, faturamento bruto, categorias, pagamentos e produtos.
+              Margem, categorias, pagamentos e produtos.
             </span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
@@ -319,7 +319,7 @@ export function MetricCard({
     neutral: 'bg-muted text-muted-foreground',
   }[tone];
   return (
-    <article className="surface-card flex min-w-0 items-center gap-2 p-2 shadow-none sm:block sm:p-2.5">
+    <article className="metric-tile flex min-w-0 items-center gap-2 sm:block">
       {Icon && (
         <span
           className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg sm:hidden ${iconTone}`}
@@ -332,12 +332,12 @@ export function MetricCard({
           <div className="flex min-w-0 items-center gap-2">
             {Icon && (
               <span
-                className={`hidden h-8 w-8 shrink-0 place-items-center rounded-xl sm:grid ${iconTone}`}
+                className={`hidden h-7 w-7 shrink-0 place-items-center rounded-lg border border-border/40 sm:grid ${iconTone}`}
               >
                 <Icon className="h-4 w-4" />
               </span>
             )}
-            <p className="truncate text-[10px] font-bold uppercase text-muted-foreground sm:text-xs">
+            <p className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-[11px]">
               {label}
             </p>
           </div>
@@ -352,7 +352,7 @@ export function MetricCard({
           )}
         </div>
         <div className="mt-0.5 flex items-baseline justify-between gap-2 sm:block">
-          <strong className="block break-words text-sm tabular-nums min-[380px]:text-base sm:mt-1 sm:text-lg">
+          <strong className="block break-words text-sm font-black tabular-nums min-[380px]:text-base sm:mt-1 sm:text-lg">
             {value}
           </strong>
           <p className="hidden line-clamp-1 text-[10px] leading-4 text-muted-foreground sm:mt-1 sm:block sm:text-[11px]">
@@ -366,7 +366,7 @@ export function MetricCard({
 export function ChartCard({ title, children }) {
   return (
     <section className="surface-card min-w-0 p-2.5 sm:p-3">
-      <h3 className="mb-3 text-sm font-bold">{title}</h3>
+      <h3 className="mb-2 text-sm font-black">{title}</h3>
       {children}
     </section>
   );

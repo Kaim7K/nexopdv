@@ -1,3 +1,5 @@
+import { mockNexoApi } from '@/api/mockNexoApi';
+
 const responseCache = new Map();
 const inFlightRequests = new Map();
 const latestRequestControllers = new Map();
@@ -229,7 +231,7 @@ const entityNames = [
   'Market',
 ];
 
-export const nexoApi = {
+const realNexoApi = {
   entities: Object.fromEntries(entityNames.map((name) => [name, entity(name)])),
   cache: { clear: invalidateCache },
   auth: {
@@ -594,3 +596,6 @@ export const nexoApi = {
     },
   },
 };
+
+export const nexoApi =
+  import.meta.env.VITE_MOCK_API === 'true' ? mockNexoApi : realNexoApi;

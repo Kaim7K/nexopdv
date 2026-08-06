@@ -461,7 +461,7 @@ export default function Estoque() {
   const handleDeleteProduct = async (product) => {
     if (!['admin', 'gerente'].includes(user.role) || deletingId) return;
     const confirmed = await confirm({
-      title: `Excluir “${product.name}”?`,
+      title: `Excluir "${product.name}"?`,
       description:
         'O produto será removido do cadastro. As vendas anteriores e seus registros de auditoria continuarão preservados.',
       confirmLabel: 'Excluir produto',
@@ -605,7 +605,7 @@ export default function Estoque() {
           icon={Package}
           eyebrow="Produtos e quantidades"
           title="Estoque"
-          description="Edite direto na tabela ou use o cadastro completo."
+          description="Busque, ajuste estoque e cadastre produtos."
         />
         <StockActionsToolbar
           ref={fileRef}
@@ -638,7 +638,7 @@ export default function Estoque() {
           active={stock === 'baixo'}
           hint={
             lowStockCount
-              ? `Até ${lowStockThreshold} unidades · clique para ver`
+              ? `Até ${lowStockThreshold} unidades`
               : 'Nenhum alerta'
           }
           onClick={() => focusStock('baixo')}
@@ -650,7 +650,7 @@ export default function Estoque() {
           active={stock === 'zerado'}
           hint={
             zeroStockCount
-              ? 'Clique para atualizar os produtos'
+              ? 'Precisa de reposição'
               : 'Nenhum produto zerado'
           }
           onClick={() => focusStock('zerado')}
@@ -690,7 +690,7 @@ export default function Estoque() {
           {filtered.length} de {products.length} produtos
         </span>
         <span className="xl:hidden">
-          Abra um produto para editar todos os dados.
+          Toque em um produto para ver mais detalhes.
         </span>
       </div>
 

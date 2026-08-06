@@ -88,7 +88,7 @@ export default function Relatorios() {
       setFiados(fiadoData);
       setProducts(productData);
     } catch (error) {
-      setLoadError(error.message || 'Nao foi possivel carregar os relatorios.');
+      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
       toast.error('Erro ao carregar dados.');
     } finally {
       setLoading(false);
@@ -505,7 +505,7 @@ export default function Relatorios() {
     if (stats.itemsPerSale > 0)
       list.push({
         type: 'info',
-        text: `Cada venda teve em media ${stats.itemsPerSale.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} item(ns).`,
+        text: `Cada venda teve em média ${stats.itemsPerSale.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} item(ns).`,
       });
     if (stats.pendingFiado > 0)
       list.push({
@@ -522,7 +522,7 @@ export default function Relatorios() {
 
   if (loading)
     return (
-      <LoadingState className="min-h-[60vh]" label="Carregando relatorios..." />
+      <LoadingState className="min-h-[60vh]" label="Carregando relatórios..." />
     );
   if (loadError && !sales.length)
     return (
@@ -538,10 +538,10 @@ export default function Relatorios() {
           <BarChart3 className="h-3.5 w-3.5" /> Resultados do mercado
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Relatórios gerenciais
+          Relatórios
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Acompanhe vendas, pagamentos, produtos, equipe e fiados.
+          Vendas, pagamentos e rankings do período.
         </p>
       </div>
 
@@ -614,7 +614,7 @@ export default function Relatorios() {
         />
       </div>
 
-      <section className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-border bg-card p-2 text-card-foreground shadow-sm shadow-black/[0.025] sm:gap-2 sm:p-2.5 lg:grid-cols-4">
+      <section className="filter-surface mb-3 grid grid-cols-2 gap-1.5 text-card-foreground sm:gap-2 lg:grid-cols-4">
         <MiniMetric
           icon={ChartNoAxesColumnIncreasing}
           label="Bruto vendido"
@@ -651,7 +651,7 @@ export default function Relatorios() {
         />
       </section>
 
-      <section className="mb-3 overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
+      <section className="surface-card mb-3 overflow-hidden text-card-foreground">
         <div className="border-b border-border p-2.5 sm:p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-bold">Estatísticas de faturamento</h3>
@@ -765,9 +765,9 @@ export default function Relatorios() {
       </section>
 
       <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3">
+        <section className="surface-card p-2.5 text-card-foreground sm:p-3">
           <h3 className="mb-3 text-sm font-bold">
-            Faturamento por {period === 'year' ? 'mes' : 'dia'}
+            Faturamento por {period === 'year' ? 'mês' : 'dia'}
           </h3>
           {stats.dailyData.length ? (
             <Suspense fallback={<ChartLoading />}>
@@ -778,7 +778,7 @@ export default function Relatorios() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-2.5 text-card-foreground sm:p-3">
+        <section className="surface-card p-2.5 text-card-foreground sm:p-3">
           <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
           {stats.paymentData.length ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
@@ -936,18 +936,16 @@ function ChartLoading({ height = 'h-40 sm:h-[240px]' }) {
 
 function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
   return (
-    <div
-      className={`rounded-xl border bg-card p-2.5 text-card-foreground sm:p-4 ${alert ? 'border-orange-400/60' : 'border-border'}`}
-    >
-      <div className="mb-0.5 flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
+    <div className={`metric-tile text-card-foreground ${alert ? 'border-orange-400/60' : ''}`}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-[11px]">
           {label}
         </span>
-        <Icon
-          className={`h-4 w-4 sm:h-5 sm:w-5 ${alert ? 'text-orange-500' : 'text-accent'}`}
-        />
+        <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted ${alert ? 'text-orange-500' : 'text-accent'}`}>
+          <Icon className="h-3.5 w-3.5" />
+        </span>
       </div>
-      <div className="text-lg font-black sm:text-xl">{value}</div>
+      <div className="truncate text-lg font-black tabular-nums sm:text-xl">{value}</div>
       {change !== 0 && (
         <div
           className={`mt-1 flex items-center gap-1 text-xs font-semibold ${change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
@@ -966,9 +964,9 @@ function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
 
 function MiniMetric({ icon: Icon, label, value, hint }) {
   return (
-    <article className="flex min-w-0 items-center gap-2.5 rounded-xl border border-border/70 bg-muted/20 p-2.5 sm:gap-3 sm:p-3">
-      <div className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-accent/10 text-accent sm:h-10 sm:w-10">
-        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+    <article className="metric-tile flex min-w-0 items-center gap-2.5 sm:gap-3">
+      <div className="grid h-7 w-7 flex-none place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent sm:h-8 sm:w-8">
+        <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
         <p className="truncate text-xs font-semibold text-muted-foreground">{label}</p>
@@ -1028,10 +1026,10 @@ function ExecutiveSummary({ stats }) {
     ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
     ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
     ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendencias'],
+    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
   ];
   return (
-    <section className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+    <section className="surface-card p-3 text-card-foreground sm:p-4">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
         <Users className="h-4 w-4 text-accent" /> Resumo executivo
       </h3>
@@ -1074,7 +1072,7 @@ function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
         </span>
       </span>
       <div className="sr-only">
-        Participacao: {formatNumber(row.percent || 0)}%
+        Participação: {formatNumber(row.percent || 0)}%
       </div>
       <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
         <div

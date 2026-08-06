@@ -105,9 +105,8 @@ export function PdvLockedState({ continuePath, onContinue, onOpenCash }) {
         <h2 className="mt-3 text-lg font-black sm:mt-4 sm:text-xl">
           Abra o caixa para começar
         </h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Informe o valor inicial disponível para troco. Depois disso, o PDV
-          será liberado para suas vendas.
+        <p className="mt-2 text-sm leading-5 text-muted-foreground">
+          Informe o troco inicial para liberar as vendas.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
           {continuePath && (

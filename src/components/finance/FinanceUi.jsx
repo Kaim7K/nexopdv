@@ -6,11 +6,11 @@ import { useModalBehavior } from '@/hooks/use-modal-behavior';
 export function ReferenceCards({ items = [], empty, render }) {
   if (!items.length) return <EmptyState icon={Users} title={empty} />;
   return (
-    <div className="grid content-start gap-3 sm:grid-cols-2">
+    <div className="grid content-start gap-2 sm:grid-cols-2">
       {items.map((item) => (
         <article
           key={item.id}
-          className={`surface-card p-4 ${!item.active ? 'opacity-60' : ''}`}
+          className={`surface-card p-3 ${!item.active ? 'opacity-60' : ''}`}
         >
           {render(item)}
         </article>
@@ -28,19 +28,19 @@ export function Field({ label, children }) {
 }
 export function ModalActions({ saving, onClose, label = 'Salvar' }) {
   return (
-    <div className="sticky -bottom-4 -mx-4 flex flex-col-reverse gap-2 border-t border-border/80 bg-card/95 px-4 pb-1 pt-3 backdrop-blur sm:-bottom-5 sm:-mx-5 sm:flex-row sm:justify-end sm:px-5">
+    <div className="sticky -bottom-4 -mx-4 flex flex-col-reverse gap-2 border-t border-border/80 bg-card/95 px-4 py-3 backdrop-blur sm:-bottom-5 sm:-mx-5 sm:flex-row sm:justify-end sm:px-5">
       <button
         type="button"
         onClick={onClose}
         disabled={saving}
-        className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
+        className="min-h-10 rounded-lg border border-border px-4 text-sm font-bold hover:bg-muted"
       >
         Cancelar
       </button>
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-60"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-accent-foreground disabled:opacity-60"
       >
         {saving && <Loader2 className="h-4 w-4 animate-spin" />}
         {label}
@@ -52,7 +52,7 @@ export function FinanceModal({ title, description = '', onClose, children, wide 
   const modalRef = useModalBehavior({ onClose, disabled });
   return (
     <div
-      className="fixed inset-0 z-[80] grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+      className="fixed inset-0 z-[80] grid items-end bg-slate-950/55 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
       role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && !disabled && onClose()}
     >
@@ -63,15 +63,15 @@ export function FinanceModal({ title, description = '', onClose, children, wide 
         aria-modal="true"
         aria-labelledby="finance-modal-title"
         aria-describedby={description ? 'finance-modal-description' : undefined}
-        className={`flex max-h-dvh w-full flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)] ${wide ? 'sm:max-w-5xl' : 'sm:max-w-xl'}`}
+        className={`flex max-h-dvh w-full flex-col overflow-hidden rounded-t-2xl border border-border/80 bg-card shadow-[0_-12px_42px_rgba(0,0,0,0.18)] sm:max-h-[92dvh] sm:rounded-xl sm:shadow-[0_18px_58px_rgba(0,0,0,0.24)] ${wide ? 'sm:max-w-5xl' : 'sm:max-w-xl'}`}
       >
-        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-muted/15 px-4 py-3">
+        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-card px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               <Landmark className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-            <h2 id="finance-modal-title" className="text-base font-bold sm:text-lg">{title}</h2>
+            <h2 id="finance-modal-title" className="text-base font-black sm:text-lg">{title}</h2>
             {description && (
               <p id="finance-modal-description" className="mt-0.5 text-xs leading-5 text-muted-foreground">
                 {description}
@@ -84,12 +84,12 @@ export function FinanceModal({ title, description = '', onClose, children, wide 
             onClick={onClose}
             disabled={disabled}
             aria-label="Fechar"
-            className="grid h-9 w-9 flex-none place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
-        <div className="flex-1 overflow-y-auto bg-muted/10 p-4 sm:p-5">{children}</div>
+        <div className="flex-1 overflow-y-auto bg-background/70 p-3 sm:p-4">{children}</div>
       </section>
     </div>
   );

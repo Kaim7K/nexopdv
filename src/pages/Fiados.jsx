@@ -206,7 +206,7 @@ export default function Fiados() {
         icon={HandCoins}
         eyebrow="Contas a receber"
         title="Vendas fiadas"
-        description="Acompanhe pendências e registre os recebimentos."
+        description="Pendências e recebimentos."
         tone="orange"
       />
 
@@ -221,7 +221,7 @@ export default function Fiados() {
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Responsável, telefone ou número da venda" className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10 sm:pl-10 sm:pr-4" />
+            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Cliente, telefone ou venda" className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10 sm:pl-10 sm:pr-4" />
           </label>
           <select aria-label="Filtrar por status" value={filterStatus} onChange={event => setFilterStatus(event.target.value)} className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10">
             <option value="">Todos status</option>
@@ -234,7 +234,7 @@ export default function Fiados() {
       </FilterPanel>
 
       {loading ? (
-        <div role="status" aria-live="polite" aria-busy="true" className="rounded-xl border border-border bg-card py-6 text-center text-muted-foreground sm:py-8"><div className="mx-auto mb-2 h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
+        <div role="status" aria-live="polite" aria-busy="true" className="loading-state"><div className="mx-auto mb-2 h-7 w-7 animate-spin rounded-full border-4 border-muted border-t-accent" /><p className="text-sm">Carregando fiados...</p></div>
       ) : loadError && !fiados.length ? (
         <ErrorState description={loadError} onRetry={loadFiados} />
       ) : filtered.length === 0 ? (
@@ -245,7 +245,7 @@ export default function Fiados() {
             const pending = item.status === 'pendente';
             const settled = item.status === 'quitado';
             return (
-              <article key={item.id} className="rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] sm:p-3">
+              <article key={item.id} className="surface-card p-2.5 sm:p-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <div className={`grid h-8 w-8 flex-none place-items-center rounded-lg sm:h-10 sm:w-10 ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                     {pending ? <Clock className="h-5 w-5" /> : settled ? <Check className="h-5 w-5" /> : <Ban className="h-5 w-5" />}

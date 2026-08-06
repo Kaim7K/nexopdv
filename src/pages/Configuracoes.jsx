@@ -424,7 +424,7 @@ export default function Configuracoes() {
             Configurações
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Personalize o mercado e ajuste o funcionamento do sistema.
+            Dados, acesso, estoque e categorias.
           </p>
         </div>
         <button
@@ -472,7 +472,7 @@ export default function Configuracoes() {
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Informações exibidas na identificação, recibos e relatórios.
+              Identificação, recibos e relatórios.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -579,7 +579,7 @@ export default function Configuracoes() {
           <section id="config-logo" className="mobile-dense-section scroll-mt-14 lg:col-span-5">
             <h2 className="font-bold">Logo do mercado</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use uma imagem nítida com fundo transparente quando possível.
+              Prefira PNG transparente.
             </p>
             <div className="mt-3 rounded-xl border border-border bg-muted/25 p-2.5">
               <ImageUploadField
@@ -743,7 +743,7 @@ export default function Configuracoes() {
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Controle o acesso dos vendedores ao PDV.
+              Bloqueio de acesso ao PDV.
             </p>
             <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3">
               <span>
