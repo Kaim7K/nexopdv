@@ -71,7 +71,7 @@ function RankingModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="modal-overlay"
       onClick={onClose}
     >
       <section
@@ -80,10 +80,10 @@ function RankingModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${title} completo`}
-        className={`flex max-h-[94dvh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[88dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]`}
+        className={`modal-panel ${maxWidth} sm:max-h-[min(36rem,calc(100dvh-3rem))]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-muted/15 px-4 py-3">
+        <header className="modal-header">
           <div className="min-w-0">
             <h3 className="truncate text-sm font-bold">{title}</h3>
             <p className="text-xs text-muted-foreground">
@@ -94,13 +94,15 @@ function RankingModal({
             type="button"
             onClick={onClose}
             aria-label="Fechar ranking completo"
-            className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            className="modal-icon-button border border-border"
           >
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="overscroll-contain overflow-y-auto p-3 sm:p-4">
-          <div className={listClassName}>{items.map(renderItem)}</div>
+        <div className="modal-body">
+          <div className={`${listClassName} max-h-[calc(100dvh-10rem)] overflow-y-auto pr-1`}>
+            {items.map(renderItem)}
+          </div>
         </div>
       </section>
     </div>

@@ -310,7 +310,7 @@ export default function ProductForm({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="modal-overlay"
       role="presentation"
     >
       <div
@@ -319,18 +319,18 @@ export default function ProductForm({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="modal-panel sm:max-w-3xl lg:max-h-[min(42rem,calc(100dvh-2rem))]"
       >
-        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 sm:px-5">
+        <div className="modal-header">
           <div>
-            <h2 id={titleId} className="text-lg font-bold">
+            <h2 id={titleId} className="modal-title">
               {isEditing
                 ? 'Editar produto'
                 : isDuplicating
                   ? 'Duplicar produto'
                   : 'Criar produto'}
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="hidden">
               {isDuplicating
                 ? 'Código de barras e quantidade foram zerados para evitar duplicidade.'
                 : 'Use o código de barras ou o nome para pesquisar a imagem no Google.'}
@@ -341,15 +341,20 @@ export default function ProductForm({
             aria-label="Fechar cadastro de produto"
             onClick={closeForm}
             disabled={saving}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="modal-icon-button disabled:cursor-not-allowed disabled:opacity-40"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain bg-muted/10 p-4 sm:p-5">
-          <section className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3.5 sm:flex-row">
-            <div className="grid h-28 w-28 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-white">
+        <div className="modal-body space-y-2">
+          <details className="hidden rounded-lg border border-border bg-muted/10 sm:block">
+            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-bold text-muted-foreground marker:hidden">
+              <span>Imagem do produto</span>
+              <span className="text-[11px] font-semibold text-accent">editar</span>
+            </summary>
+          <section className="grid grid-cols-[3rem_minmax(0,1fr)] gap-2 border-t border-border p-2 sm:grid-cols-[3.25rem_minmax(0,1fr)]">
+            <div className="grid h-12 w-12 flex-shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white">
               {form.image_url ? (
                 <img
                   src={form.image_url}
@@ -359,10 +364,10 @@ export default function ProductForm({
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
+                <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
               )}
             </div>
-            <div className="flex flex-1 flex-col justify-center gap-2">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
               {canUploadProductImage && (
                 <ImageUploadField
                   value={form.image_url}
@@ -374,31 +379,32 @@ export default function ProductForm({
                   previewClassName="hidden"
                 />
               )}
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-1.5 sm:grid-cols-3">
                 {canSearchProductImage && (
                   <button
                     type="button"
                     onClick={openImageSearch}
+                    aria-label="Buscar no Google Imagens"
                     disabled={!form.barcode.trim() && !form.name.trim()}
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-3.5 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <ExternalLink className="h-5 w-5" />
-                    Buscar no Google Imagens
+                    <ExternalLink className="h-4 w-4" />
+                    Buscar
                   </button>
                 )}
                 {canUploadProductImage && (
                   <button
                     type="button"
                     onClick={pasteImageUrl}
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-3.5 text-sm font-semibold hover:bg-muted"
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
                   >
-                    <CopyPlus className="h-5 w-5" />
-                    Colar URL
+                    <CopyPlus className="h-4 w-4" />
+                    URL
                   </button>
                 )}
               </div>
               {canSearchProductImage || canUploadProductImage ? (
-                <p className="text-[11px] leading-4 text-muted-foreground">
+                <p className="hidden text-[11px] leading-4 text-muted-foreground">
                   Use a pesquisa ou envie uma imagem conforme os recursos do
                   plano.
                 </p>
@@ -411,13 +417,14 @@ export default function ProductForm({
                 <button
                   type="button"
                   onClick={() => handleChange('image_url', '')}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="h-4 w-4" /> Remover imagem
+                  <Trash2 className="h-4 w-4" /> Remover
                 </button>
               )}
             </div>
           </section>
+          </details>
 
           <div>
             <label
@@ -435,13 +442,13 @@ export default function ProductForm({
                 onChange={(event) => handleChange('name', event.target.value)}
                 autoFocus
                 placeholder="Ex.: Leite líquido - Marca - 3L"
-                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
               <button
                 type="button"
                 onClick={() => standardizeName()}
                 title="Padronizar nome"
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"
               >
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Padronizar</span>
@@ -449,7 +456,7 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <ProductCategoryField
               category={form.category}
               open={categoryMenuOpen}
@@ -480,7 +487,7 @@ export default function ProductForm({
                 id="product-unit"
                 value={form.unit}
                 onChange={(event) => handleChange('unit', event.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 <option value="unidade">Unidade</option>
                 <option value="peso">Peso (kg)</option>
@@ -489,7 +496,7 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="product-barcode"
@@ -512,7 +519,7 @@ export default function ProductForm({
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="Escaneie ou digite o código"
-                  className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <button
                   type="button"
@@ -520,7 +527,7 @@ export default function ProductForm({
                   disabled={identifying || !/^\d{6,14}$/.test(form.barcode)}
                   aria-label="Identificar produto pelo código de barras"
                   title="Identificar produto"
-                  className="grid min-h-11 w-11 place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
+                  className="grid h-9 w-9 place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
                 >
                   {identifying ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -542,12 +549,12 @@ export default function ProductForm({
                 type="text"
                 value={form.internal_code}
                 readOnly
-                className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-muted-foreground"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-muted px-3 font-mono text-sm text-muted-foreground"
               />
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
             <div>
               <label
                 htmlFor="product-sale-price"
@@ -567,7 +574,7 @@ export default function ProductForm({
                     event.target.value.replace(/\D/g, ''),
                   )
                 }
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
@@ -588,7 +595,7 @@ export default function ProductForm({
                     event.target.value.replace(/\D/g, ''),
                   )
                 }
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
@@ -607,7 +614,7 @@ export default function ProductForm({
                 onChange={(event) =>
                   handleChange('quantity', event.target.value)
                 }
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
           </div>
@@ -623,59 +630,62 @@ export default function ProductForm({
               id="product-status"
               value={form.status}
               onChange={(event) => handleChange('status', event.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="ativo">Ativo</option>
               <option value="inativo">Inativo</option>
             </select>
           </div>
 
-          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+          <label className="flex min-h-9 items-center gap-2 rounded-lg border border-border bg-muted/15 px-3 py-1.5">
             <input
               type="checkbox"
               checked={Boolean(form.allow_pdv_price_edit)}
               onChange={(event) =>
                 handleChange('allow_pdv_price_edit', event.target.checked)
               }
-              className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent"
+              className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
             />
             <span>
               <strong className="block text-sm">
                 Permitir edição de valor no PDV
               </strong>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+              <span className="hidden">
                 Use para produtos com preço variável. Por padrão esta opção fica
                 desativada.
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
+          <label className="flex min-h-9 items-center gap-2 rounded-lg border border-border bg-muted/15 px-3 py-1.5">
             <input
               type="checkbox"
               checked={Boolean(form.track_stock)}
               onChange={(event) =>
                 handleChange('track_stock', event.target.checked)
               }
-              className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent"
+              className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
             />
             <span>
               <strong className="block text-sm">
                 Controlar estoque deste produto
               </strong>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+              <span className="hidden">
                 Quando desativado, o produto não entra nos alertas nem no
                 relatório de reposição.
               </span>
             </span>
           </label>
+          </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
+        <div className="modal-footer">
+          <div className="modal-actions">
           <button
             type="button"
             onClick={closeForm}
             disabled={saving}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            className="modal-button border border-border hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             Cancelar
           </button>
@@ -684,7 +694,7 @@ export default function ProductForm({
               type="button"
               onClick={() => saveProduct({ duplicateAfter: true })}
               disabled={saving}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-40"
+              className="modal-button border border-accent text-accent hover:bg-accent/10 disabled:opacity-40"
             >
               <CopyPlus className="h-5 w-5" /> Criar e duplicar
             </button>
@@ -693,7 +703,7 @@ export default function ProductForm({
             type="button"
             onClick={() => saveProduct()}
             disabled={saving}
-            className="inline-flex min-h-11 min-w-36 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"
+            className="modal-button modal-actions-primary min-w-36 bg-accent px-5 text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -702,6 +712,7 @@ export default function ProductForm({
             )}
             {saving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Criar'}
           </button>
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import ImageUploadField from '@/components/ImageUploadField';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import { ErrorState } from '@/components/common/PageState';
+import { PageHeader } from '@/components/common/AppShell';
 
 const EMPTY_FORM = {
   full_name: '',
@@ -119,14 +120,11 @@ export default function Usuarios() {
 
   return (
     <div className="page-shell !max-w-6xl">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <Users className="h-3.5 w-3.5" /> Equipe e acessos
-          </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Usuários</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Gerencie funcionários, perfis e acesso ao sistema.</p>
-        </div>
+      <PageHeader
+        icon={Users}
+        eyebrow="Equipe e acessos"
+        title="Usuários"
+        actions={
         <button
           type="button"
           onClick={() => setShowCreate(true)}
@@ -134,7 +132,8 @@ export default function Usuarios() {
         >
           <UserPlus className="h-4 w-4" /> Novo funcionário
         </button>
-      </div>
+        }
+      />
 
       <div className="mb-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
         <label className="relative block">
@@ -147,7 +146,7 @@ export default function Usuarios() {
             className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10 sm:pl-10 sm:pr-4"
           />
         </label>
-        <div className="text-sm font-medium text-muted-foreground">
+        <div className="text-xs font-semibold text-muted-foreground">
           {filteredUsers.length} de {users.length} funcionários
         </div>
       </div>
@@ -160,20 +159,20 @@ export default function Usuarios() {
       ) : loadError && !users.length ? (
         <ErrorState description={loadError} onRetry={load} />
       ) : filteredUsers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-5 text-center sm:p-6">
-          <Users className="mx-auto h-9 w-9 text-muted-foreground/30" />
-          <h2 className="mt-2 font-bold">Nenhum usuário encontrado</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Revise a pesquisa ou cadastre um novo funcionário.</p>
+        <div className="rounded-lg border border-dashed border-border bg-card p-4 text-center">
+          <Users className="mx-auto h-7 w-7 text-muted-foreground/30" />
+          <h2 className="mt-2 text-sm font-bold">Nenhum usuário encontrado</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Revise a pesquisa ou cadastre um funcionário.</p>
         </div>
       ) : (
-        <div className="grid min-w-0 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {filteredUsers.map(item => {
             const isActive = item.active !== false;
             const isManager = ['admin', 'gerente'].includes(item.role);
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
-              <article key={item.id} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card p-2.5 shadow-sm shadow-black/[0.025] transition hover:border-accent/30 hover:bg-muted/15 sm:p-3">
+              <article key={item.id} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:border-accent/35 hover:bg-muted/10 sm:p-3.5">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
                   <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-lg bg-secondary text-secondary-foreground sm:h-11 sm:w-11">
                     {item.photo_url ? (
@@ -241,53 +240,49 @@ export default function Usuarios() {
 
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+          className="modal-overlay"
           onMouseDown={event => event.target === event.currentTarget && !saving && setShowCreate(false)}
           role="presentation"
         >
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="max-h-[96dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-lg sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+            className="modal-panel sm:max-w-lg"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-user-title"
           >
-            <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="modal-header">
               <div>
-                <h2 id="create-user-title" className="text-xl font-black">Novo funcionário</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Crie o acesso e defina o perfil inicial.</p>
+                <h2 id="create-user-title" className="modal-title">Novo funcionário</h2>
               </div>
-              <button type="button" disabled={saving} onClick={() => setShowCreate(false)} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Fechar">
+              <button type="button" disabled={saving} onClick={() => setShowCreate(false)} className="modal-icon-button" aria-label="Fechar">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="modal-body grid gap-2.5 sm:grid-cols-2">
               <label className="text-sm font-semibold sm:col-span-2">
                 Nome completo <span className="text-destructive">*</span>
-                <input required autoFocus autoComplete="name" value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                <input required autoFocus autoComplete="name" value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
               </label>
               <label className="text-sm font-semibold sm:col-span-2">
                 E-mail <span className="text-destructive">*</span>
-                <input required type="email" autoComplete="email" value={form.email} onChange={event => setForm(previous => ({ ...previous, email: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                <input required type="email" autoComplete="email" value={form.email} onChange={event => setForm(previous => ({ ...previous, email: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
               </label>
               <label className="text-sm font-semibold">
                 Senha inicial <span className="text-destructive">*</span>
-                <input required minLength={8} type="password" autoComplete="new-password" value={form.password} onChange={event => setForm(previous => ({ ...previous, password: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
-                <span className="mt-1 block text-xs font-normal text-muted-foreground">Mínimo de 8 caracteres.</span>
+                <input required minLength={8} type="password" autoComplete="new-password" value={form.password} onChange={event => setForm(previous => ({ ...previous, password: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
               </label>
               <label className="text-sm font-semibold">
                 Perfil
-                <select value={form.role} onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+                <select value={form.role} onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
                   <option value="vendedor">Vendedor</option>
                   {user.role === 'admin' && <option value="gerente">Gerente</option>}
                   {user.role === 'admin' && <option value="admin">Administrador</option>}
                 </select>
               </label>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-border bg-muted/25 p-3">
+              <div className="rounded-lg border border-border bg-muted/20 p-2 sm:col-span-2">
               <ImageUploadField
                 value={form.photo_url}
                 onChange={value => setForm(previous => ({ ...previous, photo_url: value }))}
@@ -298,13 +293,16 @@ export default function Usuarios() {
                 previewClassName="h-16 w-16 rounded-full"
                 objectFit="cover"
               />
+              </div>
             </div>
 
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" disabled={saving} onClick={() => setShowCreate(false)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50">Cancelar</button>
-              <button type="submit" disabled={saving} className="min-h-11 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+            <div className="modal-footer">
+              <div className="modal-actions">
+              <button type="button" disabled={saving} onClick={() => setShowCreate(false)} className="modal-button border border-border hover:bg-muted disabled:opacity-50">Cancelar</button>
+              <button type="submit" disabled={saving} className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
                 {saving ? 'Criando...' : 'Criar funcionário'}
               </button>
+              </div>
             </div>
           </form>
         </div>

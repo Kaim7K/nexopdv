@@ -13,6 +13,7 @@ import {
 import { calculateSaleTotals, formatCurrency, getPaymentLabel, PAYMENT_METHODS, roundCurrency } from '@/lib/helpers';
 import { toast } from 'react-hot-toast';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { PAYMENT_VISUALS } from '@/components/common/visualTokens';
 
 const DebitCardIcon = ({ className, ...props }) => (
   <svg
@@ -42,14 +43,9 @@ const METHOD_ICONS = {
   fiado: CalendarClock,
 };
 
-const METHOD_STYLES = {
-  dinheiro: 'border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900 dark:text-emerald-300',
-  debito: 'border-sky-200 bg-sky-500/10 text-sky-700 dark:border-sky-900 dark:text-sky-300',
-  credito: 'border-violet-200 bg-violet-500/10 text-violet-700 dark:border-violet-900 dark:text-violet-300',
-  pix: 'border-teal-200 bg-teal-500/10 text-teal-700 dark:border-teal-900 dark:text-teal-300',
-  outros: 'border-slate-200 bg-slate-500/10 text-slate-700 dark:border-slate-800 dark:text-slate-300',
-  fiado: 'border-orange-200 bg-orange-500/10 text-orange-700 dark:border-orange-900 dark:text-orange-300',
-};
+const METHOD_STYLES = Object.fromEntries(
+  Object.entries(PAYMENT_VISUALS).map(([method, visual]) => [method, visual.badge]),
+);
 
 export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard }) {
   const [payments, setPayments] = useState(sale.payments || []);
@@ -153,19 +149,19 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/75 p-0 backdrop-blur-[2px] sm:items-center sm:p-5" role="presentation">
-      <div ref={modalRef} tabIndex={-1} className="flex max-h-[97dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.3)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.38)]" role="dialog" aria-modal="true" aria-labelledby="payment-title">
-        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-3 py-2.5 sm:px-5 sm:py-3">
+    <div className="modal-overlay bg-slate-950/75" role="presentation">
+      <div ref={modalRef} tabIndex={-1} className="modal-panel sm:max-w-3xl xl:max-w-4xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+        <div className="modal-header">
           <div>
-            <h2 id="payment-title" className="text-base font-black sm:text-xl">Forma de pagamento</h2>
+            <h2 id="payment-title" className="modal-title">Forma de pagamento</h2>
             <p className="hidden text-xs text-muted-foreground sm:block">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
           </div>
-          <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-5 w-5" /></button>
+          <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="modal-icon-button"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="grid flex-1 overscroll-contain overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="space-y-2 border-b border-border p-3 lg:border-b-0 lg:border-r lg:p-5">
-            <div className="max-h-36 overflow-y-auto rounded-xl border border-border bg-muted/20 p-2.5 sm:max-h-52 sm:p-3">
+        <div className="grid flex-1 overscroll-contain overflow-y-auto lg:grid-cols-[0.82fr_1.18fr]">
+          <section className="space-y-2 border-b border-border p-2.5 lg:border-b-0 lg:border-r lg:p-3">
+            <div className="max-h-28 overflow-y-auto rounded-lg border border-border bg-muted/20 p-2 sm:max-h-36">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
               <div className="space-y-1.5">
                 {sale.items.map((item, index) => (
@@ -178,21 +174,21 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               </div>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-border bg-background p-3 sm:p-4">
+            <div className="space-y-2 rounded-lg border border-border bg-background p-2.5">
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold tabular-nums">{formatCurrency(subtotal)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Desconto</span><span className="font-semibold tabular-nums">{formatCurrency(discount)}</span></div>
-              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2.5 sm:p-3">
+              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-2.5">
                 <div className="flex items-end justify-between gap-4">
                   <span className="font-bold text-emerald-700 dark:text-emerald-300">Total</span>
-                  <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-3xl">{formatCurrency(total)}</span>
+                  <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-2xl">{formatCurrency(total)}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-muted/40 p-2.5 sm:p-3">
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded-lg bg-muted/40 p-2">
                   <span className="text-xs text-muted-foreground">Pago</span>
                   <p className="mt-0.5 text-base font-black tabular-nums sm:text-xl">{formatCurrency(paidAmount)}</p>
                 </div>
-                <div className="rounded-xl bg-muted/40 p-2.5 sm:p-3">
+                <div className="rounded-lg bg-muted/40 p-2">
                   <span className="text-xs text-muted-foreground">{hasFiado ? 'Saldo fiado' : 'Restante'}</span>
                   <p className={`mt-0.5 text-base font-black tabular-nums sm:text-xl ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
                 </div>
@@ -206,16 +202,16 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
             </div>
           </section>
 
-          <section className="space-y-2.5 p-3 lg:p-5">
+          <section className="space-y-2.5 p-2.5 lg:p-3">
             {!hasFiado && (
               <div>
                 <h3 className="mb-2 text-sm font-bold">Escolha a forma de pagamento</h3>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                   {PAYMENT_METHODS.map(method => {
                     const Icon = METHOD_ICONS[method.method];
                     const disabled = method.method !== 'fiado' && remaining <= 0;
                     return (
-                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border p-2 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 sm:min-h-16 sm:gap-1.5 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
+                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-10 items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
                         <Icon className="h-5 w-5" />
                         <span className="text-xs font-bold sm:text-sm">{method.label}</span>
                         {method.method === 'debito' && (
@@ -277,10 +273,12 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
           </section>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border bg-card px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 sm:flex-row sm:px-5 sm:py-3">
-          <button type="button" onClick={onDiscard} disabled={completing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-destructive px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Descartar</button>
-          <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"><Minimize2 className="h-4 w-4" /> Minimizar</button>
-          <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:text-base"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
+        <div className="modal-footer">
+          <div className="modal-actions">
+          <button type="button" onClick={onDiscard} disabled={completing} className="modal-button border border-destructive text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /> Descartar</button>
+          <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="modal-button border border-border bg-secondary hover:bg-muted"><Minimize2 className="h-4 w-4" /> Minimizar</button>
+          <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="modal-button modal-actions-primary bg-accent px-5 text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
+          </div>
         </div>
       </div>
     </div>

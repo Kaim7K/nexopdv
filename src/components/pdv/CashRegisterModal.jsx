@@ -73,7 +73,7 @@ export default function CashRegisterModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+      className="modal-overlay z-[70]"
       role="presentation"
       onMouseDown={(event) =>
         event.target === event.currentTarget && !processing && onClose?.()
@@ -82,12 +82,12 @@ export default function CashRegisterModal({
       <form
         ref={modalRef}
         onSubmit={submit}
-        className="max-h-[96dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border/80 bg-card shadow-[0_-12px_42px_rgba(0,0,0,0.18)] sm:max-h-[92dvh] sm:rounded-xl sm:shadow-[0_18px_58px_rgba(0,0,0,0.24)]"
+        className={`modal-panel ${isClosedMode ? 'sm:max-w-[32rem]' : 'sm:max-w-[30rem]'}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-modal-title"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-card p-3 sm:p-4">
+        <div className="modal-header">
           <div className="flex items-start gap-3">
             <div className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
               {isOpenMode ? (
@@ -97,14 +97,14 @@ export default function CashRegisterModal({
               )}
             </div>
             <div>
-              <h2 id="cash-modal-title" className="text-base font-black sm:text-lg">
+              <h2 id="cash-modal-title" className="modal-title">
                 {isOpenMode
                   ? 'Abrir caixa'
                   : isClosedMode
                     ? 'Caixa fechado'
                     : 'Fechar caixa'}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="modal-subtitle">
                 {isOpenMode
                   ? 'Digite o troco inicial.'
                   : isClosedMode
@@ -118,7 +118,7 @@ export default function CashRegisterModal({
               type="button"
               disabled={processing}
               onClick={onClose}
-              className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50"
+              className="modal-icon-button"
               aria-label="Fechar"
             >
               <X className="h-5 w-5" />
@@ -126,7 +126,7 @@ export default function CashRegisterModal({
           )}
         </div>
 
-        <div className="bg-background/70 p-3 sm:p-4">
+        <div className="modal-body">
           {isOpenMode ? (
             <label className="block text-sm font-bold">
               Valor inicial do caixa
@@ -152,27 +152,27 @@ export default function CashRegisterModal({
               </span>
             </label>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 <Metric label="Valor inicial" value={formatCurrency(summary.opening_amount)} />
                 <Metric label="Vendas" value={summary.sales_count || 0} />
-                <Metric label="Faturamento" value={formatCurrency(summary.total)} />
+                <Metric label="Total" value={formatCurrency(summary.total)} />
                 <Metric label="Em dinheiro" value={formatCurrency(summary.cash_sales)} />
               </div>
 
-              <div className="rounded-lg border border-accent/25 bg-accent/5 p-3">
+              <div className="rounded-lg border border-accent/25 bg-accent/5 p-2.5 sm:p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       Dinheiro esperado no caixa
                     </p>
-                    <strong className="mt-1 block text-xl font-black text-accent sm:text-2xl">
+                    <strong className="mt-0.5 block text-xl font-black text-accent sm:text-2xl">
                       {formatCurrency(expectedCash)}
                     </strong>
                   </div>
-                  <CheckCircle2 className="h-8 w-8 text-accent" />
+                  <CheckCircle2 className="h-7 w-7 text-accent" />
                 </div>
-                <div className="mt-3 grid gap-1.5 border-t border-accent/15 pt-3 text-xs sm:grid-cols-2">
+                <div className="mt-2 grid gap-1.5 border-t border-accent/15 pt-2 text-xs sm:grid-cols-2">
                   <Formula label="Valor inicial" value={summary.opening_amount} />
                   <Formula label="Vendas em dinheiro" value={summary.cash_sales} positive />
                   <Formula label="Outras entradas" value={summary.entries} positive />
@@ -186,13 +186,13 @@ export default function CashRegisterModal({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-border bg-card p-3">
+              {paymentEntries.length > 0 && (
+              <div className="rounded-lg border border-border bg-card p-2.5 sm:p-3">
                 <h3 className="flex items-center gap-2 text-sm font-black">
                   <Clock3 className="h-4 w-4 text-accent" /> Resumo por pagamento
                 </h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {paymentEntries.length ? (
-                    paymentEntries.map(([method, amount]) => (
+                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {paymentEntries.map(([method, amount]) => (
                       <div
                         key={method}
                         className="flex items-center justify-between rounded-lg bg-muted/35 px-3 py-2 text-sm"
@@ -200,14 +200,10 @@ export default function CashRegisterModal({
                         <span>{getPaymentLabel(method)}</span>
                         <strong>{formatCurrency(amount)}</strong>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Nenhuma venda registrada neste caixa.
-                    </p>
-                  )}
+                    ))}
                 </div>
               </div>
+              )}
 
               {!isClosedMode && (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -301,22 +297,18 @@ export default function CashRegisterModal({
                   )}
                 </div>
               )}
-              {isClosedMode && (
-                <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
-                  Fechamento concluído. O relatório do caixa está pronto.
-                </div>
-              )}
             </div>
           )}
         </div>
 
-        <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-border bg-card p-3 sm:flex-row sm:justify-end sm:p-4">
-          {onClose && (
+        <div className="modal-footer">
+          <div className="modal-actions">
+          {onClose && !isClosedMode && (
             <button
               type="button"
               disabled={processing || reporting}
               onClick={onClose}
-              className="min-h-10 rounded-lg border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+              className="modal-button border border-border hover:bg-muted"
             >
               Voltar
             </button>
@@ -326,9 +318,17 @@ export default function CashRegisterModal({
               type="button"
               disabled={processing || reporting}
               onClick={onContinue}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+              className="modal-button border border-border hover:bg-muted"
             >
-              {isClosedMode ? 'Continuar no sistema' : 'Continuar sem caixa'}{' '}
+              {isClosedMode ? (
+                <>
+                  <span className="sm:hidden">Continuar</span>
+                  <span className="hidden sm:inline">Continuar</span>
+                  <span className="sr-only">Continuar no sistema</span>
+                </>
+              ) : (
+                'Continuar sem caixa'
+              )}{' '}
               <ArrowRight className="h-4 w-4" />
             </button>
           )}
@@ -337,7 +337,7 @@ export default function CashRegisterModal({
               type="button"
               disabled={processing || reporting}
               onClick={onLogout}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-destructive/40 px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              className="modal-button border border-destructive/40 text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" /> Sair
             </button>
@@ -347,25 +347,26 @@ export default function CashRegisterModal({
               type="button"
               disabled={processing || reporting}
               onClick={onDownloadReport}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-accent px-4 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50"
+              className="modal-button border border-accent text-accent hover:bg-accent/10"
             >
               <Download className="h-4 w-4" />{' '}
-              {reporting ? 'Gerando relatório...' : 'Baixar relatório'}
+              {reporting ? 'Gerando...' : 'Relatório'}
             </button>
           )}
-          <button
-            type="submit"
-            disabled={processing || reporting || (isOpenMode && openingAmount === '') || (isClosingMode && !hasCountedCash)}
-            className="min-h-10 rounded-lg bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {processing
-              ? 'Processando...'
-              : isOpenMode
-                ? 'Abrir caixa'
-                : isClosedMode
-                  ? 'Concluir'
+          {!isClosedMode && (
+            <button
+              type="submit"
+              disabled={processing || reporting || (isOpenMode && openingAmount === '') || (isClosingMode && !hasCountedCash)}
+              className="modal-button modal-actions-primary bg-accent px-5 text-accent-foreground hover:bg-accent/90"
+            >
+              {processing
+                ? 'Processando...'
+                : isOpenMode
+                  ? 'Abrir caixa'
                   : 'Confirmar fechamento'}
-          </button>
+            </button>
+          )}
+          </div>
         </div>
       </form>
     </div>
@@ -374,11 +375,11 @@ export default function CashRegisterModal({
 
 function Metric({ label, value }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5">
+    <div className="min-w-0 rounded-lg border border-border bg-card p-2">
       <span className="block text-[11px] font-bold text-muted-foreground">
         {label}
       </span>
-      <strong className="mt-1 block text-base font-black tabular-nums">
+      <strong className="mt-0.5 block truncate text-sm font-black tabular-nums sm:text-base">
         {value}
       </strong>
     </div>
@@ -387,9 +388,9 @@ function Metric({ label, value }) {
 
 function Formula({ label, value, positive = false, negative = false }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-card/70 px-2.5 py-1.5">
-      <span className="text-muted-foreground">{label}</span>
-      <strong className="tabular-nums">
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-card/70 px-2 py-1.5">
+      <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+      <strong className="shrink-0 tabular-nums">
         {positive ? '+ ' : negative ? '- ' : ''}
         {formatCurrency(Math.abs(Number(value || 0)))}
       </strong>

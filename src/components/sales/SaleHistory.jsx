@@ -1,5 +1,5 @@
 import React from 'react';
-import { Archive, Ban, Download, Eye, Loader2, Printer, ReceiptText, X } from 'lucide-react';
+import { Archive, Ban, Download, Eye, Loader2, MoreHorizontal, Printer, ReceiptText, X } from 'lucide-react';
 import { PaymentBadge, StatusBadge } from '@/components/common/visualTokens';
 import {
   calculateSaleTotals,
@@ -74,6 +74,27 @@ export function SaleCard({
           <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Ver detalhes
         </button>
       </div>
+      <details className="group mt-1.5 rounded-lg border border-border bg-background sm:mt-2 sm:rounded-xl">
+        <summary className="flex min-h-9 cursor-pointer list-none items-center justify-center gap-1.5 px-3 text-xs font-bold text-muted-foreground marker:hidden hover:bg-muted/60 sm:min-h-10 sm:text-sm">
+          <MoreHorizontal className="h-4 w-4" /> Mais ações
+        </summary>
+        <div className="border-t border-border p-2">
+          <SaleActions
+            sale={sale}
+            receiptLoading={receiptLoading}
+            printing={printing}
+            canCancel={canCancel}
+            canDelete={canDelete}
+            onDetails={onDetails}
+            onReceipt={onReceipt}
+            onPrint={onPrint}
+            onCancel={onCancel}
+            onDelete={onDelete}
+            mobile
+            showDetails={false}
+          />
+        </div>
+      </details>
     </article>
   );
 }
@@ -89,12 +110,13 @@ export function SaleActions({
   onDelete,
   printing = false,
   mobile = false,
+  showDetails = true,
 }) {
   return (
     <div
       className={`flex items-center ${mobile ? 'mt-3 grid grid-cols-2 gap-2' : 'justify-center gap-1'}`}
     >
-      <button
+      {showDetails && <button
         type="button"
         onClick={onDetails}
         className={
@@ -106,7 +128,7 @@ export function SaleActions({
       >
         <Eye className="h-4 w-4" />
         {mobile && 'Detalhes'}
-      </button>
+      </button>}
       <button
         type="button"
         disabled={receiptLoading}
@@ -260,20 +282,20 @@ export function SaleDetailModal({
       : formatCurrency(totals.discount);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="modal-overlay"
       onClick={onClose}
       role="presentation"
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="flex max-h-[96dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="modal-panel sm:max-w-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sale-detail-title"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/80 bg-card px-3 py-3 sm:px-4">
+        <div className="modal-header sticky top-0 z-10">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 sm:h-10 sm:w-10"><ReceiptText className="h-5 w-5" /></span>
           <div className="min-w-0">
@@ -326,8 +348,8 @@ export function SaleDetailModal({
             </button>
           </div>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/10 p-3 text-sm sm:p-4">
-          <div className="grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
+        <div className="modal-body space-y-3 text-sm">
+            <div className="grid gap-2 rounded-lg bg-muted/30 p-3 sm:grid-cols-2">
             <Info
               label="Vendedor"
               value={sale.seller_name || 'Não informado'}
@@ -384,7 +406,7 @@ export function SaleDetailModal({
               })}
             </div>
           </section>
-          <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
+          <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
               <span className="tabular-nums">
@@ -462,24 +484,24 @@ export function ConfirmSaleAction({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+      className="modal-overlay"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
       role="presentation"
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="w-full rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="modal-panel sm:max-w-md"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="sale-action-title"
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="modal-header">
           <div>
-            <h2 id="sale-action-title" className="text-xl font-black">
+            <h2 id="sale-action-title" className="modal-title">
               {action.type === 'cancel' ? 'Cancelar venda' : 'Arquivar venda'}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="modal-subtitle">
               Venda #{action.sale.sale_number} ·{' '}
               {formatCurrency(action.sale.total)}
             </p>
@@ -488,19 +510,20 @@ export function ConfirmSaleAction({
             type="button"
             disabled={processing}
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50"
+            className="modal-icon-button disabled:opacity-50"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+        <div className="modal-body">
         {action.type === 'cancel' ? (
           <>
-            <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+            <div className="rounded-lg border border-amber-300/60 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
               Os produtos serão devolvidos ao estoque. Se a venda for fiado, o
               registro pendente também será cancelado.
             </div>
-            <label className="mt-4 block text-sm font-semibold">
+            <label className="mt-3 block text-sm font-semibold">
               Motivo do cancelamento{' '}
               <span className="font-normal text-muted-foreground">
                 (opcional)
@@ -517,17 +540,19 @@ export function ConfirmSaleAction({
             </label>
           </>
         ) : (
-          <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             A venda sairá da lista principal, mas seus vínculos financeiros e a
             auditoria serão preservados para conferência.
           </div>
         )}
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        </div>
+        <div className="modal-footer">
+          <div className="modal-actions">
           <button
             type="button"
             disabled={processing}
             onClick={onClose}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+            className="modal-button border border-border hover:bg-muted disabled:opacity-50"
           >
             Voltar
           </button>
@@ -535,17 +560,17 @@ export function ConfirmSaleAction({
             type="button"
             disabled={processing}
             onClick={onConfirm}
-            className={`min-h-11 rounded-xl px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${action.type === 'cancel' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-destructive hover:bg-destructive/90'}`}
+            className={`modal-button modal-actions-primary text-white disabled:cursor-not-allowed disabled:opacity-50 ${action.type === 'cancel' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-destructive hover:bg-destructive/90'}`}
           >
             {processing
               ? 'Processando...'
               : action.type === 'cancel'
-                ? 'Confirmar cancelamento'
+                ? 'Confirmar'
                 : 'Arquivar venda'}
           </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

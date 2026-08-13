@@ -27,6 +27,7 @@ import {
   SaleType,
   paymentNames,
 } from '@/components/sales/SaleHistory';
+import { PageHeader } from '@/components/common/AppShell';
 
 const PAGE_SIZE = 20;
 const todayKey = () => {
@@ -343,12 +344,18 @@ export default function Vendas() {
 
   return (
     <div className="page-shell">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <PageHeader
+        icon={History}
+        eyebrow="Histórico"
+        title="Vendas"
+        description={`${total} registro${total === 1 ? '' : 's'} no período`}
+      />
+      <div className="hidden">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <History className="h-3.5 w-3.5" /> Histórico
           </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+          <h1 className="text-xl font-black tracking-tight sm:text-2xl">
             Vendas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -357,15 +364,15 @@ export default function Vendas() {
         </div>
       </div>
 
-      <section className="filter-surface mb-3 grid gap-1.5 sm:mb-4 sm:gap-3" aria-label="Filtros de vendas">
-        <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-2">
+      <section className="filter-surface mb-3 grid gap-2.5" aria-label="Filtros de vendas">
+        <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
           <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
           <SaleMetric label="Vendas" value={metrics.sales_count || 0} />
           <SaleMetric label="Ticket" value={formatCurrency(metrics.average_ticket)} />
           <SaleMetric label="Canceladas" value={metrics.cancelled_count || 0} muted />
         </div>
 
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1.5">
           {[
             ['hoje', 'Hoje'],
             ['ontem', 'Ontem'],
@@ -376,7 +383,7 @@ export default function Vendas() {
               key={range}
               type="button"
               onClick={() => applyQuickRange(range)}
-              className="min-h-8 rounded-lg border border-border px-1.5 text-xs font-bold transition hover:border-accent hover:bg-accent/5 sm:min-h-9 sm:px-3"
+              className="min-h-8 rounded-lg border border-border px-1.5 text-xs font-bold transition hover:border-accent hover:bg-accent/5"
             >
               {label}
             </button>
@@ -394,13 +401,13 @@ export default function Vendas() {
                 setPage(1);
               }}
               placeholder="Buscar venda"
-              className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
           <button
             type="button"
             onClick={() => setAdvancedFiltersOpen((open) => !open)}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted sm:min-h-11 lg:hidden"
+            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted lg:hidden"
             aria-expanded={advancedFiltersOpen}
             aria-controls="sales-advanced-filters"
           >
@@ -417,7 +424,7 @@ export default function Vendas() {
 
         <div
           id="sales-advanced-filters"
-          className={`${advancedFiltersOpen ? 'grid' : 'hidden lg:grid'} gap-2 md:grid-cols-2 xl:grid-cols-[140px_140px_110px_110px_180px_180px_auto]`}
+          className={`${advancedFiltersOpen ? 'grid' : 'hidden lg:grid'} gap-1.5 md:grid-cols-2 xl:grid-cols-[136px_136px_104px_104px_minmax(150px,1fr)_minmax(150px,1fr)_minmax(132px,0.8fr)_auto_auto]`}
         >
           <input
             aria-label="Data inicial"
@@ -429,7 +436,7 @@ export default function Vendas() {
               setReportTo(selectedDate);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
           <input
             aria-label="Data final"
@@ -440,7 +447,7 @@ export default function Vendas() {
               setReportTo(event.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
           <input
             aria-label="Horário inicial"
@@ -450,7 +457,7 @@ export default function Vendas() {
               setReportStart(event.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
           <input
             aria-label="Horário final"
@@ -460,7 +467,7 @@ export default function Vendas() {
               setReportEnd(event.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
           {canSeeTeam && (
             <select
@@ -470,7 +477,7 @@ export default function Vendas() {
                 setReportSeller(event.target.value);
                 setPage(1);
               }}
-              className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+              className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             >
               <option value="">Todos os vendedores</option>
               {sellers.map((seller) => (
@@ -485,7 +492,7 @@ export default function Vendas() {
               setReportPayment(event.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Todos os pagamentos</option>
             {PAYMENT_METHODS.map((payment) => (
@@ -499,23 +506,43 @@ export default function Vendas() {
               setFilterStatus(event.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           >
             <option value="">Todos os status</option>
             <option value="concluida">Concluídas</option>
             <option value="cancelada">Canceladas</option>
           </select>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="hidden h-9 items-center justify-center rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted xl:inline-flex"
+            >
+              Limpar
+            </button>
+          )}
+          {canExportReports && (
+            <button
+              type="button"
+              disabled={reporting}
+              onClick={downloadReport}
+              className="hidden h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 xl:inline-flex"
+            >
+              {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {reporting ? 'Gerando...' : 'Relatório'}
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-2">
+        <div className="-mt-1 flex flex-wrap items-center justify-end gap-1.5 xl:hidden">
+          <div className="flex flex-wrap gap-1.5">
             {hasFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
                 className="min-h-9 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted"
               >
-                Limpar filtros
+                Limpar
               </button>
             )}
           </div>
@@ -524,10 +551,10 @@ export default function Vendas() {
               type="button"
               disabled={reporting}
               onClick={downloadReport}
-              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
             >
               {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {reporting ? 'Gerando...' : 'Baixar relatório'}
+              {reporting ? 'Gerando...' : 'Relatório'}
             </button>
           )}
         </div>
@@ -590,50 +617,50 @@ export default function Vendas() {
               />
             ))}
           </div>
-          <div className="hidden overflow-hidden rounded-lg border border-border bg-card shadow-none lg:block">
+          <div className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)] lg:block">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-sm">
-                <thead className="bg-secondary text-xs font-bold text-secondary-foreground">
+              <table className="w-full min-w-[960px] text-sm">
+                <thead className="bg-secondary text-[11px] font-bold uppercase tracking-normal text-secondary-foreground">
                   <tr>
-                    <th className="px-4 py-3 text-left">Venda</th>
-                    <th className="px-4 py-3 text-left">Data e hora</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Venda</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Data e hora</th>
                     {canSeeTeam && (
-                      <th className="px-4 py-3 text-left">Vendedor</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Vendedor</th>
                     )}
-                    <th className="px-4 py-3 text-left">Pagamento</th>
-                    <th className="px-4 py-3 text-left">Tipo</th>
-                    <th className="px-4 py-3 text-right">Total</th>
-                    <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Ações</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Pagamento</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Tipo</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right">Total</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sales.map((sale) => (
                     <tr key={sale.id} className="transition hover:bg-muted/25">
-                      <td className="px-4 py-3 font-black">
+                      <td className="whitespace-nowrap px-3 py-2.5 font-black">
                         #{sale.sale_number}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
                         {formatDateTime(sale.created_date)}
                       </td>
                       {canSeeTeam && (
-                        <td className="px-4 py-3 font-semibold">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-semibold">
                           {sale.seller_name || '-'}
                         </td>
                       )}
-                      <td className="max-w-[240px] px-4 py-3 text-muted-foreground">
+                      <td className="max-w-[220px] whitespace-nowrap px-3 py-2.5 text-muted-foreground">
                         {paymentNames(sale)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         <SaleType sale={sale} />
                       </td>
-                      <td className="px-4 py-3 text-right font-bold tabular-nums">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
                         {formatCurrency(sale.total)}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-center">
                         <SaleStatus sale={sale} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         <SaleActions
                           sale={sale}
                           receiptLoading={receiptLoadingId === sale.id}
@@ -689,7 +716,6 @@ export default function Vendas() {
     </div>
   );
 }
-
 function SaleMetric({ label, value, muted = false }) {
   return (
     <div className="metric-tile min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2">

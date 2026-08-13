@@ -100,7 +100,6 @@ export default function AuditoriaGeral() {
           <ScrollText className="h-3.5 w-3.5" /> Histórico de ações
         </div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Auditoria geral</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Consulte alterações, vendas, cancelamentos e ações da equipe.</p>
       </div>
 
       <section className="mb-3 rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.025]" aria-label="Filtros da auditoria">
@@ -137,7 +136,7 @@ export default function AuditoriaGeral() {
       ) : loadError && !allEntries.length ? (
         <ErrorState description={loadError} onRetry={loadAudits} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card py-6 text-center sm:py-8"><ScrollText className="mx-auto h-11 w-11 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
+        <div className="rounded-lg border border-dashed border-border bg-card py-4 text-center"><ScrollText className="mx-auto h-7 w-7 text-muted-foreground/25" /><h2 className="mt-2 text-sm font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-xs text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground">Limpar</button>}</div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/[0.025]">
           <div className="max-h-[calc(100dvh-230px)] divide-y divide-border overflow-y-auto">

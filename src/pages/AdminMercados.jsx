@@ -277,7 +277,7 @@ export default function AdminMercados() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3">
           {filtered.map((market) => {
             const updating = updatingIds.has(market.id);
             return (
@@ -285,7 +285,8 @@ export default function AdminMercados() {
                 className={`mobile-dense-section transition ${updating ? 'opacity-75' : 'hover:border-accent/35'}`}
                 key={market.id}
               >
-                <div className="flex items-start gap-3">
+                <div className="grid gap-2 sm:flex sm:items-start sm:gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                   <div
                     className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-xl sm:h-12 sm:w-12 sm:rounded-2xl"
                     style={{ background: market.primary_color || '#16a06a' }}
@@ -310,6 +311,7 @@ export default function AdminMercados() {
                       /{market.slug}
                     </p>
                   </div>
+                  </div>
                   <select
                     aria-label={`Status de ${market.name}`}
                     disabled={updating || market.status === 'cancelado'}
@@ -319,7 +321,7 @@ export default function AdminMercados() {
                     onChange={(event) =>
                       changeMarketStatus(market, event.target.value)
                     }
-                    className="h-10 rounded-xl border border-border bg-background px-2 text-xs font-bold disabled:opacity-50"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-2 text-xs font-bold disabled:opacity-50 sm:w-auto sm:rounded-xl"
                   >
                     <option value="teste">Em teste</option>
                     <option value="ativo">Ativo</option>
@@ -328,7 +330,7 @@ export default function AdminMercados() {
                   </select>
                 </div>
 
-                <div className="mt-3 sm:mt-4">
+                <div className="mt-2 sm:mt-3">
                   <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-black">Módulos habilitados</h3>
                     <span className="text-xs text-muted-foreground">
@@ -336,7 +338,7 @@ export default function AdminMercados() {
                       {MARKET_MODULES.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-2">
                     {MARKET_MODULES.map((module) => {
                       const checked = (market.enabled_modules || []).includes(
                         module.key,
@@ -368,7 +370,7 @@ export default function AdminMercados() {
                   </div>
                 </div>
 
-                <details className="mt-3 rounded-xl border border-border bg-muted/10 p-2.5 sm:p-3">
+                <details className="mt-2 rounded-lg border border-border bg-muted/10 p-2.5">
                   <summary className="cursor-pointer text-sm font-bold">
                     Recursos específicos{' '}
                     <span className="font-normal text-muted-foreground">
@@ -376,7 +378,7 @@ export default function AdminMercados() {
                       {MARKET_FEATURES.length})
                     </span>
                   </summary>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
                     {MARKET_FEATURES.map((feature) => {
                       const checked = (market.enabled_features || []).includes(
                         feature.key,
@@ -408,8 +410,8 @@ export default function AdminMercados() {
                   </div>
                 </details>
 
-                <div className="mt-3 border-t border-border pt-3 sm:mt-4 sm:pt-4">
-                  <div className="mb-3 grid gap-2 sm:mb-4 sm:grid-cols-2">
+                <div className="mt-2 border-t border-border pt-2 sm:mt-3 sm:pt-3">
+                  <div className="mb-2 grid gap-2 sm:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]">
                     <label className="text-xs font-bold text-muted-foreground">
                       Plano contratado
                       <select
@@ -437,7 +439,7 @@ export default function AdminMercados() {
                         ))}
                       </select>
                     </label>
-                    <div className="rounded-xl border border-border bg-muted/25 p-2.5 sm:p-3">
+                    <div className="rounded-lg border border-border bg-muted/25 p-2.5">
                       <span className="text-xs text-muted-foreground">
                         Uso atual
                       </span>
@@ -452,7 +454,7 @@ export default function AdminMercados() {
                     </div>
                   </div>
                   <label
-                    className={`mb-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-2.5 sm:mb-4 sm:p-3 ${updating ? 'pointer-events-none opacity-60' : ''}`}
+                    className={`mb-2 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-muted/25 p-2.5 ${updating ? 'pointer-events-none opacity-60' : ''}`}
                   >
                     <span className="flex min-w-0 items-start gap-3">
                       <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
@@ -486,12 +488,12 @@ export default function AdminMercados() {
                     scopeId={market.id}
                     label="Logo do mercado"
                     name={market.name}
-                    previewClassName="h-14 w-24 rounded-xl"
+                    previewClassName="h-12 w-20 rounded-lg"
                   />
                   <button
                     type="button"
                     onClick={() => openDetail(market)}
-                    className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border text-xs font-bold hover:bg-muted"
+                    className="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-xs font-bold hover:bg-muted"
                   >
                     <Eye className="h-4 w-4" /> Ver limites, cobrança e
                     histórico
@@ -505,7 +507,7 @@ export default function AdminMercados() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+          className="modal-overlay"
           onMouseDown={(event) =>
             event.target === event.currentTarget && !saving && setOpen(false)
           }
@@ -514,17 +516,17 @@ export default function AdminMercados() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="grid max-h-[96dvh] w-full gap-3 overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:max-w-2xl sm:grid-cols-2 sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+            className="modal-panel sm:max-w-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-market-title"
           >
-            <div className="flex items-start justify-between gap-4 sm:col-span-2">
+            <div className="modal-header">
               <div>
-                <h2 id="new-market-title" className="text-lg font-black sm:text-xl">
+                <h2 id="new-market-title" className="modal-title">
                   Novo mercado
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="modal-subtitle">
                   Crie o cliente e o acesso administrativo inicial.
                 </p>
               </div>
@@ -532,13 +534,14 @@ export default function AdminMercados() {
                 type="button"
                 disabled={saving}
                 onClick={() => setOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-50"
+                className="modal-icon-button"
                 aria-label="Fechar"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            <div className="modal-body grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">
               Nome do mercado <span className="text-destructive">*</span>
               <input
@@ -685,43 +688,47 @@ export default function AdminMercados() {
               />
             </label>
 
-            <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
+            </div>
+
+            <div className="modal-footer">
+              <div className="modal-actions">
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => setOpen(false)}
-                className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+                className="modal-button border border-border hover:bg-muted disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />{' '}
                 {saving ? 'Criando...' : 'Criar com todos os módulos'}
               </button>
+              </div>
             </div>
           </form>
         </div>
       )}
       {detail && (
-        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4">
+        <div className="modal-overlay">
           <section
             ref={detailModalRef}
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="market-detail-title"
-            className="flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+            className="modal-panel max-w-3xl"
           >
-            <header className="flex items-start justify-between border-b border-border/80 bg-muted/15 p-4">
+            <header className="modal-header">
               <div>
-                <h2 id="market-detail-title" className="text-xl font-black">
+                <h2 id="market-detail-title" className="modal-title">
                   {detail.market?.name}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="modal-subtitle">
                   Plano, limites, uso, cobranças e alterações administrativas.
                 </p>
               </div>
@@ -729,14 +736,14 @@ export default function AdminMercados() {
                 type="button"
                 onClick={() => setDetail(null)}
                 aria-label="Fechar detalhes"
-                className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
+                className="modal-icon-button"
               >
                 <X className="h-5 w-5" />
               </button>
             </header>
-            <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-5 sm:p-5">
+            <div className="modal-body space-y-3">
               {detailLoading ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">
+                <p className="py-10 text-center text-sm text-muted-foreground">
                   Carregando dados completos...
                 </p>
               ) : (
@@ -797,7 +804,7 @@ export default function AdminMercados() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="modal-subtitle">
                         Nenhuma cobrança registrada.
                       </p>
                     )}
@@ -822,7 +829,7 @@ export default function AdminMercados() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="modal-subtitle">
                         Nenhuma alteração administrativa registrada.
                       </p>
                     )}
@@ -877,7 +884,7 @@ function DetailValue({ label, value }) {
   return (
     <div className="rounded-xl border border-border bg-muted/20 p-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-xl font-black">{value || 0}</dd>
+      <dd className="mt-1 modal-title">{value || 0}</dd>
     </div>
   );
 }

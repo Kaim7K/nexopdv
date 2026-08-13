@@ -13,6 +13,7 @@ import {
 import { nexoApi } from "@/api/nexoApi";
 import { ErrorState, LoadingState } from "@/components/common/PageState";
 import { formatCurrency } from "@/lib/helpers";
+import { PageHeader } from "@/components/common/AppShell";
 
 export default function AdminOverview() {
   const [data, setData] = useState(null);
@@ -72,7 +73,13 @@ export default function AdminOverview() {
   );
   return (
     <div className="page-shell space-y-3 sm:space-y-4">
-      <header>
+      <PageHeader
+        icon={Gauge}
+        eyebrow="Resumo da plataforma"
+        title="Visão geral"
+        description="Clientes, faturamento e uso do Nexo PDV."
+      />
+      <header className="hidden">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <Gauge className="h-3.5 w-3.5" /> Resumo da plataforma
         </div>

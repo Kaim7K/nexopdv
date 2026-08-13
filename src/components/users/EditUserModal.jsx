@@ -40,23 +40,24 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
-      <form ref={modalRef} onSubmit={save} className="max-h-[96dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:max-w-lg sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
-        <div className="mb-3 flex items-start justify-between gap-4 sm:mb-5">
+    <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
+      <form ref={modalRef} onSubmit={save} className="modal-panel sm:max-w-lg" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+        <div className="modal-header">
           <div>
-            <h2 id="edit-user-title" className="text-lg font-black sm:text-xl">Editar usuário</h2>
-            <p className="mt-1 truncate text-sm text-muted-foreground">{user.email}</p>
+            <h2 id="edit-user-title" className="modal-title">Editar usuário</h2>
+            <p className="modal-subtitle truncate">{user.email}</p>
           </div>
-          <button type="button" disabled={saving} onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Fechar">
+          <button type="button" disabled={saving} onClick={onClose} className="modal-icon-button" aria-label="Fechar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-muted/25 p-2.5 sm:p-3">
-          <ImageUploadField value={form.photo_url} onChange={value => setForm(previous => ({ ...previous, photo_url: value }))} kind="user" scopeId={user.id} label="Foto do usuário" name={form.full_name || user.email} previewClassName="h-20 w-20 rounded-full" objectFit="cover" />
+        <div className="modal-body space-y-3">
+        <div className="rounded-lg border border-border bg-muted/25 p-2.5 sm:p-3">
+          <ImageUploadField value={form.photo_url} onChange={value => setForm(previous => ({ ...previous, photo_url: value }))} kind="user" scopeId={user.id} label="Foto do usuário" name={form.full_name || user.email} previewClassName="h-16 w-16 rounded-full sm:h-20 sm:w-20" objectFit="cover" />
         </div>
 
-        <div className="mt-3 grid gap-3 sm:mt-4 sm:grid-cols-2 sm:gap-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-semibold sm:col-span-2">
             Nome completo <span className="text-destructive">*</span>
             <input required autoFocus value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11" />
@@ -78,12 +79,15 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
             {!canChangeStatus && <span className="mt-1 block text-xs text-muted-foreground">Este status não pode ser alterado pelo seu perfil.</span>}
           </div>
         </div>
+        </div>
 
-        <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:justify-end">
-          <button type="button" disabled={saving} onClick={onClose} className="min-h-10 rounded-xl border border-border px-4 text-sm font-bold transition hover:bg-muted disabled:opacity-50 sm:min-h-11">Cancelar</button>
-          <button type="submit" disabled={saving} className="min-h-10 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11">
+        <div className="modal-footer">
+          <div className="modal-actions">
+          <button type="button" disabled={saving} onClick={onClose} className="modal-button border border-border hover:bg-muted">Cancelar</button>
+          <button type="submit" disabled={saving} className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
             {saving ? 'Salvando...' : 'Salvar alterações'}
           </button>
+          </div>
         </div>
       </form>
     </div>

@@ -13,25 +13,35 @@ export function PageHeader({
   icon: Icon = null,
   eyebrow,
   title,
-  description,
+  description = '',
   actions = null,
   tone = 'accent',
 }) {
   return (
     <header className="page-header">
-      <div className="min-w-0">
-        {eyebrow && (
-          <div
-            className={`mb-1 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold text-current sm:mb-1.5 sm:px-3 sm:py-1 sm:text-xs ${toneClasses[tone] || toneClasses.accent}`}
-          >
-            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-            <span className="truncate">{eyebrow}</span>
-          </div>
-        )}
-        <h1 className="page-title">{title}</h1>
-        {description && <p className="page-subtitle">{description}</p>}
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${toneClasses[tone] || toneClasses.accent}`}
+        >
+          {Icon ? <Icon className="h-[18px] w-[18px]" /> : null}
+        </span>
+        <div className="min-w-0">
+          {eyebrow && (
+            <div
+              className="mb-0.5 truncate text-[10px] font-black uppercase tracking-[0.08em] text-muted-foreground"
+            >
+              {eyebrow}
+            </div>
+          )}
+          <h1 className="page-title">{title}</h1>
+          {description && <p className="page-subtitle">{description}</p>}
+        </div>
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">{actions}</div>}
+      {actions && (
+        <div className="flex shrink-0 flex-wrap gap-1.5 sm:justify-end">
+          {actions}
+        </div>
+      )}
     </header>
   );
 }
@@ -73,7 +83,7 @@ export function MetricCard({
       className={`metric-tile ${toneMap[tone] || toneMap.default} ${onClick ? 'hover:border-accent/35 hover:bg-muted/20' : ''} ${active ? 'border-accent/35 bg-accent/5' : ''}`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="line-clamp-2 text-[10px] font-bold uppercase leading-3 tracking-wide text-muted-foreground sm:text-[11px] sm:leading-4">
+        <span className="line-clamp-1 text-[10px] font-bold uppercase leading-3 tracking-wide text-muted-foreground sm:text-[11px] sm:leading-4">
           {label}
         </span>
         {Icon && (
@@ -82,7 +92,7 @@ export function MetricCard({
           </span>
         )}
       </div>
-      <strong className="mt-1 block truncate text-base font-black tabular-nums sm:text-lg xl:text-xl">
+      <strong className="mt-1 block truncate text-base font-black tabular-nums sm:text-lg">
         {value}
       </strong>
       {hint && (

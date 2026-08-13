@@ -41,19 +41,19 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
   const openFilePicker = () => {
     if (fileRef && typeof fileRef === 'object') fileRef.current?.click();
   };
-  const exportLabel = exporting ? 'Gerando...' : 'Baixar Excel';
+  const exportLabel = exporting ? 'Gerando...' : 'Excel';
   const importLabel = importing ? 'Importando...' : 'Importar';
   const saveLabel = saving
     ? 'Salvando...'
     : dirtyCount
       ? `Salvar ${dirtyCount}`
-      : 'Tudo salvo';
+      : 'Salvo';
   const inactiveLabel = deletingInactive
     ? 'Apagando...'
-    : `Apagar inativos${inactiveCount ? ` (${inactiveCount})` : ''}`;
+    : `Inativos${inactiveCount ? ` (${inactiveCount})` : ''}`;
 
   return (
-    <div className="grid gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+    <div className="grid gap-1.5 sm:flex sm:flex-nowrap sm:items-center sm:gap-2">
       <input
         ref={fileRef}
         hidden

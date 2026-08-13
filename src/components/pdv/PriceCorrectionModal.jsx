@@ -30,7 +30,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="modal-overlay"
       role="presentation"
     >
       <div
@@ -39,14 +39,14 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="price-correction-title"
-        className="w-full overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-lg sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="modal-panel sm:max-w-lg"
       >
-        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 sm:px-5">
+        <div className="modal-header">
           <div>
-            <h2 id="price-correction-title" className="text-lg font-bold">
+            <h2 id="price-correction-title" className="modal-title">
               Corrigir valor do produto
             </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="modal-subtitle">
               A alteração ficará registrada na auditoria.
             </p>
           </div>
@@ -54,16 +54,16 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
             type="button"
             aria-label="Fechar"
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="modal-icon-button"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="space-y-4 p-4 sm:p-6">
+        <div className="modal-body space-y-3">
           <div className="text-sm text-muted-foreground">
             Selecione o item com valor incorreto:
           </div>
-          <div className="max-h-44 space-y-1 overflow-y-auto sm:max-h-48">
+          <div className="max-h-40 space-y-1 overflow-y-auto sm:max-h-48">
             {items.map((item, i) => (
               <button
                 type="button"
@@ -112,11 +112,12 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
             </div>
           )}
         </div>
-        <div className="flex flex-col-reverse gap-2 border-t px-4 py-4 sm:flex-row sm:px-6">
+        <div className="modal-footer">
+          <div className="modal-actions">
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted"
+            className="modal-button border border-border hover:bg-muted"
           >
             Cancelar
           </button>
@@ -124,10 +125,11 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
             type="button"
             onClick={handleSave}
             disabled={selectedIndex === null || !newPrice}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
+            className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
           >
             <Check className="h-4 w-4" /> Salvar Alteração
           </button>
+          </div>
         </div>
       </div>
     </div>

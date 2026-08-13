@@ -442,9 +442,6 @@ export default function PDV() {
       setCashPromptDismissed(true);
       setCashModal('closed');
       discardLocalDraft({ notifyWhenVisible: false });
-      toast.success(
-        'Caixa fechado. Baixe o relatório do período quando desejar.',
-      );
     } catch (error) {
       toast.error(error.message || 'Não foi possível fechar o caixa.');
     } finally {

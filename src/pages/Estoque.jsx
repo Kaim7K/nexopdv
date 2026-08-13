@@ -600,13 +600,12 @@ export default function Estoque() {
 
   return (
     <div className="page-shell !max-w-[1700px]">
-      <div className="mb-2 flex flex-col gap-2 sm:mb-3 xl:flex-row xl:items-end xl:justify-between">
-        <PageHeader
-          icon={Package}
-          eyebrow="Produtos e quantidades"
-          title="Estoque"
-          description="Busque, ajuste estoque e cadastre produtos."
-        />
+      <PageHeader
+        icon={Package}
+        eyebrow="Produtos e quantidades"
+        title="Estoque"
+        description="Busque, ajuste e cadastre produtos."
+        actions={
         <StockActionsToolbar
           ref={fileRef}
           loading={loading}
@@ -623,9 +622,10 @@ export default function Estoque() {
           onDeleteInactive={handleDeleteInactive}
           onCreate={() => openProductModal('create')}
         />
-      </div>
+        }
+      />
 
-      <div className="mb-2 grid grid-cols-2 gap-1.5 sm:mb-3 sm:gap-2 xl:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 xl:grid-cols-4">
         <StockMetric
           label="Produtos cadastrados"
           value={products.length}
@@ -696,7 +696,7 @@ export default function Estoque() {
 
       <div
         ref={tableRef}
-        className="compact-scroll min-h-[240px] scroll-mt-4 overflow-auto overscroll-contain rounded-xl border border-border bg-card [isolation:isolate] sm:min-h-[340px] xl:max-h-[calc(100dvh-260px)]"
+        className="compact-scroll min-h-[240px] scroll-mt-4 overflow-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)] [isolation:isolate] sm:min-h-[340px] xl:max-h-[calc(100dvh-286px)]"
       >
         {loading ? (
           <div

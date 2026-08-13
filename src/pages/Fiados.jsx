@@ -9,6 +9,7 @@ import PaginationControls from '@/components/common/PaginationControls';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ErrorState } from '@/components/common/PageState';
+import { getPaymentVisual } from '@/components/common/visualTokens';
 import {
   FilterPanel,
   MetricCard,
@@ -238,7 +239,7 @@ export default function Fiados() {
       ) : loadError && !fiados.length ? (
         <ErrorState description={loadError} onRetry={loadFiados} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center sm:py-8"><HandCoins className="mx-auto h-9 w-9 text-muted-foreground/25" /><h2 className="mt-3 font-bold">Nenhum fiado encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Não há registros para os filtros selecionados.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground">Limpar filtros</button>}</div>
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-4 text-center"><HandCoins className="mx-auto h-7 w-7 text-muted-foreground/25" /><h2 className="mt-2 text-sm font-bold">Nenhum fiado encontrado</h2><p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou registre uma venda fiada no PDV.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground">Limpar</button>}</div>
       ) : (
         <div className="grid gap-2">
           {visibleFiados.map(item => {
@@ -269,18 +270,18 @@ export default function Fiados() {
                     <div className="flex gap-2">
                       {pending && canManage(item) && (
                         <>
-                          <button type="button" onClick={() => setSettleFiado(item)} className="min-h-10 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700">Quitar</button>
-                          <button type="button" onClick={() => setCancelFiado(item)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-destructive/30 px-3 text-sm font-bold text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-4 w-4" /> Cancelar</button>
+                          <button type="button" onClick={() => setSettleFiado(item)} className="min-h-9 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700">Quitar</button>
+                          <button type="button" onClick={() => setCancelFiado(item)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-destructive/30 px-2.5 text-xs font-bold text-destructive hover:bg-destructive/10" aria-label={`Cancelar fiado de ${item.responsible_name}`}><Ban className="h-3.5 w-3.5" /> Cancelar</button>
                         </>
                       )}
                       {settled && isGerente && (
                         <>
-                          <button type="button" disabled={processing} onClick={() => handleReopen(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-accent/30 px-3 text-sm font-bold text-accent hover:bg-accent/10 disabled:opacity-50" aria-label={`Desfazer quitação de ${item.responsible_name}`}>
-                            <RotateCcw className="h-4 w-4" />
-                            Desfazer quitação
+                          <button type="button" disabled={processing} onClick={() => handleReopen(item)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/30 px-2.5 text-xs font-bold text-accent hover:bg-accent/10 disabled:opacity-50" aria-label={`Desfazer quitação de ${item.responsible_name}`}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Desfazer
                           </button>
-                          <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-bold text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label={`Arquivar fiado de ${item.responsible_name}`}>
-                            <Archive className="h-4 w-4" />
+                          <button type="button" disabled={processing} onClick={() => handleDelete(item)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-bold text-muted-foreground hover:bg-muted disabled:opacity-50" aria-label={`Arquivar fiado de ${item.responsible_name}`}>
+                            <Archive className="h-3.5 w-3.5" />
                             Arquivar
                           </button>
                         </>
@@ -299,10 +300,11 @@ export default function Fiados() {
       )}
 
       {settleFiado && (
-        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="max-h-[94dvh] w-full overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="dialog" aria-modal="true" aria-labelledby="settle-title">
+        <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
+          <div ref={debtModalRef} tabIndex={-1} className="modal-panel sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="settle-title">
             <ModalHeader id="settle-title" title="Quitar fiado" subtitle={`${settleFiado.responsible_name} · ${formatCurrency(settleFiado.total_amount)}`} onClose={() => setSettleFiado(null)} disabled={processing} />
-            <section className="mt-4 rounded-xl border border-border/80 bg-muted/10 p-3">
+            <div className="modal-body space-y-3">
+            <section className="rounded-lg border border-border/80 bg-muted/10 p-3">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-black">Itens da venda</h3>
                 <span className="text-xs font-semibold text-muted-foreground">
@@ -318,7 +320,7 @@ export default function Fiados() {
                   {settlementSaleError}
                 </div>
               ) : (settlementSale?.items || []).length ? (
-                <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                <div className="mt-2 max-h-44 space-y-1.5 overflow-y-auto pr-1 sm:max-h-56">
                   {settlementSale.items.map((item, index) => (
                     <div key={`${item.product_id || item.product_name || index}-${index}`} className="grid grid-cols-[auto_1fr_auto] gap-2 rounded-xl border border-border px-3 py-2.5 text-sm">
                       <span className="font-bold tabular-nums text-muted-foreground">
@@ -346,20 +348,21 @@ export default function Fiados() {
                 </div>
               )}
             </section>
-            <p className="mt-5 text-sm font-semibold">Selecione a forma de recebimento:</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {SETTLEMENT_METHODS.map(([method, label, Icon]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border/80 bg-background text-sm font-bold transition hover:border-accent hover:bg-accent/5 disabled:opacity-50"><Icon className="h-4 w-4 text-muted-foreground" />{label}</button>)}
+            <p className="text-sm font-semibold">Selecione a forma de recebimento:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {SETTLEMENT_METHODS.map(([method, label, Icon]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className={`modal-button border disabled:opacity-50 ${getPaymentVisual(method).badge}`}><Icon className="h-4 w-4" />{label}</button>)}
+            </div>
             </div>
           </div>
         </div>
       )}
 
       {cancelFiado && (
-        <div className="fixed inset-0 z-50 grid items-end bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="w-full rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
+        <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
+          <div ref={debtModalRef} tabIndex={-1} className="modal-panel sm:max-w-md" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
             <ModalHeader id="cancel-fiado-title" title="Cancelar fiado" subtitle={`${cancelFiado.responsible_name} · ${formatCurrency(cancelFiado.total_amount)}`} onClose={() => setCancelFiado(null)} disabled={processing} />
-            <div className="mt-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">O registro deixará de aparecer como pendente. Esta ação ficará registrada na auditoria.</div>
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" disabled={processing} onClick={() => setCancelFiado(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50">Voltar</button><button type="button" disabled={processing} onClick={handleCancel} className="min-h-11 rounded-xl bg-destructive px-5 text-sm font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">{processing ? 'Cancelando...' : 'Confirmar cancelamento'}</button></div>
+            <div className="modal-body"><div className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">O registro deixará de aparecer como pendente. Esta ação ficará registrada na auditoria.</div></div>
+            <div className="modal-footer"><div className="modal-actions"><button type="button" disabled={processing} onClick={() => setCancelFiado(null)} className="modal-button border border-border hover:bg-muted disabled:opacity-50">Voltar</button><button type="button" disabled={processing} onClick={handleCancel} className="modal-button modal-actions-primary bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">{processing ? 'Cancelando...' : 'Confirmar'}</button></div></div>
           </div>
         </div>
       )}
@@ -374,5 +377,5 @@ function StatusBadge({ status }) {
 }
 
 function ModalHeader({ id, title, subtitle, onClose, disabled }) {
-  return <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><HandCoins className="h-5 w-5" /></span><div className="min-w-0"><h2 id={id} className="truncate text-lg font-black">{title}</h2><p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p></div></div><button type="button" disabled={disabled} onClick={onClose} className="grid h-9 w-9 flex-none place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Fechar"><X className="h-5 w-5" /></button></div>;
+  return <div className="modal-header"><div className="flex min-w-0 items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><HandCoins className="h-5 w-5" /></span><div className="min-w-0"><h2 id={id} className="modal-title truncate">{title}</h2><p className="modal-subtitle truncate">{subtitle}</p></div></div><button type="button" disabled={disabled} onClick={onClose} className="modal-icon-button" aria-label="Fechar"><X className="h-5 w-5" /></button></div>;
 }

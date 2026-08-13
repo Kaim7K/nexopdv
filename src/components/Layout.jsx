@@ -1,6 +1,13 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, User as UserIcon, X } from 'lucide-react';
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut,
+  Menu,
+  User as UserIcon,
+  X,
+} from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
 import { CashRegisterProvider } from '@/lib/CashRegisterContext';
@@ -72,6 +79,13 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const [config, setConfig] = useState(() => readCachedConfig());
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('nexo:sidebar-collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
   const [loggingOut, setLoggingOut] = useState(false);
   const mobileNavRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
@@ -81,6 +95,17 @@ export default function Layout() {
   useEffect(() => {
     setMobileMenu(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'nexo:sidebar-collapsed',
+        sidebarCollapsed ? '1' : '0',
+      );
+    } catch {
+      /* preferencia visual opcional */
+    }
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (!mobileMenu) return undefined;
@@ -228,7 +253,7 @@ export default function Layout() {
   const brandName = config.nome_mercado || user.market_name || 'Nexo PDV';
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background md:gap-3 md:p-3 dark:bg-background">
+    <div className="flex h-dvh overflow-hidden bg-transparent md:gap-3 md:p-3 dark:bg-background">
       <a
         href="#main-content"
         className="fixed left-3 top-3 z-[70] -translate-y-20 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-accent-foreground shadow-lg transition focus:translate-y-0"
@@ -249,9 +274,9 @@ export default function Layout() {
         ref={mobileNavRef}
         id="main-navigation"
         aria-label="Menu principal"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(264px,calc(100vw-2.25rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-transform duration-200 md:static md:h-full md:w-56 md:translate-x-0 md:overflow-hidden md:rounded-xl md:border md:border-sidebar-border/80 md:shadow-[0_24px_70px_rgba(0,0,0,0.22)] xl:w-60 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(264px,calc(100vw-2.25rem))] flex-shrink-0 flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-2xl transition-[width,transform] duration-200 md:static md:h-full md:translate-x-0 md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/80 md:shadow-[0_28px_80px_rgba(0,0,0,0.26)] ${sidebarCollapsed ? 'md:w-[76px]' : 'md:w-56 xl:w-60'} ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="relative flex min-h-[64px] items-center border-b border-sidebar-border/70 px-4 xl:min-h-[68px] xl:px-5">
+        <div className={`relative flex min-h-[68px] items-center border-b border-sidebar-border/70 px-3 xl:min-h-[72px] ${sidebarCollapsed ? 'md:justify-center' : 'xl:px-4'}`}>
           <button
             type="button"
             aria-label="Fechar menu"
@@ -266,22 +291,39 @@ export default function Layout() {
               src={config.logo_url || user.logo_url}
               alt={brandName}
               decoding="async"
-              className="max-h-10 w-auto max-w-[172px] object-contain object-left xl:max-h-12 xl:max-w-[188px]"
+              className={`max-h-10 w-auto object-contain object-left transition-all xl:max-h-11 ${sidebarCollapsed ? 'md:max-w-10' : 'max-w-[172px] xl:max-w-[188px]'}`}
             />
           ) : (
-            <div className="text-xl font-bold text-sidebar-foreground">
+            <div className={`text-2xl font-black leading-none text-sidebar-foreground ${sidebarCollapsed ? 'md:text-lg' : ''}`}>
               Nexo <span style={{ color: 'var(--market-primary)' }}>PDV</span>
             </div>
           )}
+          <button
+            type="button"
+            aria-label={
+              sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'
+            }
+            title={
+              sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'
+            }
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            className="absolute -right-3 top-4 hidden h-7 w-7 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent text-sidebar-foreground/70 shadow-sm transition hover:text-sidebar-foreground md:grid"
+          >
+            {sidebarCollapsed ? (
+              <ChevronsRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            )}
+          </button>
         </div>
 
-        <div className="px-3 pb-1.5 pt-3 xl:px-4 xl:pt-4">
-          <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/40">
+        <div className={`px-3 pb-1.5 pt-3 xl:px-4 xl:pt-4 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+          <p className="line-clamp-2 text-[11px] font-semibold uppercase leading-4 tracking-[0.08em] text-sidebar-foreground/45" title={brandName}>
             {brandName}
           </p>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 pb-3 xl:px-3 xl:pb-4">
+        <nav className={`flex-1 space-y-1 overflow-y-auto px-2.5 pb-3 xl:px-3 xl:pb-4 ${sidebarCollapsed ? 'md:px-2' : ''}`}>
           {filteredItems.map((item) => {
             const active = item.exact
               ? accessPath === item.path
@@ -290,25 +332,28 @@ export default function Layout() {
               <Link
                 key={item.path}
                 to={item.path}
+                title={item.label}
                 onMouseEnter={() => ROUTE_PREFETCHERS[item.path]?.()}
                 onFocus={() => ROUTE_PREFETCHERS[item.path]?.()}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex min-h-10 items-center gap-2.5 rounded-lg border px-2.5 text-[13px] transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 xl:min-h-10 xl:gap-3 xl:px-3 xl:text-sm ${active ? 'border-sidebar-primary/30 bg-sidebar-primary/15 font-bold text-sidebar-accent-foreground shadow-inner' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground'}`}
+                className={`group relative flex min-h-11 items-center gap-2.5 rounded-xl border px-2.5 text-[13px] transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 xl:min-h-11 xl:gap-3 xl:px-3 xl:text-sm ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''} ${active ? 'border-sidebar-primary/35 bg-sidebar-primary/18 font-bold text-sidebar-accent-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]' : 'border-transparent text-sidebar-foreground/68 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'}`}
               >
                 <item.icon
                   className={`h-[18px] w-[18px] flex-none transition ${active ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'}`}
                 />
-                <span>{item.label}</span>
+                <span className={sidebarCollapsed ? 'md:sr-only' : ''}>
+                  {item.label}
+                </span>
                 {active && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
+                  <span className={`ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary ${sidebarCollapsed ? 'md:absolute md:right-1.5' : ''}`} />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-2.5 xl:p-3">
-          <div className="flex items-center gap-2.5 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/60 p-2">
+        <div className={`border-t border-sidebar-border p-2.5 xl:p-3 ${sidebarCollapsed ? 'md:p-2' : ''}`}>
+          <div className={`flex items-center gap-2.5 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/70 p-2 ${sidebarCollapsed ? 'md:justify-center md:border-transparent md:bg-transparent md:p-0' : ''}`}>
             <div className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-lg bg-sidebar-accent xl:h-10 xl:w-10">
               {user.photo_url ? (
                 <img
@@ -322,7 +367,7 @@ export default function Layout() {
                 <UserIcon className="h-4 w-4 text-sidebar-foreground/55" />
               )}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className={`min-w-0 flex-1 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
               <div className="truncate text-sm font-bold">
                 {user.full_name || user.email}
               </div>
@@ -331,21 +376,25 @@ export default function Layout() {
               </div>
             </div>
           </div>
-          <div className="mt-2 flex gap-1">
-            <ThemeToggle showLabel />
+          <div className={`mt-2 flex gap-1 ${sidebarCollapsed ? 'md:flex-col' : ''}`}>
+            <ThemeToggle showLabel={!sidebarCollapsed} />
             <button
               type="button"
               onClick={handleLogout}
               disabled={loggingOut}
+              title="Sair"
               className="flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg text-xs font-semibold text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 disabled:opacity-50"
             >
-              <LogOut className="h-4 w-4" /> {loggingOut ? 'Saindo...' : 'Sair'}
+              <LogOut className="h-4 w-4" />{' '}
+              <span className={sidebarCollapsed ? 'md:sr-only' : ''}>
+                {loggingOut ? 'Saindo...' : 'Sair'}
+              </span>
             </button>
           </div>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background md:rounded-xl md:border md:border-border md:shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:md:shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
+      <div className="workspace-panel flex min-w-0 flex-1 flex-col overflow-hidden bg-background/80 md:rounded-2xl">
         <header className="sticky top-0 z-30 flex min-h-[44px] flex-none items-center gap-2 border-b border-border/80 bg-card/95 px-2 py-1 shadow-sm backdrop-blur md:hidden">
           <button
             ref={mobileMenuButtonRef}
@@ -372,7 +421,7 @@ export default function Layout() {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 overscroll-contain overflow-auto bg-muted/25 outline-none md:rounded-xl"
+          className="min-w-0 flex-1 overscroll-contain overflow-auto bg-transparent outline-none md:rounded-2xl"
         >
           {user.platform_notice && (
             <div

@@ -236,7 +236,7 @@ export default function AdminPlanos() {
           <h1 className="text-2xl font-black sm:text-3xl">
             Planos e assinaturas
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hidden">
             Preços, limites, funcionalidades, cobranças e ciclo de vida dos
             contratos.
           </p>
@@ -291,7 +291,7 @@ export default function AdminPlanos() {
                         {plan.active ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
-                    <strong className="mt-3 block text-xl font-black sm:text-2xl">
+                    <strong className="mt-3 block modal-title sm:text-2xl">
                       {formatCurrency(plan.monthly_price)}
                       <span className="text-xs font-normal text-muted-foreground">
                         /mês
@@ -354,11 +354,11 @@ export default function AdminPlanos() {
                 ))}
               </div>
             ) : (
-              <EmptyState
-                icon={CreditCard}
-                title="Nenhum plano criado"
-                description="Crie o primeiro plano para vincular assinaturas."
-              />
+              <div className="rounded-lg border border-dashed border-border bg-card px-4 py-4 text-center">
+                <CreditCard className="mx-auto h-7 w-7 text-muted-foreground/25" />
+                <h3 className="mt-2 text-sm font-bold">Nenhum plano criado</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Crie o primeiro plano para vincular assinaturas.</p>
+              </div>
             )}
           </section>
           <section>
@@ -429,12 +429,12 @@ export default function AdminPlanos() {
           </section>
           <section className="mobile-dense-section">
             <h2 className="text-lg font-black">Histórico de pagamentos</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="hidden">
               Mensalidades, vencimentos, inadimplência, pagamentos e estornos.
             </p>
             <form
               onSubmit={createPayment}
-              className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+              className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1.4fr)_minmax(120px,0.8fr)_minmax(150px,0.9fr)_minmax(150px,0.9fr)_auto]"
             >
               <Field label="Assinatura">
                 <select
@@ -586,7 +586,7 @@ export default function AdminPlanos() {
                 </div>
               </>
             ) : (
-              <p className="mt-5 text-sm text-muted-foreground">
+            <p className="mt-5 text-sm text-muted-foreground">
                 Nenhuma cobrança registrada.
               </p>
             )}
@@ -594,31 +594,32 @@ export default function AdminPlanos() {
         </>
       )}
       {open && (
-        <div className="fixed inset-0 z-50 grid items-end overflow-y-auto bg-slate-950/70 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4">
+        <div className="modal-overlay">
           <form
             ref={modalRef}
             onSubmit={submit}
             role="dialog"
             aria-modal="true"
-            className="grid max-h-[96dvh] w-full gap-3 overflow-y-auto rounded-t-[20px] border border-border/80 bg-card p-4 shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[92dvh] sm:max-w-2xl sm:grid-cols-2 sm:rounded-[20px] sm:p-5 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+            className="modal-panel sm:max-w-2xl"
           >
-            <div className="flex items-start justify-between sm:col-span-2">
+            <div className="modal-header">
               <div>
-                <h2 className="text-xl font-black">
+                <h2 className="modal-title">
                   {editing ? 'Editar plano' : 'Novo plano'}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="modal-subtitle">
                   Defina preço, teste, limites e acesso.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted"
+                className="modal-icon-button"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
+            <div className="modal-body grid gap-3 sm:grid-cols-2">
             <Field label="Nome">
               <input
                 required
@@ -812,21 +813,35 @@ export default function AdminPlanos() {
                 ))}
               </div>
             </fieldset>
-            <button
-              type="submit"
-              disabled={
-                saving ||
-                (form.active !== false && !form.enabled_modules.length)
-              }
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 font-bold text-accent-foreground sm:col-span-2"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {saving ? 'Salvando...' : 'Salvar plano'}
-            </button>
+            </div>
+
+            <div className="modal-footer">
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  disabled={saving}
+                  className="modal-button border border-border hover:bg-muted disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    saving ||
+                    (form.active !== false && !form.enabled_modules.length)
+                  }
+                  className="modal-button modal-actions-primary bg-accent text-accent-foreground disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {saving ? 'Salvando...' : 'Salvar plano'}
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       )}

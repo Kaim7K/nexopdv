@@ -37,8 +37,8 @@ export function LoadingState({
       aria-live="polite"
       aria-busy="true"
       className={cn(
-        'grid place-items-center px-4 py-7 text-center text-sm text-muted-foreground sm:px-5 sm:py-9',
-        fullScreen ? 'fixed inset-0 z-[90] bg-background' : 'min-h-44',
+        'grid place-items-center px-4 py-5 text-center text-sm text-muted-foreground sm:px-5 sm:py-6',
+        fullScreen ? 'fixed inset-0 z-[90] bg-background' : 'min-h-32',
         className,
       )}
     >
@@ -90,17 +90,17 @@ export function EmptyState({
     <div className={cn('empty-state', className)}>
       <div className="max-w-md">
         {Icon && (
-          <span className="mx-auto grid h-9 w-9 place-items-center rounded-lg border border-border bg-muted/60 text-muted-foreground sm:h-10 sm:w-10">
-            <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+          <span className="mx-auto grid h-8 w-8 place-items-center rounded-lg border border-border bg-muted/60 text-muted-foreground">
+            <Icon className="h-4 w-4" aria-hidden="true" />
           </span>
         )}
-        <h2 className="mt-2.5 text-base font-bold sm:mt-3">{title}</h2>
+        <h2 className="mt-2 text-sm font-bold sm:text-base">{title}</h2>
         {description && (
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">
+          <p className="mt-0.5 text-xs leading-5 text-muted-foreground sm:text-sm">
             {description}
           </p>
         )}
-        {action && <div className="mt-4">{action}</div>}
+        {action && <div className="mt-3">{action}</div>}
       </div>
     </div>
   );
@@ -119,10 +119,10 @@ export function ErrorState({
       className={cn('empty-state border-destructive/30', className)}
     >
       <div className="max-w-md">
-        <span className="mx-auto grid h-9 w-9 place-items-center rounded-lg border border-destructive/20 bg-destructive/10 text-destructive sm:h-10 sm:w-10">
-          <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+        <span className="mx-auto grid h-8 w-8 place-items-center rounded-lg border border-destructive/20 bg-destructive/10 text-destructive">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
         </span>
-        <h2 className="mt-2.5 text-base font-bold sm:mt-3">{title}</h2>
+        <h2 className="mt-2 text-sm font-bold sm:text-base">{title}</h2>
         {error.message && (
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {error.message}

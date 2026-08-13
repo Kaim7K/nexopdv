@@ -795,16 +795,10 @@ function TransactionModal({
       }
       onClose={onClose}
       disabled={saving}
-      description={
-        item
-          ? 'Altere os dados do lançamento. Pagamentos vinculados permanecem no histórico.'
-          : initialType === 'expense'
-            ? 'Registre o que saiu do mercado. Se estiver pago em dinheiro, o caixa aberto também será atualizado.'
-            : 'Informe o valor, a origem e a situação deste lançamento financeiro.'
-      }
+      description={item ? 'Atualize valor, datas e status.' : initialType === 'expense' ? 'Registre a saída do caixa ou conta.' : 'Informe valor, origem e status.'}
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Tipo">
             <select
               className="field"
@@ -850,7 +844,7 @@ function TransactionModal({
             placeholder="Ex.: Conta de energia de julho"
           />
         </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Categoria">
             <select
               required={form.type !== 'transfer'}
@@ -881,7 +875,7 @@ function TransactionModal({
             />
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Conta financeira">
             <select
               required
@@ -1379,8 +1373,8 @@ function Suppliers({ bootstrap, refreshAll }) {
     }
   };
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <form onSubmit={save} className="surface-card h-fit space-y-4 p-4">
+    <div className="grid content-start gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <form onSubmit={save} className="surface-card h-fit space-y-3 p-3">
         <h3 className="font-bold">Novo fornecedor</h3>
         <Field label="Nome">
           <input
@@ -1417,7 +1411,7 @@ function Suppliers({ bootstrap, refreshAll }) {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent font-bold text-accent-foreground"
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-accent font-bold text-accent-foreground"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
         </button>
@@ -1470,8 +1464,8 @@ function Accounts({ bootstrap, dashboard, refreshAll }) {
     }
   };
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <form onSubmit={save} className="surface-card h-fit space-y-4 p-4">
+    <div className="grid content-start gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <form onSubmit={save} className="surface-card h-fit space-y-3 p-3">
         <h3 className="font-bold">Nova conta financeira</h3>
         <Field label="Nome">
           <input
@@ -1512,7 +1506,7 @@ function Accounts({ bootstrap, dashboard, refreshAll }) {
           'financial_email_alerts',
         ) &&
           (bootstrap.enabled_features || []).includes('email_sending') && (
-            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-3 text-sm">
+            <label className="flex min-h-10 items-center gap-3 rounded-lg border border-border px-3 text-sm">
               <input
                 type="checkbox"
                 checked={form.is_default}
@@ -1526,14 +1520,14 @@ function Accounts({ bootstrap, dashboard, refreshAll }) {
         <button
           type="submit"
           disabled={saving}
-          className="min-h-11 w-full rounded-xl bg-accent font-bold text-accent-foreground"
+          className="min-h-10 w-full rounded-lg bg-accent font-bold text-accent-foreground"
         >
           Criar conta
         </button>
       </form>
-      <div className="grid content-start gap-3 sm:grid-cols-2">
+      <div className="grid max-w-3xl content-start gap-2 sm:grid-cols-2">
         {(dashboard?.accounts || bootstrap.accounts || []).map((item) => (
-          <article key={item.id} className="surface-card p-4">
+          <article key={item.id} className="surface-card p-3">
             <div className="flex items-start justify-between">
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
                 <Landmark className="h-5 w-5" />
@@ -1544,9 +1538,9 @@ function Accounts({ bootstrap, dashboard, refreshAll }) {
                 </span>
               )}
             </div>
-            <strong className="mt-4 block text-sm">{item.name}</strong>
+            <strong className="mt-3 block text-sm">{item.name}</strong>
             <p className="mt-1 text-xs text-muted-foreground">{item.type}</p>
-            <strong className="mt-3 block text-xl tabular-nums">
+            <strong className="mt-2 block text-lg tabular-nums">
               {formatCurrency(item.balance ?? item.opening_balance)}
             </strong>
           </article>
@@ -1626,12 +1620,12 @@ function Purchases({ bootstrap, refreshAll }) {
     }
   };
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-end">
         <button
           type="button"
           onClick={openPurchase}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-accent-foreground"
         >
           <Plus className="h-4 w-4" /> Registrar compra
         </button>
@@ -1645,11 +1639,11 @@ function Purchases({ bootstrap, refreshAll }) {
           description="Registre uma compra para atualizar estoque, custos e contas a pagar em conjunto."
         />
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2">
           {items.map((item) => (
             <article
               key={item.id}
-              className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
+              className="surface-card flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
             >
               <div className="min-w-0 flex-1">
                 <strong className="text-sm">
@@ -2116,8 +2110,8 @@ function Goals({ bootstrap, data, refreshAll }) {
     }
   };
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <form onSubmit={submit} className="surface-card h-fit space-y-4 p-4">
+    <div className="grid content-start gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <form onSubmit={submit} className="surface-card h-fit space-y-3 p-3">
         <h3 className="font-bold">Nova meta mensal</h3>
         <Field label="Mês">
           <input
@@ -2179,15 +2173,15 @@ function Goals({ bootstrap, data, refreshAll }) {
         <button
           type="submit"
           disabled={saving}
-          className="min-h-11 w-full rounded-xl bg-accent font-bold text-accent-foreground"
+          className="min-h-10 w-full rounded-lg bg-accent font-bold text-accent-foreground"
         >
           Criar meta
         </button>
       </form>
-      <div className="grid content-start gap-3 sm:grid-cols-2">
+      <div className="grid max-w-3xl content-start gap-2 sm:grid-cols-2">
         {(data?.goals || []).length ? (
           data.goals.map((goal) => (
-            <article key={goal.id} className="surface-card p-4">
+            <article key={goal.id} className="surface-card p-3">
               <div className="flex justify-between gap-3">
                 <strong className="text-sm">
                   {goal.type.replaceAll('_', ' ')}

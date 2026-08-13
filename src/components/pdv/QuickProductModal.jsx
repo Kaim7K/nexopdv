@@ -69,7 +69,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="modal-overlay"
       role="presentation"
     >
       <form
@@ -80,16 +80,16 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         aria-modal="true"
         aria-labelledby="quick-product-title"
         aria-describedby="quick-product-description"
-        className="flex max-h-[96dvh] w-full flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card text-card-foreground shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-w-md sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="modal-panel sm:max-w-md"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-muted/15 px-4 py-3">
+        <div className="modal-header">
           <div>
-            <h2 id="quick-product-title" className="text-base font-black sm:text-lg">
+            <h2 id="quick-product-title" className="modal-title">
               Produto não encontrado
             </h2>
             <p
               id="quick-product-description"
-              className="mt-1 text-xs leading-4 text-muted-foreground sm:text-sm sm:leading-5"
+              className="modal-subtitle"
             >
               Cadastre somente o essencial e continue a venda sem sair do PDV.
             </p>
@@ -99,13 +99,13 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
             aria-label="Fechar cadastro rápido"
             onClick={onClose}
             disabled={saving}
-            className="grid h-10 w-10 flex-none place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            className="modal-icon-button"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-5">
+        <div className="modal-body space-y-3 sm:space-y-4">
           <label className="block text-sm font-semibold">
             Código de barras
             <span className="relative mt-1.5 block">
@@ -166,19 +166,20 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border px-3 py-3 sm:flex-row sm:px-5 sm:py-4">
+        <div className="modal-footer">
+          <div className="modal-actions">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
+            className="modal-button border border-border hover:bg-muted"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving || !name.trim()}
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:min-h-12"
+            className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -187,6 +188,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
             )}
             {saving ? 'Salvando no estoque...' : 'Salvar e adicionar à venda'}
           </button>
+          </div>
         </div>
       </form>
     </div>

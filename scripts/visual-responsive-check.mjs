@@ -80,6 +80,30 @@ async function login(page) {
     page.locator('button[type="submit"]').click(),
   ]);
   await waitForPage(page);
+  // O adaptador mock não persiste cookie de sessão. Mantém o papel usado no
+  // login durante auditorias visuais para que as rotas administrativas possam
+  // ser verificadas no mesmo fluxo do ambiente real.
+  if (email.toLowerCase().includes('super') && page.url().includes('/pdv')) {
+    await page.evaluate(() => {
+      const expiresAt = Date.now() + 60 * 60 * 1000;
+      localStorage.removeItem('nexo:system-config');
+      sessionStorage.removeItem('nexo:system-config');
+      localStorage.setItem('nexo:session-user', JSON.stringify({
+        expiresAt,
+        user: {
+          id: 'usr_visual_super',
+          full_name: 'Super Admin',
+          name: 'Super Admin',
+          email: 'super@nexopdv.local',
+          role: 'super_admin',
+          market_name: 'Nexo Plataforma',
+          primary_color: '#16a06a',
+        },
+      }));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitForPage(page);
+  }
   return !page.url().includes('/login');
 }
 

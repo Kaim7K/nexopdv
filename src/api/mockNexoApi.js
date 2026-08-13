@@ -63,6 +63,27 @@ const demoUser = {
   ],
 };
 
+const mockSuperUser = {
+  id: 'usr_mock_super',
+  full_name: 'Super Admin',
+  name: 'Super Admin',
+  email: 'super@nexopdv.local',
+  role: 'super_admin',
+  market_name: 'Nexo Plataforma',
+  primary_color: '#16a06a',
+  platform_notice: '',
+};
+
+function sessionUserFallback() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('nexo:session-user') || 'null');
+    if (cached?.user?.role === 'super_admin') return { ...mockSuperUser, ...cached.user };
+  } catch {
+    /* mock opcional */
+  }
+  return { ...demoUser };
+}
+
 const productNames = [
   ['Pão francês', 'Padaria', 0.5, 38],
   ['Bala de Morango', 'Bomboniere', 0.2, 120],
@@ -211,6 +232,7 @@ function seedDb() {
   return {
     products,
     sales,
+    users,
     cashSessions,
     cashMovements: [
       {
@@ -610,7 +632,7 @@ function financeBootstrap(db) {
     suppliers: db.finance.suppliers,
     recurring: db.finance.recurring,
     settings: db.finance.settings,
-    users: db.users.map((user) => ({
+    users: mockUsers(db).map((user) => ({
       ...user,
       permissions: Object.fromEntries(permissionKeys.map((key) => [key, true])),
     })),
@@ -692,8 +714,13 @@ export const mockNexoApi = {
     },
   },
   auth: {
-    me: () => delay({ ...demoUser }),
-    login: () => delay({ user: { ...demoUser } }),
+    me: () => delay(sessionUserFallback()),
+    login: (email = '', _password = '', _remember = true) =>
+      delay({
+        user: String(email).toLowerCase().includes('super')
+          ? { ...mockSuperUser }
+          : { ...demoUser },
+      }),
     logout: async (redirect) => {
       if (redirect) window.location.href = redirect;
       return { ok: true };

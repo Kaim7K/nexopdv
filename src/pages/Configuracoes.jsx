@@ -33,6 +33,7 @@ import {
 } from '@/lib/product-categories';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 import { hasMarketFeature } from '@/lib/market-modules';
+import { PageHeader } from '@/components/common/AppShell';
 
 const RESET_OPTIONS = [
   {
@@ -415,22 +416,42 @@ export default function Configuracoes() {
 
   return (
     <form onSubmit={handleSave} className="page-shell">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <PageHeader
+        icon={Store}
+        eyebrow="Seu mercado"
+        title="Configurações"
+        description="Dados, acesso, estoque e categorias."
+        actions={
+          <button
+            type="submit"
+            disabled={!hasChanges || saving}
+            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground shadow-none transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          >
+            <Save className="h-4 w-4" />{' '}
+            {saving
+              ? 'Salvando...'
+              : hasChanges
+                ? `Salvar ${changeCount} alteração${changeCount > 1 ? 'ões' : ''}`
+                : 'Tudo salvo'}
+          </button>
+        }
+      />
+      <div className="hidden">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
             <Store className="h-3.5 w-3.5" /> Seu mercado
           </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="text-xl font-black tracking-tight sm:text-2xl">
             Configurações
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
             Dados, acesso, estoque e categorias.
           </p>
         </div>
         <button
           type="submit"
           disabled={!hasChanges || saving}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground shadow-sm transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground shadow-none transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
         >
           <Save className="h-4 w-4" />{' '}
           {saving
@@ -465,17 +486,17 @@ export default function Configuracoes() {
         </select>
       </label>
 
-      <div className="grid gap-3 lg:grid-cols-12">
+      <div className="grid items-start gap-2.5 lg:grid-cols-12">
         <section id="config-market" className="mobile-dense-section scroll-mt-14 lg:col-span-7">
-          <div className="mb-3">
+          <div className="mb-2">
             <h2 className="flex items-center gap-2 font-bold">
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="hidden text-sm text-muted-foreground">
               Identificação, recibos e relatórios.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <label className="block text-sm font-semibold sm:col-span-2">
               Nome do mercado <span className="text-destructive">*</span>
               <input
@@ -484,7 +505,7 @@ export default function Configuracoes() {
                 onChange={(event) =>
                   handleChange('nome_mercado', event.target.value)
                 }
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="Nome do estabelecimento"
               />
             </label>
@@ -531,10 +552,10 @@ export default function Configuracoes() {
                     }
                     rows={3}
                     maxLength={500}
-                    className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    className="mt-1 min-h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                     placeholder="Mensagem de atendimento, horários ou observações do estabelecimento"
                   />
-                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                  <span className="hidden">
                     Logo, nome, cores e estes contatos serão aplicados
                     automaticamente aos e-mails deste mercadinho.
                   </span>
@@ -552,7 +573,7 @@ export default function Configuracoes() {
                   handleChange('cnpj', formatCnpj(event.target.value))
                 }
                 maxLength={18}
-                className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="00.000.000/0000-00"
               />
             </label>
@@ -568,7 +589,7 @@ export default function Configuracoes() {
                 }
                 rows={3}
                 maxLength={240}
-                className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1 min-h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="Rua, número, bairro e cidade"
               />
             </label>
@@ -578,18 +599,18 @@ export default function Configuracoes() {
         {canUseLogo && (
           <section id="config-logo" className="mobile-dense-section scroll-mt-14 lg:col-span-5">
             <h2 className="font-bold">Logo do mercado</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="hidden text-sm text-muted-foreground">
               Prefira PNG transparente.
             </p>
-            <div className="mt-3 rounded-xl border border-border bg-muted/25 p-2.5">
+            <div className="mt-2 rounded-lg border border-border bg-muted/20 p-1.5">
               <ImageUploadField
                 value={logoUrl}
                 onChange={(value) => handleChange('logo_url', value)}
                 kind="market"
                 scopeId={user?.market_id || user?.id}
-                label="Arquivo da logo"
+                label="Logo"
                 name={brandName}
-                previewClassName="h-20 w-36 rounded-xl"
+                previewClassName="h-12 w-20 rounded-lg"
               />
             </div>
           </section>
@@ -597,17 +618,17 @@ export default function Configuracoes() {
 
         {canCustomizeSidebar && (
           <section id="config-sidebar" className="mobile-dense-section scroll-mt-14 lg:col-span-12">
-            <div className="grid gap-5 lg:grid-cols-[1fr_420px] lg:items-center">
+            <div className="grid gap-3 lg:grid-cols-[1fr_320px] lg:items-center">
               <div>
                 <h2 className="flex items-center gap-2 font-bold">
                   <Paintbrush className="h-5 w-5 text-accent" /> Cores da barra
                   lateral
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="hidden text-sm text-muted-foreground">
                   Escolha o fundo e o destaque. A cor dos textos é calculada
                   automaticamente para manter a leitura.
                 </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                   <ColorField
                     label="Cor de fundo"
                     value={sidebarPalette.background}
@@ -624,7 +645,7 @@ export default function Configuracoes() {
                   />
                 </div>
                 <div
-                  className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${sidebarPalette.isAccentDistinct ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}
+                  className={`mt-2 flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-semibold ${sidebarPalette.isAccentDistinct ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}
                 >
                   {sidebarPalette.isAccentDistinct ? (
                     <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none" />
@@ -639,14 +660,14 @@ export default function Configuracoes() {
                 </div>
               </div>
               <div
-                className="overflow-hidden rounded-2xl border border-border shadow-sm"
+                className="overflow-hidden rounded-lg border border-border shadow-none"
                 style={{
                   backgroundColor: sidebarPalette.background,
                   color: sidebarPalette.foreground,
                 }}
               >
                 <div
-                  className="flex min-h-16 items-center gap-3 border-b px-4"
+                  className="flex min-h-12 items-center gap-3 border-b px-3"
                   style={{ borderColor: sidebarPalette.border }}
                 >
                   {logoUrl ? (
@@ -660,9 +681,9 @@ export default function Configuracoes() {
                     <strong>{brandName}</strong>
                   )}
                 </div>
-                <div className="space-y-2 p-3">
+                <div className="space-y-1.5 p-2">
                   <div
-                    className="flex h-11 items-center gap-3 rounded-xl px-3 font-bold"
+                    className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-bold"
                     style={{
                       backgroundColor: sidebarPalette.accentSurface,
                       color: sidebarPalette.foreground,
@@ -678,7 +699,7 @@ export default function Configuracoes() {
                       style={{ backgroundColor: sidebarPalette.accent }}
                     />
                   </div>
-                  <div className="flex h-11 items-center gap-3 rounded-xl px-3 opacity-70">
+                  <div className="flex h-9 items-center gap-2 rounded-lg px-3 text-sm opacity-70">
                     <span
                       className="h-4 w-4 rounded border"
                       style={{ borderColor: sidebarPalette.border }}
@@ -695,10 +716,10 @@ export default function Configuracoes() {
           <h2 className="flex items-center gap-2 font-bold">
             <Layers className="h-5 w-5 text-accent" /> Vendas abertas
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hidden text-sm text-muted-foreground">
             Quantidade máxima de vendas minimizadas.
           </p>
-          <label className="mt-4 block text-sm font-semibold">
+          <label className="mt-2 block text-sm font-semibold">
             Limite simultâneo
             <input
               type="number"
@@ -709,7 +730,7 @@ export default function Configuracoes() {
               onChange={(event) =>
                 handleChange('limite_vendas_minimizadas', event.target.value)
               }
-              className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
         </section>
@@ -718,10 +739,10 @@ export default function Configuracoes() {
           <h2 className="flex items-center gap-2 font-bold">
             <PackageSearch className="h-5 w-5 text-accent" /> Estoque baixo
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hidden text-sm text-muted-foreground">
             Quantidade usada nos alertas da tela de produtos.
           </p>
-          <label className="mt-4 block text-sm font-semibold">
+          <label className="mt-2 block text-sm font-semibold">
             Quantidade de alerta
             <input
               type="number"
@@ -732,7 +753,7 @@ export default function Configuracoes() {
               onChange={(event) =>
                 handleChange('limite_estoque_baixo', event.target.value)
               }
-              className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
         </section>
@@ -742,15 +763,15 @@ export default function Configuracoes() {
             <h2 className="flex items-center gap-2 font-bold">
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="hidden text-sm text-muted-foreground">
               Bloqueio de acesso ao PDV.
             </p>
-            <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-muted/25 p-3">
+            <label className="mt-2 flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
               <span>
                 <strong className="block text-sm">
                   Exigir abertura para vendedores
                 </strong>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
+                <span className="hidden">
                   Administradores não são bloqueados.
                 </span>
               </span>
@@ -773,10 +794,6 @@ export default function Configuracoes() {
                 <PackageSearch className="h-5 w-5 text-accent" /> Categorias de
                 produtos
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Edite, adicione ou remova as categorias usadas no estoque e no
-                cadastro.
-              </p>
             </div>
             <button
               type="button"
@@ -785,13 +802,13 @@ export default function Configuracoes() {
                 setCategoryDraft('');
                 setEditingCategory('');
               }}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
             >
               Restaurar padrão
             </button>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               value={categoryDraft}
               onChange={(event) => setCategoryDraft(event.target.value)}
@@ -800,12 +817,12 @@ export default function Configuracoes() {
                   ? 'Editar categoria selecionada'
                   : 'Nova categoria'
               }
-              className="h-11 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
             <button
               type="button"
               onClick={commitCategory}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground hover:bg-accent/90"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground hover:bg-accent/90"
             >
               <Save className="h-4 w-4" />{' '}
               {editingCategory ? 'Salvar edição' : 'Adicionar'}
@@ -817,18 +834,18 @@ export default function Configuracoes() {
                   setEditingCategory('');
                   setCategoryDraft('');
                 }}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
               >
                 Cancelar
               </button>
             )}
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
             {productCategories.map((category) => (
               <div
                 key={category}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/25 px-3 py-2"
+                className="flex items-center gap-2 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5"
               >
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {category}
@@ -836,7 +853,7 @@ export default function Configuracoes() {
                 <button
                   type="button"
                   onClick={() => editCategory(category)}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                   aria-label={`Editar ${category}`}
                   title="Editar categoria"
                 >
@@ -845,7 +862,7 @@ export default function Configuracoes() {
                 <button
                   type="button"
                   onClick={() => deleteCategory(category)}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/20 bg-card text-destructive hover:bg-destructive/10"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-destructive/20 bg-card text-destructive hover:bg-destructive/10"
                   aria-label={`Excluir ${category}`}
                   title="Excluir categoria"
                 >

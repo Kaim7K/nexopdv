@@ -318,18 +318,18 @@ export default function HistoricoCaixas() {
         />
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:block">
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-card shadow-none xl:block">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-normal text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">Operador / unidade</th>
-                  <th className="px-4 py-3">Abertura</th>
-                  <th className="px-4 py-3">Fechamento</th>
-                  <th className="px-4 py-3 text-right">Inicial</th>
-                  <th className="px-4 py-3 text-right">Vendas</th>
-                  <th className="px-4 py-3 text-right">Final</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">
+                  <th className="whitespace-nowrap px-3 py-2.5">Operador</th>
+                  <th className="whitespace-nowrap px-3 py-2.5">Abertura</th>
+                  <th className="whitespace-nowrap px-3 py-2.5">Fechamento</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Vendas</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Final</th>
+                  <th className="whitespace-nowrap px-3 py-2.5">Status</th>
+                  <th className="whitespace-nowrap px-3 py-2.5">
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
@@ -337,35 +337,35 @@ export default function HistoricoCaixas() {
               <tbody className="divide-y divide-border">
                 {data.items.map((item) => (
                   <tr key={item.id} className="hover:bg-muted/25">
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <strong className="block">{item.seller_name}</strong>
                       <span className="text-xs text-muted-foreground">
                         {item.unit_name || "Unidade principal"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
                       {formatDate(item.opened_at)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
                       {formatDate(item.closed_at)}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
                       {formatCurrency(item.opening_amount)}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
                       {formatCurrency(item.total_sales)}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
                       {formatCurrency(item.final_amount)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-3 py-2.5">
                       <Status value={item.status} />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() => openDetail(item)}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-muted"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
                       >
                         <Eye className="h-4 w-4" /> Detalhes
                       </button>
@@ -706,7 +706,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
   };
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:p-3 lg:p-4"
       role="presentation"
     >
       <section
@@ -715,12 +715,12 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-detail-title"
-        className="flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[94dvh] sm:rounded-[20px] sm:border sm:border-border/80 sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]"
+        className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[min(41rem,calc(100dvh-3rem))] sm:rounded-xl sm:border sm:border-border/80 sm:shadow-[0_22px_70px_rgba(0,0,0,0.32)]"
       >
-        <header className="relative flex flex-col gap-3 border-b border-border/80 bg-muted/15 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+        <header className="relative flex flex-col gap-2 border-b border-border/80 bg-muted/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="flex min-w-0 items-center gap-3 pr-11 sm:pr-0">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-              <Banknote className="h-5 w-5" />
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+              <Banknote className="h-4 w-4" />
             </span>
             <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -735,7 +735,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             </p>
             </div>
           </div>
-          <div className="grid w-full grid-cols-3 items-center gap-2 sm:flex sm:w-auto sm:flex-none sm:pr-11">
+          <div className="grid w-full grid-cols-2 items-center gap-2 min-[430px]:grid-cols-3 sm:flex sm:w-auto sm:flex-none sm:pr-11">
             {canManageClosed && !editing && (
               <>
                 <button
@@ -779,16 +779,16 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
             </button>
           </div>
         </header>
-        <div className="flex-1 space-y-2.5 overflow-y-auto bg-muted/10 p-2.5 sm:space-y-3 sm:p-4">
+        <div className="flex-1 space-y-2 overflow-y-auto bg-muted/10 p-2.5">
           {loading ? (
             <LoadingState label="Carregando movimentação completa..." />
           ) : (
             <>
-              <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
+              <section className="rounded-lg border border-border/80 bg-card p-2.5">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div>
                     <h3 className="font-black">Resumo do caixa</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="hidden text-xs text-muted-foreground">
                       Valores principais para conferência.
                     </p>
                   </div>
@@ -820,47 +820,47 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </dl>
               </section>
 
-              <section className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-2.5 sm:p-3">
-                <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
+              <section className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.04] p-2.5">
+                <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
                   <div>
                     <h3 className="font-black">Conferência do dinheiro</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="hidden text-xs text-muted-foreground">
                       Compare contado, esperado e diferença.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border bg-card p-2.5 shadow-none">
+                  <div className="rounded-lg border border-border bg-card p-2.5 shadow-none">
                     <p className="text-xs font-bold uppercase text-muted-foreground">
                       Resultado
                     </p>
                     <strong className={`mt-0.5 block text-lg font-black tabular-nums ${differenceTone}`}>
                       {differenceLabel}
                     </strong>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="hidden text-xs text-muted-foreground">
                       {differenceSummary}
                     </p>
                   </div>
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-card p-1.5 text-center text-xs sm:gap-2">
-                  <div className="rounded-lg bg-muted/25 px-2 py-2">
+                <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg border border-border bg-card p-1 text-center text-xs">
+                  <div className="rounded-md bg-muted/25 px-2 py-1.5">
                     <span className="block text-[10px] font-bold uppercase text-muted-foreground">Esperado</span>
                     <strong className="mt-0.5 block text-sm tabular-nums">{formatCurrency(expectedAfterExpense)}</strong>
                   </div>
-                  <div className="rounded-lg bg-muted/25 px-2 py-2">
+                  <div className="rounded-md bg-muted/25 px-2 py-1.5">
                     <span className="block text-[10px] font-bold uppercase text-muted-foreground">Contado</span>
                     <strong className="mt-0.5 block text-sm tabular-nums">{formatCurrency(declaredCash)}</strong>
                   </div>
-                  <div className="rounded-lg bg-muted/25 px-2 py-2">
+                  <div className="rounded-md bg-muted/25 px-2 py-1.5">
                     <span className="block text-[10px] font-bold uppercase text-muted-foreground">Diferença</span>
                     <strong className={`mt-0.5 block text-sm tabular-nums ${differenceTone}`}>{formatCurrency(cashDifference)}</strong>
                   </div>
                 </div>
-                <details className="group mt-2 rounded-xl border border-border bg-card">
-                  <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-black marker:hidden">
+                <details className="group mt-2 rounded-lg border border-border bg-card">
+                  <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-black marker:hidden">
                     Ver cálculo completo
                     <SlidersHorizontal className="h-4 w-4 text-muted-foreground transition group-open:rotate-90" />
                   </summary>
-                  <div className="grid gap-2 border-t border-border p-2.5 lg:grid-cols-2">
-                  <dl className="grid gap-1.5 rounded-xl border border-border bg-background p-2.5 text-sm">
+                  <div className="grid gap-2 border-t border-border p-2 lg:grid-cols-2">
+                  <dl className="grid gap-1 rounded-lg border border-border bg-background p-2 text-sm">
                     <div className="px-3 pb-1 text-xs font-black uppercase text-muted-foreground">
                       Cálculo esperado
                     </div>
@@ -881,7 +881,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                       total
                     />
                   </dl>
-                  <dl className="grid gap-1.5 rounded-xl border border-border bg-background p-2.5 text-sm">
+                  <dl className="grid gap-1 rounded-lg border border-border bg-background p-2 text-sm">
                     <div className="px-3 pb-1 text-xs font-black uppercase text-muted-foreground">
                       Fechamento informado
                     </div>
@@ -902,7 +902,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                             : "negative"
                       }
                     />
-                    <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    <p className="hidden rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                       {session.status === "fechado"
                         ? "Diferença entre esperado e contado."
                         : "A conferência final aparece ao fechar."}
@@ -912,7 +912,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </details>
               </section>
 
-              <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
+              <section className="rounded-lg border border-border/80 bg-card p-2.5">
                 <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-black">Vendas deste caixa</h3>
@@ -938,7 +938,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 </div>
                 {summary.sales?.length ? (
                   linkedSales.length ? (
-                    <div className="grid max-h-[42dvh] gap-1.5 overflow-y-auto pr-1 sm:max-h-96 md:grid-cols-2">
+                    <div className="grid max-h-48 gap-1.5 overflow-y-auto pr-1 md:grid-cols-2">
                       {linkedSales.map((sale) => (
                         <LinkedSaleButton
                           key={sale.id}
@@ -959,16 +959,16 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                 )}
               </section>
 
-              <div className="grid items-start gap-3">
-                <div className="grid items-start gap-3 lg:grid-cols-2">
-              <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
-                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid items-start gap-2">
+                <div className="grid items-start gap-2 lg:grid-cols-2">
+              <section className="rounded-lg border border-border/80 bg-card p-2.5">
+                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-black">Pagamentos</h3>
                   {canMove && (
                     <button
                       type="button"
                       onClick={() => setMovementOpen((v) => !v)}
-                      className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-accent-foreground"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground"
                     >
                       <PlusCircle className="h-4 w-4" /> Movimentar caixa
                     </button>
@@ -991,21 +991,21 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                       ),
                     )
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Nenhum pagamento registrado.
                     </p>
                   )}
                 </div>
               </section>
-              <section className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3">
-                <div className="mb-3">
+              <section className="rounded-lg border border-border/80 bg-card p-2.5">
+                <div className="mb-2">
                   <h3 className="font-black">Movimentações manuais</h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground">
                     Entradas, retiradas e ajustes fora das vendas.
                   </p>
                 </div>
                 {cashMovements.length ? (
-                  <div className="max-h-80 divide-y divide-border overflow-y-auto rounded-xl border border-border">
+                  <div className="max-h-44 divide-y divide-border overflow-y-auto rounded-lg border border-border">
                     {cashMovements.map((item) => {
                       const reversed = ["estornado", "cancelado"].includes(item.status);
                       return (
@@ -1041,7 +1041,7 @@ function CashDetail({ data, loading, currentUser, onClose, onChanged }) {
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
                     Nenhuma entrada, retirada ou ajuste além das vendas.
                   </div>
                 )}
@@ -1285,43 +1285,43 @@ function CashSaleDetailModal({ sale, loading, onClose }) {
   const change = Number(sale.change_amount || Math.max(0, received - totals.total));
   return (
     <div
-      className="fixed inset-0 z-[60] grid items-end bg-slate-950/75 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+      className="modal-overlay z-[60] bg-slate-950/75"
       role="presentation"
       onClick={onClose}
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="flex max-h-[96dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.3)] sm:max-h-[92dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.38)]"
+        className="modal-panel sm:max-w-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-sale-detail-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-muted/15 p-4">
+        <div className="modal-header">
           <div className="min-w-0">
-            <h2 id="cash-sale-detail-title" className="truncate text-lg font-black">
+            <h2 id="cash-sale-detail-title" className="modal-title truncate">
               Venda #{sale.sale_number}
             </h2>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="modal-subtitle truncate">
               {formatDate(sale.created_date)}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-muted"
+            className="modal-icon-button"
             aria-label="Fechar venda"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto bg-muted/10 p-4 sm:p-5">
+        <div className="modal-body">
           {loading ? (
             <LoadingState label="Carregando venda..." />
           ) : (
-            <div className="space-y-4 text-sm">
-              <div className="grid gap-2 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
+            <div className="space-y-3 text-sm">
+              <div className="grid gap-2 rounded-lg bg-muted/30 p-3 sm:grid-cols-2">
                 <Value label="Status" value={sale.status === "concluida" ? "Concluída" : "Cancelada"} />
                 <Value label="Responsável" value={sale.seller_name || "Não informado"} />
                 <Value label="Subtotal" value={formatCurrency(totals.subtotal)} />

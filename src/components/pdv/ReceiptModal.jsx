@@ -139,19 +139,19 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
   }, [sale, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-4">
-      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="flex max-h-[96dvh] w-full max-w-2xl flex-col rounded-t-[20px] border border-border/80 bg-card shadow-[0_-20px_70px_rgba(0,0,0,0.28)] sm:max-h-[90dvh] sm:rounded-[20px] sm:shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-        <div className="flex items-center justify-between border-b border-border/80 bg-muted/15 px-4 py-3 no-print sm:px-5">
+    <div className="modal-overlay">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="modal-panel sm:max-w-xl">
+        <div className="modal-header no-print">
           <div>
-            <h2 id="receipt-modal-title" className="text-lg font-bold">Recibo da venda</h2>
+            <h2 id="receipt-modal-title" className="modal-title">Recibo da venda</h2>
             <p className="text-xs text-muted-foreground">Visualização organizada para impressão e PDF</p>
           </div>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Fechar recibo">
+          <button type="button" onClick={onClose} className="modal-icon-button" aria-label="Fechar recibo">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-[#f7f9f8] p-4 text-black sm:p-6" ref={receiptRef}>
+        <div className="flex-1 overflow-y-auto bg-[#f7f9f8] p-3 text-black sm:p-4" ref={receiptRef}>
           <div className="receipt mx-auto w-full max-w-[360px]">
             <div className="r-header">
               <div className="r-badge">Mercado</div>
@@ -232,16 +232,18 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
           </div>
         </div>
 
-        <div className="flex gap-2 border-t border-border px-6 py-4 no-print">
-          <button type="button" onClick={handlePrint} title="Imprimir (F8)" className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-sm font-medium hover:bg-secondary">
+        <div className="modal-footer no-print">
+          <div className="modal-actions">
+          <button type="button" onClick={handlePrint} title="Imprimir (F8)" className="modal-button border border-border hover:bg-secondary">
             <Printer className="h-4 w-4" /> Imprimir
           </button>
-          <button type="button" onClick={handlePDF} disabled={generatingPdf} className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-50">
+          <button type="button" onClick={handlePDF} disabled={generatingPdf} className="modal-button border border-border hover:bg-secondary disabled:opacity-50">
             <FileText className="h-4 w-4" /> {generatingPdf ? 'Gerando...' : 'PDF'}
           </button>
-          <button type="button" onClick={onNewSale || onClose} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground hover:bg-accent/90">
+          <button type="button" onClick={onNewSale || onClose} className="modal-button modal-actions-primary bg-accent text-accent-foreground hover:bg-accent/90">
             <Plus className="h-4 w-4" /> {primaryLabel}
           </button>
+          </div>
         </div>
       </div>
     </div>

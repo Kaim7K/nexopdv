@@ -63,7 +63,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
           <h3 id="financial-summary-title" className="text-base font-bold">
             Resumo financeiro
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="hidden">
             Período selecionado.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
             <strong className="block text-sm">Gráfico e compromissos</strong>
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            <span className="hidden">
               Tendência e pendências.
             </span>
           </span>
@@ -169,7 +169,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
 
       <section className="hidden gap-3 xl:grid xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
         <ChartCard title="Entradas, saídas e lucro">
-          <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
+          <p className="hidden">
             Evolução diária do dinheiro.
           </p>
           <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
@@ -178,7 +178,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         </ChartCard>
         <section className="surface-card p-3 sm:p-4">
           <h3 className="text-sm font-bold">Próximos compromissos</h3>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="hidden">
             Pendências que afetam o saldo.
           </p>
           <div className="mt-2 space-y-1.5">
@@ -213,7 +213,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
             <strong className="block text-sm">Análises detalhadas</strong>
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            <span className="hidden">
               Margem, categorias, pagamentos e produtos.
             </span>
           </span>

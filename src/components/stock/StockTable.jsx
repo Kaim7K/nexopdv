@@ -16,55 +16,55 @@ const TABLE_COLUMNS = [
     key: 'name',
     label: 'Produto',
     sortKey: 'name',
-    width: 'w-[250px]',
+    width: 'w-[230px]',
     sticky: 'left',
   },
   {
     key: 'category',
     label: 'Categoria',
     sortKey: 'category',
-    width: 'w-[135px]',
+    width: 'w-[130px]',
     type: 'text',
   },
   {
     key: 'barcode',
     label: 'Cód. barras',
     sortKey: 'barcode',
-    width: 'w-[120px]',
+    width: 'w-[125px]',
     type: 'text',
   },
   {
     key: 'sale_price',
     label: 'Venda',
     sortKey: 'sale_price',
-    width: 'w-[120px]',
+    width: 'w-[105px]',
     type: 'number',
   },
   {
     key: 'quantity',
-    label: 'Estoque',
+    label: 'Qtd.',
     sortKey: 'quantity',
-    width: 'w-[95px]',
+    width: 'w-[90px]',
     type: 'number',
   },
   {
     key: 'last_sale_at',
     label: 'Última venda',
     sortKey: 'last_sale_at',
-    width: 'w-[170px]',
+    width: 'w-[135px]',
     type: 'date',
   },
   {
     key: 'status',
     label: 'Status',
     sortKey: 'status',
-    width: 'w-[100px]',
+    width: 'w-[105px]',
     type: 'text',
   },
   {
     key: 'actions',
     label: 'Ações',
-    width: 'w-[120px]',
+    width: 'w-[105px]',
     sticky: 'right',
   },
 ];
@@ -92,7 +92,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-    <table className="hidden w-full min-w-[1110px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+      <table className="hidden w-full min-w-[1025px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col
@@ -154,7 +154,7 @@ function HeaderCell({ column, SortIcon, onSort }) {
 
   return (
     <th
-      className={`${stickyClass} border-b border-border bg-card px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-muted-foreground shadow-none ${column.visibility || ''}`}
+      className={`${stickyClass} whitespace-nowrap border-b border-border bg-card px-3 py-2 text-left text-[11px] font-black uppercase tracking-normal text-muted-foreground shadow-none ${column.visibility || ''}`}
     >
       {column.sortKey ? (
         <button
@@ -169,7 +169,7 @@ function HeaderCell({ column, SortIcon, onSort }) {
           <SortIcon column={column.sortKey} />
         </button>
       ) : (
-        <span>{column.label}</span>
+        <span className="whitespace-nowrap">{column.label}</span>
       )}
     </th>
   );
@@ -300,12 +300,12 @@ function CellEditor({
   if (fieldKey === 'last_sale_at') {
     return (
       <div className="min-w-0">
-        <span className="block truncate text-xs font-bold">
+        <span className="block whitespace-nowrap text-[11px] font-bold">
           {product.last_sale_at
             ? formatDateTime(product.last_sale_at)
             : 'Nunca vendido'}
         </span>
-        <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+        <span className="mt-0.5 block whitespace-nowrap text-[10px] text-muted-foreground">
           {product.last_sale_at ? 'Última saída' : 'Sem vendas'}
         </span>
       </div>

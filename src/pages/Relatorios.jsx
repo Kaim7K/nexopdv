@@ -20,6 +20,7 @@ import {
 import { formatCurrency, formatNumber, getPaymentLabel } from '@/lib/helpers';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 import RankingList from '@/components/common/RankingList';
+import { PageHeader } from '@/components/common/AppShell';
 
 const PERIODS = [
   { key: 'today', label: 'Hoje' },
@@ -67,9 +68,11 @@ export default function Relatorios() {
   const [sellerRankingSort, setSellerRankingSort] = useState('revenue');
   const [categoryRankingSort, setCategoryRankingSort] = useState('revenue');
 
+  const customRangeComplete = period !== 'custom' || (customStart && customEnd);
   const customRangeValid =
     period !== 'custom' ||
-    (customStart && customEnd && new Date(customStart) <= new Date(customEnd));
+    !customRangeComplete ||
+    new Date(customStart) <= new Date(customEnd);
 
   useEffect(() => {
     loadData();
@@ -132,12 +135,23 @@ export default function Relatorios() {
       end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
       prevStart = new Date(now.getFullYear() - 1, 0, 1);
       prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
-    } else {
+    } else if (customStart && customEnd) {
       start = customStart ? new Date(`${customStart}T00:00:00`) : new Date(0);
       end = customEnd ? new Date(`${customEnd}T23:59:59`) : new Date();
       const difference = Math.max(1, end.getTime() - start.getTime());
       prevStart = new Date(start.getTime() - difference);
       prevEnd = new Date(start.getTime() - 1);
+    } else {
+      start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      prevStart = new Date(now);
+      prevStart.setDate(prevStart.getDate() - 1);
+      prevStart.setHours(0, 0, 0, 0);
+      prevEnd = new Date(now);
+      prevEnd.setDate(prevEnd.getDate() - 1);
+      prevEnd.setHours(23, 59, 59, 999);
     }
     return {
       startDate: start,
@@ -149,7 +163,7 @@ export default function Relatorios() {
 
   const { periodSales, prevPeriodSales } = useMemo(
     () => ({
-      periodSales: customRangeValid
+      periodSales: customRangeValid && customRangeComplete
         ? sales.filter(
             (sale) =>
               sale.status === 'concluida' &&
@@ -157,7 +171,7 @@ export default function Relatorios() {
               new Date(sale.created_date) <= endDate,
           )
         : [],
-      prevPeriodSales: customRangeValid
+      prevPeriodSales: customRangeValid && customRangeComplete
         ? sales.filter(
             (sale) =>
               sale.status === 'concluida' &&
@@ -533,7 +547,13 @@ export default function Relatorios() {
 
   return (
     <div className="page-shell">
-      <div className="mb-2">
+      <PageHeader
+        icon={BarChart3}
+        eyebrow="Resultados do mercado"
+        title="Relatórios"
+        description="Vendas, pagamentos e rankings do período."
+      />
+      <div className="hidden">
         <div className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <BarChart3 className="h-3.5 w-3.5" /> Resultados do mercado
         </div>
@@ -586,6 +606,11 @@ export default function Relatorios() {
           </div>
         )}
       </div>
+      {period === 'custom' && !customRangeComplete && (
+        <div className="mb-3 rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs font-semibold text-muted-foreground">
+              Escolha a data inicial e final para ver o período personalizado.
+        </div>
+      )}
       {!customRangeValid && (
         <div className="mb-4 rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
           Informe um período válido: a data inicial deve ser anterior ou igual à
