@@ -47,6 +47,15 @@ const METHOD_STYLES = Object.fromEntries(
   Object.entries(PAYMENT_VISUALS).map(([method, visual]) => [method, visual.badge]),
 );
 
+const METHOD_SHORT_LABELS = {
+  dinheiro: 'Dinheiro',
+  debito: 'Débito',
+  credito: 'Crédito',
+  pix: 'Pix',
+  outros: 'Outros',
+  fiado: 'Fiado',
+};
+
 export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard }) {
   const [payments, setPayments] = useState(sale.payments || []);
   const [observation, setObservation] = useState(sale.observation || '');
@@ -150,80 +159,67 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
 
   return (
     <div className="modal-overlay bg-slate-950/75" role="presentation">
-      <div ref={modalRef} tabIndex={-1} className="modal-panel sm:max-w-3xl xl:max-w-4xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <div ref={modalRef} tabIndex={-1} className="modal-panel sm:max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
         <div className="modal-header">
           <div>
             <h2 id="payment-title" className="modal-title">Forma de pagamento</h2>
-            <p className="hidden text-xs text-muted-foreground sm:block">Selecione a forma e digite o valor. O campo será ativado automaticamente.</p>
+            <p className="modal-subtitle hidden sm:block">Confira o total e escolha como o cliente vai pagar.</p>
           </div>
           <button type="button" aria-label="Fechar" disabled={completing} onClick={onClose} className="modal-icon-button"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="grid flex-1 overscroll-contain overflow-y-auto lg:grid-cols-[0.82fr_1.18fr]">
-          <section className="space-y-2 border-b border-border p-2.5 lg:border-b-0 lg:border-r lg:p-3">
-            <div className="max-h-28 overflow-y-auto rounded-lg border border-border bg-muted/20 p-2 sm:max-h-36">
-              <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resumo dos produtos</h3>
-              <div className="space-y-1.5">
+        <div className="modal-body space-y-3 bg-card sm:p-3.5">
+          <section className="overflow-hidden rounded-xl border border-emerald-500/25 bg-emerald-500/[0.055]">
+            <div className="grid items-stretch sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="flex items-center justify-between gap-4 p-3 sm:px-4 sm:py-3.5">
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.06em] text-emerald-700 dark:text-emerald-300">Total da venda</span>
+                  <strong className="mt-0.5 block text-[1.75rem] font-black leading-none tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-3xl">{formatCurrency(total)}</strong>
+                  <span className="mt-1 block text-[11px] text-muted-foreground">Subtotal {formatCurrency(subtotal)}{discount > 0 ? ` · desconto ${formatCurrency(discount)}` : ''}</span>
+                </div>
+                {change > 0 && <div className="rounded-lg bg-emerald-500/10 px-3 py-2 text-right text-emerald-700 dark:text-emerald-300"><span className="block text-[10px] font-bold uppercase">Troco</span><strong className="text-lg tabular-nums">{formatCurrency(change)}</strong></div>}
+              </div>
+              <div className="grid grid-cols-2 border-t border-emerald-500/20 bg-card/55 sm:min-w-56 sm:border-l sm:border-t-0">
+                <div className="flex flex-col justify-center px-3 py-2.5 sm:px-4"><span className="text-[11px] text-muted-foreground">Pago</span><strong className="mt-0.5 text-base tabular-nums">{formatCurrency(paidAmount)}</strong></div>
+                <div className="flex flex-col justify-center border-l border-emerald-500/20 px-3 py-2.5 text-right sm:px-4"><span className="text-[11px] text-muted-foreground">{hasFiado ? 'A fiar' : 'Restante'}</span><strong className={`mt-0.5 text-base tabular-nums ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</strong></div>
+              </div>
+            </div>
+            <details className="group border-t border-emerald-500/20 bg-card/45">
+              <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-bold text-muted-foreground marker:hidden hover:bg-muted/40 sm:px-4">
+                <span>{sale.items.length} {sale.items.length === 1 ? 'produto na venda' : 'produtos na venda'}</span>
+                <span className="group-open:hidden">Ver produtos</span><span className="hidden group-open:inline">Ocultar</span>
+              </summary>
+              <div className="max-h-32 divide-y divide-border overflow-y-auto border-t border-border px-3 sm:px-4">
                 {sale.items.map((item, index) => (
-                  <div key={`${item.product_id}-${index}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
-                    <span className="font-bold tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(2)}kg` : `${item.quantity}x`}</span>
-                    <span className="truncate">{item.product_name}</span>
-                    <span className="font-semibold tabular-nums">{formatCurrency(item.subtotal)}</span>
+                  <div key={`${item.product_id}-${index}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 py-2 text-xs sm:text-sm">
+                    <span className="font-black tabular-nums">{item.unit === 'peso' ? `${Number(item.weight || 0).toFixed(2)}kg` : `${item.quantity}x`}</span>
+                    <span className="truncate text-foreground/80">{item.product_name}</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-2 rounded-lg border border-border bg-background p-2.5">
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold tabular-nums">{formatCurrency(subtotal)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Desconto</span><span className="font-semibold tabular-nums">{formatCurrency(discount)}</span></div>
-              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-2.5">
-                <div className="flex items-end justify-between gap-4">
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300">Total</span>
-                  <span className="text-xl font-black tracking-tight text-emerald-600 tabular-nums dark:text-emerald-400 sm:text-2xl">{formatCurrency(total)}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="rounded-lg bg-muted/40 p-2">
-                  <span className="text-xs text-muted-foreground">Pago</span>
-                  <p className="mt-0.5 text-base font-black tabular-nums sm:text-xl">{formatCurrency(paidAmount)}</p>
-                </div>
-                <div className="rounded-lg bg-muted/40 p-2">
-                  <span className="text-xs text-muted-foreground">{hasFiado ? 'Saldo fiado' : 'Restante'}</span>
-                  <p className={`mt-0.5 text-base font-black tabular-nums sm:text-xl ${remaining > 0.01 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{formatCurrency(Math.max(0, remaining))}</p>
-                </div>
-              </div>
-              {change > 0 && (
-                <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 px-4 py-3 text-emerald-700 dark:text-emerald-300">
-                  <span className="font-bold">Troco</span>
-                  <span className="text-xl font-black tabular-nums">{formatCurrency(change)}</span>
-                </div>
-              )}
-            </div>
+            </details>
           </section>
 
-          <section className="space-y-2.5 p-2.5 lg:p-3">
+          <section className="space-y-3">
             {!hasFiado && (
               <div>
-                <h3 className="mb-2 text-sm font-bold">Escolha a forma de pagamento</h3>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                <div className="mb-2 flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <h3 className="text-sm font-black">Como o cliente vai pagar?</h3>
+                  <span className="text-[11px] leading-tight text-muted-foreground sm:text-xs">
+                    {payments.length > 0
+                      ? 'Para dividir, ajuste o valor informado e escolha outra forma'
+                      : 'O restante é preenchido automaticamente'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {PAYMENT_METHODS.map(method => {
                     const Icon = METHOD_ICONS[method.method];
-                    const disabled = method.method !== 'fiado' && remaining <= 0;
+                    const disabled = remaining <= 0;
                     return (
-                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`flex min-h-10 items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 transition hover:border-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-35 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
-                        <Icon className="h-5 w-5" />
-                        <span className="text-xs font-bold sm:text-sm">{method.label}</span>
-                        {method.method === 'debito' && (
-                          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700 dark:bg-black/20 dark:text-sky-200">
-                            Débito
-                          </span>
-                        )}
-                        {method.method === 'credito' && (
-                          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-700 dark:bg-black/20 dark:text-violet-200">
-                            Crédito
-                          </span>
-                        )}
+                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`group flex min-h-10 items-center gap-2 rounded-lg border px-2.5 text-left transition hover:-translate-y-px hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
+                        <span className="grid h-7 w-7 flex-none place-items-center rounded-md bg-white/65 dark:bg-black/15"><Icon className="h-4 w-4" /></span>
+                        <span className="truncate text-xs font-black sm:text-sm">{METHOD_SHORT_LABELS[method.method] || method.label}</span>
                       </button>
                     );
                   })}
@@ -235,8 +231,8 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               <div className="space-y-3">
                 <h3 className="text-sm font-bold">Valores informados</h3>
                 {payments.map((payment, index) => (
-                  <div key={`${payment.method}-${index}`} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2 sm:gap-3 sm:p-3">
-                    <span className="w-20 truncate text-xs font-semibold sm:w-32 sm:text-sm">{getPaymentLabel(payment.method)}</span>
+                  <div key={`${payment.method}-${index}`} className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-2 sm:gap-3">
+                    <span className="w-20 truncate text-xs font-bold sm:w-28 sm:text-sm">{METHOD_SHORT_LABELS[payment.method] || getPaymentLabel(payment.method)}</span>
                     {payment.method === 'fiado' ? (
                       <span className="flex-1 text-right text-lg font-black text-orange-600 tabular-nums dark:text-orange-400 sm:text-xl">{formatCurrency(debtAmount)}</span>
                     ) : (
@@ -250,7 +246,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                           min="0"
                           value={payment.amount}
                           onChange={event => updateAmount(index, event.target.value)}
-                          className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-right text-base font-black tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:h-12 sm:text-xl"
+                          className="h-10 w-full appearance-none rounded-lg border border-border bg-card pl-10 pr-3 text-right text-base font-black tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:h-11 sm:text-lg [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
                       </label>
                     )}
@@ -269,15 +265,15 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
               </div>
             )}
 
-            <label className="block"><span className="sr-only">Observação da venda</span><input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:h-11" /></label>
+            <label className="block"><span className="sr-only">Observação da venda</span><input type="text" placeholder="Observação da venda (opcional)" value={observation} onChange={event => setObservation(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent" /></label>
           </section>
         </div>
 
         <div className="modal-footer">
-          <div className="modal-actions">
-          <button type="button" onClick={onDiscard} disabled={completing} className="modal-button border border-destructive text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /> Descartar</button>
-          <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="modal-button border border-border bg-secondary hover:bg-muted"><Minimize2 className="h-4 w-4" /> Minimizar</button>
-          <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="modal-button modal-actions-primary bg-accent px-5 text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <button type="button" onClick={onDiscard} disabled={completing} className="modal-button border border-transparent text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /> Descartar</button>
+            <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="modal-button border border-border bg-background hover:bg-muted"><Minimize2 className="h-4 w-4" /> Minimizar</button>
+            <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="modal-button col-span-2 bg-accent px-5 text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:ml-auto"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
           </div>
         </div>
       </div>

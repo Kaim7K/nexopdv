@@ -4,10 +4,14 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.env.VISUAL_BASE_URL || 'http://127.0.0.1:5173';
 const outDir = process.env.VISUAL_MODAL_OUT_DIR || 'artifacts/modal-screenshots';
-const viewports = [
+const availableViewports = [
   ['mobile-360', 360, 780],
   ['desktop-1366', 1366, 900],
 ];
+const requestedViewports = new Set((process.env.VISUAL_MODAL_VIEWPORTS || '').split(',').map(value => value.trim()).filter(Boolean));
+const viewports = requestedViewports.size
+  ? availableViewports.filter(([name]) => requestedViewports.has(name))
+  : availableViewports;
 
 const adminUser = {
   id: 'usr_visual_admin', full_name: 'Maria Oliveira', name: 'Maria Oliveira',
@@ -33,7 +37,23 @@ const scenarios = [
   }],
   ['pdv-pagamento', '/pdv', 'admin', async (page) => {
     await page.locator('button').filter({ hasText: 'Pão francês' }).first().click();
+    await page.locator('button').filter({ hasText: 'Bala de Morango' }).first().click();
     await page.getByRole('button', { name: /Pagamento/ }).last().click();
+  }],
+  ['pdv-pagamento-dinheiro', '/pdv', 'admin', async (page) => {
+    await page.locator('button').filter({ hasText: 'Pão francês' }).first().click();
+    await page.locator('button').filter({ hasText: 'Bala de Morango' }).first().click();
+    await page.getByRole('button', { name: /Pagamento/ }).last().click();
+    await page.locator('[role="dialog"]:visible').getByRole('button', { name: 'Dinheiro' }).click();
+  }],
+  ['pdv-pagamento-misto', '/pdv', 'admin', async (page) => {
+    await page.locator('button').filter({ hasText: 'Pão francês' }).first().click();
+    await page.locator('button').filter({ hasText: 'Bala de Morango' }).first().click();
+    await page.getByRole('button', { name: /Pagamento/ }).last().click();
+    const dialog = page.locator('[role="dialog"]:visible');
+    await dialog.getByRole('button', { name: 'Dinheiro' }).click();
+    await dialog.getByRole('spinbutton', { name: /Valor em Dinheiro/ }).fill('0.30');
+    await dialog.getByRole('button', { name: 'Pix' }).click();
   }],
   ['pdv-cadastro-rapido', '/pdv', 'admin', async (page) => {
     await page.locator('body').click({ position: { x: 1, y: 1 } });
@@ -58,6 +78,10 @@ const scenarios = [
   ['admin-novo-mercado', '/admin/mercados', 'super', async (page) => page.getByRole('button', { name: /Novo mercado/ }).click()],
   ['admin-novo-plano', '/admin/planos', 'super', async (page) => page.getByRole('button', { name: /Novo plano/ }).click()],
 ];
+const requestedScenarios = new Set((process.env.VISUAL_MODAL_SCENARIOS || '').split(',').map(value => value.trim()).filter(Boolean));
+const selectedScenarios = requestedScenarios.size
+  ? scenarios.filter(([name]) => requestedScenarios.has(name))
+  : scenarios;
 
 async function seedSession(page, role) {
   const user = role === 'super' ? superUser : adminUser;
@@ -82,7 +106,7 @@ const browser = await chromium.launch({ headless: true, channel: process.env.VIS
 const results = [];
 
 for (const [viewport, width, height] of viewports) {
-  for (const [name, route, role, openModal] of scenarios) {
+  for (const [name, route, role, openModal] of selectedScenarios) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
     const page = await context.newPage();
     const errors = [];
