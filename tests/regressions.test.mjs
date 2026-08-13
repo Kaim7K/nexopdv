@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-const [api, http, media, app, sales, fiados, audits, stock, users, settings, adminMarkets, layout, receipt, receiptPdf, metadata, robots, vercel] = await Promise.all([
+const [api, http, media, app, sales, fiados, audits, stock, users, settings, adminMarkets, layout, receipt, receiptPdf, metadata, robots, vercel, cashContext, pdv, cashModal, login] = await Promise.all([
   read('api/index.js'),
   read('server/http.js'),
   read('server/media.js'),
@@ -21,6 +21,10 @@ const [api, http, media, app, sales, fiados, audits, stock, users, settings, adm
   read('src/hooks/use-page-metadata.js'),
   read('public/robots.txt'),
   read('vercel.json'),
+  read('src/lib/CashRegisterContext.jsx'),
+  read('src/pages/PDV.jsx'),
+  read('src/components/pdv/CashRegisterModal.jsx'),
+  read('src/pages/Login.jsx'),
 ]);
 
 assert.match(api, /WITH existing AS MATERIALIZED[\s\S]*sale_number AS[\s\S]*INSERT INTO nexo\.records[\s\S]*UPDATE nexo\.records product[\s\S]*INSERT INTO nexo\.records\(market_id, entity, data\)/, 'A conclusão da venda deve manter idempotência, numeração, venda, estoque e fiado na mesma instrução atômica.');
@@ -51,10 +55,19 @@ assert.match(settings, /maintenance\.reset/, 'A limpeza seletiva deve usar uma r
 assert.match(settings, /Exigir abertura para vendedores/, 'O administrador do mercado deve controlar a exigência de caixa.');
 assert.match(adminMarkets, /require_cash_register/, 'O superadministrador deve configurar a exigência de caixa por mercado.');
 assert.match(layout, /config\.logo_url \|\| user\.logo_url/, 'A sidebar deve usar a logo enviada pelo mercado.');
+assert.match(layout, /CashRegisterProvider/, 'O layout deve fornecer uma fonte unica para o estado do caixa.');
 assert.match(receipt, /downloadSaleReceiptPdf/, 'O modal de recibo deve usar o gerador compartilhado.');
 assert.match(receiptPdf, /doc\.addImage/, 'O recibo em PDF deve inserir a logo do mercado.');
 assert.match(api, /user\.role !== 'admin'.*zerar dados do mercado/s, 'Somente administradores podem zerar dados.');
 assert.match(api, /CASH_REGISTER_REQUIRED/, 'O backend deve impedir venda obrigatória sem caixa aberto.');
+assert.match(cashContext, /status = cashState\.session \? 'aberto' : 'fechado'/, 'O status do caixa deve ser centralizado como aberto ou fechado.');
+assert.match(pdv, /cashPromptDismissed/, 'O PDV nao deve reabrir o modal de caixa apos o usuario continuar sem caixa.');
+assert.doesNotMatch(pdv, /onClose=\{\s*cashState\.required && !cashState\.session/s, 'O modal de abertura nao deve impedir logout ou navegacao com caixa fechado.');
+assert.match(pdv, /discardLocalDraft\(\{ notifyWhenVisible: false \}\)/, 'Fechar caixa deve limpar rascunhos e vendas temporarias do PDV.');
+assert.match(cashModal, /Continuar no sistema/, 'O resumo final do fechamento deve permitir continuar navegando.');
+assert.match(cashModal, /> Sair/, 'O resumo final do fechamento deve oferecer sair da conta.');
+assert.match(login, /<span>Lembrar-me<\/span>/, 'O login deve manter a opcao de lembrar compacta.');
+assert.doesNotMatch(login, /Manter conectado|continuar.{0,20}logado/s, 'O login nao deve exibir explicacao longa sobre lembrar sessao.');
 assert.match(api, /deletionAudit[\s\S]*target AS MATERIALIZED[\s\S]*FROM target[\s\S]*EXISTS \(SELECT 1 FROM audit\)/, 'A exclusão definitiva deve bloquear a venda e registrar auditoria atomicamente antes de removê-la.');
 assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve oferecer relatório diário de vendas.');
 assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');

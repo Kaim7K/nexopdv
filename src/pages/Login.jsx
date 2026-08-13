@@ -15,7 +15,7 @@ export default function Login() {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,10 @@ export default function Login() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('nexo:remember-email');
-      if (saved) setEmail(saved);
+      if (saved) {
+        setEmail(saved);
+        setRemember(true);
+      }
     } catch {
       /* opcional */
     }
@@ -134,19 +137,14 @@ export default function Login() {
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
           <input
             type="checkbox"
             checked={remember}
             onChange={(event) => setRemember(event.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[var(--market-primary)]"
+            className="h-4 w-4 accent-[var(--market-primary)]"
           />
-          <span>
-            <strong className="block leading-tight">Manter conectado</strong>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              Este dispositivo continuará logado por bastante tempo. O navegador também pode oferecer salvar a senha.
-            </span>
-          </span>
+          <span>Lembrar-me</span>
         </label>
 
         <Button

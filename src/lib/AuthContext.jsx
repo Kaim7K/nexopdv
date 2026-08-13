@@ -13,6 +13,10 @@ import { nexoApi } from '@/api/nexoApi';
 const AuthContext = createContext(null);
 const USER_CACHE_KEY = 'nexo:session-user';
 const USER_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+const SESSION_SCOPED_KEYS = [
+  USER_CACHE_KEY,
+  'nexo:system-config',
+];
 
 function storage() {
   return typeof window === 'undefined' ? null : window.localStorage;
@@ -32,6 +36,14 @@ function cacheUser(user) {
     if (user) storage()?.setItem(USER_CACHE_KEY, JSON.stringify({ user, expiresAt: Date.now() + USER_CACHE_TTL }));
     else storage()?.removeItem(USER_CACHE_KEY);
   } catch { /* cache opcional */ }
+}
+
+function clearSessionState() {
+  try {
+    const local = storage();
+    SESSION_SCOPED_KEYS.forEach((key) => local?.removeItem(key));
+    window.sessionStorage?.removeItem('nexo:system-config');
+  } catch { /* limpeza opcional */ }
 }
 
 export const AuthProvider = ({ children }) => {
@@ -82,7 +94,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const expireSession = () => {
       setUser(null);
-      cacheUser(null);
+      clearSessionState();
       setLoading(false);
       setChecked(true);
     };
@@ -93,8 +105,8 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try { await nexoApi.auth.logout(); } finally {
       setUser(null);
-      cacheUser(null);
-      window.location.href = '/';
+      clearSessionState();
+      window.location.href = '/login';
     }
   }, []);
 

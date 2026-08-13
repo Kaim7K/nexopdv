@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, User as UserIcon, X } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
+import { CashRegisterProvider } from '@/lib/CashRegisterContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import { usePageMetadata } from '@/hooks/use-page-metadata';
 import {
@@ -381,9 +382,11 @@ export default function Layout() {
               {user.platform_notice}
             </div>
           )}
-          <Suspense fallback={<PageSkeleton />}>
-            <Outlet context={{ user, config }} />
-          </Suspense>
+          <CashRegisterProvider user={user}>
+            <Suspense fallback={<PageSkeleton />}>
+              <Outlet context={{ user, config }} />
+            </Suspense>
+          </CashRegisterProvider>
         </main>
       </div>
     </div>

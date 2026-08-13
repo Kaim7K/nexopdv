@@ -13,6 +13,8 @@ import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import SaleSummary from '@/components/pdv/SaleSummary';
 import { useConfirm } from '@/components/common/ConfirmProvider';
+import { useAuth } from '@/lib/AuthContext';
+import { useCashRegister } from '@/lib/CashRegisterContext';
 import { formatCurrency } from '@/lib/helpers';
 import { hasMarketFeature } from '@/lib/market-modules';
 import {
@@ -57,8 +59,18 @@ const modalFallback = (
 
 export default function PDV() {
   const confirm = useConfirm();
+  const { logout } = useAuth();
   const { user, config } = /** @type {any} */ (useOutletContext());
   const navigate = useNavigate();
+  const {
+    cashState,
+    cashLoading,
+    canUseOperationalCash,
+    refreshCash,
+    openCash,
+    closeCash,
+    clearCashContext,
+  } = useCashRegister();
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
   const [initialDraft] = useState(() => readSavedPdvDraft(draftStorageKey));
   const [products, setProducts] = useState([]);
@@ -92,17 +104,11 @@ export default function PDV() {
   const [saleNumber, setSaleNumber] = useState(1);
   const nextMinimizedId = useRef(1);
   const [productsLoading, setProductsLoading] = useState(true);
-  const [cashState, setCashState] = useState(() => ({
-    required: user.role === 'vendedor' && Boolean(user.require_cash_register),
-    market_requires_cash: Boolean(user.require_cash_register),
-    session: null,
-    summary: null,
-  }));
-  const [cashLoading, setCashLoading] = useState(true);
   const [cashModal, setCashModal] = useState(null);
   const [cashProcessing, setCashProcessing] = useState(false);
   const [cashReporting, setCashReporting] = useState(false);
   const [closedCashReport, setClosedCashReport] = useState(null);
+  const [cashPromptDismissed, setCashPromptDismissed] = useState(false);
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const modalsOpen =
@@ -176,10 +182,7 @@ export default function PDV() {
     getNextSaleNumber();
   }, []);
 
-  const canUsePdv =
-    user.role !== 'vendedor' ||
-    !cashState.required ||
-    Boolean(cashState.session);
+  const canUsePdv = canUseOperationalCash;
   const continuePath = useMemo(() => {
     const enabled = Array.isArray(user.enabled_modules)
       ? user.enabled_modules
@@ -197,8 +200,10 @@ export default function PDV() {
     return target ? `/${target}` : null;
   }, [user.enabled_modules]);
   const continueWithoutCash = () => {
-    if (!continuePath) return;
+    setCashPromptDismissed(true);
     setCashModal(null);
+    if (closedCashReport) setClosedCashReport(null);
+    if (!continuePath) return;
     navigate(continuePath);
   };
   const receiptConfig = useMemo(
@@ -215,10 +220,10 @@ export default function PDV() {
     if (!activeSale.items.length) return;
     if (user.role === 'vendedor' && cashState.required) {
       try {
-        const latestCash = await nexoApi.cash.current();
-        setCashState(latestCash);
+        const latestCash = await refreshCash();
         if (!latestCash.session) {
           setShowPayment(false);
+          setCashPromptDismissed(false);
           setCashModal('open');
           toast.error('Abra o caixa antes de ir para o pagamento.');
           return;
@@ -244,6 +249,7 @@ export default function PDV() {
       cashState.required &&
       !cashState.session &&
       !closedCashReport &&
+      !cashPromptDismissed &&
       cashModal !== 'closed'
     )
       setCashModal('open');
@@ -252,6 +258,7 @@ export default function PDV() {
     cashState.required,
     cashState.session,
     closedCashReport,
+    cashPromptDismissed,
     cashModal,
   ]);
 
@@ -388,27 +395,19 @@ export default function PDV() {
   }, [searchQuery]);
 
   const loadCash = async () => {
-    setCashLoading(true);
     try {
-      const data = await nexoApi.cash.current();
-      setCashState(data);
+      await refreshCash();
     } catch (error) {
       toast.error(error.message || 'Não foi possível verificar o caixa.');
-    } finally {
-      setCashLoading(false);
     }
   };
 
   const handleOpenCash = async (openingAmount) => {
     setCashProcessing(true);
     try {
-      const result = await nexoApi.cash.open(openingAmount);
-      setCashState((previous) => ({
-        ...previous,
-        session: result.session,
-        summary: result.summary,
-      }));
+      await openCash(openingAmount);
       setClosedCashReport(null);
+      setCashPromptDismissed(false);
       setCashModal(null);
       toast.success('Caixa aberto. Você já pode começar a vender.');
     } catch (error) {
@@ -434,25 +433,33 @@ export default function PDV() {
   const handleCloseCash = async ({ closingAmount, closingExpense, closingEntry }) => {
     setCashProcessing(true);
     try {
-      const result = await nexoApi.cash.close(
+      const result = await closeCash(
         closingAmount,
         closingExpense,
         closingEntry,
       );
-      setCashState((previous) => ({
-        ...previous,
-        session: null,
-        summary: null,
-      }));
       setClosedCashReport({ session: result.session, summary: result.summary });
+      setCashPromptDismissed(true);
       setCashModal('closed');
-      setActiveSale(createEmptySale());
-      setMinimizedSales([]);
+      discardLocalDraft({ notifyWhenVisible: false });
       toast.success(
         'Caixa fechado. Baixe o relatório do período quando desejar.',
       );
     } catch (error) {
       toast.error(error.message || 'Não foi possível fechar o caixa.');
+    } finally {
+      setCashProcessing(false);
+    }
+  };
+
+  const logoutAfterCashClose = async () => {
+    setCashProcessing(true);
+    try {
+      clearCashContext();
+      discardLocalDraft({ notifyWhenVisible: false });
+      setClosedCashReport(null);
+      setCashModal(null);
+      await logout();
     } finally {
       setCashProcessing(false);
     }
@@ -965,17 +972,16 @@ export default function PDV() {
             cashState={cashModal === 'closed' ? closedCashReport : cashState}
             processing={cashProcessing}
             reporting={cashReporting}
-            onClose={
-              cashState.required && !cashState.session && cashModal === 'open'
-                ? undefined
-                : () => {
-                    setCashModal(null);
-                    if (cashModal === 'closed') setClosedCashReport(null);
-                  }
-                }
+            onClose={() => {
+              if (cashModal === 'closed' || cashModal === 'open')
+                setCashPromptDismissed(true);
+              setCashModal(null);
+              if (cashModal === 'closed') setClosedCashReport(null);
+            }}
             onOpen={handleOpenCash}
             onContinue={
-              cashModal === 'open' && !cashState.session
+              (cashModal === 'open' || cashModal === 'closed') &&
+              !cashState.session
                 ? continueWithoutCash
                 : undefined
             }
@@ -985,6 +991,7 @@ export default function PDV() {
                 ? downloadCashReport
                 : undefined
             }
+            onLogout={cashModal === 'closed' ? logoutAfterCashClose : undefined}
           />
         )}
         {canUsePdv && minimizedSales.length > 0 && (

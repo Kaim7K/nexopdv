@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock3,
   Download,
+  LogOut,
   LockKeyhole,
   ReceiptText,
   X,
@@ -27,6 +28,7 @@ export default function CashRegisterModal({
   onOpen,
   onCloseCash,
   onDownloadReport,
+  onLogout,
 }) {
   const modalRef = useModalBehavior({ onClose, disabled: processing || reporting });
   const [openingAmount, setOpeningAmount] = useState('');
@@ -319,14 +321,25 @@ export default function CashRegisterModal({
               Voltar
             </button>
           )}
-          {isOpenMode && onContinue && (
+          {(isOpenMode || isClosedMode) && onContinue && (
             <button
               type="button"
               disabled={processing || reporting}
               onClick={onContinue}
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-bold hover:bg-muted disabled:opacity-50"
             >
-              Continuar sem caixa <ArrowRight className="h-4 w-4" />
+              {isClosedMode ? 'Continuar no sistema' : 'Continuar sem caixa'}{' '}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+          {isClosedMode && onLogout && (
+            <button
+              type="button"
+              disabled={processing || reporting}
+              onClick={onLogout}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-destructive/40 px-4 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <LogOut className="h-4 w-4" /> Sair
             </button>
           )}
           {!isOpenMode && onDownloadReport && (
