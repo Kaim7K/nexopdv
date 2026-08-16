@@ -848,7 +848,7 @@ export default function PDV() {
       if (Number.isFinite(Number(sale.sale_number)))
         setSaleNumber(Number(sale.sale_number) + 1);
       else getNextSaleNumber();
-      loadCash();
+      await refreshCash().catch(() => null);
     } catch (error) {
       toast.error(error.message || 'Erro ao concluir venda.');
     }

@@ -1,5 +1,9 @@
 import { AppError } from "./errors.js";
 import { methodNotAllowed, send } from "./http.js";
+import {
+  buildCashSessionSummary,
+  getSalePaymentAllocations,
+} from "./cash-summary.js";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -334,7 +338,7 @@ function saleMetrics(sales, productsById, settings) {
     const day = dateOnly(row.created_date);
     const daily = result.daily.get(day) || { revenue: 0, cogs: 0 };
     daily.revenue += net;
-    for (const payment of sale.payments || []) {
+    for (const payment of getSalePaymentAllocations(sale)) {
       const method =
         result.payments[payment.method] === undefined
           ? "outros"
@@ -494,6 +498,7 @@ async function loadDashboard(sql, marketId, query) {
             sum(CASE WHEN payment->>'amount' ~ '^[0-9]+(\\.[0-9]+)?$'
               THEN (payment->>'amount')::numeric ELSE 0 END)-
             CASE WHEN payment->>'method'='dinheiro'
+                AND NOT (sale.data ? 'tendered_amount')
               THEN COALESCE(NULLIF(sale.data->>'change_amount','')::numeric,0)
               ELSE 0 END
           ) AS received_amount
@@ -501,7 +506,8 @@ async function loadDashboard(sql, marketId, query) {
           jsonb_array_elements(COALESCE(sale.data->'payments','[]'::jsonb)) payment
         WHERE sale.market_id=${marketId} AND sale.entity='sales'
           AND sale.data->>'status'='concluida' AND payment->>'method'<>'fiado'
-        GROUP BY sale.id,payment->>'method',sale.data->>'change_amount'
+        GROUP BY sale.id,payment->>'method',sale.data->>'change_amount',
+          (sale.data ? 'tendered_amount')
       ) sale_receipts
       GROUP BY method
     `,
@@ -2191,17 +2197,18 @@ async function loadReconciliation(sql, marketId, query) {
     sql`SELECT id,data,created_date FROM nexo.records WHERE market_id=${marketId} AND entity='cash_movements' AND created_date>=${range.from}::date AND created_date<${range.toExclusive}::date`,
   ]);
   const result = sessions.map((row) => {
-    const session = row.data || {},
-      sessionSales = sales.filter(
-        (sale) =>
-          sale.data?.cash_session_id === row.id &&
-          sale.data?.status === "concluida",
-      ),
-      sessionMovements = movements.filter(
-        (item) =>
-          item.data?.cash_session_id === row.id &&
-          !["cancelado", "estornado"].includes(item.data?.status),
-      );
+    const session = { id: row.id, ...(row.data || {}), created_date: row.created_date };
+    const sessionSales = sales
+      .filter((sale) => sale.data?.cash_session_id === row.id)
+      .map((sale) => ({ id: sale.id, ...(sale.data || {}), created_date: sale.created_date }));
+    const sessionMovements = movements
+      .filter((item) => item.data?.cash_session_id === row.id)
+      .map((item) => ({ id: item.id, ...(item.data || {}), created_date: item.created_date }));
+    const cashSummary = buildCashSessionSummary(
+      session,
+      sessionSales,
+      sessionMovements,
+    );
     const payments = {
       dinheiro: 0,
       pix: 0,
@@ -2209,44 +2216,15 @@ async function loadReconciliation(sql, marketId, query) {
       credito: 0,
       fiado: 0,
       outros: 0,
+      ...(cashSummary.payments || {}),
     };
-    for (const sale of sessionSales) {
-      let changeToDiscount = round(Number(sale.data?.change_amount || 0));
-      for (const payment of sale.data?.payments || []) {
-        const method =
-          payments[payment.method] === undefined ? "outros" : payment.method;
-        const rawAmount = round(Number(payment.amount || 0));
-        const changeDiscount =
-          method === "dinheiro" && changeToDiscount > 0
-            ? Math.min(rawAmount, changeToDiscount)
-            : 0;
-        changeToDiscount = round(changeToDiscount - changeDiscount);
-        payments[
-          method
-        ] += rawAmount - changeDiscount;
-      }
-    }
-    const entries = sessionMovements
-        .filter((item) => item.data?.type === "entrada")
-        .reduce((sum, item) => sum + Number(item.data?.amount || 0), 0),
-      withdrawals = sessionMovements
-        .filter((item) => item.data?.type === "retirada")
-        .reduce((sum, item) => sum + Number(item.data?.amount || 0), 0);
-    const closingEntry = round(Number(session.closing_entry || 0));
-    const closingExpense = round(Number(session.closing_expense || 0));
-    const expectedCash = round(
-        Number(session.opening_amount || 0) +
-          payments.dinheiro +
-          entries -
-          withdrawals -
-          closingExpense +
-          closingEntry,
-      ),
-      declared =
+    const declared =
         session.closing_amount === null || session.closing_amount === undefined
           ? null
           : Number(session.closing_amount),
-      difference = declared === null ? null : round(declared - expectedCash);
+      difference = declared === null
+        ? null
+        : round(declared - Number(cashSummary.expected_cash || 0));
     return {
       id: row.id,
       operator: session.seller_name || "Não informado",
@@ -2257,14 +2235,14 @@ async function loadReconciliation(sql, marketId, query) {
       payments: Object.fromEntries(
         Object.entries(payments).map(([key, value]) => [key, round(value)]),
       ),
-      entries: round(entries),
-      withdrawals: round(withdrawals),
-      closing_entry: closingEntry,
-      closing_expense: closingExpense,
-      expected_cash: expectedCash,
+      entries: cashSummary.entries,
+      withdrawals: cashSummary.withdrawals,
+      closing_entry: cashSummary.closing_entry,
+      closing_expense: cashSummary.closing_expense,
+      expected_cash: cashSummary.expected_cash,
       declared_cash: declared,
       difference,
-      sales_count: sessionSales.length,
+      sales_count: cashSummary.sales_count,
       has_difference: difference !== null && Math.abs(difference) >= 0.01,
     };
   });

@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { getRuntimeConfig } from './config.js';
 import { AppError } from './errors.js';
 
-export const CURRENT_SCHEMA_VERSION = 16;
+export const CURRENT_SCHEMA_VERSION = 17;
 const READY_CACHE_MS = 60_000;
 
 let client;

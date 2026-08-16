@@ -32,6 +32,7 @@ import {
 import { handleFinanceRequest } from '../server/finance.js';
 import {
   buildCashSessionSummary,
+  normalizePaymentsForSale,
   roundMoney,
   summarizeSales,
 } from '../server/cash-summary.js';
@@ -448,6 +449,100 @@ function cashClosingExpenseQuery(
       market_id,transaction_id,action,new_data,actor_id,actor_name
     )
     SELECT market_id,id,'cash_close_synced',to_jsonb(transaction),${user.id},${user.full_name || user.email}
+    FROM transaction
+  `;
+}
+
+function cashClosingEntryQuery(
+  sqlTag,
+  user,
+  session,
+  amount,
+  occurredAt = new Date().toISOString(),
+  references = {},
+  requiredSessionStatus = null,
+  requiredOperationId = null,
+) {
+  const normalizedAmount = roundMoney(Number(amount || 0));
+  if (normalizedAmount <= 0) {
+    return sqlTag`
+      WITH reversed_transaction AS (
+        UPDATE nexo.finance_transactions
+        SET status='reversed',paid_amount=0,settled_at=NULL,cancelled_by=${user.id},
+            cancelled_at=now(),cancellation_reason='Entrada do fechamento removida',updated_date=now()
+        WHERE market_id=${user.market_id} AND origin='cash_close_entry' AND origin_id=${session.id}
+          AND status NOT IN ('cancelled','reversed')
+          AND (${requiredSessionStatus === null} OR EXISTS (
+            SELECT 1 FROM nexo.records cash_session
+            WHERE cash_session.id=${session.id} AND cash_session.market_id=${user.market_id}
+              AND cash_session.entity='cash_sessions'
+              AND cash_session.data->>'status'=${requiredSessionStatus}
+              AND (${requiredOperationId === null} OR cash_session.data->>'financial_operation_id'=${requiredOperationId})
+          ))
+        RETURNING id,market_id
+      ), reversed_payments AS (
+        UPDATE nexo.finance_payments payment
+        SET reversed_at=now(),reversed_by=${user.id},reversal_reason='Entrada do fechamento removida'
+        FROM reversed_transaction transaction
+        WHERE payment.transaction_id=transaction.id AND payment.reversed_at IS NULL
+      )
+      INSERT INTO nexo.finance_transaction_events(
+        market_id,transaction_id,action,new_data,actor_id,actor_name
+      )
+      SELECT market_id,id,'reversed',jsonb_build_object('amount',0),${user.id},${user.full_name || user.email}
+      FROM reversed_transaction
+    `;
+  }
+
+  const { accountId } = references;
+  if (!accountId)
+    throw new AppError(
+      409,
+      'FINANCE_ACCOUNT_REQUIRED',
+      'Não foi possível vincular a entrada do fechamento a uma conta financeira.',
+    );
+  return sqlTag`
+    WITH transaction AS (
+      INSERT INTO nexo.finance_transactions(
+        market_id,unit_id,account_id,type,description,amount,paid_amount,
+        issue_date,due_date,settled_at,payment_method,status,origin,origin_id,notes,created_by
+      ) SELECT
+        ${user.market_id},${session.unit_id || user.unit_id || null},${accountId},'adjustment',
+        'Entrada registrada no fechamento do caixa',${normalizedAmount},${normalizedAmount},
+        ${occurredAt.slice(0, 10)},${occurredAt.slice(0, 10)},${occurredAt},'dinheiro','paid',
+        'cash_close_entry',${session.id},${`cash_direction:entrada | Caixa ${session.id}`},${user.id}
+      WHERE (${requiredSessionStatus === null} OR EXISTS (
+        SELECT 1 FROM nexo.records cash_session
+        WHERE cash_session.id=${session.id} AND cash_session.market_id=${user.market_id}
+          AND cash_session.entity='cash_sessions'
+          AND cash_session.data->>'status'=${requiredSessionStatus}
+          AND (${requiredOperationId === null} OR cash_session.data->>'financial_operation_id'=${requiredOperationId})
+      ))
+      ON CONFLICT (market_id,origin,origin_id)
+        WHERE origin='cash_close_entry' AND origin_id IS NOT NULL
+      DO UPDATE SET
+        unit_id=excluded.unit_id,account_id=excluded.account_id,amount=excluded.amount,
+        paid_amount=excluded.paid_amount,issue_date=excluded.issue_date,due_date=excluded.due_date,
+        settled_at=excluded.settled_at,payment_method=excluded.payment_method,status='paid',
+        cancelled_by=NULL,cancelled_at=NULL,cancellation_reason=NULL,updated_date=now()
+      RETURNING *
+    ), reversed_payments AS (
+      UPDATE nexo.finance_payments payment
+      SET reversed_at=now(),reversed_by=${user.id},reversal_reason='Entrada do fechamento atualizada'
+      FROM transaction
+      WHERE payment.transaction_id=transaction.id AND payment.reversed_at IS NULL
+    ), payment AS (
+      INSERT INTO nexo.finance_payments(
+        market_id,transaction_id,account_id,amount,paid_at,payment_method,notes,created_by
+      )
+      SELECT market_id,id,account_id,paid_amount,settled_at,payment_method,
+             'Entrada sincronizada com o fechamento do caixa',${user.id}
+      FROM transaction
+    )
+    INSERT INTO nexo.finance_transaction_events(
+      market_id,transaction_id,action,new_data,actor_id,actor_name
+    )
+    SELECT market_id,id,'cash_close_entry_synced',to_jsonb(transaction),${user.id},${user.full_name || user.email}
     FROM transaction
   `;
 }
@@ -1468,7 +1563,7 @@ async function routeHandler(req, res) {
       const financialOperationId = randomUUID();
       update.financial_operation_id = financialOperationId;
       const financeReferences =
-        nextStatus === 'fechado' && closingExpense > 0
+        nextStatus === 'fechado' && (closingExpense > 0 || closingEntry > 0)
           ? await ensureCashFinanceReferences(sql, user)
           : {};
       const auditPayload = {
@@ -1497,6 +1592,16 @@ async function routeHandler(req, res) {
           user,
           current,
           nextStatus === 'fechado' ? closingExpense : 0,
+          occurredAt,
+          financeReferences,
+          nextStatus,
+          financialOperationId,
+        ),
+        cashClosingEntryQuery(
+          tx,
+          user,
+          current,
+          nextStatus === 'fechado' ? closingEntry : 0,
           occurredAt,
           financeReferences,
           nextStatus,
@@ -1552,7 +1657,7 @@ async function routeHandler(req, res) {
             SET status='reversed',paid_amount=0,settled_at=NULL,cancelled_by=${user.id},
                 cancelled_at=now(),cancellation_reason='Caixa excluído',updated_date=now()
             WHERE market_id=${user.market_id} AND (
-              (origin='cash_close' AND origin_id=${session.id}) OR
+              (origin IN ('cash_close','cash_close_entry') AND origin_id=${session.id}) OR
               (origin='cash_movement' AND origin_id IN (
                 SELECT id FROM nexo.records WHERE market_id=${user.market_id}
                   AND entity='cash_movements' AND data->>'cash_session_id'=${session.id}
@@ -1914,7 +2019,9 @@ async function routeHandler(req, res) {
         },
       };
       const financeReferences =
-        closingExpense > 0 ? await ensureCashFinanceReferences(sql, user) : {};
+        closingExpense > 0 || closingEntry > 0
+          ? await ensureCashFinanceReferences(sql, user)
+          : {};
       const closeAudit = {
         action_type: 'caixa_fechado',
         entity_type: 'cash_session',
@@ -1944,6 +2051,16 @@ async function routeHandler(req, res) {
           user,
           session,
           closingExpense,
+          closedAt,
+          financeReferences,
+          'fechado',
+          financialOperationId,
+        ),
+        cashClosingEntryQuery(
+          tx,
+          user,
+          session,
+          closingEntry,
           closedAt,
           financeReferences,
           'fechado',
@@ -2930,16 +3047,6 @@ async function routeHandler(req, res) {
       method: payment.method,
       amount: roundMoney(Math.max(0, Number(payment.amount))),
     }));
-    const paid = roundMoney(
-      cleanPayments
-        .filter((payment) => payment.method !== 'fiado')
-        .reduce((sum, payment) => sum + payment.amount, 0),
-    );
-    const outstanding = roundMoney(Math.max(0, total - paid));
-    if (!isFiado && paid + 0.009 < total)
-      return send(res, 400, {
-        message: 'O pagamento é menor que o total da venda.',
-      });
     const responsibleName = text(req.body.fiado?.responsible_name, 180);
     const requestedOperationId = text(req.body.client_operation_id, 64);
     const clientOperationId = isUuid(requestedOperationId)
@@ -2949,20 +3056,25 @@ async function routeHandler(req, res) {
       return send(res, 400, {
         message: 'Informe o responsável pela venda fiada.',
       });
-    if (isFiado && paid > total + 0.009)
-      return send(res, 400, {
-        message:
-          'O valor recebido não pode ser maior que o total em uma venda fiada.',
+    let paymentAllocation;
+    try {
+      paymentAllocation = normalizePaymentsForSale(cleanPayments, total, {
+        isFiado,
       });
-    if (isFiado && outstanding < 0.01)
+    } catch (error) {
       return send(res, 400, {
-        message: 'Não há saldo pendente para registrar como fiado.',
+        code: error.code || 'INVALID_PAYMENT_ALLOCATION',
+        message: error.message || 'Os pagamentos não conciliam com o total da venda.',
       });
-    const normalizedPayments = cleanPayments.map((payment) =>
-      payment.method === 'fiado'
-        ? { method: 'fiado', amount: outstanding }
-        : payment,
-    );
+    }
+    const {
+      payments: normalizedPayments,
+      paidAmount: paid,
+      tenderedAmount,
+      cashTenderedAmount,
+      changeAmount,
+      outstandingAmount: outstanding,
+    } = paymentAllocation;
     const saleData = {
       seller_id: user.id,
       seller_name: user.full_name || user.email,
@@ -2975,8 +3087,10 @@ async function routeHandler(req, res) {
       discount_type: discountType,
       total,
       paid_amount: paid,
+      tendered_amount: tenderedAmount,
+      cash_tendered_amount: cashTenderedAmount,
       outstanding_amount: isFiado ? outstanding : 0,
-      change_amount: isFiado ? 0 : roundMoney(Math.max(0, paid - total)),
+      change_amount: changeAmount,
       observation: text(req.body.observation, 1000),
       sale_type: isFiado ? 'fiado' : 'normal',
       client_operation_id: clientOperationId,
@@ -3447,6 +3561,14 @@ async function routeHandler(req, res) {
     const table = ENTITIES[path[1]];
     if (!table) return send(res, 404, { message: 'Entidade desconhecida.' });
     const id = path[2];
+    if (
+      ['sales', 'cash_sessions'].includes(table) &&
+      req.method !== 'GET'
+    )
+      return send(res, 405, {
+        message:
+          'Este registro financeiro só pode ser alterado pelo fluxo operacional correspondente.',
+      });
     if (table === 'users') {
       if (!['admin', 'gerente'].includes(user.role))
         return send(res, 403, {

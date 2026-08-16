@@ -1,11 +1,82 @@
 import assert from 'node:assert/strict';
 import {
   buildCashSessionSummary,
+  getSalePaymentAllocations,
+  normalizePaymentsForSale,
   roundMoney,
   summarizeSales,
 } from '../server/cash-summary.js';
 
 assert.equal(roundMoney(0.1 + 0.2), 0.3, 'Centavos devem ser arredondados com estabilidade.');
+
+const splitPayment = normalizePaymentsForSale(
+  [
+    { method: 'dinheiro', amount: 40 },
+    { method: 'pix', amount: 30 },
+    { method: 'credito', amount: 30 },
+  ],
+  100,
+);
+assert.deepEqual(splitPayment.payments, [
+  { method: 'dinheiro', amount: 40 },
+  { method: 'pix', amount: 30 },
+  { method: 'credito', amount: 30 },
+]);
+assert.equal(
+  splitPayment.payments.reduce((sum, payment) => sum + payment.amount, 0),
+  100,
+  'Pagamento dividido deve conciliar exatamente com o total.',
+);
+
+const duplicateMethods = normalizePaymentsForSale(
+  [
+    { method: 'pix', amount: 10 },
+    { method: 'pix', amount: 20 },
+    { method: 'dinheiro', amount: 70 },
+  ],
+  100,
+);
+assert.deepEqual(duplicateMethods.payments, [
+  { method: 'pix', amount: 30 },
+  { method: 'dinheiro', amount: 70 },
+]);
+
+const cashWithChange = normalizePaymentsForSale(
+  [{ method: 'dinheiro', amount: 120 }],
+  100,
+);
+assert.deepEqual(cashWithChange.payments, [{ method: 'dinheiro', amount: 100 }]);
+assert.equal(cashWithChange.tenderedAmount, 120);
+assert.equal(cashWithChange.changeAmount, 20);
+assert.throws(
+  () => normalizePaymentsForSale([{ method: 'pix', amount: 120 }], 100),
+  /Somente pagamentos em dinheiro podem gerar troco/,
+);
+
+const partialFiado = normalizePaymentsForSale(
+  [
+    { method: 'dinheiro', amount: 40 },
+    { method: 'fiado', amount: 60 },
+  ],
+  100,
+  { isFiado: true },
+);
+assert.deepEqual(partialFiado.payments, [
+  { method: 'dinheiro', amount: 40 },
+  { method: 'fiado', amount: 60 },
+]);
+assert.equal(partialFiado.paidAmount, 40);
+assert.equal(partialFiado.outstandingAmount, 60);
+
+assert.deepEqual(
+  getSalePaymentAllocations({
+    total: 100,
+    change_amount: 20,
+    payments: [{ method: 'dinheiro', amount: 120 }],
+  }),
+  [{ method: 'dinheiro', amount: 100 }],
+  'Vendas legadas com troco devem ser conciliadas sem desconto duplicado.',
+);
 
 const sales = [
   {

@@ -1,3 +1,9 @@
+import {
+  buildCashSessionSummary,
+  normalizePaymentsForSale,
+  summarizeSales as summarizeRecordedSales,
+} from '../../server/cash-summary.js';
+
 const STORE_KEY = 'nexo:mock-db:v2';
 const LATENCY = 80;
 
@@ -547,19 +553,12 @@ function saleInRange(sale, from, to) {
 }
 
 function summarizeSales(sales) {
-  const payments = {};
-  for (const sale of sales) {
-    for (const payment of sale.payments || [{ method: sale.payment_method, amount: sale.total }]) {
-      payments[payment.method || 'outros'] = round((payments[payment.method || 'outros'] || 0) + Number(payment.amount || 0));
-    }
-  }
-  const total = round(sales.reduce((sum, sale) => sum + Number(sale.total || 0), 0));
+  const summary = summarizeRecordedSales(sales);
   return {
-    total,
+    ...summary,
     gross_total: round(sales.reduce((sum, sale) => sum + Number(sale.subtotal || sale.total || 0), 0)),
-    count: sales.length,
-    payments,
-    cash_sales: payments.dinheiro || 0,
+    count: summary.sales_count,
+    cash_sales: summary.payments.dinheiro || 0,
     sales,
     filters: {},
   };
@@ -572,26 +571,12 @@ function cashSummary(db, session) {
       : sale.cash_session_id === session.id,
   );
   const movements = db.cashMovements.filter((item) => item.cash_session_id === session.id);
-  const summary = summarizeSales(sales);
-  const entries = round(movements.filter((item) => item.type === 'entrada').reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const withdrawals = round(movements.filter((item) => item.type === 'retirada').reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const opening = Number(session.opening_amount || 0);
-  const closingEntry = Number(session.closing_entry || 0);
-  const closingExpense = Number(session.closing_expense || 0);
-  const expectedCash = round(opening + (summary.payments.dinheiro || 0) + entries - withdrawals + closingEntry - closingExpense);
-  const finalAmount = Number(session.closing_amount ?? expectedCash);
+  const summary = buildCashSessionSummary(session, sales, movements);
+  const finalAmount = Number(session.closing_amount ?? summary.expected_cash);
   return {
     ...summary,
-    opening_amount: opening,
-    entries,
-    withdrawals,
-    movements,
-    closing_entry: closingEntry,
-    closing_expense: closingExpense,
-    expected_cash: expectedCash,
-    expected_cash_before_expense: round(opening + (summary.payments.dinheiro || 0) + entries - withdrawals),
     final_amount: finalAmount,
-    difference: round(finalAmount - expectedCash),
+    difference: round(finalAmount - summary.expected_cash),
   };
 }
 
@@ -885,6 +870,11 @@ export const mockNexoApi = {
       }),
     addMovement: (cashId, data) =>
       withDb((db) => {
+        const existing = db.cashMovements.find((item) => item.operation_id === data.operation_id);
+        if (existing) {
+          const session = db.cashSessions.find((item) => item.id === cashId);
+          return { movement: existing, summary: cashSummary(db, session) };
+        }
         const movement = {
           id: id('mov'),
           cash_session_id: cashId,
@@ -892,16 +882,23 @@ export const mockNexoApi = {
           amount: round(data.amount),
           note: data.note || '',
           origin: 'manual',
+          operation_id: data.operation_id,
+          status: 'ativo',
           operator_name: demoUser.full_name,
           created_at: nowIso(),
         };
         db.cashMovements.push(movement);
-        return movement;
+        const session = db.cashSessions.find((item) => item.id === cashId);
+        return { movement, summary: cashSummary(db, session) };
       }),
   },
   sales: {
     complete: (data) =>
       withDb((db) => {
+        const existing = db.sales.find(
+          (sale) => sale.client_operation_id === data.client_operation_id,
+        );
+        if (existing) return existing;
         const number = Math.max(0, ...db.sales.map((sale) => Number(sale.sale_number || 0))) + 1;
         const items = (data.items || []).map((item) => ({
           ...item,
@@ -909,24 +906,38 @@ export const mockNexoApi = {
           subtotal: round(Number(item.subtotal || 0)),
         }));
         const subtotal = round(items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0));
-        const discount = round(data.discount || 0);
-        const total = round(data.total ?? subtotal - discount + Number(data.addition || 0));
-        const paymentMethod = data.payment_method || data.paymentMethod || data.payments?.[0]?.method || 'dinheiro';
+        const discountValue = Math.max(0, Number(data.discount_value || 0));
+        const discount = round(data.discount_type === 'percentual'
+          ? subtotal * Math.min(100, discountValue) / 100
+          : Math.min(subtotal, discountValue));
+        const total = round(Math.max(0, subtotal - discount));
+        const isFiado = data.sale_type === 'fiado';
+        const allocation = normalizePaymentsForSale(data.payments || [], total, { isFiado });
+        const paymentMethod = allocation.payments.length === 1
+          ? allocation.payments[0].method
+          : 'dividido';
         const currentCash = db.cashSessions.find((item) => item.status === 'aberto');
         const sale = {
           id: id('sale'),
           sale_number: number,
           seller_id: demoUser.id,
           seller_name: demoUser.full_name,
-          status: paymentMethod === 'fiado' ? 'pendente' : 'concluida',
-          type: paymentMethod === 'fiado' ? 'fiado' : 'normal',
+          status: 'concluida',
+          type: isFiado ? 'fiado' : 'normal',
+          sale_type: isFiado ? 'fiado' : 'normal',
           payment_method: paymentMethod,
-          payments: data.payments || [{ method: paymentMethod, amount: total }],
+          payments: allocation.payments,
           items,
           subtotal,
           discount,
           addition: round(data.addition || 0),
           total,
+          paid_amount: allocation.paidAmount,
+          tendered_amount: allocation.tenderedAmount,
+          cash_tendered_amount: allocation.cashTenderedAmount,
+          outstanding_amount: allocation.outstandingAmount,
+          change_amount: allocation.changeAmount,
+          client_operation_id: data.client_operation_id,
           cash_session_id: currentCash?.id,
           customer_name: data.customer_name || data.customerName || '',
           created_date: nowIso(),
@@ -941,15 +952,15 @@ export const mockNexoApi = {
             product.last_sale_at = sale.created_date;
           }
         }
-        if (paymentMethod === 'fiado') {
+        if (isFiado) {
           db.fiados.unshift({
             id: id('fiado'),
             sale_id: sale.id,
             sale_number: sale.sale_number,
             responsible_name: sale.customer_name || 'Cliente fiado',
-            amount: total,
+            amount: allocation.outstandingAmount,
             paid_amount: 0,
-            pending_amount: total,
+            pending_amount: allocation.outstandingAmount,
             status: 'pendente',
             created_date: sale.created_date,
           });
@@ -980,7 +991,15 @@ export const mockNexoApi = {
     cancel: (saleId) =>
       withDb((db) => {
         const sale = db.sales.find((item) => item.id === saleId);
-        if (sale) sale.status = 'cancelada';
+        if (!sale || sale.status !== 'concluida') return sale;
+        sale.status = 'cancelada';
+        for (const item of sale.items || []) {
+          const product = db.products.find((candidate) => candidate.id === item.product_id);
+          if (!product) continue;
+          product.quantity = round(
+            Number(product.quantity || 0) + Number(item.quantity || item.weight || 0),
+          );
+        }
         return sale;
       }),
     delete: (saleId) =>

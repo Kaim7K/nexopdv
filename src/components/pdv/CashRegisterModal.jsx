@@ -15,6 +15,7 @@ import {
   formatCurrencyInput,
   getPaymentLabel,
   parseCurrencyDigits,
+  roundCurrency,
 } from '@/lib/helpers';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
@@ -45,16 +46,18 @@ export default function CashRegisterModal({
   const isClosingMode = !isOpenMode && !isClosedMode;
   const expectedCash = useMemo(
     () =>
-      isClosingMode
-        ? Number(summary.expected_cash || 0) +
-          parseCurrencyDigits(closingEntry) -
-          parseCurrencyDigits(closingExpense)
-        : Number(summary.expected_cash || 0),
+      roundCurrency(
+        isClosingMode
+          ? Number(summary.expected_cash || 0) +
+            parseCurrencyDigits(closingEntry) -
+            parseCurrencyDigits(closingExpense)
+          : Number(summary.expected_cash || 0),
+      ),
     [summary.expected_cash, closingEntry, closingExpense, isClosingMode],
   );
   const countedCash = parseCurrencyDigits(closingAmount);
   const hasCountedCash = closingAmount !== '';
-  const difference = Math.round((countedCash - expectedCash) * 100) / 100;
+  const difference = roundCurrency(countedCash - expectedCash);
 
   const submit = (event) => {
     event.preventDefault();

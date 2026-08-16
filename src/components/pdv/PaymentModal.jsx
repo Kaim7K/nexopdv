@@ -90,6 +90,11 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
   }, [payments, focusIndex]);
 
   const addPayment = method => {
+    const existingIndex = payments.findIndex(payment => payment.method === method);
+    if (existingIndex >= 0) {
+      setFocusIndex(existingIndex);
+      return;
+    }
     if (method === 'fiado') {
       setShowFiadoForm(true);
       setPayments(previous => previous.some(payment => payment.method === 'fiado')
@@ -154,6 +159,15 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
       toast.error(`Pagamento incompleto. Falta ${formatCurrency(remaining)}.`);
       return;
     }
+    const cashTendered = roundCurrency(
+      nonFiadoPayments
+        .filter(payment => payment.method === 'dinheiro')
+        .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+    );
+    if (change > cashTendered) {
+      toast.error('Somente pagamentos em dinheiro podem gerar troco.');
+      return;
+    }
     completeOnce({ payments: normalizedPayments(), observation, sale_type: 'normal' });
   };
 
@@ -215,7 +229,8 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {PAYMENT_METHODS.map(method => {
                     const Icon = METHOD_ICONS[method.method];
-                    const disabled = remaining <= 0;
+                    const alreadySelected = payments.some(payment => payment.method === method.method);
+                    const disabled = remaining <= 0 && !alreadySelected;
                     return (
                       <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`group flex min-h-10 items-center gap-2 rounded-lg border px-2.5 text-left transition hover:-translate-y-px hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
                         <span className="grid h-7 w-7 flex-none place-items-center rounded-md bg-white/65 dark:bg-black/15"><Icon className="h-4 w-4" /></span>
