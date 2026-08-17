@@ -266,7 +266,7 @@ export function SaleDetailModal({
   if (loading || sale._loading)
     return (
       <div
-        className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4 backdrop-blur-[2px]"
+        className="modal-overlay"
         role="presentation"
       >
         <div className="rounded-xl border border-border bg-card px-5 py-4 text-center shadow-2xl">

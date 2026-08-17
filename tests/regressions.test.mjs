@@ -4,7 +4,15 @@ import { readFile } from 'node:fs/promises';
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 const [api, http, media, app, sales, fiados, audits, stock, users, settings, adminMarkets, layout, receipt, receiptPdf, metadata, robots, vercel, cashContext, pdv, cashModal, login] = await Promise.all([
-  read('api/index.js'),
+  Promise.all([
+    read('api/index.js'),
+    read('server/entities/routes.js'),
+    read('server/sales/routes.js'),
+    read('server/cash/routes.js'),
+    read('server/platform/routes.js'),
+    read('server/request-context.js'),
+    read('server/module-access.js'),
+  ]).then(files => files.join('\n')),
   read('server/http.js'),
   read('server/media.js'),
   read('src/App.jsx'),

@@ -45,7 +45,7 @@ const MinimizedSalesBar = lazy(() => import('@/components/pdv/MinimizedSalesBar'
 const CashRegisterModal = lazy(() => import('@/components/pdv/CashRegisterModal'));
 
 const modalFallback = (
-  <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
+  <div className="modal-overlay">
     <div
       role="status"
       aria-live="polite"
@@ -855,7 +855,7 @@ export default function PDV() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-muted/20">
+    <div className="pdv-root flex h-full flex-col bg-muted/20">
       <PdvTopBar
         saleNumber={saleNumber}
         temporaryNumber={activeSale.temporary_number}

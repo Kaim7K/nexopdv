@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 export default function ThemeToggle({ className = '', showLabel = false }) {
@@ -37,7 +37,7 @@ export default function ThemeToggle({ className = '', showLabel = false }) {
       onClick={toggle}
       aria-label={actionLabel}
       aria-pressed={theme === 'dark'}
-      className={`flex h-9 items-center justify-center rounded-lg text-sidebar-foreground/70 transition duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] sm:h-11 ${showLabel ? 'flex-1 gap-2 px-3 text-xs font-semibold' : 'w-9 sm:w-11'} ${className}`}
+      className={`app-theme-toggle flex h-9 items-center justify-center text-sidebar-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar sm:h-11 ${showLabel ? 'flex-1 gap-2 px-3 text-xs font-semibold' : 'w-9 sm:w-11'} ${className}`}
       title={showLabel ? undefined : actionLabel}
     >
       {theme === 'light' ? (

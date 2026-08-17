@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const [api,client,migration,moduleMigration,cashPage,quickModal,app,layout,navigation,email,plansPage,moduleCatalog] = await Promise.all([
-  read('api/index.js'),read('src/api/nexoApi.js'),read('database/migrations/011_platform_administration.sql'),
+  Promise.all([read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')]).then(files => files.join('\n')),read('src/api/nexoApi.js'),read('database/migrations/011_platform_administration.sql'),
   read('database/migrations/012_cash_history_module.sql'),read('src/pages/HistoricoCaixas.jsx'),read('src/components/pdv/QuickProductModal.jsx'),read('src/App.jsx'),read('src/components/Layout.jsx'),read('src/config/navigation.jsx'),read('server/stock-alerts.js'),read('src/pages/AdminPlanos.jsx'),read('src/lib/market-modules.js'),
 ]);
 

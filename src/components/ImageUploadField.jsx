@@ -49,9 +49,9 @@ export default function ImageUploadField({
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="image-upload-field space-y-1.5">
       <label className="text-xs font-semibold text-muted-foreground">{label}</label>
-      <div className="flex gap-2">
+      <div className="image-upload-row flex items-start gap-2">
         <div className={`${previewClassName} grid flex-shrink-0 place-items-center overflow-hidden border border-border bg-white`}>
           {value ? (
             <img src={value} alt={label} decoding="async" className={`h-full w-full ${objectFit === 'cover' ? 'object-cover' : 'object-contain p-1'}`} />
@@ -59,7 +59,7 @@ export default function ImageUploadField({
             <ImageIcon className="h-6 w-6 text-muted-foreground/45" />
           )}
         </div>
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="image-upload-controls min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap gap-1.5">
             <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}

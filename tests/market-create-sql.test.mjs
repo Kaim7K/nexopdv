@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const api = await readFile(new URL('../api/index.js', import.meta.url), 'utf8');
+const api = (
+  await Promise.all([
+    readFile(new URL('../api/index.js', import.meta.url), 'utf8'),
+    readFile(new URL('../server/platform/routes.js', import.meta.url), 'utf8'),
+  ])
+).join('\n');
 
 assert.match(
   api,

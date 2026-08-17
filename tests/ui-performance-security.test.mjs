@@ -9,7 +9,8 @@ import {
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const [api, stock, stockMetric, settings, auth, layout, googleImages, pdv, css] = await Promise.all([
-  read('api/index.js'),
+  Promise.all([read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')])
+    .then(files => files.join('\n')),
   read('src/pages/Estoque.jsx'),
   read('src/components/stock/StockMetric.jsx'),
   read('src/pages/Configuracoes.jsx'),

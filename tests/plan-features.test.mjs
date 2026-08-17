@@ -5,7 +5,7 @@ const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const catalog = read('src/lib/market-modules.js');
 const migration = read('database/migrations/014_plan_features.sql');
-const api = read('api/index.js');
+const api = [read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')].join('\n');
 const auth = read('server/auth.js');
 const plans = read('src/pages/AdminPlanos.jsx');
 const markets = read('src/pages/AdminMercados.jsx');

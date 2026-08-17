@@ -44,7 +44,7 @@ function ProductGrid({ products, onSelect, loading }) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="grid grid-cols-2 gap-1.5 border-b border-border px-2 py-1.5 sm:block sm:space-y-2 sm:px-3 sm:py-3">
+      <div className="pdv-product-toolbar grid grid-cols-2 gap-1.5 rounded-xl px-2 py-1.5 sm:block sm:space-y-2 sm:px-2.5 sm:py-2.5">
         <div className="hidden grid-cols-[1fr_auto] gap-2 sm:grid">
           <div className="relative min-w-0">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-3" />
@@ -109,7 +109,7 @@ function ProductGrid({ products, onSelect, loading }) {
                 type="button"
                 key={product.id}
                 onClick={() => onSelect(product)}
-                className="group flex min-w-0 flex-col rounded-lg border border-border bg-card p-1.5 text-left transition active:scale-[0.98] sm:rounded-xl sm:p-2.5 sm:hover:border-accent sm:hover:shadow-md"
+                className="pdv-product-card group flex min-w-0 flex-col rounded-lg border border-transparent p-1.5 text-left transition active:scale-[0.98] sm:rounded-xl sm:p-2.5"
               >
                 <div className="mb-1 flex h-12 items-center justify-center overflow-hidden rounded-md bg-muted sm:mb-2 sm:h-20 sm:rounded-lg">
                   {product.image_url ? (

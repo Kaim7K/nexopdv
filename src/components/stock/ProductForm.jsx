@@ -2,12 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CopyPlus,
   ExternalLink,
-  ImageIcon,
   Loader2,
   Save,
   ScanSearch,
   Sparkles,
-  Trash2,
   X,
 } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
@@ -348,26 +346,13 @@ export default function ProductForm({
         </div>
 
         <div className="modal-body space-y-2">
-          <details className="hidden rounded-lg border border-border bg-muted/10 sm:block">
+          <details className="rounded-lg border border-border bg-muted/10">
             <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-bold text-muted-foreground marker:hidden">
               <span>Imagem do produto</span>
               <span className="text-[11px] font-semibold text-accent">editar</span>
             </summary>
-          <section className="grid grid-cols-[3rem_minmax(0,1fr)] gap-2 border-t border-border p-2 sm:grid-cols-[3.25rem_minmax(0,1fr)]">
-            <div className="grid h-12 w-12 flex-shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white">
-              {form.image_url ? (
-                <img
-                  src={form.image_url}
-                  alt={form.name || 'Produto'}
-                  decoding="async"
-                  className="h-full w-full object-contain p-2"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
-              )}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+          <section className="border-t border-border p-2.5">
+            <div className="grid min-w-0 gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               {canUploadProductImage && (
                 <ImageUploadField
                   value={form.image_url}
@@ -376,10 +361,10 @@ export default function ProductForm({
                   scopeId={user?.market_id}
                   label="Imagem do produto"
                   name={form.name || form.barcode || 'produto'}
-                  previewClassName="hidden"
+                  previewClassName="h-16 w-20 rounded-lg sm:h-[4.5rem] sm:w-24"
                 />
               )}
-              <div className="grid gap-1.5 sm:grid-cols-3">
+              <div className="grid gap-1.5 sm:min-w-32">
                 {canSearchProductImage && (
                   <button
                     type="button"
@@ -412,15 +397,6 @@ export default function ProductForm({
                 <p className="text-[11px] leading-4 text-muted-foreground">
                   Imagens de produtos não estão incluídas neste plano.
                 </p>
-              )}
-              {canUploadProductImage && form.image_url && (
-                <button
-                  type="button"
-                  onClick={() => handleChange('image_url', '')}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" /> Remover
-                </button>
               )}
             </div>
           </section>

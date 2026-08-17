@@ -7,8 +7,18 @@ const root = join(process.cwd());
 
 test('cash closing expense affects expected cash and admin can reopen/edit closed cash', () => {
   const modal = readFileSync(join(root, 'src', 'components', 'pdv', 'CashRegisterModal.jsx'), 'utf8');
-  const api = readFileSync(join(root, 'api', 'index.js'), 'utf8');
-  const history = readFileSync(join(root, 'src', 'pages', 'HistoricoCaixas.jsx'), 'utf8');
+  const api = [
+    readFileSync(join(root, 'api', 'index.js'), 'utf8'),
+    readFileSync(join(root, 'server', 'entities', 'routes.js'), 'utf8'),
+    readFileSync(join(root, 'server', 'cash', 'routes.js'), 'utf8'),
+  ].join('\n');
+  const history = [
+    readFileSync(join(root, 'src', 'pages', 'HistoricoCaixas.jsx'), 'utf8'),
+    readFileSync(
+      join(root, 'src', 'features', 'cash-history', 'components', 'CashDetail.jsx'),
+      'utf8',
+    ),
+  ].join('\n');
   const client = readFileSync(join(root, 'src', 'api', 'nexoApi.js'), 'utf8');
 
   assert.match(modal, /expectedCash/);

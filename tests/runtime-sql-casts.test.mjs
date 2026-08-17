@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const api = await readFile(new URL('../api/index.js', import.meta.url), 'utf8');
+const api = (
+  await Promise.all([
+    readFile(new URL('../api/index.js', import.meta.url), 'utf8'),
+    readFile(new URL('../server/cash/routes.js', import.meta.url), 'utf8'),
+  ])
+).join('\n');
 const finance = await readFile(new URL('../server/finance.js', import.meta.url), 'utf8');
 for (const typedValue of [
   /'entity_id',\$\{path\[1\]\}::uuid/,

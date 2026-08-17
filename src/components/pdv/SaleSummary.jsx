@@ -25,8 +25,8 @@ export default function SaleSummary({
   const canMinimize = minimizedCount < maxMinimized;
 
   return (
-    <div className="flex h-full flex-col border-t border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-2.5 py-1.5 sm:px-4 sm:py-2.5">
+    <div className="pdv-sale-summary flex h-full flex-col bg-card">
+      <div className="pdv-sale-summary-header flex items-center justify-between px-2.5 py-1.5 sm:px-4 sm:py-2.5">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-4 w-4 text-accent sm:h-5 sm:w-5" />
           <span className="text-xs font-bold sm:text-sm">Produtos da venda</span>
@@ -35,7 +35,7 @@ export default function SaleSummary({
       </div>
 
       {canDiscount && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border bg-muted/30 px-3 py-1.5 sm:gap-2 sm:px-5 sm:py-2.5">
+        <div className="pdv-sale-discount flex flex-wrap items-center gap-1.5 bg-muted/30 px-3 py-1.5 sm:gap-2 sm:px-5 sm:py-2.5">
           <Tag className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground">Desconto</span>
           <select value={sale.discount_type || 'valor'} onChange={event => onDiscountChange({ ...sale, discount_type: event.target.value })} className="h-8 rounded-lg border border-border bg-card px-2 text-xs focus:outline-none focus:ring-2 focus:ring-accent sm:h-9 sm:text-sm">
@@ -48,7 +48,7 @@ export default function SaleSummary({
 
       <SaleItemsList items={sale.items} onUpdateQuantity={onUpdateQuantity} onUpdateWeight={onUpdateWeight} onUpdatePrice={onUpdatePrice} onRemoveItem={onRemoveItem} />
 
-      <div className="border-t border-border bg-muted/20 px-2.5 py-2 sm:px-4 sm:py-2.5">
+      <div className="pdv-sale-totals bg-muted/20 px-2.5 py-2 sm:px-4 sm:py-2.5">
         <div className="mb-1.5 flex justify-between text-[11px] text-muted-foreground sm:mb-2 sm:text-xs">
           <span>Subtotal</span>
           <span className="tabular-nums">{formatCurrency(subtotal)}</span>

@@ -1,197 +1,13 @@
+import { createHttpClient } from '@/api/http/http-client';
 import { mockNexoApi } from '@/api/mockNexoApi';
+import { createQueryParams } from '@/api/query-params';
 
-const responseCache = new Map();
-const inFlightRequests = new Map();
-const latestRequestControllers = new Map();
-const MAX_CACHE_ENTRIES = 160;
+const httpClient = createHttpClient();
+const request = httpClient.request;
 
-const STATUS_MESSAGES = {
-  400: 'Revise os dados informados e tente novamente.',
-  401: 'Sua sessão expirou. Faça login novamente.',
-  403: 'Seu usuário não tem permissão para esta ação.',
-  404: 'A informação solicitada não foi encontrada.',
-  409: 'Não foi possível concluir porque há dados conflitantes.',
-  413: 'O arquivo ou solicitação ultrapassa o tamanho permitido.',
-  429: 'Há muitas tentativas em sequência. Aguarde um instante.',
-  500: 'O servidor encontrou um problema. Tente novamente em instantes.',
-  503: 'O sistema está temporariamente indisponível. Tente novamente em instantes.',
-};
-
-function buildApiError({ response, data, path }) {
-  const message =
-    data?.message ||
-    STATUS_MESSAGES[response.status] ||
-    'Erro ao acessar o servidor.';
-  return Object.assign(new Error(message), {
-    status: response.status,
-    code: data?.code || `HTTP_${response.status}`,
-    requestId: data?.requestId,
-    data,
-    path,
-    retryable: response.status >= 500 || response.status === 429,
-  });
-}
-
-function invalidateCache(path = '') {
-  if (!path || /^\/(auth|admin|markets|users|maintenance)(\/|$)/.test(path)) {
-    responseCache.clear();
-    return;
-  }
-  const scopes = path.startsWith('/finance')
-    ? ['/finance']
-    : /^\/(products|stock)(\/|$)/.test(path) ||
-        path.startsWith('/entities/Product')
-      ? ['/products', '/entities/Product', '/finance']
-      : path.startsWith('/sales') || path.startsWith('/entities/Sale')
-        ? ['/sales', '/entities/Sale', '/finance', '/cash']
-        : path.startsWith('/entities/FiadoRecord')
-          ? ['/entities/FiadoRecord', '/finance']
-        : path.startsWith('/cash')
-          ? ['/cash', '/finance']
-          : path.startsWith('/stock-alerts')
-            ? ['/stock-alerts']
-            : path.startsWith('/entities/SystemConfig')
-              ? ['/entities/SystemConfig', '/stock-alerts']
-              : [path.split('/').slice(0, 3).join('/')];
-  for (const key of responseCache.keys()) {
-    if (scopes.some((scope) => key.startsWith(`GET:${scope}`)))
-      responseCache.delete(key);
-  }
-}
-
-function pruneResponseCache() {
-  const now = Date.now();
-  for (const [key, cached] of responseCache) {
-    if (!cached || cached.expiresAt <= now) responseCache.delete(key);
-  }
-  while (responseCache.size > MAX_CACHE_ENTRIES) {
-    responseCache.delete(responseCache.keys().next().value);
-  }
-}
-
-async function performRequest(path, options = {}) {
-  let response;
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(
-    () => timeoutController.abort(),
-    options.timeout || 30_000,
-  );
-  const signal = options.signal
-    ? typeof AbortSignal.any === 'function'
-      ? AbortSignal.any([options.signal, timeoutController.signal])
-      : options.signal
-    : timeoutController.signal;
-  const {
-    cacheTTL: _cacheTTL,
-    timeout: _timeout,
-    latestKey: _latestKey,
-    signal: _externalSignal,
-    ...fetchOptions
-  } = options;
-  void _cacheTTL;
-  void _timeout;
-  void _latestKey;
-  void _externalSignal;
-  try {
-    response = await fetch(`/api${path}`, {
-      credentials: 'include',
-      headers:
-        options.body instanceof FormData
-          ? { Accept: 'application/json' }
-          : { Accept: 'application/json', 'Content-Type': 'application/json' },
-      ...fetchOptions,
-      signal,
-      body:
-        options.body instanceof FormData
-          ? options.body
-          : options.body
-            ? JSON.stringify(options.body)
-            : undefined,
-    });
-  } catch (cause) {
-    const aborted = cause?.name === 'AbortError';
-    const timedOut = aborted && timeoutController.signal.aborted;
-    throw Object.assign(
-      new Error(
-        timedOut
-          ? 'O servidor demorou para responder. Tente novamente.'
-          : aborted
-            ? 'A busca anterior foi substituída.'
-            : 'Não foi possível conectar ao servidor.',
-      ),
-      {
-        code: timedOut
-          ? 'REQUEST_TIMEOUT'
-          : aborted
-            ? 'REQUEST_REPLACED'
-            : 'NETWORK_ERROR',
-        cause,
-      },
-    );
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  const data = contentType.includes('application/json')
-    ? await response.json().catch(() => ({}))
-    : {};
-  if (!response.ok) {
-    if (
-      response.status === 401 &&
-      !path.startsWith('/auth/login') &&
-      !path.startsWith('/auth/me') &&
-      typeof window !== 'undefined'
-    ) {
-      responseCache.clear();
-      window.dispatchEvent(new CustomEvent('nexo:session-expired'));
-    }
-    throw buildApiError({ response, data, path });
-  }
-  return data;
-}
-
-const request = (path, options = {}) => {
-  const method = String(options.method || 'GET').toUpperCase();
-  const cacheTTL = method === 'GET' ? Number(options.cacheTTL || 0) : 0;
-  const cacheKey = `${method}:${path}`;
-
-  if (cacheTTL > 0) {
-    pruneResponseCache();
-    const cached = responseCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now())
-      return Promise.resolve(cached.data);
-    if (inFlightRequests.has(cacheKey)) return inFlightRequests.get(cacheKey);
-  }
-
-  let latestController = null;
-  if (options.latestKey) {
-    latestRequestControllers.get(options.latestKey)?.abort();
-    latestController = new AbortController();
-    latestRequestControllers.set(options.latestKey, latestController);
-  }
-  const requestOptions = latestController
-    ? { ...options, signal: latestController.signal }
-    : options;
-
-  const promise = performRequest(path, requestOptions)
-    .then((data) => {
-      if (method === 'GET' && cacheTTL > 0)
-        responseCache.set(cacheKey, { data, expiresAt: Date.now() + cacheTTL });
-      if (method !== 'GET') invalidateCache(path);
-      return data;
-    })
-    .finally(() => {
-      inFlightRequests.delete(cacheKey);
-      if (
-        options.latestKey &&
-        latestRequestControllers.get(options.latestKey) === latestController
-      )
-        latestRequestControllers.delete(options.latestKey);
-    });
-
-  if (cacheTTL > 0) inFlightRequests.set(cacheKey, promise);
-  return promise;
+const ENTITY_LIST_CACHE_TTL = {
+  SystemConfig: 45_000,
+  Product: 20_000,
 };
 
 const entity = (name) => ({
@@ -199,12 +15,7 @@ const entity = (name) => ({
     request(
       `/entities/${name}?sort=${encodeURIComponent(sort)}&limit=${limit}`,
       {
-        cacheTTL:
-          name === 'SystemConfig'
-            ? 45_000
-            : name === 'Product'
-              ? 20_000
-              : 8_000,
+        cacheTTL: ENTITY_LIST_CACHE_TTL[name] || 8_000,
       },
     ),
   filter: (filters, sort = '-created_date', limit = 500) =>
@@ -233,7 +44,7 @@ const entityNames = [
 
 const realNexoApi = {
   entities: Object.fromEntries(entityNames.map((name) => [name, entity(name)])),
-  cache: { clear: invalidateCache },
+  cache: httpClient.cache,
   auth: {
     me: () => request('/auth/me', { cacheTTL: 15_000 }),
     login: (email, password, remember = true) =>
@@ -357,15 +168,16 @@ const realNexoApi = {
       status = '',
       unitId = '',
     } = {}) => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      });
-      if (from) params.set('from', from);
-      if (to) params.set('to', to);
-      if (operatorId) params.set('operator_id', operatorId);
-      if (status) params.set('status', status);
-      if (unitId) params.set('unit_id', unitId);
+      const params = createQueryParams(
+        { page, page_size: pageSize },
+        {
+          from,
+          to,
+          operator_id: operatorId,
+          status,
+          unit_id: unitId,
+        },
+      );
       return request(`/cash/history?${params}`, {
         cacheTTL: 5_000,
         latestKey: 'cash:history',
@@ -401,26 +213,28 @@ const realNexoApi = {
       to = '',
       includeSellers = false,
     } = {}) => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      });
-      if (search) params.set('search', search);
-      if (sellerId) params.set('seller_id', sellerId);
-      if (payment) params.set('payment', payment);
-      if (status) params.set('status', status);
-      if (from) params.set('from', from);
-      if (to) params.set('to', to);
-      if (includeSellers) params.set('include_sellers', '1');
+      const params = createQueryParams(
+        { page, page_size: pageSize },
+        {
+          search,
+          seller_id: sellerId,
+          payment,
+          status,
+          from,
+          to,
+          include_sellers: includeSellers ? '1' : '',
+        },
+      );
       return request(`/sales/list?${params.toString()}`, {
         cacheTTL: 5_000,
         latestKey: 'sales:list',
       });
     },
     report: ({ from, to, sellerId = '', payment = '' }) => {
-      const params = new URLSearchParams({ from, to });
-      if (sellerId) params.set('seller_id', sellerId);
-      if (payment) params.set('payment', payment);
+      const params = createQueryParams(
+        { from, to },
+        { seller_id: sellerId, payment },
+      );
       return request(`/sales/report?${params.toString()}`, { cacheTTL: 5_000 });
     },
     cancel: (id, reason) =>

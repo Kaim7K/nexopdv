@@ -4,8 +4,12 @@ import { readFileSync } from "node:fs";
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("database/migrations/013_financial_management.sql");
-const service = read("server/finance.js");
-const api = read("api/index.js");
+const service = [
+  read("server/finance.js"),
+  read("server/finance/routes.js"),
+  read("server/finance/metrics.js"),
+].join("\n");
+const api = [read("api/index.js"), read("server/module-access.js")].join("\n");
 const client = read("src/api/nexoApi.js");
 const page = read("src/pages/Financeiro.jsx");
 const app = read("src/App.jsx");
@@ -79,7 +83,7 @@ assert.match(
 );
 assert.match(
   api,
-  /path\[0\]\s*===\s*'finance'[\s\S]{0,40}\?\s*'financeiro'/,
+  /finance:\s*'financeiro'/,
   "Módulo financeiro deve respeitar o plano contratado.",
 );
 assert.match(

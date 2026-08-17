@@ -6,7 +6,8 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const [form, quickModal, api, env, vercel] = await Promise.all([
   read('src/components/stock/ProductForm.jsx'),
   read('src/components/pdv/QuickProductModal.jsx'),
-  read('api/index.js'),
+  Promise.all([read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')])
+    .then(files => files.join('\n')),
   read('.env.example'),
   read('vercel.json'),
 ]);

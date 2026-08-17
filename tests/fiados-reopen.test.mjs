@@ -7,9 +7,19 @@ import { fileURLToPath } from 'node:url';
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 test('fiado settlement can be reopened by admin or gerente', () => {
-  const api = readFileSync(join(root, 'api', 'index.js'), 'utf8');
+  const api = [
+    readFileSync(join(root, 'api', 'index.js'), 'utf8'),
+    readFileSync(join(root, 'server', 'entities', 'routes.js'), 'utf8'),
+    readFileSync(join(root, 'server', 'sales', 'routes.js'), 'utf8'),
+  ].join('\n');
   const fiados = readFileSync(join(root, 'src', 'pages', 'Fiados.jsx'), 'utf8');
-  const vendas = readFileSync(join(root, 'src', 'pages', 'Vendas.jsx'), 'utf8');
+  const vendas = [
+    readFileSync(join(root, 'src', 'pages', 'Vendas.jsx'), 'utf8'),
+    readFileSync(
+      join(root, 'src', 'components', 'sales', 'SaleHistory.jsx'),
+      'utf8',
+    ),
+  ].join('\n');
 
   assert.match(api, /status: 'pendente'/);
   assert.match(api, /fiado_quitacao_desfeita/);

@@ -26,8 +26,8 @@ export default function SaleItemsList({
   }
 
   return (
-    <div className="flex-1 overscroll-contain overflow-y-auto">
-      <div className="sticky top-0 z-10 hidden grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] gap-3 border-b border-border bg-card px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+    <div className="pdv-sale-items flex-1 overscroll-contain overflow-y-auto">
+      <div className="pdv-sale-items-header sticky top-0 z-10 hidden grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] gap-3 bg-card px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
         <span>Quantidade</span>
         <span>Produto</span>
         <span className="text-right">Valor unitário</span>
@@ -38,7 +38,7 @@ export default function SaleItemsList({
       {items.map((item, index) => (
         <div
           key={`${item.product_id}-${index}`}
-          className="grid grid-cols-[1fr_auto] gap-1.5 border-b border-border px-2.5 py-1.5 transition-colors hover:bg-muted/30 sm:px-4 sm:py-2.5 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
+          className="pdv-sale-item grid grid-cols-[1fr_auto] gap-1.5 px-2.5 py-1.5 transition-colors sm:px-4 sm:py-2.5 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
         >
           <div className="order-2 lg:order-1">
             {item.unit === 'peso' ? (

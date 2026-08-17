@@ -5,7 +5,11 @@ const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const app = read('src/App.jsx');
 const layout = read('src/components/Layout.jsx');
-const apiClient = read('src/api/nexoApi.js');
+const apiClient = [
+  read('src/api/nexoApi.js'),
+  read('src/api/http/http-client.js'),
+  read('src/api/http/cache-policy.js'),
+].join('\n');
 const financeService = read('server/finance.js');
 const financePage = read('src/pages/Financeiro.jsx');
 const reportsPage = read('src/pages/Relatorios.jsx');
@@ -32,12 +36,12 @@ assert.doesNotMatch(
 );
 assert.match(
   apiClient,
-  /latestRequestControllers/,
+  /latestControllers/,
   'Buscas substituídas devem ser canceladas.',
 );
 assert.match(
   apiClient,
-  /invalidateCache\(path/,
+  /cache\.clear\(path\)/,
   'Mutações devem invalidar apenas caches relacionados.',
 );
 assert.match(

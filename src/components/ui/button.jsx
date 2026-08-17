@@ -5,16 +5,16 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-bold shadow-none transition duration-150 ease-out hover:bg-opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:scale-100 disabled:opacity-50 motion-reduce:transform-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold shadow-none transition duration-300 ease-out hover:bg-opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:scale-100 disabled:opacity-50 motion-reduce:transform-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-primary/15 hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-[0_10px_28px_hsl(var(--primary)/0.18)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_16px_36px_hsl(var(--primary)/0.24)]",
         destructive:
           "bg-destructive text-destructive-foreground shadow-destructive/15 hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:border-muted-foreground/30 hover:bg-muted",
+          "border border-input bg-background/80 hover:-translate-y-0.5 hover:border-accent/35 hover:bg-muted/70 hover:shadow-sm",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "shadow-none hover:bg-accent/10 hover:text-accent",

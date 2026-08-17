@@ -1,9 +1,8 @@
 import { AppError } from "./errors.js";
-import { methodNotAllowed, send } from "./http.js";
 import {
   buildCashSessionSummary,
-  getSalePaymentAllocations,
 } from "./cash-summary.js";
+import { saleMetrics, transactionMetrics } from "./finance/metrics.js";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -71,14 +70,14 @@ const PERMISSION_KEYS = [
 const FINANCE_MAINTENANCE_TTL = 15_000;
 const financeMaintenance = new Map();
 
-const round = (value) =>
+export const round = (value) =>
   Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 const text = (value, max = 500) =>
   String(value ?? "")
     .trim()
     .slice(0, max);
 const bool = (value) => value === true;
-const validUuid = (value) => UUID_PATTERN.test(String(value || ""));
+export const validUuid = (value) => UUID_PATTERN.test(String(value || ""));
 const validDate = (value) =>
   DATE_PATTERN.test(String(value || "")) &&
   !Number.isNaN(new Date(`${value}T12:00:00Z`).getTime());
@@ -135,7 +134,8 @@ function parseRange(query = {}) {
     );
   const days =
     Math.round(
-      (new Date(`${end}T12:00:00Z`) - new Date(`${start}T12:00:00Z`)) /
+      (new Date(`${end}T12:00:00Z`).getTime() -
+        new Date(`${start}T12:00:00Z`).getTime()) /
         86_400_000,
     ) + 1;
   if (days > 731)
@@ -192,7 +192,7 @@ const DEFAULT_PERMISSIONS = {
   vendedor: Object.fromEntries(PERMISSION_KEYS.map((key) => [key, false])),
 };
 
-async function financePermissions(sql, user) {
+export async function financePermissions(sql, user) {
   const [row] =
     await sql`SELECT permissions FROM nexo.finance_user_permissions WHERE user_id=${user.id} AND market_id=${user.market_id}`;
   return {
@@ -201,7 +201,7 @@ async function financePermissions(sql, user) {
   };
 }
 
-function requirePermission(permissions, key) {
+export function requirePermission(permissions, key) {
   if (!permissions[key])
     throw new AppError(
       403,
@@ -279,7 +279,7 @@ async function generateRecurringTransactions(sql, marketId) {
   await sql`UPDATE nexo.finance_transactions SET status='overdue',updated_date=now() WHERE market_id=${marketId} AND status IN ('pending','partial') AND due_date<current_date`;
 }
 
-async function ensureFinanceMaintenance(sql, user) {
+export async function ensureFinanceMaintenance(sql, user) {
   const marketId = user.market_id;
   const current = financeMaintenance.get(marketId);
   if (current?.promise) return current.promise;
@@ -302,170 +302,11 @@ async function ensureFinanceMaintenance(sql, user) {
   }
 }
 
-function invalidateFinanceMaintenance(marketId) {
+export function invalidateFinanceMaintenance(marketId) {
   financeMaintenance.delete(marketId);
 }
 
-function saleMetrics(sales, productsById, settings) {
-  const result = {
-    gross: 0,
-    net: 0,
-    discounts: 0,
-    cogs: 0,
-    missingCost: 0,
-    cardFees: 0,
-    taxes: 0,
-    payments: {
-      dinheiro: 0,
-      pix: 0,
-      debito: 0,
-      credito: 0,
-      fiado: 0,
-      outros: 0,
-    },
-    byProduct: new Map(),
-    byCategory: new Map(),
-    daily: new Map(),
-  };
-  for (const row of sales) {
-    const sale = row.data || {};
-    if (sale.status !== "concluida") continue;
-    const gross = Number(sale.subtotal ?? sale.total ?? 0);
-    const net = Number(sale.total || 0);
-    result.gross += gross;
-    result.net += net;
-    result.discounts += Math.max(0, gross - net);
-    const day = dateOnly(row.created_date);
-    const daily = result.daily.get(day) || { revenue: 0, cogs: 0 };
-    daily.revenue += net;
-    for (const payment of getSalePaymentAllocations(sale)) {
-      const method =
-        result.payments[payment.method] === undefined
-          ? "outros"
-          : payment.method;
-      const amount = Number(payment.amount || 0);
-      result.payments[method] += amount;
-      if (payment.method === "debito")
-        result.cardFees +=
-          (amount * Number(settings.debit_card_fee || 0)) / 100;
-      if (payment.method === "credito")
-        result.cardFees +=
-          (amount * Number(settings.credit_card_fee || 0)) / 100;
-    }
-    for (const item of sale.items || []) {
-      const quantity =
-        Number(item.unit === "peso" ? item.weight : item.quantity) || 0;
-      const currentProduct = productsById.get(String(item.product_id));
-      const rawCost = item.unit_cost ?? currentProduct?.cost_price;
-      const unitCost =
-        rawCost === null || rawCost === "" || rawCost === undefined
-          ? null
-          : Number(rawCost);
-      const itemCost = Number.isFinite(unitCost) ? unitCost * quantity : 0;
-      if (!Number.isFinite(unitCost)) result.missingCost += 1;
-      result.cogs += itemCost;
-      daily.cogs += itemCost;
-      const revenue = Number(item.subtotal || 0);
-      const product = result.byProduct.get(item.product_name) || {
-        label: item.product_name || "Produto",
-        revenue: 0,
-        cost: 0,
-        quantity: 0,
-      };
-      product.revenue += revenue;
-      product.cost += itemCost;
-      product.quantity += quantity;
-      result.byProduct.set(product.label, product);
-      const categoryName = currentProduct?.category || "Sem categoria";
-      const category = result.byCategory.get(categoryName) || {
-        label: categoryName,
-        revenue: 0,
-        cost: 0,
-      };
-      category.revenue += revenue;
-      category.cost += itemCost;
-      result.byCategory.set(categoryName, category);
-    }
-    result.daily.set(day, daily);
-  }
-  result.cardFees = round(result.cardFees);
-  result.taxes = round((result.net * Number(settings.tax_rate || 0)) / 100);
-  for (const key of ["gross", "net", "discounts", "cogs"])
-    result[key] = round(result[key]);
-  for (const key of Object.keys(result.payments))
-    result.payments[key] = round(result.payments[key]);
-  return result;
-}
-
-function transactionMetrics(transactions, payments, range) {
-  const paymentByTransaction = new Map();
-  for (const payment of payments) {
-    if (payment.reversed_at) continue;
-    const list = paymentByTransaction.get(payment.transaction_id) || [];
-    list.push(payment);
-    paymentByTransaction.set(payment.transaction_id, list);
-  }
-  const result = {
-    expenses: 0,
-    revenues: 0,
-    paidExpenses: 0,
-    receivedRevenues: 0,
-    payable: 0,
-    receivable: 0,
-    losses: 0,
-    byCategory: new Map(),
-    daily: new Map(),
-  };
-  for (const item of transactions) {
-    if (["cancelled", "reversed"].includes(item.status)) continue;
-    const amount = Number(item.amount || 0);
-    if (item.issue_date >= range.from && item.issue_date <= range.to) {
-      if (item.type === "expense") result.expenses += amount;
-      if (item.type === "revenue") result.revenues += amount;
-      if (item.type === "loss") result.losses += amount;
-      if (item.type === "expense" || item.type === "loss") {
-        const category = item.category_name || "Sem categoria";
-        result.byCategory.set(
-          category,
-          (result.byCategory.get(category) || 0) + amount,
-        );
-      }
-    }
-    if (["pending", "partial", "overdue"].includes(item.status)) {
-      const remaining = Math.max(0, amount - Number(item.paid_amount || 0));
-      if (item.type === "expense" || item.type === "loss")
-        result.payable += remaining;
-      if (item.type === "revenue") result.receivable += remaining;
-    }
-    for (const payment of paymentByTransaction.get(item.id) || []) {
-      const day = dateOnly(payment.paid_at);
-      if (day < range.from || day > range.to) continue;
-      const daily = result.daily.get(day) || { revenue: 0, expense: 0 };
-      if (item.type === "expense" || item.type === "loss") {
-        result.paidExpenses += Number(payment.amount);
-        daily.expense += Number(payment.amount);
-      }
-      if (item.type === "revenue") {
-        result.receivedRevenues += Number(payment.amount);
-        daily.revenue += Number(payment.amount);
-      }
-      result.daily.set(day, daily);
-    }
-  }
-  for (const key of [
-    "expenses",
-    "revenues",
-    "paidExpenses",
-    "receivedRevenues",
-    "payable",
-    "receivable",
-    "losses",
-  ])
-    result[key] = round(result[key]);
-  return result;
-}
-
-async function loadDashboard(sql, marketId, query) {
+export async function loadDashboard(sql, marketId, query) {
   const range = parseRange(query);
   const previousTo = addDays(range.from, -1);
   const previousFrom = addDays(previousTo, -range.days + 1);
@@ -896,52 +737,54 @@ async function ownedReference(
   return id;
 }
 
+function nullableField(source, current, key, fallback = null) {
+  if (source[key] === "") return null;
+  return source[key] ?? current?.[key] ?? fallback;
+}
+
+function assertTransactionDates({ type, description, issueDate, dueDate }) {
+  const invalidDueDate = dueDate && (!validDate(dueDate) || dueDate < issueDate);
+  if (type && description && validDate(issueDate) && !invalidDueDate) return;
+  throw new AppError(
+    400,
+    "INVALID_TRANSACTION",
+    "Revise tipo, descrição e datas do lançamento.",
+  );
+}
+
+function assertPaymentMethod(paymentMethod) {
+  if (!paymentMethod || PAYMENT_METHODS.has(paymentMethod)) return;
+  throw new AppError(
+    400,
+    "INVALID_PAYMENT_METHOD",
+    "Forma de pagamento inválida.",
+  );
+}
+
 function cleanTransactionInput(source, current = null) {
-  const type = TRANSACTION_TYPES.has(source.type) ? source.type : current?.type;
-  const description = text(source.description ?? current?.description, 180);
-  const amount = safeAmount(source.amount ?? current?.amount);
   const issueDate = source.issue_date ?? current?.issue_date ?? today();
-  const dueDate =
-    source.due_date === ""
-      ? null
-      : (source.due_date ?? current?.due_date ?? issueDate);
-  if (
-    !type ||
-    !description ||
-    !validDate(issueDate) ||
-    (dueDate && (!validDate(dueDate) || dueDate < issueDate))
-  )
-    throw new AppError(
-      400,
-      "INVALID_TRANSACTION",
-      "Revise tipo, descrição e datas do lançamento.",
-    );
-  const paymentMethod =
-    source.payment_method === ""
-      ? null
-      : text(source.payment_method ?? current?.payment_method, 40);
-  if (paymentMethod && !PAYMENT_METHODS.has(paymentMethod))
-    throw new AppError(
-      400,
-      "INVALID_PAYMENT_METHOD",
-      "Forma de pagamento inválida.",
-    );
-  return {
-    type,
-    description,
-    amount,
+  const transaction = {
+    type: TRANSACTION_TYPES.has(source.type) ? source.type : current?.type,
+    description: text(source.description ?? current?.description, 180),
+    amount: safeAmount(source.amount ?? current?.amount),
     issueDate,
-    dueDate,
-    paymentMethod,
+    dueDate: nullableField(source, current, "due_date", issueDate),
+    paymentMethod: text(
+      nullableField(source, current, "payment_method") || "",
+      40,
+    ) || null,
     notes: text(source.notes ?? current?.notes, 2000),
     attachmentUrl:
       source.attachment_url === undefined
         ? current?.attachment_url || null
         : normalizeAttachment(source.attachment_url),
   };
+  assertTransactionDates(transaction);
+  assertPaymentMethod(transaction.paymentMethod);
+  return transaction;
 }
 
-async function listTransactions(sql, marketId, query) {
+export async function listTransactions(sql, marketId, query) {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
   const pageSize = Math.max(
     10,
@@ -993,7 +836,7 @@ async function listTransactions(sql, marketId, query) {
   };
 }
 
-async function transactionDetail(sql, marketId, id) {
+export async function transactionDetail(sql, marketId, id) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_TRANSACTION", "Lançamento inválido.");
   const [transaction] = await sql`
@@ -1030,7 +873,7 @@ async function transactionDetail(sql, marketId, id) {
   };
 }
 
-async function createTransaction(sql, user, source) {
+export async function createTransaction(sql, user, source) {
   const value = cleanTransactionInput(source);
   const accountId = await defaultAccountId(
     sql,
@@ -1121,7 +964,7 @@ async function createTransaction(sql, user, source) {
   };
 }
 
-async function updateTransaction(sql, user, id, source) {
+export async function updateTransaction(sql, user, id, source) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_TRANSACTION", "Lançamento inválido.");
   const [current] =
@@ -1193,7 +1036,7 @@ async function updateTransaction(sql, user, id, source) {
   };
 }
 
-async function payTransaction(sql, user, id, source) {
+export async function payTransaction(sql, user, id, source) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_TRANSACTION", "Lançamento inválido.");
   const [current] =
@@ -1278,7 +1121,7 @@ async function payTransaction(sql, user, id, source) {
   };
 }
 
-async function cancelTransaction(sql, user, id, reason) {
+export async function cancelTransaction(sql, user, id, reason) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_TRANSACTION", "Lançamento inválido.");
   const cancellationReason = text(reason, 500);
@@ -1329,7 +1172,7 @@ async function cancelTransaction(sql, user, id, reason) {
   };
 }
 
-async function duplicateTransaction(sql, user, id) {
+export async function duplicateTransaction(sql, user, id) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_TRANSACTION", "Lançamento inválido.");
   const [current] =
@@ -1352,7 +1195,7 @@ async function duplicateTransaction(sql, user, id) {
   });
 }
 
-async function referenceList(sql, table, marketId) {
+export async function referenceList(sql, table, marketId) {
   const order =
     table === "finance_categories" ? "type,name" : "active DESC,name";
   const rows = await sql.query(
@@ -1367,7 +1210,7 @@ async function referenceList(sql, table, marketId) {
   }));
 }
 
-async function saveCategory(sql, user, id, source) {
+export async function saveCategory(sql, user, id, source) {
   const name = text(source.name, 100),
     type = CATEGORY_TYPES.has(source.type) ? source.type : "expense";
   if (!name)
@@ -1394,7 +1237,7 @@ async function saveCategory(sql, user, id, source) {
   return row;
 }
 
-async function saveSupplier(sql, user, id, source) {
+export async function saveSupplier(sql, user, id, source) {
   const name = text(source.name, 140);
   if (!name)
     throw new AppError(
@@ -1433,7 +1276,7 @@ async function saveSupplier(sql, user, id, source) {
   return row;
 }
 
-async function saveAccount(sql, user, id, source) {
+export async function saveAccount(sql, user, id, source) {
   const name = text(source.name, 100),
     type = ACCOUNT_TYPES.has(source.type) ? source.type : "bank";
   if (!name)
@@ -1471,7 +1314,7 @@ async function saveAccount(sql, user, id, source) {
   return { ...row, opening_balance: Number(row.opening_balance) };
 }
 
-async function saveRecurring(sql, user, id, source) {
+export async function saveRecurring(sql, user, id, source) {
   const description = text(source.description, 180),
     amount = safeAmount(source.amount),
     frequency = FREQUENCIES.has(source.frequency) ? source.frequency : null;
@@ -1614,7 +1457,7 @@ function cleanInstallments(items, total, issueDate) {
   return clean;
 }
 
-async function createPurchase(sql, user, source) {
+export async function createPurchase(sql, user, source) {
   const supplierId = await ownedReference(
     sql,
     "finance_suppliers",
@@ -1677,7 +1520,7 @@ async function createPurchase(sql, user, source) {
   };
 }
 
-async function confirmPurchase(sql, user, id) {
+export async function confirmPurchase(sql, user, id) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_PURCHASE", "Compra inválida.");
   const [purchase] =
@@ -1750,7 +1593,7 @@ async function confirmPurchase(sql, user, id) {
   };
 }
 
-async function listPurchases(sql, marketId) {
+export async function listPurchases(sql, marketId) {
   const rows =
     await sql`SELECT purchase.*,supplier.name AS supplier_name,account.name AS account_name,COALESCE(actor.full_name,actor.email) AS created_by_name,(SELECT count(*)::int FROM nexo.finance_purchase_items item WHERE item.purchase_id=purchase.id) AS item_count FROM nexo.finance_purchases purchase LEFT JOIN nexo.finance_suppliers supplier ON supplier.id=purchase.supplier_id LEFT JOIN nexo.finance_accounts account ON account.id=purchase.account_id LEFT JOIN nexo.users actor ON actor.id=purchase.created_by WHERE purchase.market_id=${marketId} ORDER BY purchase.created_date DESC LIMIT 500`;
   return rows.map((row) => ({
@@ -1762,7 +1605,7 @@ async function listPurchases(sql, marketId) {
   }));
 }
 
-async function cancelPurchase(sql, user, id, reason) {
+export async function cancelPurchase(sql, user, id, reason) {
   if (!validUuid(id))
     throw new AppError(400, "INVALID_PURCHASE", "Compra inválida.");
   const cancellationReason = text(reason, 500);
@@ -1881,7 +1724,7 @@ async function cancelPurchase(sql, user, id, reason) {
   };
 }
 
-async function saveGoal(sql, user, id, source) {
+export async function saveGoal(sql, user, id, source) {
   const period = text(source.period, 7),
     type = GOAL_TYPES.has(source.type) ? source.type : null,
     target = safeAmount(source.target_value, { allowZero: true });
@@ -1917,7 +1760,7 @@ async function saveGoal(sql, user, id, source) {
   return { ...row, target_value: Number(row.target_value) };
 }
 
-async function saveSettings(sql, user, source) {
+export async function saveSettings(sql, user, source) {
   if (
     source.email_alerts &&
     (!(user.enabled_features || []).includes("financial_email_alerts") ||
@@ -1968,7 +1811,7 @@ async function saveSettings(sql, user, source) {
   };
 }
 
-async function saveUserPermissions(sql, user, targetUserId, source) {
+export async function saveUserPermissions(sql, user, targetUserId, source) {
   if (!validUuid(targetUserId))
     throw new AppError(400, "INVALID_USER", "Usuário inválido.");
   const [target] =
@@ -1993,7 +1836,7 @@ async function saveUserPermissions(sql, user, targetUserId, source) {
   return row;
 }
 
-async function loadBootstrap(sql, user, permissions) {
+export async function loadBootstrap(sql, user, permissions) {
   const [
     categories,
     accounts,
@@ -2052,7 +1895,7 @@ async function loadBootstrap(sql, user, permissions) {
   };
 }
 
-async function loadPurchaseProducts(sql, marketId) {
+export async function loadPurchaseProducts(sql, marketId) {
   const rows = await sql`
     SELECT id,
       data->>'name' AS name,
@@ -2075,7 +1918,7 @@ async function loadPurchaseProducts(sql, marketId) {
   }));
 }
 
-async function loadLedger(sql, marketId, query) {
+export async function loadLedger(sql, marketId, query) {
   const range = parseRange(query);
   const [transactions, sales, fiados] = await Promise.all([
     sql`SELECT transaction.*,category.name AS category_name,account.name AS account_name,COALESCE(actor.full_name,actor.email,'Sistema') AS actor_name FROM nexo.finance_transactions transaction LEFT JOIN nexo.finance_categories category ON category.id=transaction.category_id LEFT JOIN nexo.finance_accounts account ON account.id=transaction.account_id LEFT JOIN nexo.users actor ON actor.id=transaction.created_by WHERE transaction.market_id=${marketId} AND transaction.issue_date>=${range.from}::date AND transaction.issue_date<=${range.to}::date`,
@@ -2132,12 +1975,14 @@ async function loadLedger(sql, marketId, query) {
   return {
     range,
     items: items
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )
       .slice(0, 2000),
   };
 }
 
-async function loadReceivables(sql, marketId, query) {
+export async function loadReceivables(sql, marketId, query) {
   const range = parseRange(query);
   const [transactions, fiados] = await Promise.all([
     sql`SELECT transaction.*,category.name AS category_name,account.name AS account_name FROM nexo.finance_transactions transaction LEFT JOIN nexo.finance_categories category ON category.id=transaction.category_id LEFT JOIN nexo.finance_accounts account ON account.id=transaction.account_id WHERE transaction.market_id=${marketId} AND transaction.type='revenue' AND transaction.status IN ('pending','partial','overdue') AND COALESCE(transaction.due_date,transaction.issue_date)>=${range.from}::date AND COALESCE(transaction.due_date,transaction.issue_date)<=${range.to}::date ORDER BY COALESCE(transaction.due_date,transaction.issue_date)`,
@@ -2189,7 +2034,7 @@ async function loadReceivables(sql, marketId, query) {
   };
 }
 
-async function loadReconciliation(sql, marketId, query) {
+export async function loadReconciliation(sql, marketId, query) {
   const range = parseRange(query);
   const [sessions, sales, movements] = await Promise.all([
     sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${marketId} AND entity='cash_sessions' AND COALESCE((data->>'opened_at')::timestamptz,created_date)>=${range.from}::date AND COALESCE((data->>'opened_at')::timestamptz,created_date)<${range.toExclusive}::date ORDER BY created_date DESC`,
@@ -2270,7 +2115,7 @@ async function loadReconciliation(sql, marketId, query) {
   return { range, totals, sessions: result };
 }
 
-async function loadHistory(sql, marketId, query) {
+export async function loadHistory(sql, marketId, query) {
   const limit = Math.max(
     10,
     Math.min(500, Number.parseInt(query.limit, 10) || 100),
@@ -2278,324 +2123,4 @@ async function loadHistory(sql, marketId, query) {
   return sql`SELECT event.*,COALESCE(actor.full_name,actor.email,event.actor_name) AS user_name,transaction.description,transaction.amount FROM nexo.finance_transaction_events event LEFT JOIN nexo.users actor ON actor.id=event.actor_id LEFT JOIN nexo.finance_transactions transaction ON transaction.id=event.transaction_id WHERE event.market_id=${marketId} ORDER BY event.created_date DESC LIMIT ${limit}`;
 }
 
-export async function handleFinanceRequest({ req, res, sql, user, path }) {
-  if (!user.market_id)
-    return send(res, 400, { message: "Usuário sem mercadinho vinculado." });
-  const section = path[1] || "dashboard",
-    id = path[2],
-    action = path[3];
-  await ensureFinanceMaintenance(sql, user);
-  const permissions = await financePermissions(sql, user);
-  requirePermission(permissions, "view");
-
-  if (section === "bootstrap" && req.method === "GET")
-    return send(res, 200, await loadBootstrap(sql, user, permissions));
-  if (section === "dashboard" && req.method === "GET") {
-    const dashboard = await loadDashboard(sql, user.market_id, req.query);
-    if (!permissions.view_profit) {
-      delete dashboard.summary.estimated_profit;
-      delete dashboard.summary.margin;
-      delete dashboard.dre;
-      delete dashboard.goals;
-      dashboard.series = dashboard.series.map(({ profit, ...item }) => {
-        void profit;
-        return item;
-      });
-    }
-    if (!permissions.view_costs) {
-      delete dashboard.summary.cogs;
-      delete dashboard.summary.inventory_value;
-      dashboard.top_products = dashboard.top_products.map(
-        ({ cost, profit, ...item }) => item,
-      );
-      dashboard.top_categories = dashboard.top_categories.map(
-        ({ cost, profit, ...item }) => item,
-      );
-    }
-    return send(res, 200, dashboard);
-  }
-  if (section === "ledger" && req.method === "GET")
-    return send(res, 200, await loadLedger(sql, user.market_id, req.query));
-  if (section === "receivables" && req.method === "GET")
-    return send(
-      res,
-      200,
-      await loadReceivables(sql, user.market_id, req.query),
-    );
-  if (section === "reconciliation" && req.method === "GET")
-    return send(
-      res,
-      200,
-      await loadReconciliation(sql, user.market_id, req.query),
-    );
-  if (section === "history" && req.method === "GET")
-    return send(res, 200, await loadHistory(sql, user.market_id, req.query));
-  if (section === "products" && req.method === "GET") {
-    if (!(user.enabled_features || []).includes("integrated_purchases"))
-      throw new AppError(
-        403,
-        "FEATURE_NOT_AVAILABLE",
-        "Compras integradas ao estoque não estão incluídas neste plano.",
-      );
-    requirePermission(permissions, "manage_purchases");
-    return send(res, 200, await loadPurchaseProducts(sql, user.market_id));
-  }
-
-  if (section === "transactions") {
-    if (!id && req.method === "GET")
-      return send(
-        res,
-        200,
-        await listTransactions(sql, user.market_id, req.query),
-      );
-    if (!id && req.method === "POST") {
-      requirePermission(permissions, "create");
-      return send(res, 201, await createTransaction(sql, user, req.body || {}));
-    }
-    if (id && id !== "batch" && !action && req.method === "GET")
-      return send(res, 200, await transactionDetail(sql, user.market_id, id));
-    if (id && req.method === "PATCH") {
-      requirePermission(permissions, "edit");
-      return send(
-        res,
-        200,
-        await updateTransaction(sql, user, id, req.body || {}),
-      );
-    }
-    if (id && action === "pay" && req.method === "POST") {
-      requirePermission(permissions, "pay");
-      return send(
-        res,
-        200,
-        await payTransaction(sql, user, id, req.body || {}),
-      );
-    }
-    if (id && action === "cancel" && req.method === "POST") {
-      requirePermission(permissions, "cancel");
-      return send(
-        res,
-        200,
-        await cancelTransaction(sql, user, id, req.body?.reason),
-      );
-    }
-    if (id && action === "duplicate" && req.method === "POST") {
-      requirePermission(permissions, "create");
-      return send(res, 201, await duplicateTransaction(sql, user, id));
-    }
-    if (id === "batch" && req.method === "POST") {
-      const ids = Array.isArray(req.body.ids)
-        ? [...new Set(req.body.ids.filter(validUuid))].slice(0, 100)
-        : [];
-      if (!ids.length)
-        throw new AppError(
-          400,
-          "BATCH_EMPTY",
-          "Selecione ao menos um lançamento.",
-        );
-      if (req.body.action === "cancel") {
-        requirePermission(permissions, "cancel");
-        const results = [];
-        for (const transactionId of ids)
-          results.push(
-            await cancelTransaction(sql, user, transactionId, req.body.reason),
-          );
-        return send(res, 200, { items: results });
-      }
-      if (req.body.action === "pay") {
-        requirePermission(permissions, "pay");
-        const results = [];
-        for (const transactionId of ids) {
-          const detail = await transactionDetail(
-            sql,
-            user.market_id,
-            transactionId,
-          );
-          const remaining = round(detail.amount - detail.paid_amount);
-          if (
-            remaining > 0 &&
-            ["pending", "partial", "overdue"].includes(detail.status)
-          )
-            results.push(
-              await payTransaction(sql, user, transactionId, {
-                ...req.body,
-                amount: remaining,
-              }),
-            );
-        }
-        return send(res, 200, { items: results });
-      }
-      throw new AppError(400, "INVALID_BATCH_ACTION", "Ação em lote inválida.");
-    }
-    return methodNotAllowed(res, ["GET", "POST", "PATCH"]);
-  }
-
-  if (section === "categories") {
-    if (req.method === "GET")
-      return send(
-        res,
-        200,
-        await referenceList(sql, "finance_categories", user.market_id),
-      );
-    requirePermission(permissions, "manage_settings");
-    if (!id && req.method === "POST")
-      return send(
-        res,
-        201,
-        await saveCategory(sql, user, null, req.body || {}),
-      );
-    if (id && req.method === "PATCH")
-      return send(res, 200, await saveCategory(sql, user, id, req.body || {}));
-    if (id && req.method === "DELETE") {
-      if (!validUuid(id))
-        throw new AppError(400, "INVALID_CATEGORY", "Categoria inválida.");
-      const [row] =
-        await sql`UPDATE nexo.finance_categories SET active=false,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND system_key IS NULL RETURNING *`;
-      if (!row)
-        throw new AppError(
-          404,
-          "CATEGORY_NOT_EDITABLE",
-          "Categoria não encontrada ou protegida.",
-        );
-      return send(res, 200, row);
-    }
-  }
-  if (section === "suppliers") {
-    if (req.method === "GET")
-      return send(
-        res,
-        200,
-        await referenceList(sql, "finance_suppliers", user.market_id),
-      );
-    requirePermission(permissions, "manage_suppliers");
-    if (!id && req.method === "POST")
-      return send(
-        res,
-        201,
-        await saveSupplier(sql, user, null, req.body || {}),
-      );
-    if (id && req.method === "PATCH")
-      return send(res, 200, await saveSupplier(sql, user, id, req.body || {}));
-    if (id && req.method === "DELETE") {
-      if (!validUuid(id))
-        throw new AppError(400, "INVALID_SUPPLIER", "Fornecedor inválido.");
-      const [row] =
-        await sql`UPDATE nexo.finance_suppliers SET active=false,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING *`;
-      if (!row)
-        throw new AppError(
-          404,
-          "SUPPLIER_NOT_FOUND",
-          "Fornecedor não encontrado.",
-        );
-      return send(res, 200, row);
-    }
-  }
-  if (section === "accounts") {
-    if (req.method === "GET")
-      return send(
-        res,
-        200,
-        await referenceList(sql, "finance_accounts", user.market_id),
-      );
-    requirePermission(permissions, "manage_accounts");
-    if (!id && req.method === "POST")
-      return send(res, 201, await saveAccount(sql, user, null, req.body || {}));
-    if (id && req.method === "PATCH")
-      return send(res, 200, await saveAccount(sql, user, id, req.body || {}));
-  }
-  if (section === "recurring") {
-    if (!(user.enabled_features || []).includes("recurring_finance"))
-      throw new AppError(
-        403,
-        "FEATURE_NOT_AVAILABLE",
-        "Despesas recorrentes não estão incluídas neste plano.",
-      );
-    if (req.method === "GET") {
-      const rows =
-        await sql`SELECT * FROM nexo.finance_recurring_rules WHERE market_id=${user.market_id} ORDER BY active DESC,next_due_date`;
-      return send(
-        res,
-        200,
-        rows.map((row) => ({ ...row, amount: Number(row.amount) })),
-      );
-    }
-    requirePermission(permissions, "create");
-    if (!id && req.method === "POST") {
-      const row = await saveRecurring(sql, user, null, req.body || {});
-      invalidateFinanceMaintenance(user.market_id);
-      return send(res, 201, row);
-    }
-    if (id && req.method === "PATCH") {
-      const row = await saveRecurring(sql, user, id, req.body || {});
-      invalidateFinanceMaintenance(user.market_id);
-      return send(res, 200, row);
-    }
-  }
-  if (section === "purchases") {
-    if (!(user.enabled_features || []).includes("integrated_purchases"))
-      throw new AppError(
-        403,
-        "FEATURE_NOT_AVAILABLE",
-        "Compras integradas ao estoque não estão incluídas neste plano.",
-      );
-    requirePermission(permissions, "manage_purchases");
-    if (!id && req.method === "GET")
-      return send(res, 200, await listPurchases(sql, user.market_id));
-    if (!id && req.method === "POST")
-      return send(res, 201, await createPurchase(sql, user, req.body || {}));
-    if (id && action === "confirm" && req.method === "POST")
-      return send(res, 200, await confirmPurchase(sql, user, id));
-    if (id && action === "cancel" && req.method === "POST")
-      return send(
-        res,
-        200,
-        await cancelPurchase(sql, user, id, req.body?.reason),
-      );
-  }
-  if (section === "goals") {
-    if (req.method === "GET") {
-      const rows =
-        await sql`SELECT goal.*,category.name AS category_name FROM nexo.finance_goals goal LEFT JOIN nexo.finance_categories category ON category.id=goal.category_id WHERE goal.market_id=${user.market_id} ORDER BY period DESC,type`;
-      return send(
-        res,
-        200,
-        rows.map((row) => ({ ...row, target_value: Number(row.target_value) })),
-      );
-    }
-    requirePermission(permissions, "manage_settings");
-    if (!id && req.method === "POST")
-      return send(res, 201, await saveGoal(sql, user, null, req.body || {}));
-    if (id && req.method === "PATCH")
-      return send(res, 200, await saveGoal(sql, user, id, req.body || {}));
-    if (id && req.method === "DELETE") {
-      if (!validUuid(id))
-        throw new AppError(400, "INVALID_GOAL", "Meta inválida.");
-      const [row] =
-        await sql`DELETE FROM nexo.finance_goals WHERE id=${id} AND market_id=${user.market_id} RETURNING id`;
-      return send(
-        res,
-        row ? 200 : 404,
-        row || { message: "Meta não encontrada." },
-      );
-    }
-  }
-  if (section === "settings") {
-    if (req.method === "GET") {
-      const rows =
-        await sql`SELECT * FROM nexo.finance_settings WHERE market_id=${user.market_id}`;
-      return send(res, 200, rows[0] || {});
-    }
-    requirePermission(permissions, "manage_settings");
-    if (req.method === "PATCH")
-      return send(res, 200, await saveSettings(sql, user, req.body || {}));
-  }
-  if (section === "permissions") {
-    requirePermission(permissions, "manage_permissions");
-    if (req.method === "PATCH" && id)
-      return send(
-        res,
-        200,
-        await saveUserPermissions(sql, user, id, req.body || {}),
-      );
-  }
-  return methodNotAllowed(res, ["GET", "POST", "PATCH", "DELETE"]);
-}
+export { handleFinanceRequest } from './finance/routes.js';

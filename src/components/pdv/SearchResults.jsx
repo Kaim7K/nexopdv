@@ -29,7 +29,7 @@ export default function SearchResults({ results, onSelect, loading }) {
           type="button"
           key={product.id}
           onClick={() => onSelect(product)}
-          className="flex w-full items-center gap-2.5 border-b border-border px-3 py-2 text-left transition-colors hover:bg-secondary/50 last:border-0 first:rounded-t-xl last:rounded-b-xl sm:gap-3 sm:px-3.5 sm:py-2.5"
+          className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors odd:bg-muted/20 hover:bg-secondary/50 first:rounded-t-xl last:rounded-b-xl sm:gap-3 sm:px-3.5 sm:py-2.5"
         >
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted sm:h-10 sm:w-10">
             {product.image_url ? (

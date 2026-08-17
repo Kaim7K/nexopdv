@@ -487,7 +487,7 @@ export default function Configuracoes() {
       </label>
 
       <div className="grid items-start gap-2.5 lg:grid-cols-12">
-        <section id="config-market" className="mobile-dense-section scroll-mt-14 lg:col-span-7">
+        <section id="config-market" className="mobile-dense-section scroll-mt-14 lg:col-span-8">
           <div className="mb-2">
             <h2 className="flex items-center gap-2 font-bold">
               <Store className="h-5 w-5 text-accent" /> Dados do mercado
@@ -577,7 +577,7 @@ export default function Configuracoes() {
                 placeholder="00.000.000/0000-00"
               />
             </label>
-            <label className="block text-sm font-semibold sm:col-span-2">
+            <label className="block text-sm font-semibold">
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-muted-foreground" />{' '}
                 Endereço
@@ -587,9 +587,9 @@ export default function Configuracoes() {
                 onChange={(event) =>
                   handleChange('endereco', event.target.value)
                 }
-                rows={3}
+                rows={2}
                 maxLength={240}
-                className="mt-1 min-h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="mt-1 min-h-14 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="Rua, número, bairro e cidade"
               />
             </label>
@@ -597,7 +597,7 @@ export default function Configuracoes() {
         </section>
 
         {canUseLogo && (
-          <section id="config-logo" className="mobile-dense-section scroll-mt-14 lg:col-span-5">
+          <section id="config-logo" className="mobile-dense-section scroll-mt-14 lg:col-span-4">
             <h2 className="font-bold">Logo do mercado</h2>
             <p className="hidden text-sm text-muted-foreground">
               Prefira PNG transparente.
@@ -610,7 +610,7 @@ export default function Configuracoes() {
                 scopeId={user?.market_id || user?.id}
                 label="Logo"
                 name={brandName}
-                previewClassName="h-12 w-20 rounded-lg"
+                previewClassName="h-16 w-24 rounded-lg"
               />
             </div>
           </section>
@@ -787,7 +787,7 @@ export default function Configuracoes() {
           </section>
         )}
 
-        <section id="config-categories" className="mobile-dense-section scroll-mt-14 lg:col-span-8">
+        <section id="config-categories" className="mobile-dense-section scroll-mt-14 lg:col-span-12">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 font-bold">
@@ -841,7 +841,7 @@ export default function Configuracoes() {
             )}
           </div>
 
-          <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {productCategories.map((category) => (
               <div
                 key={category}

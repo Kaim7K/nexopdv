@@ -21,7 +21,14 @@ const [
   googleImages,
   css,
 ] = await Promise.all([
-  read('api/index.js'),
+  Promise.all([
+    read('api/index.js'),
+    read('server/entities/routes.js'),
+    read('server/sales/routes.js'),
+    read('server/cash/routes.js'),
+    read('server/platform/routes.js'),
+  ])
+    .then(files => files.join('\n')),
   read('src/components/stock/ProductForm.jsx'),
   read('src/components/ImageUploadField.jsx'),
   read('src/pages/Estoque.jsx'),

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   ArrowRight,
   Banknote,
@@ -11,7 +10,7 @@ import ProductSearch from '@/components/pdv/ProductSearch';
 import SearchResults from '@/components/pdv/SearchResults';
 
 const Kbd = ({ children }) => (
-  <kbd className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs font-bold leading-none">
+  <kbd className="rounded-md bg-muted/70 px-2 py-1 font-mono text-xs font-bold leading-none">
     {children}
   </kbd>
 );
@@ -28,7 +27,7 @@ export function PdvTopBar({
   onPriceCorrection,
 }) {
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2.5 py-1.5 sm:gap-3 sm:px-4 sm:py-2">
+    <div className="pdv-topbar flex flex-shrink-0 items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-black sm:text-[15px]">
           Venda #{saleNumber}
@@ -144,7 +143,7 @@ export function PdvProductPanel({
   productsLoading,
 }) {
   return (
-    <div className="flex h-[32%] min-h-[210px] max-h-[280px] w-full flex-col overflow-hidden border-r border-border md:h-auto md:max-h-none md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
+    <div className="pdv-product-panel flex h-[32%] min-h-[210px] max-h-[280px] w-full flex-col overflow-hidden md:h-auto md:max-h-none md:w-[36%] md:min-w-[280px] xl:min-w-[300px]">
       <div className="flex-shrink-0 p-1.5 pb-1 sm:p-3 sm:pb-2">
         <div className="relative" ref={searchContainerRef}>
           <ProductSearch
@@ -164,8 +163,8 @@ export function PdvProductPanel({
       </div>
 
       <div className="flex-1 overflow-hidden px-1.5 pb-1.5 sm:px-3 sm:pb-3">
-        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:rounded-xl">
-          <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold sm:px-4 sm:py-2 sm:text-xs">
+        <div className="pdv-product-browser flex h-full flex-col overflow-hidden rounded-lg sm:rounded-xl">
+          <div className="flex items-center gap-2 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground sm:px-3 sm:py-1.5 sm:text-xs">
             <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" /> Produtos
           </div>
           <ProductGrid

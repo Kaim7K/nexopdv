@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import '@/styles/landing.css';
 import {
   ArrowRight,
   BarChart3,
@@ -80,7 +81,7 @@ const FEATURE_CARDS = [
   },
 ];
 
-/** @type {Array<[string, string, React.ElementType]>} */
+/** @type {Array<[string, string, import('react').ElementType]>} */
 const METRICS = [
   ['+5.000', 'mercadinhos gerenciados', ShoppingCart],
   ['+20 milhões', 'em vendas processadas', Tag],
@@ -190,6 +191,35 @@ function getWhatsAppHref() {
   return whatsapp ? `https://wa.me/${whatsapp}?text=${message}` : '#planos';
 }
 
+function useLandingReveal() {
+  useEffect(() => {
+    const elements = Array.from(
+      document.querySelectorAll('[data-landing-reveal]'),
+    );
+    if (!('IntersectionObserver' in window)) {
+      elements.forEach((element) => element.classList.add('is-visible'));
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    );
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+}
+
+function cssVariable(name, value) {
+  return /** @type {import('react').CSSProperties} */ ({ [name]: value });
+}
+
 function Logo({ light = false, className = '' }) {
   return (
     <img
@@ -218,18 +248,15 @@ function ExternalAnchor({ href, children, ...props }) {
 
 function CtaButton({ href, children, variant = 'primary', className = '' }) {
   const variants = {
-    primary:
-      'bg-[#18c987] text-[#041b14] shadow-[0_18px_45px_rgba(24,201,135,0.28)] hover:bg-[#38e3a3]',
-    dark:
-      'border border-white/20 bg-white/10 text-white hover:bg-white/15',
-    light:
-      'border border-slate-200 bg-white text-slate-950 shadow-sm hover:border-[#18c987] hover:bg-emerald-50',
+    primary: 'landing-button--primary',
+    dark: 'landing-button--glass',
+    light: 'landing-button--light',
   };
 
   return (
     <ExternalAnchor
       href={href}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 text-sm font-bold transition duration-200 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18c987] active:translate-y-0 ${variants[variant]} ${className}`}
+      className={`landing-button ${variants[variant]} ${className}`}
     >
       {children}
     </ExternalAnchor>
@@ -238,9 +265,9 @@ function CtaButton({ href, children, variant = 'primary', className = '' }) {
 
 function SectionHeader({ eyebrow, title, text, light = false }) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
+    <div className="landing-section-header mx-auto max-w-3xl text-center" data-landing-reveal>
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide ${
+        className={`landing-kicker ${
           light
             ? 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
             : 'border-emerald-200 bg-emerald-50 text-[#0c8f60]'
@@ -250,14 +277,14 @@ function SectionHeader({ eyebrow, title, text, light = false }) {
         {eyebrow}
       </span>
       <h2
-        className={`mt-3 text-balance text-2xl font-black leading-tight sm:text-4xl ${
+        className={`landing-section-title mt-4 text-balance font-black ${
           light ? 'text-white' : 'text-slate-950'
         }`}
       >
         {title}
       </h2>
       <p
-        className={`mx-auto mt-3 max-w-2xl text-sm leading-6 sm:text-base ${
+        className={`mx-auto mt-4 max-w-2xl text-sm leading-7 sm:text-base ${
           light ? 'text-emerald-50/75' : 'text-slate-600'
         }`}
       >
@@ -269,10 +296,10 @@ function SectionHeader({ eyebrow, title, text, light = false }) {
 
 function ProductMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-3xl lg:max-w-none">
-      <div className="absolute -inset-4 rounded-[2rem] bg-emerald-300/10 blur-2xl" />
-      <figure className="relative rotate-[-2deg] rounded-[1.6rem] border border-white/25 bg-slate-950/70 p-3 shadow-[0_42px_90px_rgba(0,0,0,0.5)] backdrop-blur">
-        <div className="overflow-hidden rounded-[1.1rem] bg-white">
+    <div className="landing-mockup relative mx-auto w-full max-w-3xl lg:max-w-none" data-landing-reveal>
+      <div className="landing-mockup-glow absolute -inset-8 rounded-[3rem] blur-3xl" />
+      <figure className="landing-mockup-frame relative p-2.5">
+        <div className="overflow-hidden rounded-[1.2rem] bg-white">
           <img
             src={APP_IMAGES.reports}
             alt="Painel do Nexo PDV com resumo do dia, gráficos, vendas e indicadores"
@@ -284,9 +311,9 @@ function ProductMockup() {
           />
         </div>
       </figure>
-      <div className="absolute -bottom-6 right-4 hidden w-48 rounded-xl border border-emerald-300/30 bg-[#06241b]/95 p-4 text-white shadow-2xl backdrop-blur sm:block">
-        <span className="text-xs font-bold text-emerald-200">Venda concluída</span>
-        <strong className="mt-1 block text-2xl font-black text-emerald-300">
+      <div className="landing-floating-card absolute -bottom-8 right-4 hidden w-52 p-5 text-white sm:block">
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-200">Venda concluída</span>
+        <strong className="mt-2 block text-2xl font-black text-emerald-300">
           R$ 68,40
         </strong>
         <p className="mt-1 text-xs text-emerald-50/70">em segundos</p>
@@ -295,11 +322,15 @@ function ProductMockup() {
   );
 }
 
-function FeatureCard({ Icon, title, text }) {
+function FeatureCard({ Icon, title, text, index }) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-[0_24px_50px_rgba(15,23,42,0.09)]">
-      <div className="flex items-start gap-4">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-emerald-50 text-[#0c9b68] ring-1 ring-emerald-100">
+    <article
+      className="landing-feature-card"
+      data-landing-reveal
+      style={cssVariable('--reveal-delay', `${index * 55}ms`)}
+    >
+      <div className="relative z-10 flex items-start gap-4">
+        <span className="landing-feature-icon grid h-12 w-12 shrink-0 place-items-center">
           <Icon className="h-5 w-5" />
         </span>
         <div>
@@ -313,11 +344,11 @@ function FeatureCard({ Icon, title, text }) {
 
 function MetricStrip() {
   return (
-    <div className="grid overflow-hidden rounded-xl bg-[#06241b] text-white shadow-[0_24px_70px_rgba(6,36,27,0.22)] md:grid-cols-4">
+    <div className="landing-metrics grid overflow-hidden text-white md:grid-cols-4" data-landing-reveal>
       {METRICS.map(([value, label, Icon]) => (
         <div
           key={value}
-          className="flex items-center gap-4 border-b border-white/10 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+          className="landing-metric flex items-center gap-4 p-6"
         >
           <Icon className="h-8 w-8 shrink-0 text-[#18c987]" />
           <div>
@@ -333,16 +364,17 @@ function MetricStrip() {
 function Showcase({ item }) {
   return (
     <article
-      className={`grid items-center gap-8 lg:grid-cols-2 lg:gap-14 ${
+      className={`landing-showcase grid items-center gap-10 lg:grid-cols-2 lg:gap-20 ${
         item.reverse ? 'lg:[&>figure]:order-first' : ''
       }`}
+      data-landing-reveal
     >
       <div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#0c8f60]">
+        <span className="landing-kicker border-emerald-200 bg-emerald-50 text-[#0c8f60]">
           <Check className="h-3.5 w-3.5" />
           {item.eyebrow}
         </span>
-        <h3 className="mt-4 text-balance text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
+        <h3 className="landing-showcase-title mt-5 text-balance font-black text-slate-950">
           {item.title}
         </h3>
         <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -360,7 +392,7 @@ function Showcase({ item }) {
           ))}
         </ul>
       </div>
-      <figure className="rounded-xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.09)]">
+      <figure className="landing-showcase-frame p-2.5">
         <img
           src={item.image}
           alt={item.alt}
@@ -378,7 +410,7 @@ function Showcase({ item }) {
 function PlanCard({ plan, contactHref }) {
   return (
     <article
-      className={`relative flex min-h-full flex-col rounded-xl border p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] ${
+      className={`landing-plan-card relative flex min-h-full flex-col p-7 ${
         plan.featured
           ? 'border-emerald-300 bg-[#06241b] text-white'
           : 'border-slate-200 bg-white text-slate-950'
@@ -428,6 +460,7 @@ function PlanCard({ plan, contactHref }) {
 
 export default function Landing() {
   const contactHref = getWhatsAppHref();
+  useLandingReveal();
 
   const structuredData = useMemo(
     () => [
@@ -494,14 +527,14 @@ export default function Landing() {
   });
 
   return (
-    <div className="h-dvh overflow-y-auto overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#031b15]/95 text-white shadow-[0_12px_34px_rgba(3,27,21,0.18)] backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div className="landing-premium h-dvh overflow-y-auto overflow-x-hidden bg-white text-slate-950 antialiased selection:bg-emerald-200">
+      <header className="landing-nav sticky top-0 z-50 text-white">
+        <div className="mx-auto flex h-[72px] max-w-[1320px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <a href="#inicio" aria-label="Ir para o início">
             <Logo light />
           </a>
           <nav
-            className="hidden items-center gap-9 text-sm font-bold text-white/80 lg:flex"
+            className="landing-nav-links hidden items-center gap-9 text-[13px] font-bold text-white/70 lg:flex"
             aria-label="Navegação principal"
           >
             <a href="#produto" className="transition hover:text-[#18c987]">
@@ -520,7 +553,7 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="inline-flex min-h-9 items-center justify-center rounded-md border border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
+              className="landing-login-button inline-flex min-h-10 items-center justify-center px-5 text-sm font-bold text-white"
             >
               Entrar
             </Link>
@@ -535,27 +568,28 @@ export default function Landing() {
       <main>
         <section
           id="inicio"
-          className="relative isolate overflow-hidden bg-[#031b15] pt-8 text-white"
+          className="landing-hero relative isolate overflow-hidden text-white"
         >
-          <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_42%,rgba(24,201,135,0.18),transparent_34%),linear-gradient(180deg,rgba(3,27,21,1),rgba(3,27,21,0.98))]" />
+          <div className="landing-hero-backdrop absolute inset-0 -z-20" />
+          <div className="landing-hero-grid absolute inset-0 -z-10" />
           <div className="absolute bottom-0 left-0 right-0 -z-10 h-px bg-emerald-300/25" />
 
-          <div className="mx-auto grid min-h-[640px] max-w-7xl items-center gap-10 px-4 pb-14 pt-8 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-emerald-200">
+          <div className="mx-auto grid min-h-[calc(100dvh-72px)] max-w-[1320px] items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[0.84fr_1.16fr] lg:px-8 lg:py-24">
+            <div className="landing-hero-copy" data-landing-reveal>
+              <span className="landing-kicker border-emerald-300/20 bg-emerald-300/10 text-emerald-200">
                 <Store className="h-3.5 w-3.5" />
                 Sistema de gestão para mercadinhos
               </span>
-              <h1 className="mt-5 max-w-2xl text-balance text-4xl font-black leading-[1.02] sm:text-6xl">
+              <h1 className="landing-display mt-7 max-w-2xl text-balance font-black">
                 Simples de usar. Completo para{' '}
-                <span className="text-[#18c987]">vender mais.</span>
+                <span className="landing-gradient-text">vender mais.</span>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-emerald-50/80">
+              <p className="mt-7 max-w-xl text-base leading-8 text-emerald-50/72 sm:text-lg">
                 O Nexo PDV ajuda mercadinhos a vender rápido, controlar estoque,
                 organizar finanças e tomar decisões com clareza, tudo em uma
                 única plataforma.
               </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <CtaButton href={contactHref}>
                   Fale pelo WhatsApp
                   <MessageCircle className="h-4 w-4" />
@@ -565,11 +599,12 @@ export default function Landing() {
                   <ArrowRight className="h-4 w-4" />
                 </CtaButton>
               </div>
-              <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-                {HERO_BADGES.map(({ label, Icon }) => (
+              <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-2">
+                {HERO_BADGES.map(({ label, Icon }, index) => (
                   <div
                     key={label}
-                    className="flex items-center gap-2 text-sm font-semibold text-emerald-50/80"
+                    className="landing-hero-badge flex items-center gap-2.5 text-sm font-semibold text-emerald-50/80"
+                    style={cssVariable('--badge-delay', `${index * 60}ms`)}
                   >
                     <Icon className="h-4 w-4 text-[#18c987]" />
                     {label}
@@ -581,34 +616,34 @@ export default function Landing() {
             <ProductMockup />
           </div>
         </section>
-        <section id="recursos" className="scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="recursos" className="landing-section landing-section--tint scroll-mt-20">
+          <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
             <SectionHeader
               eyebrow="Feito para a rotina do seu mercado"
               title="Tudo que você precisa, em um só lugar"
               text="Recursos essenciais que simplificam o dia a dia e fazem seu mercadinho crescer."
             />
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {FEATURE_CARDS.map((item) => (
-                <FeatureCard key={item.title} {...item} />
+            <div className="landing-bento mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {FEATURE_CARDS.map((item, index) => (
+                <FeatureCard key={item.title} {...item} index={index} />
               ))}
             </div>
-            <div className="mt-8">
+            <div className="mt-12">
               <MetricStrip />
             </div>
           </div>
         </section>
 
-        <section id="produto" className="scroll-mt-20 bg-white py-14 sm:py-16 lg:py-20">
-          <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-6 lg:px-8">
+        <section id="produto" className="landing-section scroll-mt-20 bg-white">
+          <div className="mx-auto grid max-w-[1320px] gap-24 px-4 sm:px-6 lg:gap-32 lg:px-8">
             {SHOWCASES.map((item) => (
               <Showcase key={item.title} item={item} />
             ))}
           </div>
         </section>
 
-        <section id="planos" className="scroll-mt-20 bg-[#f7faf8] py-14 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-6xl rounded-2xl border border-emerald-100 bg-white/75 px-4 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.06)] sm:px-8 lg:px-12">
+        <section id="planos" className="landing-section landing-section--tint scroll-mt-20">
+          <div className="landing-pricing-shell mx-auto max-w-6xl px-4 py-12 sm:px-8 lg:px-12 lg:py-16" data-landing-reveal>
             <SectionHeader
               eyebrow="Planos para cada momento"
               title="Escolha o plano ideal para o seu negócio"
@@ -631,18 +666,18 @@ export default function Landing() {
 
         <section
           id="duvidas"
-          className="scroll-mt-20 bg-[#031b15] py-14 text-white sm:py-16 lg:py-20"
+          className="landing-dark-section scroll-mt-20 text-white"
         >
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:px-8">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-200">
+          <div className="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-[0.68fr_1.32fr] lg:px-8">
+            <div data-landing-reveal>
+              <span className="landing-kicker border-emerald-300/25 bg-emerald-300/10 text-emerald-200">
                 <Check className="h-3.5 w-3.5" />
                 Dúvidas frequentes
               </span>
-              <h2 className="mt-4 text-balance text-3xl font-black leading-tight">
+              <h2 className="landing-section-title mt-5 text-balance font-black">
                 Respostas rápidas para você continuar
               </h2>
-              <div className="mt-8 hidden rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-6 lg:block">
+              <div className="landing-faq-aside mt-10 hidden p-7 lg:block">
                 <ClipboardList className="h-16 w-16 text-[#18c987]" />
                 <p className="mt-5 text-sm leading-6 text-emerald-50/75">
                   Tire as principais dúvidas e chame a equipe para ver o melhor
@@ -650,11 +685,11 @@ export default function Landing() {
                 </p>
               </div>
             </div>
-            <div className="grid gap-3">
+            <div className="grid gap-3" data-landing-reveal>
               {FAQS.map((item) => (
                 <details
                   key={item.question}
-                  className="group rounded-lg border border-white/10 bg-white/5 p-5 transition open:border-emerald-300/30 open:bg-white/10"
+                  className="landing-faq group p-6"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold">
                     {item.question}
@@ -668,8 +703,8 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mx-auto mt-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid items-center gap-6 rounded-xl border border-emerald-300/25 bg-emerald-300/10 p-6 lg:grid-cols-[1fr_auto]">
+          <div className="mx-auto mt-16 max-w-[1320px] px-4 sm:px-6 lg:px-8">
+            <div className="landing-final-cta grid items-center gap-8 p-7 sm:p-9 lg:grid-cols-[1fr_auto]" data-landing-reveal>
               <div className="flex items-center gap-4">
                 <MessageCircle className="h-12 w-12 shrink-0 text-[#18c987]" />
                 <div>
@@ -695,8 +730,8 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-[#031b15] text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:px-8">
+      <footer className="landing-footer text-white">
+        <div className="mx-auto grid max-w-[1320px] gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:px-8">
           <div>
             <Logo light />
             <p className="mt-4 max-w-xs text-sm leading-6 text-emerald-50/70">

@@ -5,8 +5,18 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const [migration, closingEntryMigration, api, finance, cashSummary, db, paymentModal, financeUi] = await Promise.all([
   read('database/migrations/016_financial_cash_integrity.sql'),
   read('database/migrations/017_cash_closing_entry_finance.sql'),
-  read('api/index.js'),
-  read('server/finance.js'),
+  Promise.all([
+    read('api/index.js'),
+    read('server/entities/routes.js'),
+    read('server/sales/routes.js'),
+    read('server/cash/routes.js'),
+    read('server/platform/routes.js'),
+  ])
+    .then(files => files.join('\n')),
+  Promise.all([
+    read('server/finance.js'),
+    read('server/finance/routes.js'),
+  ]).then(files => files.join('\n')),
   read('server/cash-summary.js'),
   read('server/db.js'),
   read('src/components/pdv/PaymentModal.jsx'),
