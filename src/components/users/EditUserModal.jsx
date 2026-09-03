@@ -11,6 +11,8 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
     role: user.role,
     photo_url: user.photo_url || '',
     active: user.active !== false,
+    cash_closing_time_enabled: Boolean(user.cash_closing_time_enabled),
+    cash_closing_min_time: user.cash_closing_min_time || '19:00',
   });
   const [saving, setSaving] = useState(false);
   const canChangeRole = actorRole === 'admin';
@@ -28,6 +30,8 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
       const payload = { full_name: fullName, photo_url: form.photo_url };
       if (canChangeRole) payload.role = form.role;
       if (canChangeStatus) payload.active = form.active;
+      payload.cash_closing_time_enabled = form.cash_closing_time_enabled;
+      payload.cash_closing_min_time = form.cash_closing_min_time;
       await nexoApi.entities.User.update(user.id, payload);
       toast.success('Usuário atualizado.');
       await onSaved();
@@ -79,6 +83,32 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
             {!canChangeStatus && <span className="mt-1 block text-xs text-muted-foreground">Este status não pode ser alterado pelo seu perfil.</span>}
           </div>
         </div>
+        <fieldset className="rounded-xl border border-border bg-muted/20 p-3">
+          <label className="flex cursor-pointer items-start justify-between gap-3">
+            <span>
+              <span className="block text-sm font-bold">Horário mínimo para fechar o caixa</span>
+              <span className="mt-1 block text-xs text-muted-foreground">Bloqueia o fechamento antecipado no horário de Brasília.</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={form.cash_closing_time_enabled}
+              onChange={event => setForm(previous => ({ ...previous, cash_closing_time_enabled: event.target.checked }))}
+              className="mt-1 h-4 w-4 accent-[var(--market-primary)]"
+            />
+          </label>
+          {form.cash_closing_time_enabled && (
+            <label className="mt-3 block text-sm font-semibold">
+              Liberar fechamento a partir de
+              <input
+                required
+                type="time"
+                value={form.cash_closing_min_time}
+                onChange={event => setForm(previous => ({ ...previous, cash_closing_min_time: event.target.value }))}
+                className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11"
+              />
+            </label>
+          )}
+        </fieldset>
         </div>
 
         <div className="modal-footer">

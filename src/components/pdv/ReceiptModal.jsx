@@ -140,7 +140,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
 
   return (
     <div className="modal-overlay">
-      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="modal-panel sm:max-w-xl">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="modal-panel receipt-modal-panel sm:max-w-2xl">
         <div className="modal-header no-print">
           <div>
             <h2 id="receipt-modal-title" className="modal-title">Recibo da venda</h2>
@@ -151,8 +151,8 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-[#f7f9f8] p-3 text-black sm:p-4" ref={receiptRef}>
-          <div className="receipt mx-auto w-full max-w-[360px]">
+        <div className="receipt-modal-body flex-1 overflow-y-auto bg-[#eef3f0] p-2.5 text-black sm:p-4" ref={receiptRef}>
+          <div className="receipt receipt-preview mx-auto w-full max-w-[34rem]">
             <div className="r-header">
               <div className="r-badge">Mercado</div>
               <div className="r-logo">
@@ -185,7 +185,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
                   <div key={item.key} className="r-item">
                     <span className="r-qty">{item.quantityLabel}</span>
                     <div className="min-w-0">
-                      <div className="r-name truncate">{item.name}</div>
+                      <div className="r-name">{item.name}</div>
                     </div>
                     <div className="r-prices">
                       <span>Unitário {formatCurrency(item.unitPrice)}</span>

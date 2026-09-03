@@ -49,6 +49,7 @@ const formatDate = (value) =>
 export default function HistoricoCaixas() {
   const requestSequence = useRef(0);
   const { user } = /** @type {any} */ (useOutletContext());
+  const canSeeCashBalances = user.role !== "vendedor";
   const [filters, setFilters] = useState({
     from: monthStartIsoDate(),
     to: todayIsoDate(),
@@ -141,7 +142,7 @@ export default function HistoricoCaixas() {
         icon={Banknote}
         eyebrow="Abertura e fechamento"
         title="Histórico de caixas"
-        description="Aberturas, fechamentos e diferenças de caixa."
+        description={canSeeCashBalances ? "Aberturas, fechamentos e diferenças de caixa." : "Aberturas, fechamentos e quantidade de vendas."}
       />
 
       <FilterPanel aria-label="Filtros do histórico">
@@ -217,14 +218,11 @@ export default function HistoricoCaixas() {
 
       {data.items.length > 0 && (
         <section
-          className="grid grid-cols-2 gap-1.5 sm:grid-cols-2 sm:gap-2 xl:grid-cols-4"
+          className={`grid gap-1.5 sm:gap-2 ${canSeeCashBalances ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1'}`}
           aria-label="Resumo do período exibido"
         >
-          <MetricCard
-            label="Vendas na página"
-            value={formatCurrency(totals.sales)}
-            icon={ReceiptText}
-          />
+          {canSeeCashBalances ? <>
+          <MetricCard label="Vendas na página" value={formatCurrency(totals.sales)} icon={ReceiptText} />
           <MetricCard
             label="Entradas"
             value={formatCurrency(totals.entries)}
@@ -243,6 +241,13 @@ export default function HistoricoCaixas() {
             icon={Banknote}
             tone={Math.abs(totals.differences) > 0.009 ? "red" : "green"}
           />
+          </> : (
+            <MetricCard
+              label="Quantidade de vendas"
+              value={data.items.reduce((sum, item) => sum + Number(item.sales_count || item.summary?.sales_count || 0), 0)}
+              icon={ReceiptText}
+            />
+          )}
         </section>
       )}
 
@@ -282,9 +287,9 @@ export default function HistoricoCaixas() {
                   <th className="whitespace-nowrap px-3 py-2.5">Operador</th>
                   <th className="whitespace-nowrap px-3 py-2.5">Abertura</th>
                   <th className="whitespace-nowrap px-3 py-2.5">Fechamento</th>
-                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>
-                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Vendas</th>
-                  <th className="whitespace-nowrap px-3 py-2.5 text-right">Final</th>
+                  {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>}
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right">{canSeeCashBalances ? "Vendas" : "Qtd. vendas"}</th>
+                  {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Final</th>}
                   <th className="whitespace-nowrap px-3 py-2.5">Status</th>
                   <th className="whitespace-nowrap px-3 py-2.5">
                     <span className="sr-only">Ações</span>
@@ -306,15 +311,17 @@ export default function HistoricoCaixas() {
                     <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
                       {formatDate(item.closed_at)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
+                    {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
                       {formatCurrency(item.opening_amount)}
-                    </td>
+                    </td>}
                     <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
-                      {formatCurrency(item.total_sales)}
+                      {canSeeCashBalances
+                        ? formatCurrency(item.total_sales)
+                        : item.sales_count || item.summary?.sales_count || 0}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
+                    {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
                       {formatCurrency(item.final_amount)}
-                    </td>
+                    </td>}
                     <td className="whitespace-nowrap px-3 py-2.5">
                       <Status value={item.status} />
                     </td>
@@ -348,15 +355,22 @@ export default function HistoricoCaixas() {
                     </div>
                     <Status value={item.status} />
                   </div>
-                  <dl className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-1.5 text-xs">
-                    <Value label="Vendas" value={formatCurrency(item.total_sales)} />
-                    <Value label="Final" value={formatCurrency(item.final_amount)} />
-                    <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
+                  <dl className={`mt-2 grid gap-1.5 text-xs ${canSeeCashBalances ? 'grid-cols-[1fr_1fr_auto]' : 'grid-cols-1'}`}>
+                    <Value
+                      label={canSeeCashBalances ? "Vendas" : "Quantidade de vendas"}
+                      value={canSeeCashBalances
+                        ? formatCurrency(item.total_sales)
+                        : item.sales_count || item.summary?.sales_count || 0}
+                    />
+                    {canSeeCashBalances && <>
+                      <Value label="Final" value={formatCurrency(item.final_amount)} />
+                      <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
+                    </>}
                   </dl>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    {canSeeCashBalances && <span className="truncate text-[11px] text-muted-foreground">
                       Entradas {formatCurrency(item.entries)} · Retiradas {formatCurrency(item.withdrawals)}
-                    </span>
+                    </span>}
                     <button
                       type="button"
                       onClick={() => openDetail(item)}

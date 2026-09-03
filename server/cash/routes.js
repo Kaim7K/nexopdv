@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { roundMoney } from '../cash-summary.js';
+import {
+  cashClosingAvailability,
+  cashSessionForUser,
+  cashSummaryForUser,
+} from '../cash-access.js';
 import { methodNotAllowed, send } from '../http.js';
 
 export async function handleCashRequest(
@@ -22,6 +27,10 @@ export async function handleCashRequest(
       return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
 
     if (path[1] === 'history' && req.method === 'GET') {
+      if (user.role === 'vendedor')
+        return send(res, 403, {
+          message: 'O histórico de caixas é restrito a gerentes e administradores.',
+        });
       const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
       const pageSize = Math.max(
         10,
@@ -55,7 +64,7 @@ export async function handleCashRequest(
       const items = [];
       for (const session of sessions) {
         const summary = summaries.get(String(session.id)) || {};
-        items.push({
+        const item = {
           ...session,
           summary,
           total_sales: Number(summary.total || 0),
@@ -72,7 +81,16 @@ export async function handleCashRequest(
                     Number(summary.expected_cash || 0),
                 )
               : null,
-        });
+        };
+        items.push(
+          user.role === 'vendedor'
+            ? {
+                ...cashSessionForUser(user, session),
+                summary: cashSummaryForUser(user, summary),
+                sales_count: Number(summary.sales_count || 0),
+              }
+            : item,
+        );
       }
       const [operatorRows, unitRows] = await Promise.all([
         user.role === 'vendedor'
@@ -93,6 +111,10 @@ export async function handleCashRequest(
     }
 
     if (isUuid(path[1]) && !path[2] && req.method === 'GET') {
+      if (user.role === 'vendedor')
+        return send(res, 403, {
+          message: 'Os detalhes do histórico de caixas são restritos a gerentes e administradores.',
+        });
       const [row] =
         await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE id=${path[1]} AND market_id=${user.market_id} AND entity='cash_sessions' AND (${user.role !== 'vendedor'} OR data->>'seller_id'=${user.id})`;
       if (!row)
@@ -101,8 +123,11 @@ export async function handleCashRequest(
         });
       const session = recordFromRow(row);
       return send(res, 200, {
-        session,
-        summary: await getCashSessionSummary(sql, user.market_id, session),
+        session: cashSessionForUser(user, session),
+        summary: cashSummaryForUser(
+          user,
+          await getCashSessionSummary(sql, user.market_id, session),
+        ),
       });
     }
 
@@ -526,7 +551,10 @@ export async function handleCashRequest(
       const session = recordFromRow(sessionRow);
       return send(res, 201, {
         movement: recordFromRow(movement),
-        summary: await getCashSessionSummary(sql, user.market_id, session),
+        summary: cashSummaryForUser(
+          user,
+          await getCashSessionSummary(sql, user.market_id, session),
+        ),
       });
     }
 
@@ -573,12 +601,14 @@ export async function handleCashRequest(
       const summary = session
         ? await getCashSessionSummary(sql, user.market_id, session)
         : null;
+      const closingAvailability = cashClosingAvailability(user);
       return send(res, 200, {
         required:
           user.role === 'vendedor' && Boolean(user.require_cash_register),
         market_requires_cash: Boolean(user.require_cash_register),
-        session,
-        summary,
+        session: cashSessionForUser(user, session),
+        summary: cashSummaryForUser(user, summary),
+        closing_time: closingAvailability,
       });
     }
 
@@ -599,7 +629,7 @@ export async function handleCashRequest(
       if (current)
         return send(res, 409, {
           message: 'Já existe um caixa aberto para este usuário.',
-          session: current,
+          session: cashSessionForUser(user, current),
         });
       const payload = {
         seller_id: user.id,
@@ -634,13 +664,23 @@ export async function handleCashRequest(
         })}::jsonb
       )`;
       return send(res, 201, {
-        session,
-        summary: await getCashSessionSummary(sql, user.market_id, session),
+        session: cashSessionForUser(user, session),
+        summary: cashSummaryForUser(
+          user,
+          await getCashSessionSummary(sql, user.market_id, session),
+        ),
       });
     }
 
     if (path[1] === 'close') {
       if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+      const closingAvailability = cashClosingAvailability(user);
+      if (!closingAvailability.can_close)
+        return send(res, 409, {
+          code: 'CASH_CLOSING_TIME_RESTRICTED',
+          message: closingAvailability.message,
+          closing_time: closingAvailability,
+        });
       const session = await findOpenCashSession(sql, user.market_id, user.id);
       if (!session)
         return send(res, 409, {
@@ -785,8 +825,8 @@ export async function handleCashRequest(
           message: 'O caixa já foi fechado em outra tela.',
         });
       return send(res, 200, {
-        session: recordFromRow(row),
-        summary: {
+        session: cashSessionForUser(user, recordFromRow(row)),
+        summary: cashSummaryForUser(user, {
           ...summarySnapshot,
           sales: cashSalesDetail,
           movements: cashMovementsDetail,
@@ -797,7 +837,7 @@ export async function handleCashRequest(
           expected_cash_before_expense: Number(summary.expected_cash || 0),
           expected_cash: adjustedExpectedCash,
           difference: update.difference,
-        },
+        }),
       });
     }
 

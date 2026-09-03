@@ -12,6 +12,7 @@ import { ConfirmProvider } from '@/components/common/ConfirmProvider';
 import { LoadingState } from '@/components/common/PageState';
 import Layout from '@/components/Layout';
 import NetworkStatus from '@/components/NetworkStatus';
+import TestRoleSwitcher from '@/components/TestRoleSwitcher';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ScrollToTop from '@/components/ScrollToTop';
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from '@/config/navigation';
@@ -70,6 +71,7 @@ function App() {
       <AuthProvider>
         <ConfirmProvider>
           <NetworkStatus />
+          <TestRoleSwitcher />
           <ScrollToTop />
           <AppErrorBoundary>
             <AuthenticatedApp />

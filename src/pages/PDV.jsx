@@ -966,6 +966,7 @@ export default function PDV() {
         {cashModal && (
           <CashRegisterModal
             mode={cashModal}
+            userRole={user.role}
             cashState={cashModal === 'closed' ? closedCashReport : cashState}
             processing={cashProcessing}
             reporting={cashReporting}

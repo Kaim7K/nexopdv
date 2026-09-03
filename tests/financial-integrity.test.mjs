@@ -40,7 +40,7 @@ for (const statement of migrationStatements) {
   );
 }
 
-assert.match(db, /CURRENT_SCHEMA_VERSION = 17/, 'A aplicação deve exigir a migração de integridade financeira.');
+assert.match(db, /CURRENT_SCHEMA_VERSION = 18/, 'A aplicação deve exigir a migração mais recente.');
 assert.match(migration, /cash_close/, 'Fechamentos precisam ter uma origem financeira válida.');
 assert.match(closingEntryMigration, /cash_close_entry/, 'Entradas no fechamento precisam de origem financeira idempotente.');
 assert.match(migration, /nexo_sales_client_operation_uidx/, 'Vendas devem rejeitar repetição da mesma operação.');

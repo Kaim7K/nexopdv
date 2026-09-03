@@ -56,7 +56,8 @@ const weekStartKey = () => {
 
 export default function Vendas() {
   const { user, config } = /** @type {any} */ (useOutletContext());
-  const canExportReports = hasMarketFeature(user, 'report_export');
+  const canExportReports =
+    user.role !== 'vendedor' && hasMarketFeature(user, 'report_export');
   const canSeeTeam = ['gerente', 'admin'].includes(user.role);
   const [sales, setSales] = useState([]);
   const [sellers, setSellers] = useState([]);
@@ -365,11 +366,17 @@ export default function Vendas() {
       </div>
 
       <section className="filter-surface mb-3 grid gap-2.5" aria-label="Filtros de vendas">
-        <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
-          <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
-          <SaleMetric label="Vendas" value={metrics.sales_count || 0} />
-          <SaleMetric label="Ticket" value={formatCurrency(metrics.average_ticket)} />
-          <SaleMetric label="Canceladas" value={metrics.cancelled_count || 0} muted />
+        <div className={`grid gap-1.5 ${user.role === 'vendedor' ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
+          {user.role !== 'vendedor' && (
+            <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
+          )}
+          <SaleMetric label="Quantidade de vendas" value={metrics.sales_count || 0} />
+          {user.role !== 'vendedor' && (
+            <>
+              <SaleMetric label="Ticket" value={formatCurrency(metrics.average_ticket)} />
+              <SaleMetric label="Canceladas" value={metrics.cancelled_count || 0} muted />
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-4 gap-1.5">

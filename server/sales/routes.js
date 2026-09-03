@@ -98,18 +98,28 @@ if (path[0] === 'sales' && path[1] === 'list' && req.method === 'GET') {
     id: seller.id,
     name: seller.full_name,
   }));
+  const summary = summarizeSales(summaryRows.map(recordFromRow));
   return send(res, 200, {
     items: sales,
     page,
     page_size: pageSize,
     total,
     page_count: Math.max(1, Math.ceil(total / pageSize)),
-    summary: summarizeSales(summaryRows.map(recordFromRow)),
+    summary:
+      user.role === 'vendedor'
+        ? {
+            sales_count: Number(summary.sales_count || 0),
+          }
+        : summary,
     sellers,
   });
 }
 
 if (path[0] === 'sales' && path[1] === 'report' && req.method === 'GET') {
+  if (user.role === 'vendedor')
+    return send(res, 403, {
+      message: 'Relatórios financeiros de vendas são restritos a gerentes e administradores.',
+    });
   if (!hasFeature(user, 'report_export'))
     return send(res, 403, {
       code: 'FEATURE_NOT_AVAILABLE',

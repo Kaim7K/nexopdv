@@ -16,6 +16,8 @@ const EMPTY_FORM = {
   password: '',
   role: 'vendedor',
   photo_url: '',
+  cash_closing_time_enabled: false,
+  cash_closing_min_time: '19:00',
 };
 
 const ROLE_LABELS = {
@@ -294,6 +296,32 @@ export default function Usuarios() {
                 objectFit="cover"
               />
               </div>
+              <fieldset className="rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2">
+                <label className="flex cursor-pointer items-start justify-between gap-3">
+                  <span>
+                    <span className="block text-sm font-bold">Horário mínimo para fechar o caixa</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Use o horário de Brasília para impedir fechamentos antecipados.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={form.cash_closing_time_enabled}
+                    onChange={event => setForm(previous => ({ ...previous, cash_closing_time_enabled: event.target.checked }))}
+                    className="mt-1 h-4 w-4 accent-[var(--market-primary)]"
+                  />
+                </label>
+                {form.cash_closing_time_enabled && (
+                  <label className="mt-3 block text-sm font-semibold">
+                    Liberar fechamento a partir de
+                    <input
+                      required
+                      type="time"
+                      value={form.cash_closing_min_time}
+                      onChange={event => setForm(previous => ({ ...previous, cash_closing_min_time: event.target.value }))}
+                      className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                  </label>
+                )}
+              </fieldset>
             </div>
 
             <div className="modal-footer">

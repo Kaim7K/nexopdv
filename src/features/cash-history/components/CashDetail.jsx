@@ -326,6 +326,17 @@ export default function CashDetail({
         <div className="cash-modal-scroll flex-1 space-y-[clamp(0.5rem,2cqi,0.75rem)] overflow-y-auto overflow-x-hidden bg-card p-[clamp(0.5rem,2cqi,0.75rem)]">
           {loading ? (
             <LoadingState label="Carregando movimentação completa..." />
+          ) : currentUser.role === "vendedor" ? (
+            <section className="rounded-xl border border-border bg-muted/20 p-5 text-center">
+              <ReceiptText className="mx-auto h-7 w-7 text-accent" />
+              <h3 className="mt-2 font-bold">Resumo do caixa</h3>
+              <strong className="mt-3 block text-3xl font-black tabular-nums text-accent">
+                {summary.sales_count || 0}
+              </strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                venda(s) registrada(s). Os valores financeiros são restritos à gerência.
+              </p>
+            </section>
           ) : (
             <>
               <section className="rounded-lg bg-muted/20 p-2.5">

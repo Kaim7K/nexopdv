@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Banknote,
@@ -7,6 +7,7 @@ import {
   Download,
   LogOut,
   LockKeyhole,
+  TriangleAlert,
   ReceiptText,
   X,
 } from "lucide-react";
@@ -20,6 +21,17 @@ import {
 } from "@/lib/helpers";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
 
+const brazilMinutesNow = () => {
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  return Number(parts.find((part) => part.type === 'hour')?.value || 0) * 60
+    + Number(parts.find((part) => part.type === 'minute')?.value || 0);
+};
+
 export default function CashRegisterModal({
   mode,
   cashState,
@@ -31,6 +43,7 @@ export default function CashRegisterModal({
   onCloseCash,
   onDownloadReport,
   onLogout,
+  userRole,
 }) {
   const modalRef = useModalBehavior({
     onClose,
@@ -40,6 +53,7 @@ export default function CashRegisterModal({
   const [closingAmount, setClosingAmount] = useState("");
   const [closingEntry, setClosingEntry] = useState("");
   const [closingExpense, setClosingExpense] = useState("");
+  const [clockTick, setClockTick] = useState(0);
   const summary = cashState?.summary || {};
   const paymentEntries = useMemo(
     () => Object.entries(summary.payments || {}),
@@ -48,6 +62,22 @@ export default function CashRegisterModal({
   const isOpenMode = mode === "open";
   const isClosedMode = mode === "closed";
   const isClosingMode = !isOpenMode && !isClosedMode;
+  const canSeeCashBalances = userRole !== 'vendedor';
+  const closingTime = cashState?.closing_time || {};
+  const minimumClosingMinutes = /^\d{2}:\d{2}$/.test(closingTime.minimum_time || '')
+    ? Number(closingTime.minimum_time.slice(0, 2)) * 60 + Number(closingTime.minimum_time.slice(3, 5))
+    : null;
+  const closingTimeBlocked = isClosingMode && Boolean(closingTime.enabled) && (
+    minimumClosingMinutes === null
+      ? closingTime.can_close === false
+      : brazilMinutesNow() < minimumClosingMinutes
+  );
+  useEffect(() => {
+    if (!isClosingMode || !closingTime.enabled) return undefined;
+    const interval = window.setInterval(() => setClockTick((value) => value + 1), 30_000);
+    return () => window.clearInterval(interval);
+  }, [closingTime.enabled, isClosingMode]);
+  void clockTick;
   const expectedCash = useMemo(
     () =>
       roundCurrency(
@@ -96,7 +126,7 @@ export default function CashRegisterModal({
       <form
         ref={modalRef}
         onSubmit={submit}
-        className={`modal-panel cash-mobile-modal ${isOpenMode ? "sm:max-w-[30rem]" : "sm:max-w-[56rem]"}`}
+        className={`modal-panel cash-mobile-modal ${isOpenMode ? "sm:max-w-[30rem]" : canSeeCashBalances ? "sm:max-w-[56rem]" : "sm:max-w-[34rem]"}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-modal-title"
@@ -167,25 +197,33 @@ export default function CashRegisterModal({
             </label>
           ) : (
             <div className="space-y-2.5">
-              <div className="cash-kpi-grid grid gap-px overflow-hidden rounded-xl bg-border/40">
-                <Metric
-                  label="Valor inicial"
-                  value={formatCurrency(summary.opening_amount)}
-                />
+              <div className={`cash-kpi-grid grid gap-px overflow-hidden rounded-xl bg-border/40 ${canSeeCashBalances ? '' : '!grid-cols-1'}`}>
+                {canSeeCashBalances && (
+                  <Metric
+                    label="Valor inicial"
+                    value={formatCurrency(summary.opening_amount)}
+                  />
+                )}
                 <Metric label="Vendas" value={summary.sales_count || 0} />
-                <Metric label="Total" value={formatCurrency(summary.total)} />
-                <Metric
-                  label="Em dinheiro"
-                  value={formatCurrency(summary.cash_sales)}
-                />
+                {canSeeCashBalances && (
+                  <>
+                    <Metric label="Total" value={formatCurrency(summary.total)} />
+                    <Metric
+                      label="Em dinheiro"
+                      value={formatCurrency(summary.cash_sales)}
+                    />
+                  </>
+                )}
               </div>
 
               <section className="overflow-hidden rounded-xl border border-accent/30 bg-accent/[0.045]">
                 <div className="cash-reconcile-grid grid">
-                  <FinancialValue
-                    label="Dinheiro esperado no caixa"
-                    value={formatCurrency(expectedCash)}
-                  />
+                  {canSeeCashBalances && (
+                    <FinancialValue
+                      label="Dinheiro esperado no caixa"
+                      value={formatCurrency(expectedCash)}
+                    />
+                  )}
                   {isClosingMode ? (
                     <label className="cash-reconcile-segment p-[clamp(0.625rem,2cqi,0.75rem)]">
                       <span className="block text-[11px] font-bold uppercase tracking-[0.045em] text-muted-foreground">
@@ -217,7 +255,7 @@ export default function CashRegisterModal({
                       value={formatCurrency(countedCash)}
                     />
                   )}
-                  <div
+                  {canSeeCashBalances && <div
                     className={`cash-reconcile-segment p-[clamp(0.625rem,2cqi,0.75rem)] ${hasCountedCash && !isBalanced ? "bg-amber-500/[0.07]" : "bg-emerald-500/[0.07]"}`}
                   >
                     <span className="block text-[11px] font-bold uppercase tracking-[0.045em] text-muted-foreground">
@@ -238,9 +276,9 @@ export default function CashRegisterModal({
                       )}
                       Status: {closingStatus}
                     </span>
-                  </div>
+                  </div>}
                 </div>
-                <div className="cash-formula-grid grid gap-px border-t border-accent/15 bg-accent/10 text-xs">
+                {canSeeCashBalances && <div className="cash-formula-grid grid gap-px border-t border-accent/15 bg-accent/10 text-xs">
                   <Formula
                     label="Valor inicial"
                     value={summary.opening_amount}
@@ -274,13 +312,13 @@ export default function CashRegisterModal({
                       negative
                     />
                   )}
-                </div>
+                </div>}
               </section>
 
               <div
-                className={`grid items-start gap-2.5 ${isClosedMode ? "" : "cash-support-grid"}`}
+                className={`grid items-start gap-2.5 ${!isClosedMode && canSeeCashBalances ? "cash-support-grid" : ""}`}
               >
-                {paymentEntries.length > 0 && (
+                {canSeeCashBalances && paymentEntries.length > 0 && (
                   <section className="cash-subcontainer rounded-lg bg-muted/20 p-2.5">
                     <h3 className="flex items-center gap-2 text-sm font-bold">
                       <ReceiptText className="h-4 w-4 text-accent" /> Resumo por
@@ -373,7 +411,7 @@ export default function CashRegisterModal({
                 <LogOut className="h-4 w-4" /> Sair
               </button>
             )}
-            {!isOpenMode && onDownloadReport && (
+            {!isOpenMode && canSeeCashBalances && onDownloadReport && (
               <button
                 type="button"
                 disabled={processing || reporting}
@@ -391,7 +429,7 @@ export default function CashRegisterModal({
                   processing ||
                   reporting ||
                   (isOpenMode && openingAmount === "") ||
-                  (isClosingMode && !hasCountedCash)
+                  (isClosingMode && (!hasCountedCash || closingTimeBlocked))
                 }
                 className="modal-button modal-actions-primary cash-touch-target bg-accent px-5 text-accent-foreground hover:bg-accent/90"
               >
@@ -403,6 +441,12 @@ export default function CashRegisterModal({
               </button>
             )}
           </div>
+          {closingTimeBlocked && (
+            <div role="alert" className="mt-2 flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-200">
+              <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
+              <span>{closingTime.message || `O caixa só pode ser fechado a partir das ${closingTime.minimum_time}.`}</span>
+            </div>
+          )}
         </div>
       </form>
     </div>

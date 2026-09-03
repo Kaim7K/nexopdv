@@ -94,7 +94,7 @@ export const MENU_ITEMS = [
     path: '/caixas',
     label: 'Histórico de caixas',
     icon: Banknote,
-    roles: ['gerente', 'vendedor', 'admin'],
+    roles: ['gerente', 'admin'],
     module: 'caixas',
   },
   {

@@ -37,6 +37,7 @@ import {
   buildCashSessionSummary,
   roundMoney,
 } from '../server/cash-summary.js';
+import { normalizeCashClosingTime } from '../server/cash-access.js';
 
 const ENTITIES = {
   Product: 'products',
@@ -1419,8 +1420,23 @@ async function routeHandler(req, res) {
     const photoUrl = req.body.photo_url
       ? normalizeImageValue(req.body.photo_url)
       : null;
+    if (
+      req.body.cash_closing_time_enabled !== undefined &&
+      typeof req.body.cash_closing_time_enabled !== 'boolean'
+    )
+      return send(res, 400, {
+        message: 'Configuração de horário de fechamento inválida.',
+      });
+    const closingTime = normalizeCashClosingTime(
+      req.body.cash_closing_min_time,
+    );
+    const closingTimeEnabled = Boolean(req.body.cash_closing_time_enabled);
+    if (closingTimeEnabled && !closingTime)
+      return send(res, 400, {
+        message: 'Informe um horário mínimo válido para fechar o caixa.',
+      });
     const [created] =
-      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl}) RETURNING id,email,full_name,role,photo_url`;
+      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,cash_closing_time_enabled,cash_closing_min_time) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${closingTimeEnabled},${closingTime}::time) RETURNING id,email,full_name,role,photo_url,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time`;
     return send(res, 201, created);
   }
   if (path[0] === 'sales')

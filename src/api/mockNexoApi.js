@@ -3,8 +3,14 @@ import {
   normalizePaymentsForSale,
   summarizeSales as summarizeRecordedSales,
 } from '../../server/cash-summary.js';
+import {
+  cashClosingAvailability,
+  cashSessionForUser,
+  cashSummaryForUser,
+} from '../../server/cash-access.js';
 
-const STORE_KEY = 'nexo:mock-db:v2';
+const STORE_KEY = 'nexo:mock-db:v4';
+const SESSION_USER_KEY = 'nexo:session-user';
 const LATENCY = 80;
 
 const today = () => localDate(new Date());
@@ -69,6 +75,28 @@ const demoUser = {
   ],
 };
 
+const demoSeller = {
+  ...demoUser,
+  id: 'usr_vendedor',
+  full_name: 'Vendedor de Teste',
+  name: 'Vendedor de Teste',
+  email: 'vendedor@nexopdv.local',
+  role: 'vendedor',
+  cash_closing_time_enabled: false,
+  cash_closing_min_time: '19:00',
+};
+
+const demoManager = {
+  ...demoUser,
+  id: 'usr_gerente',
+  full_name: 'Gerente de Teste',
+  name: 'Gerente de Teste',
+  email: 'gerente@nexopdv.local',
+  role: 'gerente',
+  cash_closing_time_enabled: false,
+  cash_closing_min_time: '19:00',
+};
+
 const mockSuperUser = {
   id: 'usr_mock_super',
   full_name: 'Super Admin',
@@ -82,12 +110,28 @@ const mockSuperUser = {
 
 function sessionUserFallback() {
   try {
-    const cached = JSON.parse(localStorage.getItem('nexo:session-user') || 'null');
-    if (cached?.user?.role === 'super_admin') return { ...mockSuperUser, ...cached.user };
+    const cached = JSON.parse(localStorage.getItem(SESSION_USER_KEY) || 'null');
+    if (cached?.expiresAt > Date.now() && cached?.user) {
+      if (cached.user.role === 'super_admin')
+        return { ...mockSuperUser, ...cached.user };
+      if (['admin', 'gerente', 'vendedor'].includes(cached.user.role))
+        return { ...cached.user };
+    }
   } catch {
     /* mock opcional */
   }
   return { ...demoUser };
+}
+
+function cacheMockSession(user) {
+  try {
+    localStorage.setItem(
+      SESSION_USER_KEY,
+      JSON.stringify({ user, expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 }),
+    );
+  } catch {
+    /* cache opcional */
+  }
 }
 
 const productNames = [
@@ -136,6 +180,7 @@ function makeProduct([name, category, salePrice, quantity], index) {
 }
 
 function makeSale(number, offsetDays, hour, payment, products) {
+  const seller = number % 2 === 0 ? demoSeller : demoUser;
   const itemA = products[number % products.length];
   const itemB = products[(number + 3) % products.length];
   const items = [
@@ -149,8 +194,8 @@ function makeSale(number, offsetDays, hour, payment, products) {
   return {
     id: `sale_${number}`,
     sale_number: number,
-    seller_id: demoUser.id,
-    seller_name: demoUser.full_name,
+    seller_id: seller.id,
+    seller_name: seller.full_name,
     market_id: demoUser.market_id,
     unit_id: demoUser.unit_id,
     customer_name: number % 6 === 0 ? 'Cliente fiado' : '',
@@ -163,7 +208,12 @@ function makeSale(number, offsetDays, hour, payment, products) {
     discount,
     addition: 0,
     total,
-    cash_session_id: 'cash_today',
+    cash_session_id:
+      seller.id === demoSeller.id && offsetDays === 0
+        ? 'cash_today'
+        : seller.id === demoSeller.id && offsetDays === -1
+          ? 'cash_yesterday'
+          : null,
     created_date: created,
     updated_date: created,
   };
@@ -191,8 +241,8 @@ function seedDb() {
   const cashSessions = [
     {
       id: 'cash_today',
-      seller_id: demoUser.id,
-      seller_name: demoUser.full_name,
+      seller_id: demoSeller.id,
+      seller_name: demoSeller.full_name,
       market_id: demoUser.market_id,
       unit_id: demoUser.unit_id,
       unit_name: demoUser.unit_name,
@@ -208,8 +258,8 @@ function seedDb() {
     },
     {
       id: 'cash_yesterday',
-      seller_id: demoUser.id,
-      seller_name: demoUser.full_name,
+      seller_id: demoSeller.id,
+      seller_name: demoSeller.full_name,
       market_id: demoUser.market_id,
       unit_id: demoUser.unit_id,
       unit_name: demoUser.unit_name,
@@ -224,17 +274,7 @@ function seedDb() {
       updated_date: addDays(-1, 18, 10),
     },
   ];
-  const users = [
-    demoUser,
-    {
-      ...demoUser,
-      id: 'usr_vendedor',
-      full_name: 'Caliane Santos',
-      name: 'Caliane Santos',
-      email: 'caliane@nexopdv.local',
-      role: 'vendedor',
-    },
-  ];
+  const users = [demoUser, demoManager, demoSeller];
   return {
     products,
     sales,
@@ -565,10 +605,8 @@ function summarizeSales(sales) {
 }
 
 function cashSummary(db, session) {
-  const sales = completedSales(db).filter((sale) =>
-    session.id === 'cash_today'
-      ? localDate(new Date(sale.created_date)) === today()
-      : sale.cash_session_id === session.id,
+  const sales = completedSales(db).filter(
+    (sale) => sale.cash_session_id === session.id,
   );
   const movements = db.cashMovements.filter((item) => item.cash_session_id === session.id);
   const summary = buildCashSessionSummary(session, sales, movements);
@@ -629,6 +667,12 @@ function financeBootstrap(db) {
 
 function mockUsers(db) {
   return Array.isArray(db.users) && db.users.length ? db.users : [demoUser];
+}
+
+function currentMockUser(db) {
+  const sessionUser = sessionUserFallback();
+  const savedUser = mockUsers(db).find((user) => user.id === sessionUser.id);
+  return savedUser ? { ...sessionUser, ...savedUser } : sessionUser;
 }
 
 function financeDashboard(db) {
@@ -699,14 +743,38 @@ export const mockNexoApi = {
     },
   },
   auth: {
-    me: () => delay(sessionUserFallback()),
-    login: (email = '', _password = '', _remember = true) =>
-      delay({
-        user: String(email).toLowerCase().includes('super')
-          ? { ...mockSuperUser }
-          : { ...demoUser },
+    me: () => withDb((db) => currentMockUser(db)),
+    login: (email = '', password = '', _remember = true) => {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      let user;
+      if (normalizedEmail === demoSeller.email && password === 'vendedor123')
+        user = { ...demoSeller };
+      else if (normalizedEmail.includes('super')) user = { ...mockSuperUser };
+      else if (normalizedEmail === demoUser.email) user = { ...demoUser };
+      else throw new Error('E-mail ou senha inválidos.');
+      cacheMockSession(user);
+      return delay({ user });
+    },
+    simulateRole: (role) =>
+      withDb((db) => {
+        const profiles = {
+          admin: demoUser,
+          gerente: demoManager,
+          vendedor: demoSeller,
+        };
+        const baseUser = profiles[role];
+        if (!baseUser) throw new Error('Perfil de teste inválido.');
+        const savedUser = mockUsers(db).find((item) => item.id === baseUser.id);
+        const user = savedUser ? { ...baseUser, ...savedUser } : { ...baseUser };
+        cacheMockSession(user);
+        return { user };
       }),
     logout: async (redirect) => {
+      try {
+        localStorage.removeItem(SESSION_USER_KEY);
+      } catch {
+        /* cache opcional */
+      }
       if (redirect) window.location.href = redirect;
       return { ok: true };
     },
@@ -782,33 +850,52 @@ export const mockNexoApi = {
   cash: {
     current: () =>
       withDb((db) => {
-        const session = db.cashSessions.find((item) => item.status === 'aberto') || null;
+        const user = currentMockUser(db);
+        const session = db.cashSessions.find(
+          (item) => item.status === 'aberto' && item.seller_id === user.id,
+        ) || null;
+        const summary = session ? cashSummary(db, session) : null;
         return {
-          required: true,
+          required: user.role === 'vendedor',
           market_requires_cash: true,
-          session,
-          summary: session ? cashSummary(db, session) : null,
+          session: cashSessionForUser(user, session),
+          summary: cashSummaryForUser(user, summary),
+          closing_time: cashClosingAvailability(user),
         };
       }),
     open: (openingAmount) =>
       withDb((db) => {
+        const user = currentMockUser(db);
         const session = {
           id: id('cash'),
-          seller_id: demoUser.id,
-          seller_name: demoUser.full_name,
-          unit_id: demoUser.unit_id,
-          unit_name: demoUser.unit_name,
+          seller_id: user.id,
+          seller_name: user.full_name,
+          unit_id: user.unit_id,
+          unit_name: user.unit_name,
           opening_amount: round(openingAmount),
           status: 'aberto',
           opened_at: nowIso(),
           created_date: nowIso(),
         };
         db.cashSessions.unshift(session);
-        return { session, summary: cashSummary(db, session) };
+        return {
+          session: cashSessionForUser(user, session),
+          summary: cashSummaryForUser(user, cashSummary(db, session)),
+        };
       }),
     close: (closingAmount, closingExpense = 0, closingEntry = 0) =>
       withDb((db) => {
-        const session = db.cashSessions.find((item) => item.status === 'aberto');
+        const user = currentMockUser(db);
+        const availability = cashClosingAvailability(user);
+        if (!availability.can_close) {
+          const error = Object.assign(new Error(availability.message), {
+            code: 'CASH_CLOSING_TIME_RESTRICTED',
+          });
+          throw error;
+        }
+        const session = db.cashSessions.find(
+          (item) => item.status === 'aberto' && item.seller_id === user.id,
+        );
         if (!session) throw new Error('Nenhum caixa aberto.');
         Object.assign(session, {
           status: 'fechado',
@@ -818,7 +905,10 @@ export const mockNexoApi = {
           closed_at: nowIso(),
           updated_date: nowIso(),
         });
-        return { session, summary: cashSummary(db, session) };
+        return {
+          session: cashSessionForUser(user, session),
+          summary: cashSummaryForUser(user, cashSummary(db, session)),
+        };
       }),
     update: (cashId, data) =>
       withDb((db) => {
@@ -835,11 +925,14 @@ export const mockNexoApi = {
     updateSettings: () => delay({ ok: true }),
     history: ({ page = 1, pageSize = 20, from = '', to = '', operatorId = '', status = '', unitId = '' } = {}) =>
       withDb((db) => {
+        const user = currentMockUser(db);
+        if (user.role === 'vendedor')
+          throw new Error('O histórico de caixas é restrito a gerentes e administradores.');
         const items = db.cashSessions
-          .filter((session) => (!operatorId || session.seller_id === operatorId) && (!status || session.status === status) && (!unitId || session.unit_id === unitId) && saleInRange({ created_date: session.opened_at }, from, to))
+          .filter((session) => (user.role !== 'vendedor' || session.seller_id === user.id) && (!operatorId || session.seller_id === operatorId) && (!status || session.status === status) && (!unitId || session.unit_id === unitId) && saleInRange({ created_date: session.opened_at }, from, to))
           .map((session) => {
             const summary = cashSummary(db, session);
-            return {
+            const item = {
               ...session,
               summary,
               total_sales: summary.total,
@@ -848,20 +941,34 @@ export const mockNexoApi = {
               final_amount: summary.final_amount,
               difference: summary.difference,
             };
+            return user.role === 'vendedor'
+              ? {
+                  ...cashSessionForUser(user, session),
+                  summary: cashSummaryForUser(user, summary),
+                  sales_count: Number(summary.sales_count || 0),
+                }
+              : item;
           });
         const start = (page - 1) * pageSize;
         return {
           items: items.slice(start, start + pageSize),
           total: items.length,
           page_count: Math.max(1, Math.ceil(items.length / pageSize)),
-          operators: mockUsers(db).map((user) => ({ id: user.id, name: user.full_name || user.email })),
+          operators: (user.role === 'vendedor' ? [user] : mockUsers(db)).map((item) => ({ id: item.id, name: item.full_name || item.email })),
           units: [{ id: demoUser.unit_id, name: demoUser.unit_name }],
         };
       }),
     detail: (cashId) =>
       withDb((db) => {
+        const user = currentMockUser(db);
+        if (user.role === 'vendedor')
+          throw new Error('Os detalhes do histórico de caixas são restritos a gerentes e administradores.');
         const session = db.cashSessions.find((item) => item.id === cashId);
-        return { session, summary: cashSummary(db, session) };
+        const summary = cashSummary(db, session);
+        return {
+          session: cashSessionForUser(user, session),
+          summary: cashSummaryForUser(user, summary),
+        };
       }),
     remove: (cashId) =>
       withDb((db) => {
@@ -870,6 +977,7 @@ export const mockNexoApi = {
       }),
     addMovement: (cashId, data) =>
       withDb((db) => {
+        const user = currentMockUser(db);
         const existing = db.cashMovements.find((item) => item.operation_id === data.operation_id);
         if (existing) {
           const session = db.cashSessions.find((item) => item.id === cashId);
@@ -884,7 +992,7 @@ export const mockNexoApi = {
           origin: 'manual',
           operation_id: data.operation_id,
           status: 'ativo',
-          operator_name: demoUser.full_name,
+          operator_name: user.full_name,
           created_at: nowIso(),
         };
         db.cashMovements.push(movement);
@@ -895,6 +1003,7 @@ export const mockNexoApi = {
   sales: {
     complete: (data) =>
       withDb((db) => {
+        const user = currentMockUser(db);
         const existing = db.sales.find(
           (sale) => sale.client_operation_id === data.client_operation_id,
         );
@@ -916,12 +1025,14 @@ export const mockNexoApi = {
         const paymentMethod = allocation.payments.length === 1
           ? allocation.payments[0].method
           : 'dividido';
-        const currentCash = db.cashSessions.find((item) => item.status === 'aberto');
+        const currentCash = db.cashSessions.find(
+          (item) => item.status === 'aberto' && item.seller_id === user.id,
+        );
         const sale = {
           id: id('sale'),
           sale_number: number,
-          seller_id: demoUser.id,
-          seller_name: demoUser.full_name,
+          seller_id: user.id,
+          seller_name: user.full_name,
           status: 'concluida',
           type: isFiado ? 'fiado' : 'normal',
           sale_type: isFiado ? 'fiado' : 'normal',
@@ -971,20 +1082,31 @@ export const mockNexoApi = {
       withDb((db) => ({ sale_number: Math.max(0, ...db.sales.map((sale) => Number(sale.sale_number || 0))) + 1 })),
     list: (filters = {}) =>
       withDb((db) => {
+        const user = currentMockUser(db);
         const page = Number(filters.page || 1);
         const pageSize = Number(filters.pageSize || 20);
-        const items = sortItems(filterSales(db, filters), '-created_date');
+        const effectiveFilters =
+          user.role === 'vendedor'
+            ? { ...filters, sellerId: user.id }
+            : filters;
+        const items = sortItems(filterSales(db, effectiveFilters), '-created_date');
         const start = (page - 1) * pageSize;
+        const summary = summarizeSales(items.filter((sale) => sale.status === 'concluida'));
         return {
           items: items.slice(start, start + pageSize),
           total: items.length,
           page_count: Math.max(1, Math.ceil(items.length / pageSize)),
-          summary: summarizeSales(items.filter((sale) => sale.status === 'concluida')),
-          sellers: mockUsers(db).map((user) => ({ id: user.id, name: user.full_name || user.email })),
+          summary: user.role === 'vendedor'
+            ? { sales_count: Number(summary.sales_count || 0) }
+            : summary,
+          sellers: (user.role === 'vendedor' ? [user] : mockUsers(db)).map((item) => ({ id: item.id, name: item.full_name || item.email })),
         };
       }),
     report: (filters) =>
       withDb((db) => {
+        const user = currentMockUser(db);
+        if (user.role === 'vendedor')
+          throw new Error('Relatórios financeiros de vendas são restritos a gerentes e administradores.');
         const sales = filterSales(db, filters).filter((sale) => sale.status === 'concluida');
         return { sales, summary: summarizeSales(sales), filters };
       }),
