@@ -8,6 +8,7 @@ import {
   cashSummaryForUser,
   normalizeCashClosingTime,
 } from '../server/cash-access.js';
+import { isCashClosingTimeBlocked } from '../src/lib/cash-closing-time.js';
 
 const root = process.cwd();
 
@@ -26,6 +27,19 @@ test('horário mínimo usa o horário de Brasília e bloqueia antes do limite', 
   assert.equal(
     cashClosingAvailability(user, new Date('2026-09-03T22:00:00Z')).can_close,
     true,
+  );
+  const closingTime = {
+    enabled: true,
+    minimum_time: '19:00',
+    can_close: false,
+  };
+  assert.equal(
+    isCashClosingTimeBlocked(closingTime, new Date('2026-09-03T21:59:00Z')),
+    true,
+  );
+  assert.equal(
+    isCashClosingTimeBlocked(closingTime, new Date('2026-09-03T22:00:00Z')),
+    false,
   );
 });
 
@@ -56,10 +70,13 @@ test('interface e API mantêm a restrição financeira e o bloqueio do fechament
   const cashRoutes = readFileSync(join(root, 'server', 'cash', 'routes.js'), 'utf8');
   const mockApi = readFileSync(join(root, 'src', 'api', 'mockNexoApi.js'), 'utf8');
   const roleSwitcher = readFileSync(join(root, 'src', 'components', 'TestRoleSwitcher.jsx'), 'utf8');
+  const pdv = readFileSync(join(root, 'src', 'pages', 'PDV.jsx'), 'utf8');
   assert.match(sales, /user\.role !== 'vendedor'/);
   assert.match(sales, /Quantidade de vendas/);
   assert.match(cashModal, /canSeeCashBalances/);
   assert.match(cashModal, /closingTimeBlocked/);
+  assert.match(pdv, /isCashClosingTimeBlocked\(latestCash\.closing_time\)/);
+  assert.match(pdv, /latestCash = await refreshCash\(\)/);
   assert.match(cashRoutes, /CASH_CLOSING_TIME_RESTRICTED/);
   assert.match(mockApi, /vendedor@nexopdv\.local/);
   assert.match(mockApi, /vendedor123/);

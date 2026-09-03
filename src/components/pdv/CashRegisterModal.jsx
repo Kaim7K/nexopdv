@@ -20,17 +20,10 @@ import {
   roundCurrency,
 } from "@/lib/helpers";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
-
-const brazilMinutesNow = () => {
-  const parts = new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(new Date());
-  return Number(parts.find((part) => part.type === 'hour')?.value || 0) * 60
-    + Number(parts.find((part) => part.type === 'minute')?.value || 0);
-};
+import {
+  cashClosingTimeMessage,
+  isCashClosingTimeBlocked,
+} from "@/lib/cash-closing-time";
 
 export default function CashRegisterModal({
   mode,
@@ -64,14 +57,8 @@ export default function CashRegisterModal({
   const isClosingMode = !isOpenMode && !isClosedMode;
   const canSeeCashBalances = userRole !== 'vendedor';
   const closingTime = cashState?.closing_time || {};
-  const minimumClosingMinutes = /^\d{2}:\d{2}$/.test(closingTime.minimum_time || '')
-    ? Number(closingTime.minimum_time.slice(0, 2)) * 60 + Number(closingTime.minimum_time.slice(3, 5))
-    : null;
-  const closingTimeBlocked = isClosingMode && Boolean(closingTime.enabled) && (
-    minimumClosingMinutes === null
-      ? closingTime.can_close === false
-      : brazilMinutesNow() < minimumClosingMinutes
-  );
+  const closingTimeBlocked =
+    isClosingMode && isCashClosingTimeBlocked(closingTime);
   useEffect(() => {
     if (!isClosingMode || !closingTime.enabled) return undefined;
     const interval = window.setInterval(() => setClockTick((value) => value + 1), 30_000);
@@ -444,7 +431,7 @@ export default function CashRegisterModal({
           {closingTimeBlocked && (
             <div role="alert" className="mt-2 flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-200">
               <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
-              <span>{closingTime.message || `O caixa só pode ser fechado a partir das ${closingTime.minimum_time}.`}</span>
+              <span>{cashClosingTimeMessage(closingTime)}</span>
             </div>
           )}
         </div>

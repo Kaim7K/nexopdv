@@ -18,6 +18,10 @@ import { useCashRegister } from '@/lib/CashRegisterContext';
 import { formatCurrency } from '@/lib/helpers';
 import { hasMarketFeature } from '@/lib/market-modules';
 import {
+  cashClosingTimeMessage,
+  isCashClosingTimeBlocked,
+} from '@/lib/cash-closing-time';
+import {
   PdvLockedState,
   PdvProductPanel,
   PdvTopBar,
@@ -417,7 +421,7 @@ export default function PDV() {
     }
   };
 
-  const openCashDialog = () => {
+  const openCashDialog = async () => {
     if (
       cashState.session &&
       (activeSale.items.length > 0 || minimizedSales.length > 0)
@@ -427,7 +431,28 @@ export default function PDV() {
       );
       return;
     }
-    setCashModal(cashState.session ? 'close' : 'open');
+    let latestCash = cashState;
+    if (cashState.session) {
+      try {
+        latestCash = await refreshCash();
+      } catch (error) {
+        toast.error(
+          error.message ||
+            'Não foi possível confirmar o horário permitido para fechar o caixa.',
+        );
+        return;
+      }
+    }
+
+    if (
+      latestCash.session &&
+      isCashClosingTimeBlocked(latestCash.closing_time)
+    ) {
+      toast.error(cashClosingTimeMessage(latestCash.closing_time));
+      return;
+    }
+
+    setCashModal(latestCash.session ? 'close' : 'open');
   };
 
   const handleCloseCash = async ({ closingAmount, closingExpense, closingEntry }) => {
