@@ -797,7 +797,13 @@ async function routeHandler(req, res) {
       code: 'SESSION_EXPIRED',
       message: 'Sessão expirada.',
     });
-  if (user.role !== 'super_admin' && user.maintenance_mode)
+  const isSystemReloadStatus =
+    path[0] === 'system' && path[1] === 'reload' && req.method === 'GET';
+  if (
+    user.role !== 'super_admin' &&
+    user.maintenance_mode &&
+    !isSystemReloadStatus
+  )
     return send(res, 503, {
       code: 'PLATFORM_MAINTENANCE',
       message:
@@ -1374,7 +1380,7 @@ async function routeHandler(req, res) {
     });
   }
 
-  if (path[0] === 'admin' || path[0] === 'markets')
+  if (path[0] === 'admin' || path[0] === 'markets' || path[0] === 'system')
     return handlePlatformRequest(
       { req, res, sql, user, path },
       {

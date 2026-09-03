@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`,import.meta.url),'utf8');
-const [api,client,migration,moduleMigration,cashPage,quickModal,app,layout,navigation,email,plansPage,moduleCatalog] = await Promise.all([
+const [api,client,migration,moduleMigration,cashPage,quickModal,app,layout,navigation,email,plansPage,moduleCatalog,reloadWatcher,adminSettings] = await Promise.all([
   Promise.all([read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')]).then(files => files.join('\n')),read('src/api/nexoApi.js'),read('database/migrations/011_platform_administration.sql'),
-  read('database/migrations/012_cash_history_module.sql'),read('src/pages/HistoricoCaixas.jsx'),read('src/components/pdv/QuickProductModal.jsx'),read('src/App.jsx'),read('src/components/Layout.jsx'),read('src/config/navigation.jsx'),read('server/stock-alerts.js'),read('src/pages/AdminPlanos.jsx'),read('src/lib/market-modules.js'),
+  read('database/migrations/012_cash_history_module.sql'),read('src/pages/HistoricoCaixas.jsx'),read('src/components/pdv/QuickProductModal.jsx'),read('src/App.jsx'),read('src/components/Layout.jsx'),read('src/config/navigation.jsx'),read('server/stock-alerts.js'),read('src/pages/AdminPlanos.jsx'),read('src/lib/market-modules.js'),read('src/components/SystemReloadWatcher.jsx'),read('src/pages/AdminConfiguracoes.jsx'),
 ]);
 
 assert.match(migration,/nexo_products_market_barcode_uidx/,'O banco deve impedir códigos de barras duplicados.');
@@ -33,4 +33,11 @@ assert.match(api,/PLAN_IN_USE/,'A exclusão de planos em uso deve ser bloqueada 
 assert.match(client,/method:\s*'DELETE'/,'O cliente deve oferecer exclusão de planos ao Super Admin.');
 assert.match(email,/loadMarketEmailBrand/);
 assert.match(email,/brand\.primaryColor/);
+assert.match(api,/system_reload_token/,'A API deve persistir o comando global de recarregamento.');
+assert.match(api,/isSystemReloadStatus/,'O sinal de recarregamento deve continuar acessível durante a manutenção.');
+assert.match(api,/user\.role !== 'super_admin'/,'Somente o Super Admin pode disparar o recarregamento global.');
+assert.match(client,/reloadStatus/,'O cliente deve consultar o sinal de recarregamento.');
+assert.match(reloadWatcher,/window\.location\.reload\(\)/,'Os dispositivos devem recarregar ao detectar um novo sinal.');
+assert.match(reloadWatcher,/visibilitychange/,'Abas suspensas devem verificar o sinal ao voltar ao foco.');
+assert.match(adminSettings,/Recarregar todos/,'A configuração da plataforma deve expor o comando global.');
 console.log('Teste de administração, caixas, e-mails e cadastro rápido aprovado.');

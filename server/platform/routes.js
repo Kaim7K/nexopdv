@@ -13,6 +13,41 @@ export async function handlePlatformRequest(
     text,
   },
 ) {
+  if (path[0] === 'system' && path[1] === 'reload') {
+    if (req.method === 'GET') {
+      const [setting] = await sql`
+        SELECT value #>> '{}' AS reload_token, updated_date
+        FROM nexo.platform_settings
+        WHERE key='system_reload_token'
+      `;
+      return send(res, 200, {
+        reload_token: setting?.reload_token || '0',
+        requested_at: setting?.updated_date || null,
+      });
+    }
+    if (req.method !== 'POST') return methodNotAllowed(res, ['GET', 'POST']);
+    if (user.role !== 'super_admin')
+      return send(res, 403, {
+        message: 'Apenas o Super Admin pode recarregar todos os dispositivos.',
+      });
+
+    const reloadToken = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+    const [setting] = await sql`
+      INSERT INTO nexo.platform_settings(key,value,updated_by)
+      VALUES('system_reload_token',${JSON.stringify(reloadToken)}::jsonb,${user.id})
+      ON CONFLICT(key) DO UPDATE SET
+        value=excluded.value,
+        updated_by=excluded.updated_by,
+        updated_date=now()
+      RETURNING value #>> '{}' AS reload_token, updated_date
+    `;
+    return send(res, 200, {
+      ok: true,
+      reload_token: setting.reload_token,
+      requested_at: setting.updated_date,
+    });
+  }
+
   if (path[0] === 'admin') {
     if (user.role !== 'super_admin')
       return send(res, 403, { message: 'Acesso restrito ao Super Admin.' });

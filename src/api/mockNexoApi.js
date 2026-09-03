@@ -11,6 +11,7 @@ import {
 
 const STORE_KEY = 'nexo:mock-db:v4';
 const SESSION_USER_KEY = 'nexo:session-user';
+const SYSTEM_RELOAD_KEY = 'nexo:mock-system-reload-token';
 const LATENCY = 80;
 
 const today = () => localDate(new Date());
@@ -732,6 +733,10 @@ function transactionList(db, filters = {}) {
 }
 
 export const mockNexoApi = {
+  system: {
+    reloadStatus: () =>
+      delay({ reload_token: localStorage.getItem(SYSTEM_RELOAD_KEY) || '0' }),
+  },
   entities: Object.fromEntries(
     ['Product', 'Sale', 'FiadoRecord', 'GeneralAudit', 'ProductAudit', 'SystemConfig', 'User', 'Market'].map((name) => [name, entityApi(name)]),
   ),
@@ -1285,5 +1290,10 @@ export const mockNexoApi = {
     reports: () => delay({}),
     logs: () => delay([]),
     settings: { get: () => delay({}), update: (data) => delay(data) },
+    reloadAll: () => {
+      const reloadToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(SYSTEM_RELOAD_KEY, reloadToken);
+      return delay({ ok: true, reload_token: reloadToken });
+    },
   },
 };

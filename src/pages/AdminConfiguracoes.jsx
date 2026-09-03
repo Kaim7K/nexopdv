@@ -5,6 +5,7 @@ import {
   Loader2,
   LockKeyhole,
   Mail,
+  RefreshCw,
   Save,
   ServerCog,
   ShieldCheck,
@@ -12,6 +13,7 @@ import {
 import { nexoApi } from "@/api/nexoApi";
 import { toast } from "react-hot-toast";
 import { ErrorState, LoadingState } from "@/components/common/PageState";
+import { useConfirm } from "@/components/common/ConfirmProvider";
 
 const DEFAULTS = {
   email_provider: "brevo",
@@ -29,10 +31,12 @@ const DEFAULTS = {
   platform_notice: "",
 };
 export default function AdminConfiguracoes() {
+  const confirm = useConfirm();
   const [form, setForm] = useState(DEFAULTS),
     [logs, setLogs] = useState([]),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
+    [reloadingDevices, setReloadingDevices] = useState(false),
     [error, setError] = useState("");
   const load = async () => {
     setLoading(true);
@@ -73,6 +77,26 @@ export default function AdminConfiguracoes() {
       toast.error(cause.message || "Não foi possível salvar as configurações.");
     } finally {
       setSaving(false);
+    }
+  };
+  const reloadAllDevices = async () => {
+    const accepted = await confirm({
+      title: "Recarregar todos os dispositivos?",
+      description:
+        "Todas as pessoas conectadas terão a página recarregada em até 10 segundos. Use esta opção depois que uma atualização estiver publicada.",
+      confirmLabel: "Recarregar dispositivos",
+      tone: "destructive",
+    });
+    if (!accepted) return;
+
+    setReloadingDevices(true);
+    try {
+      await nexoApi.admin.reloadAll();
+      toast.success("Comando enviado para todos os dispositivos conectados.");
+    } catch (cause) {
+      toast.error(cause.message || "Não foi possível recarregar os dispositivos.");
+    } finally {
+      setReloadingDevices(false);
     }
   };
   if (loading)
@@ -284,6 +308,27 @@ export default function AdminConfiguracoes() {
             }
           />
         </Field>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 sm:col-span-2 sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <strong className="block text-sm">Atualização global</strong>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Recarrega o sistema em todos os dispositivos que estiverem conectados.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={reloadingDevices}
+              onClick={reloadAllDevices}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-background px-4 text-sm font-black text-amber-700 transition hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${reloadingDevices ? "animate-spin" : ""}`}
+              />
+              {reloadingDevices ? "Enviando..." : "Recarregar todos"}
+            </button>
+          </div>
+        </div>
       </Section>
       <section className="mobile-dense-section">
         <div className="flex items-start gap-3">

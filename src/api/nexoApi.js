@@ -54,6 +54,9 @@ const realNexoApi = {
       if (redirect) window.location.href = redirect;
     },
   },
+  system: {
+    reloadStatus: () => request('/system/reload'),
+  },
   users: {
     create: (data) => request('/users', { method: 'POST', body: data }),
   },
@@ -408,6 +411,7 @@ const realNexoApi = {
       update: (data) =>
         request('/admin/settings', { method: 'PATCH', body: data }),
     },
+    reloadAll: () => request('/system/reload', { method: 'POST' }),
   },
 };
 

@@ -15,6 +15,7 @@ import NetworkStatus from '@/components/NetworkStatus';
 import TestRoleSwitcher from '@/components/TestRoleSwitcher';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ScrollToTop from '@/components/ScrollToTop';
+import SystemReloadWatcher from '@/components/SystemReloadWatcher';
 import { PRIVATE_ROUTES, PUBLIC_ROUTES } from '@/config/navigation';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import PageNotFound from '@/lib/PageNotFound';
@@ -71,6 +72,7 @@ function App() {
       <AuthProvider>
         <ConfirmProvider>
           <NetworkStatus />
+          <SystemReloadWatcher />
           <TestRoleSwitcher />
           <ScrollToTop />
           <AppErrorBoundary>
