@@ -4,6 +4,7 @@ import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Mail, Pencil, Search, Shield, Trash2, User, UserPlus, Users, X } from 'lucide-react';
 import EditUserModal from '@/components/users/EditUserModal';
+import CashClosingScheduleField, { defaultCashClosingSchedule } from '@/components/users/CashClosingScheduleField';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
@@ -18,6 +19,7 @@ const EMPTY_FORM = {
   photo_url: '',
   cash_closing_time_enabled: false,
   cash_closing_min_time: '19:00',
+  cash_closing_schedule: defaultCashClosingSchedule(),
 };
 
 const ROLE_LABELS = {
@@ -105,6 +107,11 @@ export default function Usuarios() {
     };
     if (!payload.full_name) return toast.error('Informe o nome do funcionário.');
     if (payload.password.length < 8) return toast.error('A senha deve ter ao menos 8 caracteres.');
+    if (
+      payload.cash_closing_time_enabled &&
+      !Object.keys(payload.cash_closing_schedule || {}).length
+    )
+      return toast.error('Selecione ao menos um dia para o fechamento.');
 
     setSaving(true);
     try {
@@ -296,11 +303,11 @@ export default function Usuarios() {
                 objectFit="cover"
               />
               </div>
-              <fieldset className="rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2">
+              <fieldset className={`${form.role === 'vendedor' ? '' : 'hidden'} rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2`}>
                 <label className="flex cursor-pointer items-start justify-between gap-3">
                   <span>
-                    <span className="block text-sm font-bold">Horário mínimo para fechar o caixa</span>
-                    <span className="mt-1 block text-xs text-muted-foreground">Use o horário de Brasília para impedir fechamentos antecipados.</span>
+                    <span className="block text-sm font-bold">Agenda de fechamento do caixa</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Escolha os dias e horários mínimos no horário de Brasília.</span>
                   </span>
                   <input
                     type="checkbox"
@@ -310,16 +317,10 @@ export default function Usuarios() {
                   />
                 </label>
                 {form.cash_closing_time_enabled && (
-                  <label className="mt-3 block text-sm font-semibold">
-                    Liberar fechamento a partir de
-                    <input
-                      required
-                      type="time"
-                      value={form.cash_closing_min_time}
-                      onChange={event => setForm(previous => ({ ...previous, cash_closing_min_time: event.target.value }))}
-                      className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                    />
-                  </label>
+                  <CashClosingScheduleField
+                    value={form.cash_closing_schedule}
+                    onChange={cash_closing_schedule => setForm(previous => ({ ...previous, cash_closing_schedule }))}
+                  />
                 )}
               </fieldset>
             </div>

@@ -674,6 +674,15 @@ export async function handleCashRequest(
 
     if (path[1] === 'close') {
       if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+      const requestedSessionId = text(req.body.cash_session_id, 64);
+      const canCloseAnyCash = ['admin', 'gerente'].includes(user.role);
+      if (requestedSessionId && !isUuid(requestedSessionId))
+        return send(res, 400, { message: 'Caixa informado é inválido.' });
+      if (requestedSessionId && !canCloseAnyCash)
+        return send(res, 403, {
+          message:
+            'Apenas administradores e gerentes podem fechar o caixa de outro operador.',
+        });
       const closingAvailability = cashClosingAvailability(user);
       if (!closingAvailability.can_close)
         return send(res, 409, {
@@ -681,10 +690,24 @@ export async function handleCashRequest(
           message: closingAvailability.message,
           closing_time: closingAvailability,
         });
-      const session = await findOpenCashSession(sql, user.market_id, user.id);
+      const session = requestedSessionId
+        ? recordFromRow(
+            (
+              await sql`
+                SELECT id,data,created_date,updated_date
+                FROM nexo.records
+                WHERE id=${requestedSessionId} AND market_id=${user.market_id}
+                  AND entity='cash_sessions' AND data->>'status'='aberto'
+                LIMIT 1
+              `
+            )[0],
+          )
+        : await findOpenCashSession(sql, user.market_id, user.id);
       if (!session)
         return send(res, 409, {
-          message: 'Não existe caixa aberto para este usuário.',
+          message: requestedSessionId
+            ? 'Este caixa não está aberto ou não pertence ao seu mercado.'
+            : 'Não existe caixa aberto para este usuário.',
         });
       const summary = await getCashSessionSummary(sql, user.market_id, session);
       const closingAmount =
@@ -770,9 +793,13 @@ export async function handleCashRequest(
         entity_id: session.id,
         user_id: user.id,
         user_name: user.full_name || user.email,
-        description: `Caixa fechado com ${summary.sales_count} venda(s)`,
+        description: `Caixa de ${session.seller_name} fechado por ${user.full_name || user.email} com ${summary.sales_count} venda(s)`,
         details: {
           ...summarySnapshot,
+          seller_id: session.seller_id,
+          seller_name: session.seller_name,
+          closed_by: user.id,
+          closed_by_name: user.full_name || user.email,
           closing_amount: closingAmount,
           closing_entry: closingEntry || 0,
           closing_expense: closingExpense || 0,

@@ -531,6 +531,15 @@ function sortItems(items, sort = '-created_date') {
   });
 }
 
+function limitEntityItems(name, items, limit) {
+  if (name !== 'FiadoRecord') return items.slice(0, limit);
+  const pending = items.filter((item) => item.status === 'pendente');
+  const history = items
+    .filter((item) => item.status !== 'pendente')
+    .slice(0, limit);
+  return sortItems([...pending, ...history], '-created_date');
+}
+
 function collection(db, name) {
   const map = {
     Product: 'products',
@@ -553,7 +562,9 @@ function collection(db, name) {
 function entityApi(name) {
   return {
     list: (sort = '-created_date', limit = 500) =>
-      withDb((db) => sortItems(collection(db, name), sort).slice(0, limit)),
+      withDb((db) =>
+        limitEntityItems(name, sortItems(collection(db, name), sort), limit),
+      ),
     filter: (filters, sort = '-created_date', limit = 500) =>
       withDb((db) =>
         sortItems(collection(db, name).filter((item) => matchesFilters(item, filters)), sort).slice(0, limit),
@@ -888,9 +899,14 @@ export const mockNexoApi = {
           summary: cashSummaryForUser(user, cashSummary(db, session)),
         };
       }),
-    close: (closingAmount, closingExpense = 0, closingEntry = 0) =>
+    close: (closingAmount, closingExpense = 0, closingEntry = 0, cashSessionId = null) =>
       withDb((db) => {
         const user = currentMockUser(db);
+        const canCloseAnyCash = ['admin', 'gerente'].includes(user.role);
+        if (cashSessionId && !canCloseAnyCash)
+          throw new Error(
+            'Apenas administradores e gerentes podem fechar o caixa de outro operador.',
+          );
         const availability = cashClosingAvailability(user);
         if (!availability.can_close) {
           const error = Object.assign(new Error(availability.message), {
@@ -899,7 +915,11 @@ export const mockNexoApi = {
           throw error;
         }
         const session = db.cashSessions.find(
-          (item) => item.status === 'aberto' && item.seller_id === user.id,
+          (item) =>
+            item.status === 'aberto' &&
+            (cashSessionId
+              ? item.id === cashSessionId
+              : item.seller_id === user.id),
         );
         if (!session) throw new Error('Nenhum caixa aberto.');
         Object.assign(session, {

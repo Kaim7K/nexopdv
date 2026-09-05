@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Archive, Ban, Banknote, Check, Clock, CreditCard, HandCoins, Phone, QrCode, RotateCcw, Search, X } from 'lucide-react';
+import { Archive, Ban, Banknote, CalendarRange, Check, Clock, CreditCard, HandCoins, Phone, QrCode, RotateCcw, Search, X } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { usePagination } from '@/hooks/use-pagination';
 import PaginationControls from '@/components/common/PaginationControls';
@@ -10,6 +10,7 @@ import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ErrorState } from '@/components/common/PageState';
 import { getPaymentVisual } from '@/components/common/visualTokens';
+import { matchesFiadoFilters } from '@/lib/fiado-filters';
 import {
   FilterPanel,
   MetricCard,
@@ -34,6 +35,8 @@ export default function Fiados() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [filterStatus, setFilterStatus] = useState('');
+  const [settledFrom, setSettledFrom] = useState('');
+  const [settledTo, setSettledTo] = useState('');
   const [settleFiado, setSettleFiado] = useState(null);
   const [cancelFiado, setCancelFiado] = useState(null);
   const [settlementSale, setSettlementSale] = useState(null);
@@ -50,7 +53,7 @@ export default function Fiados() {
     setLoading(true);
     setLoadError('');
     try {
-      const data = await nexoApi.entities.FiadoRecord.list('-created_date', 300);
+      const data = await nexoApi.entities.FiadoRecord.list('-created_date', 1000);
       setFiados(data.filter((item) => item.archived !== true));
     } catch (error) {
       setLoadError(error.message || 'Não foi possível carregar os fiados.');
@@ -90,14 +93,18 @@ export default function Fiados() {
     };
   }, [settleFiado]);
 
-  const filtered = useMemo(() => fiados.filter(item => {
-    const query = deferredSearch.trim().toLowerCase();
-    const matchSearch = !query
-      || String(item.responsible_name || '').toLowerCase().includes(query)
-      || String(item.phone || '').toLowerCase().includes(query)
-      || String(item.sale_number || '').includes(query);
-    return matchSearch && (!filterStatus || item.status === filterStatus);
-  }), [fiados, deferredSearch, filterStatus]);
+  const filtered = useMemo(
+    () =>
+      fiados.filter((item) =>
+        matchesFiadoFilters(item, {
+          query: deferredSearch,
+          status: filterStatus,
+          settledFrom,
+          settledTo,
+        }),
+      ),
+    [fiados, deferredSearch, filterStatus, settledFrom, settledTo],
+  );
 
   const totals = useMemo(() => ({
     pending: filtered.filter(item => item.status === 'pendente').reduce((sum, item) => sum + Number(item.total_amount || 0), 0),
@@ -198,8 +205,13 @@ export default function Fiados() {
     }
   };
 
-  const hasFilters = Boolean(search || filterStatus);
-  const clearFilters = () => { setSearch(''); setFilterStatus(''); };
+  const hasFilters = Boolean(search || filterStatus || settledFrom || settledTo);
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatus('');
+    setSettledFrom('');
+    setSettledTo('');
+  };
 
   return (
     <div className="page-shell !max-w-6xl">
@@ -218,7 +230,7 @@ export default function Fiados() {
       </div>
 
       <FilterPanel aria-label="Filtros de fiados">
-        <div className="grid gap-1.5 sm:grid-cols-[1fr_190px_auto] sm:gap-2">
+        <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-2 xl:grid-cols-[minmax(15rem,1fr)_170px_160px_160px_auto]">
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -230,8 +242,39 @@ export default function Fiados() {
             <option value="quitado">Quitados</option>
             <option value="cancelado">Cancelados</option>
           </select>
+          <label className="relative">
+            <span className="pointer-events-none absolute left-9 top-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Quitados de</span>
+            <CalendarRange className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="date"
+              aria-label="Quitados de"
+              title="Data inicial da quitação"
+              value={settledFrom}
+              max={settledTo || undefined}
+              onChange={event => setSettledFrom(event.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background pb-0.5 pl-9 pr-2 pt-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10"
+            />
+          </label>
+          <label className="relative">
+            <span className="pointer-events-none absolute left-9 top-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Quitados até</span>
+            <CalendarRange className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="date"
+              aria-label="Quitados até"
+              title="Data final da quitação"
+              value={settledTo}
+              min={settledFrom || undefined}
+              onChange={event => setSettledTo(event.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background pb-0.5 pl-9 pr-2 pt-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10"
+            />
+          </label>
           {hasFilters && <button type="button" onClick={clearFilters} className="min-h-9 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted sm:min-h-10">Limpar</button>}
         </div>
+        {(settledFrom || settledTo) && filterStatus !== 'quitado' && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            O período filtra apenas os quitados. Fiados pendentes continuam visíveis em qualquer data.
+          </p>
+        )}
       </FilterPanel>
 
       {loading ? (

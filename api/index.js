@@ -37,7 +37,10 @@ import {
   buildCashSessionSummary,
   roundMoney,
 } from '../server/cash-summary.js';
-import { normalizeCashClosingTime } from '../server/cash-access.js';
+import {
+  normalizeCashClosingSchedule,
+  normalizeCashClosingTime,
+} from '../server/cash-access.js';
 
 const ENTITIES = {
   Product: 'products',
@@ -1436,13 +1439,35 @@ async function routeHandler(req, res) {
     const closingTime = normalizeCashClosingTime(
       req.body.cash_closing_min_time,
     );
+    const closingSchedule = normalizeCashClosingSchedule(
+      req.body.cash_closing_schedule,
+    );
+    const resolvedClosingSchedule =
+      closingSchedule ||
+      (closingTime
+        ? Object.fromEntries(
+            Array.from({ length: 7 }, (_, day) => [String(day), closingTime]),
+          )
+        : {});
     const closingTimeEnabled = Boolean(req.body.cash_closing_time_enabled);
-    if (closingTimeEnabled && !closingTime)
+    if (
+      req.body.cash_closing_schedule !== undefined &&
+      closingSchedule === null
+    )
       return send(res, 400, {
-        message: 'Informe um horário mínimo válido para fechar o caixa.',
+        message: 'A agenda de fechamento informada é inválida.',
       });
+    if (
+      closingTimeEnabled &&
+      !Object.keys(resolvedClosingSchedule).length
+    )
+      return send(res, 400, {
+        message: 'Selecione ao menos um dia e horário para fechar o caixa.',
+      });
+    const legacyClosingTime =
+      Object.values(resolvedClosingSchedule)[0] || closingTime;
     const [created] =
-      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,cash_closing_time_enabled,cash_closing_min_time) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${closingTimeEnabled},${closingTime}::time) RETURNING id,email,full_name,role,photo_url,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time`;
+      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,cash_closing_time_enabled,cash_closing_min_time,cash_closing_schedule) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${closingTimeEnabled},${legacyClosingTime}::time,${JSON.stringify(resolvedClosingSchedule)}::jsonb) RETURNING id,email,full_name,role,photo_url,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
     return send(res, 201, created);
   }
   if (path[0] === 'sales')

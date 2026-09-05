@@ -148,13 +148,19 @@ const realNexoApi = {
         method: 'PATCH',
         body: { status: 'aberto' },
       }),
-    close: (closingAmount, closingExpense = null, closingEntry = null) =>
+    close: (
+      closingAmount,
+      closingExpense = null,
+      closingEntry = null,
+      cashSessionId = null,
+    ) =>
       request('/cash/close', {
         method: 'POST',
         body: {
           closing_amount: closingAmount,
           closing_expense: closingExpense,
           closing_entry: closingEntry,
+          ...(cashSessionId ? { cash_session_id: cashSessionId } : {}),
         },
       }),
     updateSettings: (requireCashRegister) =>

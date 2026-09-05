@@ -6,6 +6,7 @@ import {
   cashClosingAvailability,
   cashSessionForUser,
   cashSummaryForUser,
+  normalizeCashClosingSchedule,
   normalizeCashClosingTime,
 } from '../server/cash-access.js';
 import { isCashClosingTimeBlocked } from '../src/lib/cash-closing-time.js';
@@ -41,6 +42,74 @@ test('horário mínimo usa o horário de Brasília e bloqueia antes do limite', 
     isCashClosingTimeBlocked(closingTime, new Date('2026-09-03T22:00:00Z')),
     false,
   );
+});
+
+test('administradores e gerentes ignoram o horário mínimo de fechamento', () => {
+  for (const role of ['admin', 'gerente']) {
+    const availability = cashClosingAvailability(
+      {
+        role,
+        cash_closing_time_enabled: true,
+        cash_closing_min_time: '23:59',
+      },
+      new Date('2026-09-03T12:00:00Z'),
+    );
+    assert.equal(availability.can_close, true);
+    assert.equal(availability.enabled, false);
+  }
+
+  const cashRoutes = readFileSync(join(root, 'server', 'cash', 'routes.js'), 'utf8');
+  const cashDetail = readFileSync(
+    join(root, 'src', 'features', 'cash-history', 'components', 'CashDetail.jsx'),
+    'utf8',
+  );
+  assert.match(cashRoutes, /\['admin', 'gerente'\]\.includes\(user\.role\)/);
+  assert.match(cashRoutes, /cash_session_id/);
+  assert.match(cashDetail, /Fechar caixa/);
+});
+
+test('agenda semanal aceita vários dias e horários e bloqueia dias não selecionados', () => {
+  const schedule = normalizeCashClosingSchedule({
+    1: '19:00',
+    2: '20:30',
+    5: '18:15',
+  });
+  assert.deepEqual(schedule, { 1: '19:00', 2: '20:30', 5: '18:15' });
+  assert.equal(normalizeCashClosingSchedule({ 1: '25:00' }), null);
+  const seller = {
+    role: 'vendedor',
+    cash_closing_time_enabled: true,
+    cash_closing_schedule: schedule,
+  };
+
+  // 07/09/2026 é segunda-feira; 22:00 UTC corresponde a 19:00 em Brasília.
+  assert.equal(
+    cashClosingAvailability(seller, new Date('2026-09-07T21:59:00Z')).can_close,
+    false,
+  );
+  assert.equal(
+    cashClosingAvailability(seller, new Date('2026-09-07T22:00:00Z')).can_close,
+    true,
+  );
+  assert.equal(
+    cashClosingAvailability(seller, new Date('2026-09-09T23:00:00Z')).can_close,
+    false,
+  );
+
+  const scheduleField = readFileSync(
+    join(
+      root,
+      'src',
+      'components',
+      'users',
+      'CashClosingScheduleField.jsx',
+    ),
+    'utf8',
+  );
+  assert.match(scheduleField, /Segunda-feira/);
+  assert.match(scheduleField, /Domingo/);
+  assert.match(scheduleField, /type="time"/);
+  assert.match(scheduleField, /toggleDay/);
 });
 
 test('API remove valores financeiros do resumo de caixa do vendedor', () => {

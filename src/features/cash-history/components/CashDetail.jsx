@@ -20,6 +20,7 @@ import { SaleDetailModal } from "@/components/sales/SaleHistory";
 import { useConfirm } from "@/components/common/ConfirmProvider";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
 import { useCashDetailModel } from "@/features/cash-history/hooks/use-cash-detail-model";
+import CashRegisterModal from "@/components/pdv/CashRegisterModal";
 import {
   formatCurrency,
   formatCurrencyInput,
@@ -80,10 +81,12 @@ export default function CashDetail({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingCash, setEditingCash] = useState(false);
+  const [closingCash, setClosingCash] = useState(false);
   const confirmDialog = useConfirm();
   const modalRef = useModalBehavior({ onClose, disabled: saving || deleting });
   const {
     canMove,
+    canCloseAny,
     canDelete,
     canManageClosed,
     paymentEntries,
@@ -215,6 +218,29 @@ export default function CashDetail({
       setEditingCash(false);
     }
   };
+  const closeSession = async ({
+    closingAmount,
+    closingExpense,
+    closingEntry,
+  }) => {
+    if (editingCash) return;
+    setEditingCash(true);
+    try {
+      await nexoApi.cash.close(
+        closingAmount,
+        closingExpense,
+        closingEntry,
+        session.id,
+      );
+      toast.success(`Caixa de ${session.seller_name} fechado.`);
+      setClosingCash(false);
+      await onChanged();
+    } catch (cause) {
+      toast.error(cause.message || "Não foi possível fechar este caixa.");
+    } finally {
+      setEditingCash(false);
+    }
+  };
   const saveEdit = async (event) => {
     event.preventDefault();
     if (editingCash) return;
@@ -280,6 +306,17 @@ export default function CashDetail({
             </div>
           </div>
           <div className="cash-header-actions grid w-full items-center gap-1.5 sm:flex sm:w-auto sm:flex-none sm:pr-12">
+            {canCloseAny && (
+              <button
+                type="button"
+                onClick={() => setClosingCash(true)}
+                disabled={editingCash}
+                className="cash-touch-target inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-accent-foreground disabled:opacity-50"
+              >
+                <Banknote className="h-4 w-4" />
+                Fechar caixa
+              </button>
+            )}
             {canManageClosed && !editing && (
               <>
                 <button
@@ -817,6 +854,24 @@ export default function CashDetail({
             sale={selectedSale}
             loading={selectedSaleLoading || selectedSale._loading}
             onClose={() => setSelectedSale(null)}
+          />
+        )}
+        {closingCash && (
+          <CashRegisterModal
+            mode="close"
+            cashState={{
+              session,
+              summary,
+              closing_time: { enabled: false, can_close: true },
+            }}
+            processing={editingCash}
+            onClose={() => setClosingCash(false)}
+            onContinue={undefined}
+            onOpen={undefined}
+            onCloseCash={closeSession}
+            onDownloadReport={undefined}
+            onLogout={undefined}
+            userRole={currentUser.role}
           />
         )}
       </section>

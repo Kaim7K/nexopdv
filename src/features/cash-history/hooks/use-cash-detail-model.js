@@ -131,6 +131,9 @@ export function useCashDetailModel({
 
     return {
       canMove: session.status === 'aberto' && session.seller_id === currentUser.id,
+      canCloseAny:
+        ['admin', 'gerente'].includes(currentUser.role) &&
+        session.status === 'aberto',
       canDelete: currentUser.role === 'admin' && session.status === 'fechado',
       canManageClosed:
         currentUser.role === 'admin' && session.status === 'fechado',

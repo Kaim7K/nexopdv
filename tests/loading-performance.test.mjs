@@ -81,6 +81,6 @@ assert.doesNotMatch(
 );
 assert.match(migration, /gin_trgm_ops/);
 assert.match(migration, /nexo_finance_transactions_type_period_idx/);
-assert.match(database, /CURRENT_SCHEMA_VERSION = 18/);
+assert.match(database, /CURRENT_SCHEMA_VERSION = 19/);
 
 console.log('Teste de carregamento e performance aprovado.');

@@ -1,7 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { roundMoney } from '../cash-summary.js';
-import { normalizeCashClosingTime } from '../cash-access.js';
+import {
+  normalizeCashClosingSchedule,
+  normalizeCashClosingTime,
+} from '../cash-access.js';
 import { send } from '../http.js';
 
 export async function handleEntityRequest(
@@ -43,7 +46,7 @@ export async function handleEntityRequest(
       return send(
         res,
         200,
-        await sql`SELECT id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id} AND active=true ORDER BY full_name NULLS LAST,email`,
+        await sql`SELECT id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id} AND active=true ORDER BY full_name NULLS LAST,email`,
       );
     if (req.method === 'DELETE') {
       if (!isUuid(id))
@@ -132,7 +135,7 @@ export async function handleEntityRequest(
           message: 'Você não pode desativar o próprio acesso.',
         });
       const [target] =
-        await sql`SELECT id,role,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true`;
+        await sql`SELECT id,role,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true`;
       if (!target)
         return send(res, 404, { message: 'Usuário não encontrado.' });
       if (user.role === 'gerente') {
@@ -163,17 +166,28 @@ export async function handleEntityRequest(
         req.body.cash_closing_min_time === undefined
           ? undefined
           : normalizeCashClosingTime(req.body.cash_closing_min_time);
-      const resolvedClosingTime =
-        closingTime === undefined
-          ? normalizeCashClosingTime(target.cash_closing_min_time)
-          : closingTime;
       const resolvedClosingTimeEnabled =
         typeof req.body.cash_closing_time_enabled === 'boolean'
           ? req.body.cash_closing_time_enabled
           : Boolean(target.cash_closing_time_enabled);
-      if (resolvedClosingTimeEnabled && !resolvedClosingTime)
+      const closingSchedule =
+        req.body.cash_closing_schedule === undefined
+          ? undefined
+          : normalizeCashClosingSchedule(req.body.cash_closing_schedule);
+      const resolvedClosingSchedule =
+        closingSchedule === undefined
+          ? normalizeCashClosingSchedule(target.cash_closing_schedule) || {}
+          : closingSchedule;
+      if (req.body.cash_closing_schedule !== undefined && !closingSchedule)
         return send(res, 400, {
-          message: 'Informe um horário mínimo válido para fechar o caixa.',
+          message: 'A agenda de fechamento informada é inválida.',
+        });
+      if (
+        resolvedClosingTimeEnabled &&
+        !Object.keys(resolvedClosingSchedule || {}).length
+      )
+        return send(res, 400, {
+          message: 'Selecione ao menos um dia e horário para fechar o caixa.',
         });
       if (
         req.body.cash_closing_time_enabled !== undefined &&
@@ -183,7 +197,7 @@ export async function handleEntityRequest(
           message: 'Configuração de horário de fechamento inválida.',
         });
       const [u] =
-        await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time ELSE cash_closing_min_time END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time`;
+        await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time WHEN ${closingSchedule !== undefined} THEN ${Object.values(closingSchedule || {})[0] || null}::time ELSE cash_closing_min_time END,cash_closing_schedule=CASE WHEN ${closingSchedule !== undefined} THEN ${JSON.stringify(closingSchedule || {})}::jsonb ELSE cash_closing_schedule END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
       return send(res, 200, u);
     }
   }
@@ -323,7 +337,24 @@ export async function handleEntityRequest(
       Math.min(Number(req.query.limit) || 500, maxLimit),
     );
     const rows =
-      await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity=${table} ORDER BY updated_date DESC LIMIT ${limit}`;
+      table === 'fiado_records'
+        ? await sql`
+            SELECT id,data,created_date,updated_date
+            FROM nexo.records
+            WHERE market_id=${user.market_id} AND entity='fiado_records'
+              AND (
+                data->>'status'='pendente'
+                OR id IN (
+                  SELECT id FROM nexo.records
+                  WHERE market_id=${user.market_id} AND entity='fiado_records'
+                    AND data->>'status'<>'pendente'
+                  ORDER BY updated_date DESC
+                  LIMIT ${limit}
+                )
+              )
+            ORDER BY updated_date DESC
+          `
+        : await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity=${table} ORDER BY updated_date DESC LIMIT ${limit}`;
     let out = rows.map((r) => ({
       id: r.id,
       ...r.data,

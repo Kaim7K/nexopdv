@@ -48,6 +48,7 @@ export function publicUser(user) {
     cash_closing_min_time: user.cash_closing_min_time
       ? String(user.cash_closing_min_time).slice(0, 5)
       : null,
+    cash_closing_schedule: user.cash_closing_schedule || {},
     unit_id: user.unit_id || null,
     unit_name: user.unit_name || null,
     platform_notice: user.platform_notice || '',
@@ -69,7 +70,7 @@ export async function authenticateCredentials(sql, input) {
   const rows = await sql`
     SELECT
       u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
-      u.cash_closing_time_enabled, u.cash_closing_min_time,
+      u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
       unit.name AS unit_name,
       m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
       COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
@@ -146,7 +147,7 @@ export async function currentUser(req, sql) {
     const rows = await sql`
       SELECT
         u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
-        u.cash_closing_time_enabled, u.cash_closing_min_time,
+        u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
         unit.name AS unit_name,
         m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
         COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
