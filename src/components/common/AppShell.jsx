@@ -19,13 +19,13 @@ export function PageHeader({
 }) {
   return (
     <header className="page-header">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex w-full min-w-0 items-center gap-3 xl:w-auto xl:flex-1">
         <span
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${toneClasses[tone] || toneClasses.accent}`}
         >
           {Icon ? <Icon className="h-[18px] w-[18px]" /> : null}
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           {eyebrow && (
             <div
               className="mb-0.5 truncate text-[10px] font-black uppercase tracking-[0.08em] text-muted-foreground"
@@ -38,7 +38,7 @@ export function PageHeader({
         </div>
       </div>
       {actions && (
-        <div className="flex shrink-0 flex-wrap gap-1.5 sm:justify-end">
+        <div className="flex w-full min-w-0 flex-wrap gap-1.5 xl:w-auto xl:shrink-0 xl:justify-end">
           {actions}
         </div>
       )}

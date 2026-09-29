@@ -422,7 +422,7 @@ export default function Layout() {
            id="main-content"
            data-app-scroll-container
            tabIndex={-1}
-          className="min-w-0 flex-1 overscroll-contain overflow-auto bg-transparent outline-none md:rounded-2xl"
+          className="min-w-0 flex-1 overflow-auto overscroll-y-auto bg-transparent outline-none md:rounded-2xl"
         >
           {user.platform_notice && (
             <div

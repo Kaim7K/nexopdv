@@ -115,6 +115,40 @@ if (path[0] === 'sales' && path[1] === 'list' && req.method === 'GET') {
   });
 }
 
+if (
+  path[0] === 'sales' &&
+  path[1] === 'product-history' &&
+  req.method === 'GET'
+) {
+  if (!['gerente', 'admin'].includes(user.role)) {
+    return send(res, 403, {
+      message: 'Relatórios de produtos são restritos a gerentes e administradores.',
+    });
+  }
+  if (!user.market_id)
+    return send(res, 400, { message: 'Usuário sem mercado.' });
+
+  const productId = text(req.query.product_id, 80);
+  if (!isUuid(productId))
+    return send(res, 400, { message: 'Produto inválido.' });
+
+  const rows = await sql`
+    SELECT id,data,created_date,updated_date
+    FROM nexo.records
+    WHERE market_id=${user.market_id}
+      AND entity='sales'
+      AND data->>'status'='concluida'
+      AND COALESCE((data->>'archived')::boolean,false)=false
+      AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(COALESCE(data->'items','[]'::jsonb)) AS sale_item
+        WHERE sale_item->>'product_id'=${productId}
+      )
+    ORDER BY created_date ASC
+  `;
+  return send(res, 200, rows.map(recordFromRow));
+}
+
 if (path[0] === 'sales' && path[1] === 'report' && req.method === 'GET') {
   if (user.role === 'vendedor')
     return send(res, 403, {
@@ -268,6 +302,7 @@ if (path[0] === 'sales' && path[1] === 'complete' && req.method === 'POST') {
     return {
       product_id: item.product_id,
       product_name: text(product.name, 180),
+      category: text(product.category, 120),
       barcode: text(product.barcode, 180),
       internal_code: text(product.internal_code, 180),
       quantity: unit === 'peso' ? 1 : soldQuantity,

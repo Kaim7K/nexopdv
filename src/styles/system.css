@@ -209,7 +209,7 @@
   font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(1.25rem, 1.7vw, 1.65rem);
   font-weight: 700 !important;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 
 .app-premium .page-subtitle {

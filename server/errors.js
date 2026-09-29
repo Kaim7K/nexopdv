@@ -33,6 +33,9 @@ export function mapDatabaseError(error) {
   if (error?.code === '42501') {
     return new AppError(503, 'DATABASE_PERMISSION', 'O usuário do banco não possui as permissões necessárias.');
   }
+  if (/exceeded the quota|quota.*exceeded|upgrade your plan to increase limits/i.test(detail)) {
+    return new AppError(503, 'DATABASE_QUOTA_EXCEEDED', 'O banco de dados atingiu o limite do plano. Verifique a cota do Neon e tente novamente.');
+  }
   if (/ENOTFOUND|fetch failed|invalid.*url|connection string|Failed to connect/i.test(detail)) {
     return new AppError(503, 'DATABASE_CONNECTION', 'Não foi possível conectar ao banco de dados configurado.');
   }

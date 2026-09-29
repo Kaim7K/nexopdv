@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import bcrypt from 'bcryptjs';
 import { authenticateCredentials } from '../server/auth.js';
+import { mapDatabaseError } from '../server/errors.js';
 
 const password = 'SenhaForte-123';
 const password_hash = await bcrypt.hash(password, 4);
@@ -36,5 +37,14 @@ await assert.rejects(
   authenticateCredentials(sql, { email: 'email-invalido', password }),
   error => error.code === 'INVALID_CREDENTIALS_FORMAT' && error.status === 400,
 );
+
+const quotaError = mapDatabaseError(
+  new Error(
+    'Server error (HTTP status 402): {"message":"Your account or project has exceeded the quota. Upgrade your plan to increase limits."}',
+  ),
+);
+assert.equal(quotaError.status, 503);
+assert.equal(quotaError.code, 'DATABASE_QUOTA_EXCEEDED');
+assert.equal(quotaError.expose, true);
 
 console.log('Teste de autenticação aprovado.');

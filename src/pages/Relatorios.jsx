@@ -18,6 +18,13 @@ import {
   Users,
 } from 'lucide-react';
 import { formatCurrency, formatNumber, getPaymentLabel } from '@/lib/helpers';
+import {
+  allocateSaleItems,
+  getSaleGrossTotal,
+  getSaleItemQuantity,
+  getSaleNetTotal,
+  getSalePaymentAllocations,
+} from '@/lib/report-metrics';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 import RankingList from '@/components/common/RankingList';
 import { PageHeader } from '@/components/common/AppShell';
@@ -185,24 +192,16 @@ export default function Relatorios() {
 
   const stats = useMemo(() => {
     const totalRevenue = periodSales.reduce(
-      (sum, sale) => sum + Number(sale.total || 0),
+      (sum, sale) => sum + getSaleNetTotal(sale),
       0,
     );
     const grossRevenue = periodSales.reduce(
-      (sum, sale) => sum + Number(sale.subtotal || sale.total || 0),
+      (sum, sale) => sum + getSaleGrossTotal(sale),
       0,
     );
-    const totalDiscount = periodSales.reduce((sum, sale) => {
-      const subtotal = Number(sale.subtotal || sale.total || 0);
-      const rawDiscount = Math.max(0, Number(sale.discount_value || 0));
-      const discount =
-        sale.discount_type === 'percentual'
-          ? (subtotal * Math.min(rawDiscount, 100)) / 100
-          : Math.min(rawDiscount, subtotal);
-      return sum + discount;
-    }, 0);
+    const totalDiscount = Math.max(0, grossRevenue - totalRevenue);
     const prevRevenue = prevPeriodSales.reduce(
-      (sum, sale) => sum + Number(sale.total || 0),
+      (sum, sale) => sum + getSaleNetTotal(sale),
       0,
     );
     const revenueChange =
@@ -215,7 +214,7 @@ export default function Relatorios() {
         (sale.items || []).reduce(
           (itemSum, item) =>
             itemSum +
-            (Number(item.unit === 'peso' ? item.weight : item.quantity) || 0),
+            getSaleItemQuantity(item),
           0,
         ),
       0,
@@ -254,38 +253,42 @@ export default function Relatorios() {
       );
     };
     for (const sale of periodSales) {
-      for (const item of sale.items || []) {
+      const productsInSale = new Map();
+      for (const allocation of allocateSaleItems(sale)) {
+        const { item, quantity, netRevenue } = allocation;
         const productName = item.product_name || 'Produto sem nome';
-        if (!productMap[productName])
-          productMap[productName] = { qty: 0, revenue: 0, sales: 0 };
-        const quantity =
-          Number(item.unit === 'peso' ? item.weight : item.quantity) || 0;
-        const itemSubtotal =
-          Number(item.subtotal ?? item.total ?? item.total_price) ||
-          Number(item.unit_price || item.price || 0) * quantity ||
-          0;
-        productMap[productName].qty += quantity;
-        productMap[productName].revenue += itemSubtotal;
-        productMap[productName].sales += 1;
+        const productKey = String(item.product_id || `name:${productName}`);
+        const productData = productsInSale.get(productKey) || {
+          name: productName,
+          qty: 0,
+          revenue: 0,
+        };
+        productData.qty += quantity;
+        productData.revenue += netRevenue;
+        productsInSale.set(productKey, productData);
+
         const category = resolveCategory(item);
         if (!categoryMap[category]) categoryMap[category] = { qty: 0, revenue: 0 };
         categoryMap[category].qty += quantity;
-        categoryMap[category].revenue += itemSubtotal;
+        categoryMap[category].revenue += netRevenue;
+      }
+      for (const [productKey, productData] of productsInSale) {
+        if (!productMap[productKey]) {
+          productMap[productKey] = { ...productData, sales: 0 };
+        } else {
+          productMap[productKey].qty += productData.qty;
+          productMap[productKey].revenue += productData.revenue;
+        }
+        productMap[productKey].sales += 1;
       }
     }
 
     const paymentMap = {};
     for (const sale of periodSales) {
-      let changeToDiscount = Math.max(0, Number(sale.change_amount || 0));
-      for (const payment of sale.payments || []) {
+      for (const payment of getSalePaymentAllocations(sale)) {
         const rawAmount = Math.max(0, Number(payment.amount || 0));
-        const changeDiscount =
-          payment.method === 'dinheiro' && changeToDiscount > 0
-            ? Math.min(rawAmount, changeToDiscount)
-            : 0;
-        changeToDiscount = Math.max(0, changeToDiscount - changeDiscount);
         paymentMap[payment.method] =
-          Number(paymentMap[payment.method] || 0) + rawAmount - changeDiscount;
+          Number(paymentMap[payment.method] || 0) + rawAmount;
       }
     }
     const paymentData = Object.entries(paymentMap)
@@ -303,11 +306,11 @@ export default function Relatorios() {
       if (!sellerMap[seller])
         sellerMap[seller] = { count: 0, revenue: 0, items: 0 };
       sellerMap[seller].count += 1;
-      sellerMap[seller].revenue += Number(sale.total || 0);
+      sellerMap[seller].revenue += getSaleNetTotal(sale);
       sellerMap[seller].items += (sale.items || []).reduce(
         (sum, item) =>
           sum +
-          (Number(item.unit === 'peso' ? item.weight : item.quantity) || 0),
+          getSaleItemQuantity(item),
         0,
       );
     }
@@ -346,7 +349,7 @@ export default function Relatorios() {
               month: '2-digit',
             });
       if (!dailyMap[key]) dailyMap[key] = { date: label, value: 0 };
-      dailyMap[key].value += Number(sale.total || 0);
+      dailyMap[key].value += getSaleNetTotal(sale);
     }
     const dailyData = Object.entries(dailyMap)
       .sort(([first], [second]) => first.localeCompare(second))
@@ -378,7 +381,7 @@ export default function Relatorios() {
       }
       if (!breakdownMap[key])
         breakdownMap[key] = { key, label, revenue: 0, sales: 0 };
-      breakdownMap[key].revenue += Number(sale.total || 0);
+      breakdownMap[key].revenue += getSaleNetTotal(sale);
       breakdownMap[key].sales += 1;
     }
     const breakdownData = Object.values(breakdownMap)
@@ -431,8 +434,8 @@ export default function Relatorios() {
   ]);
 
   const productRankingRows = useMemo(() => {
-    const rows = Object.entries(stats.productMap || {}).map(([name, data]) => ({
-      name,
+    const rows = Object.values(stats.productMap || {}).map((data) => ({
+      name: data.name,
       revenue: Number(data.revenue || 0),
       items: Number(data.qty || 0),
       sales: Number(data.sales || 0),

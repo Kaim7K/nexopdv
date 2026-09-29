@@ -211,6 +211,11 @@ const realNexoApi = {
     complete: (data) =>
       request('/sales/complete', { method: 'POST', body: data }),
     nextNumber: () => request('/sales/next', { cacheTTL: 3_000 }),
+    productHistory: (productId) =>
+      request(
+        `/sales/product-history?product_id=${encodeURIComponent(productId)}`,
+        { cacheTTL: 10_000 },
+      ),
     list: ({
       page = 1,
       pageSize = 20,

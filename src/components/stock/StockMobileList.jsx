@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Package, Pencil, Trash2 } from 'lucide-react';
+import { BarChart3, Copy, Package, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import {
   getStockState,
@@ -13,13 +13,14 @@ export default function StockMobileList({
   deletingId,
   canDelete,
   onEdit,
+  onReport,
   onDuplicate,
   onDelete,
   hasFilters,
   onClearFilters,
 }) {
   return (
-    <div className="space-y-1.5 p-1.5 xl:hidden">
+    <div className="divide-y divide-border/70 xl:hidden">
       {products.map((product) => {
         const { quantity, tracksStock, isZero, isLow, isDirty } = getStockState(
           product,
@@ -27,13 +28,13 @@ export default function StockMobileList({
           dirty,
         );
         const stateClass = isDirty
-          ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-100'
+          ? 'border-l-amber-500 bg-amber-500/10'
           : tracksStock && isZero
-            ? 'border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-100'
+            ? 'border-l-red-500 bg-red-500/10'
             : tracksStock && isLow
-              ? 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-100'
-              : 'border-border bg-card text-foreground';
-        const stockLabel = tracksStock ? `Estoque: ${quantity}` : 'Sem controle';
+              ? 'border-l-amber-500 bg-amber-500/5'
+              : 'border-l-transparent bg-card';
+        const stockLabel = tracksStock ? `Estq: ${quantity}` : 'Sem controle';
         const lastSaleLabel = product.last_sale_at
           ? formatDateTime(product.last_sale_at)
           : 'Nunca vendido';
@@ -41,15 +42,16 @@ export default function StockMobileList({
         return (
           <article
             key={product.id}
-            className={`rounded-xl border p-2 shadow-none transition active:scale-[0.995] ${stateClass}`}
+            className={`flex min-w-0 items-center gap-1.5 border-l-2 px-2 py-1.5 transition-colors ${stateClass}`}
           >
-            <div className="flex items-start gap-2">
-              <button
-                type="button"
-                onClick={() => onEdit(product)}
-                className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white"
-                aria-label={`Editar ${product.name}`}
-              >
+            <button
+              type="button"
+              onClick={() => onEdit(product)}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left"
+              aria-label={`Editar ${product.name}`}
+              title={`Última venda: ${lastSaleLabel}`}
+            >
+              <span className="hidden h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-white min-[380px]:grid">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
@@ -61,70 +63,54 @@ export default function StockMobileList({
                 ) : (
                   <Package className="h-4 w-4 text-muted-foreground" />
                 )}
-              </button>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-bold text-foreground">
+                  {product.name}
+                </span>
+                <span className="block truncate text-[10px] text-muted-foreground">
+                  {product.category || 'Sem categoria'} · {stockLabel}
+                </span>
+              </span>
+              <strong className="shrink-0 text-xs font-bold tabular-nums text-foreground">
+                {formatCurrency(product.sale_price || 0)}
+              </strong>
+            </button>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="line-clamp-1 text-sm font-black leading-4">
-                      {product.name}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                      {product.category || 'Sem categoria'}
-                    </p>
-                  </div>
-                  <strong className="shrink-0 text-sm font-black tabular-nums text-foreground">
-                    {formatCurrency(product.sale_price || 0)}
-                  </strong>
-                </div>
-
-                <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
-                  <span className="rounded-full border border-border bg-background px-2 py-0.5">
-                    {stockLabel}
-                  </span>
-                  <span className="rounded-full border border-border bg-background px-2 py-0.5">
-                    {product.status === 'inativo' ? 'Inativo' : 'Ativo'}
-                  </span>
-                </div>
-
-                <div className="mt-1 grid gap-0.5 text-[10px] leading-3 text-muted-foreground">
-                  <span className="truncate">
-                    Código: {product.barcode || '-'}
-                  </span>
-                  <span className="truncate">
-                    Última venda: {lastSaleLabel}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-1.5 flex gap-1.5">
-              <button
-                type="button"
+            <div className="flex shrink-0 items-center gap-1">
+              {onReport && (
+                <RowAction
+                  label={`Abrir relatório de ${product.name}`}
+                  title="Relatório"
+                  onClick={() => onReport(product)}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" />
+                </RowAction>
+              )}
+              <RowAction
+                label={`Editar ${product.name}`}
+                title="Editar"
                 onClick={() => onEdit(product)}
-                className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold hover:bg-muted"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Editar
-              </button>
-              <button
-                type="button"
+              </RowAction>
+              <RowAction
+                label={`Duplicar ${product.name}`}
+                title="Duplicar"
                 onClick={() => onDuplicate(product)}
-                className="inline-flex min-h-8 w-10 items-center justify-center rounded-lg border border-border bg-card hover:bg-muted"
-                aria-label={`Duplicar ${product.name}`}
               >
                 <Copy className="h-3.5 w-3.5" />
-              </button>
+              </RowAction>
               {canDelete && (
-                <button
-                  type="button"
+                <RowAction
+                  destructive
                   disabled={deletingId === product.id}
+                  label={`Excluir ${product.name}`}
+                  title="Excluir"
                   onClick={() => onDelete(product)}
-                  className="inline-flex min-h-8 w-10 items-center justify-center rounded-lg border border-destructive/25 bg-card text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
-                  aria-label={`Excluir ${product.name}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                </RowAction>
               )}
             </div>
           </article>
@@ -134,5 +120,31 @@ export default function StockMobileList({
         <StockEmptyState hasFilters={hasFilters} onClearFilters={onClearFilters} />
       )}
     </div>
+  );
+}
+
+function RowAction({
+  children,
+  label,
+  title,
+  onClick,
+  disabled = false,
+  destructive = false,
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={label}
+      title={title}
+      className={`grid h-8 w-8 place-items-center rounded-md border bg-card transition-colors disabled:cursor-wait disabled:opacity-50 ${
+        destructive
+          ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
+          : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package } from 'lucide-react';
+import { BarChart3, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 import { getStockState } from '@/components/stock/stock-view-utils';
 
@@ -8,6 +8,7 @@ export default function StockGridView({
   lowStockThreshold,
   dirty,
   onEdit,
+  onReport,
 }) {
   return (
     <div className="grid grid-cols-2 gap-2 p-2 min-[390px]:grid-cols-3 sm:grid-cols-4 sm:p-2.5 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
@@ -26,13 +27,17 @@ export default function StockGridView({
               : 'border-border bg-card';
 
         return (
-          <button
+          <article
             key={product.id}
-            type="button"
-            onClick={() => onEdit(product)}
-            className={`group min-w-0 overflow-hidden rounded-xl border text-left transition active:scale-[0.98] sm:hover:-translate-y-0.5 sm:hover:shadow-md ${statusClass}`}
+            className={`group relative min-w-0 overflow-hidden rounded-xl border text-left transition sm:hover:-translate-y-0.5 sm:hover:shadow-md ${statusClass}`}
           >
-            <div className="aspect-[4/3] bg-muted/30 sm:aspect-square">
+            <button
+              type="button"
+              onClick={() => onEdit(product)}
+              className="block w-full text-left active:scale-[0.99]"
+              aria-label={`Editar ${product.name}`}
+            >
+              <div className="aspect-[4/3] bg-muted/30 sm:aspect-square">
               {product.image_url ? (
                 <img
                   src={product.image_url}
@@ -47,8 +52,8 @@ export default function StockGridView({
                   <Package className="h-6 w-6" />
                 </div>
               )}
-            </div>
-            <div className="space-y-1 p-2">
+              </div>
+              <div className="space-y-1 p-2">
               <div>
                 <p className="line-clamp-2 min-h-8 text-[11px] font-bold leading-4 sm:text-xs">
                   {product.name}
@@ -83,8 +88,20 @@ export default function StockGridView({
                   {product.barcode || product.internal_code || '-'}
                 </span>
               </div>
-            </div>
-          </button>
+              </div>
+            </button>
+            {onReport && (
+              <button
+                type="button"
+                onClick={() => onReport(product)}
+                className="absolute right-1.5 top-1.5 grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground"
+                aria-label={`Abrir relatório de ${product.name}`}
+                title="Relatório"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </button>
+            )}
+          </article>
         );
       })}
     </div>

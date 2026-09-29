@@ -8,7 +8,7 @@ import {
 } from '../src/lib/pdv.js';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-const [api, stock, stockMetric, settings, auth, layout, googleImages, pdv, css] = await Promise.all([
+const [api, stock, stockMetric, settings, auth, layout, reloadWatcher, googleImages, pdv, css] = await Promise.all([
   Promise.all([read('api/index.js'), read('server/entities/routes.js'), read('server/cash/routes.js'), read('server/platform/routes.js')])
     .then(files => files.join('\n')),
   read('src/pages/Estoque.jsx'),
@@ -16,6 +16,7 @@ const [api, stock, stockMetric, settings, auth, layout, googleImages, pdv, css] 
   read('src/pages/Configuracoes.jsx'),
   read('src/lib/AuthContext.jsx'),
   read('src/components/Layout.jsx'),
+  read('src/components/SystemReloadWatcher.jsx'),
   read('src/lib/google-images.js'),
   read('src/pages/PDV.jsx'),
   read('src/index.css'),
@@ -54,6 +55,8 @@ assert.match(settings, /isAccentDistinct/, 'O sistema deve impedir combinações
 assert.match(auth, /localStorage/, 'A sessão deve manter cache persistente para evitar deslogar ao fechar a aba.');
 assert.match(api, /24 \* 90/, 'Login com manter conectado deve criar sessão longa.');
 assert.match(layout, /ROUTE_PREFETCHERS/, 'As páginas devem ser pré-carregadas por intenção.');
+assert.match(reloadWatcher, /POLL_INTERVAL_MS = 60_000/, 'O verificador de recarregamento deve evitar polling agressivo.');
+assert.match(reloadWatcher, /ERROR_RETRY_MS = 5 \* 60_000/, 'Falhas no verificador de recarregamento devem aplicar backoff.');
 assert.match(googleImages, /window\.open/, 'A pesquisa deve abrir no navegador do usuário.');
 assert.match(pdv, /window\.setInterval/, 'O rascunho deve manter heartbeat enquanto a tela está ativa.');
 assert.match(css, /grafite neutro/, 'O tema escuro deve documentar a paleta neutra.');

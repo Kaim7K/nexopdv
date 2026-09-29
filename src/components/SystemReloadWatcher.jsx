@@ -3,19 +3,28 @@ import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
 
 const RELOAD_TOKEN_KEY = 'nexo:system-reload-token';
-const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 60_000;
+const ERROR_RETRY_MS = 5 * 60_000;
 
 export default function SystemReloadWatcher() {
   const { user } = useAuth();
   const checkingRef = useRef(false);
   const reloadTimerRef = useRef(null);
+  const retryAfterRef = useRef(0);
 
   const checkForReload = useCallback(async () => {
-    if (!user || checkingRef.current || reloadTimerRef.current) return;
+    if (
+      !user ||
+      checkingRef.current ||
+      reloadTimerRef.current ||
+      Date.now() < retryAfterRef.current
+    )
+      return;
     checkingRef.current = true;
 
     try {
       const status = await nexoApi.system.reloadStatus();
+      retryAfterRef.current = 0;
       const nextToken = String(status?.reload_token || '0');
       const currentToken = window.sessionStorage.getItem(RELOAD_TOKEN_KEY);
 
@@ -30,7 +39,7 @@ export default function SystemReloadWatcher() {
         window.location.reload();
       }, 1_000);
     } catch {
-      // A próxima verificação tenta novamente quando a conexão voltar.
+      retryAfterRef.current = Date.now() + ERROR_RETRY_MS;
     } finally {
       checkingRef.current = false;
     }

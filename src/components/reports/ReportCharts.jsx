@@ -4,7 +4,9 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
+  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -126,6 +128,71 @@ export function PaymentChart({ data }) {
           contentStyle={TOOLTIP_STYLE}
         />
       </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function ProductSalesChart({ data, unitLabel }) {
+  return (
+    <ResponsiveContainer width="100%" height={compactChartHeight(250)}>
+      <ComposedChart data={data} margin={{ left: 0, right: 4, top: 8 }}>
+        <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          dataKey="label"
+          minTickGap={16}
+          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+          axisLine={{ stroke: 'hsl(var(--border))' }}
+          tickLine={false}
+        />
+        <YAxis
+          yAxisId="quantity"
+          width={38}
+          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+          tickFormatter={(value) => formatNumber(value)}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          yAxisId="revenue"
+          orientation="right"
+          width={48}
+          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+          tickFormatter={(value) =>
+            Number(value) >= 1000
+              ? `R$ ${formatNumber(Number(value) / 1000)}k`
+              : `R$ ${formatNumber(value)}`
+          }
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip
+          formatter={(value, name) =>
+            name === 'Faturamento'
+              ? formatCurrency(value)
+              : `${formatNumber(value)} ${unitLabel}`
+          }
+          contentStyle={TOOLTIP_STYLE}
+          labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+        />
+        <Legend />
+        <Bar
+          yAxisId="quantity"
+          dataKey="quantity"
+          name="Quantidade"
+          fill="hsl(var(--chart-1))"
+          radius={[5, 5, 0, 0]}
+        />
+        <Line
+          yAxisId="revenue"
+          type="monotone"
+          dataKey="revenue"
+          name="Faturamento"
+          stroke="hsl(var(--chart-3))"
+          strokeWidth={2.5}
+          dot={{ r: 3, fill: 'hsl(var(--chart-3))' }}
+          activeDot={{ r: 5 }}
+        />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

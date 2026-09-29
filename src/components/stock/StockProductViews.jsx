@@ -15,12 +15,15 @@ export default function StockProductViews({
   SortIcon,
   onSort,
   onEdit,
+  onReport,
   onDuplicate,
   onDelete,
   onInlineEdit,
   hasFilters,
   onClearFilters,
 }) {
+  const canViewReports = ['gerente', 'admin'].includes(userRole);
+
   if (viewMode === 'grid') {
     return (
       <>
@@ -29,6 +32,7 @@ export default function StockProductViews({
           lowStockThreshold={lowStockThreshold}
           dirty={dirty}
           onEdit={onEdit}
+          onReport={canViewReports ? onReport : undefined}
         />
         {!products.length && (
           <div className="p-2">
@@ -53,6 +57,7 @@ export default function StockProductViews({
         deletingId={deletingId}
         canDelete={canDelete}
         onEdit={onEdit}
+        onReport={canViewReports ? onReport : undefined}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
         hasFilters={hasFilters}
@@ -68,6 +73,7 @@ export default function StockProductViews({
         SortIcon={SortIcon}
         onSort={onSort}
         onEdit={onEdit}
+        onReport={canViewReports ? onReport : undefined}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
         onInlineEdit={onInlineEdit}

@@ -53,7 +53,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
     : `Inativos${inactiveCount ? ` (${inactiveCount})` : ''}`;
 
   return (
-    <div className="grid gap-1.5 sm:flex sm:flex-nowrap sm:items-center sm:gap-2">
+    <div className="grid w-full min-w-0 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2 xl:w-auto xl:flex-nowrap">
       <input
         ref={fileRef}
         hidden
@@ -67,14 +67,14 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
           type="button"
           disabled={!dirtyCount || saving}
           onClick={onSave}
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm"
         >
           <Save className="h-4 w-4" /> {saveLabel}
         </button>
         <button
           type="button"
           onClick={onCreate}
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary/90 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary/90 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm"
         >
           <Plus className="h-4 w-4" /> Novo produto
         </button>
@@ -158,7 +158,7 @@ function SecondaryButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm ${
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 text-xs font-bold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm ${
         destructive
           ? 'border-destructive/30 text-destructive hover:bg-destructive/10'
           : 'border-border'

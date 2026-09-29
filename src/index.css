@@ -178,11 +178,13 @@
   }
 
   .page-header {
-    @apply mb-3 flex flex-col gap-2 rounded-xl border border-border/70 bg-card/90 px-3 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.045)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-3.5;
+    @apply mb-3 flex flex-col gap-2 rounded-xl border border-border/70 bg-card/90 px-3 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.045)] backdrop-blur sm:px-4 sm:py-3.5 xl:flex-row xl:items-center xl:justify-between;
   }
 
   .page-title {
     @apply text-xl font-bold tracking-tight text-foreground sm:text-2xl xl:text-[1.65rem] xl:leading-tight;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .page-subtitle {
@@ -338,7 +340,7 @@
   }
 
   .modal-button {
-    @apply inline-flex min-h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-bold leading-tight transition disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-9 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-bold leading-tight transition disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .control-button {

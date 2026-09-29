@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  BarChart3,
   Copy,
   Package,
   Pencil,
@@ -64,7 +65,7 @@ const TABLE_COLUMNS = [
   {
     key: 'actions',
     label: 'Ações',
-    width: 'w-[105px]',
+    width: 'w-[145px]',
     sticky: 'right',
   },
 ];
@@ -85,6 +86,7 @@ export default function StockTable({
   SortIcon,
   onSort,
   onEdit,
+  onReport,
   onDuplicate,
   onDelete,
   onInlineEdit,
@@ -125,6 +127,7 @@ export default function StockTable({
               deletingId={deletingId}
               canDelete={canDelete}
               onEdit={onEdit}
+              onReport={onReport}
               onDuplicate={onDuplicate}
               onDelete={onDelete}
               onInlineEdit={onInlineEdit}
@@ -182,6 +185,7 @@ function ProductRow({
   deletingId,
   canDelete,
   onEdit,
+  onReport,
   onDuplicate,
   onDelete,
   onInlineEdit,
@@ -220,6 +224,15 @@ function ProductRow({
       ))}
       <td className={`${cellClass} sticky right-0 z-10 border-l border-border/70`}>
         <div className="flex justify-end gap-1.5">
+          {onReport && (
+            <ActionButton
+              label={`Abrir relatório de ${product.name}`}
+              title="Relatório"
+              onClick={() => onReport(product)}
+            >
+              <BarChart3 className="h-4 w-4" />
+            </ActionButton>
+          )}
           <ActionButton
             label={`Editar ${product.name} no formulario`}
             title="Editar"

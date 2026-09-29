@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { formatDateTime } from '@/lib/helpers';
@@ -50,6 +50,7 @@ const collator = new Intl.Collator('pt-BR', {
 
 export default function Estoque() {
   const confirm = useConfirm();
+  const navigate = useNavigate();
   const { user, config } = /** @type {any} */ (useOutletContext());
   const fileRef = useRef(null);
   const tableRef = useRef(null);
@@ -696,7 +697,7 @@ export default function Estoque() {
 
       <div
         ref={tableRef}
-        className="compact-scroll min-h-[240px] scroll-mt-4 overflow-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)] [isolation:isolate] sm:min-h-[340px] xl:max-h-[calc(100dvh-286px)]"
+        className="compact-scroll min-h-[240px] scroll-mt-4 overflow-x-auto overflow-y-visible rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)] [isolation:isolate] sm:min-h-[340px]"
       >
         {loading ? (
           <div
@@ -728,6 +729,7 @@ export default function Estoque() {
             SortIcon={SortIcon}
             onSort={toggleSort}
             onEdit={(product) => openProductModal('edit', product)}
+            onReport={(product) => navigate(`/produto/${product.id}`)}
             onDuplicate={(product) => openProductModal('duplicate', product)}
             onDelete={handleDeleteProduct}
             onInlineEdit={editInline}

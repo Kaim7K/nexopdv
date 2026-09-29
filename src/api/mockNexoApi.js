@@ -1026,6 +1026,16 @@ export const mockNexoApi = {
       }),
   },
   sales: {
+    productHistory: (productId) =>
+      withDb((db) =>
+        db.sales.filter(
+          (sale) =>
+            sale.status === 'concluida' &&
+            (sale.items || []).some(
+              (item) => String(item.product_id) === String(productId),
+            ),
+        ),
+      ),
     complete: (data) =>
       withDb((db) => {
         const user = currentMockUser(db);
@@ -1034,11 +1044,17 @@ export const mockNexoApi = {
         );
         if (existing) return existing;
         const number = Math.max(0, ...db.sales.map((sale) => Number(sale.sale_number || 0))) + 1;
-        const items = (data.items || []).map((item) => ({
-          ...item,
-          product_name: item.product_name || item.name,
-          subtotal: round(Number(item.subtotal || 0)),
-        }));
+        const items = (data.items || []).map((item) => {
+          const product = db.products.find(
+            (candidate) => candidate.id === item.product_id,
+          );
+          return {
+            ...item,
+            product_name: item.product_name || item.name || product?.name,
+            category: item.category || product?.category || '',
+            subtotal: round(Number(item.subtotal || 0)),
+          };
+        });
         const subtotal = round(items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0));
         const discountValue = Math.max(0, Number(data.discount_value || 0));
         const discount = round(data.discount_type === 'percentual'
