@@ -80,6 +80,56 @@ assert.equal(
   'Cada venda deve aparecer uma única vez no recorte por hora.',
 );
 
+const datedSales = [
+  {
+    id: 'before-range',
+    status: 'concluida',
+    created_date: '2026-09-20T12:00:00-03:00',
+    total: 100,
+    items: [{ product_id: 'product-a', unit: 'unidade', quantity: 100, subtotal: 100 }],
+  },
+  {
+    id: 'thursday-1',
+    status: 'concluida',
+    created_date: '2026-09-24T12:00:00-03:00',
+    total: 30,
+    items: [{ product_id: 'product-a', unit: 'unidade', quantity: 3, subtotal: 30 }],
+  },
+  {
+    id: 'thursday-2',
+    status: 'concluida',
+    created_date: '2026-10-01T12:00:00-03:00',
+    total: 30,
+    items: [{ product_id: 'product-a', unit: 'unidade', quantity: 3, subtotal: 30 }],
+  },
+];
+const rangedReport = buildProductReport(datedSales, 'product-a', {
+  startDate: '2026-09-21',
+  endDate: '2026-10-04',
+});
+const thursday = rangedReport.weekdayRows.find((row) => row.key === 4);
+
+assert.equal(rangedReport.saleCount, 2, 'Vendas fora do período devem ser excluídas.');
+assert.equal(rangedReport.totalQuantity, 6);
+assert.equal(rangedReport.totalRevenue, 60);
+assert.equal(rangedReport.periodDayCount, 14, 'A média deve usar todos os dias do período.');
+assert.equal(rangedReport.weekdayRows.length, 7, 'A semana deve exibir inclusive dias sem venda.');
+assert.equal(thursday.periodDays, 2, 'As duas quintas-feiras do período devem compor a média.');
+assert.equal(thursday.averageDailyQuantity, 3);
+assert.equal(thursday.averageDailyRevenue, 30);
+assert.equal(rangedReport.averageDailyQuantity, 6 / 14);
+assert.equal(rangedReport.averageDailyRevenue, 60 / 14);
+assert.deepEqual(
+  rangedReport.monthRows.map((row) => row.periodDays),
+  [10, 4],
+  'Cada mês deve considerar somente seus dias dentro do período selecionado.',
+);
+assert.equal(
+  rangedReport.dayRows.reduce((sum, row) => sum + row.quantity, 0),
+  rangedReport.totalQuantity,
+  'Os dias sem venda devem aparecer sem alterar a quantidade total.',
+);
+
 assert.deepEqual(
   getSalePaymentAllocations({
     total: 90,

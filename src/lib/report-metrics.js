@@ -130,7 +130,39 @@ const WEEKDAY_LABELS = [
   'Sábado',
 ];
 
-export function buildProductReport(sales = [], productId) {
+const toValidDate = (value, endOfDay = false) => {
+  if (!value) return null;
+  const date = value instanceof Date
+    ? new Date(value)
+    : new Date(
+      typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? `${value}T${endOfDay ? '23:59:59.999' : '00:00:00'}`
+        : value,
+    );
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const dateKey = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const monthKey = (date) => dateKey(date).slice(0, 7);
+
+const eachCalendarDay = (startDate, endDate, callback) => {
+  if (!startDate || !endDate || startDate > endDate) return 0;
+  const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const finalDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  let count = 0;
+  while (cursor <= finalDay) {
+    callback(new Date(cursor));
+    count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+};
+
+export function buildProductReport(sales = [], productId, options = {}) {
+  const selectedStart = toValidDate(options.startDate);
+  const selectedEnd = toValidDate(options.endDate, true);
   const monthMap = new Map();
   const dayMap = new Map();
   const weekdayMap = new Map();
@@ -161,6 +193,8 @@ export function buildProductReport(sales = [], productId) {
 
     const date = new Date(sale.created_date);
     if (Number.isNaN(date.getTime())) continue;
+    if (selectedStart && date < selectedStart) continue;
+    if (selectedEnd && date > selectedEnd) continue;
     const saleKey = sale.id || sale.sale_number || sale.created_date;
     if (saleIds.has(saleKey)) continue;
 
@@ -172,19 +206,19 @@ export function buildProductReport(sales = [], productId) {
     const occurrence = { date, quantity, revenue };
     occurrences.push(occurrence);
 
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const saleMonthKey = monthKey(date);
     addBucketValue(
       monthMap,
-      monthKey,
+      saleMonthKey,
       date
         .toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
         .replace('.', ''),
       occurrence,
     );
-    const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const saleDayKey = dateKey(date);
     addBucketValue(
       dayMap,
-      dayKey,
+      saleDayKey,
       date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
       occurrence,
     );
@@ -202,6 +236,53 @@ export function buildProductReport(sales = [], productId) {
     );
   }
 
+  const sortedOccurrences = [...occurrences].sort(
+    (first, second) => first.date.getTime() - second.date.getTime(),
+  );
+  const rangeStart = selectedStart || sortedOccurrences[0]?.date || null;
+  const rangeEnd = selectedEnd || sortedOccurrences.at(-1)?.date || null;
+  const weekdayDayCounts = new Map();
+  const monthDayCounts = new Map();
+  const periodDayCount = eachCalendarDay(rangeStart, rangeEnd, (date) => {
+    const currentMonthKey = monthKey(date);
+    const currentDayKey = dateKey(date);
+    weekdayDayCounts.set(date.getDay(), (weekdayDayCounts.get(date.getDay()) || 0) + 1);
+    monthDayCounts.set(currentMonthKey, (monthDayCounts.get(currentMonthKey) || 0) + 1);
+
+    if (!monthMap.has(currentMonthKey)) {
+      monthMap.set(currentMonthKey, {
+        key: currentMonthKey,
+        label: date
+          .toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+          .replace('.', ''),
+        quantity: 0,
+        revenue: 0,
+        saleCount: 0,
+      });
+    }
+    if (!dayMap.has(currentDayKey)) {
+      dayMap.set(currentDayKey, {
+        key: currentDayKey,
+        label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        quantity: 0,
+        revenue: 0,
+        saleCount: 0,
+      });
+    }
+  });
+
+  for (let weekday = 0; weekday < WEEKDAY_LABELS.length; weekday += 1) {
+    if (!weekdayMap.has(weekday) && weekdayDayCounts.has(weekday)) {
+      weekdayMap.set(weekday, {
+        key: weekday,
+        label: WEEKDAY_LABELS[weekday],
+        quantity: 0,
+        revenue: 0,
+        saleCount: 0,
+      });
+    }
+  }
+
   const sortByValue = (rows, field = 'quantity') =>
     [...rows].sort(
       (first, second) =>
@@ -211,38 +292,48 @@ export function buildProductReport(sales = [], productId) {
           numeric: true,
         }),
     );
-  const normalizeRows = (map) =>
+  const normalizeRows = (map, getPeriodDays) =>
     [...map.values()].map((row) => ({
       ...row,
+      revenue: fromCents(toCents(row.revenue)),
       averageTicket: row.saleCount ? row.revenue / row.saleCount : 0,
+      periodDays: getPeriodDays(row),
+      averageDailyQuantity: getPeriodDays(row)
+        ? row.quantity / getPeriodDays(row)
+        : 0,
+      averageDailyRevenue: getPeriodDays(row)
+        ? row.revenue / getPeriodDays(row)
+        : 0,
     }));
 
-  const monthRows = normalizeRows(monthMap).sort((first, second) =>
+  const monthRows = normalizeRows(
+    monthMap,
+    (row) => monthDayCounts.get(row.key) || 0,
+  ).sort((first, second) =>
     String(first.key).localeCompare(String(second.key), 'pt-BR', {
       numeric: true,
     }),
   );
-  const dayRows = normalizeRows(dayMap).sort((first, second) =>
+  const dayRows = normalizeRows(dayMap, () => 1).sort((first, second) =>
     String(first.key).localeCompare(String(second.key), 'pt-BR', {
       numeric: true,
     }),
   );
-  const weekdayRows = normalizeRows(weekdayMap).sort(
+  const weekdayRows = normalizeRows(
+    weekdayMap,
+    (row) => weekdayDayCounts.get(row.key) || 0,
+  ).sort(
     (first, second) => first.key - second.key,
   );
-  const hourRows = normalizeRows(hourMap).sort(
+  const hourRows = normalizeRows(hourMap, () => periodDayCount).sort(
     (first, second) => first.key - second.key,
   );
   const totalQuantity = occurrences.reduce(
     (sum, item) => sum + item.quantity,
     0,
   );
-  const totalRevenue = occurrences.reduce(
-    (sum, item) => sum + item.revenue,
-    0,
-  );
-  const sortedOccurrences = [...occurrences].sort(
-    (first, second) => first.date.getTime() - second.date.getTime(),
+  const totalRevenue = fromCents(
+    occurrences.reduce((sum, item) => sum + toCents(item.revenue), 0),
   );
   const bestMonth = sortByValue(monthRows)[0] || null;
   const bestWeekday = sortByValue(weekdayRows)[0] || null;
@@ -256,6 +347,11 @@ export function buildProductReport(sales = [], productId) {
     totalRevenue,
     averageQuantityPerSale: saleIds.size ? totalQuantity / saleIds.size : 0,
     averageRevenuePerSale: saleIds.size ? totalRevenue / saleIds.size : 0,
+    averageDailyQuantity: periodDayCount ? totalQuantity / periodDayCount : 0,
+    averageDailyRevenue: periodDayCount ? totalRevenue / periodDayCount : 0,
+    periodDayCount,
+    rangeStart,
+    rangeEnd,
     firstSaleAt: sortedOccurrences[0]?.date || null,
     lastSaleAt: sortedOccurrences.at(-1)?.date || null,
     bestMonth,

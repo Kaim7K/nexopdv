@@ -35,6 +35,36 @@ const PRODUCT_CHART_VIEWS = [
   },
   { key: 'hour', label: 'Hora', title: 'Vendas por horário', rows: 'hourRows' },
 ];
+const PRODUCT_REPORT_PERIODS = [
+  { key: 'today', label: 'Hoje' },
+  { key: 'week', label: 'Semana' },
+  { key: 'month', label: 'Mês' },
+  { key: 'year', label: 'Ano' },
+  { key: 'all', label: 'Tudo' },
+  { key: 'custom', label: 'Personalizado' },
+];
+
+const toDateInputValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getReportPeriodRange = (period, customStart, customEnd) => {
+  if (period === 'all') return { startDate: null, endDate: null };
+  if (period === 'custom') {
+    return { startDate: customStart || null, endDate: customEnd || null };
+  }
+
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setHours(0, 0, 0, 0);
+  if (period === 'week') startDate.setDate(startDate.getDate() - startDate.getDay());
+  if (period === 'month') startDate.setDate(1);
+  if (period === 'year') startDate.setMonth(0, 1);
+  return { startDate, endDate: now };
+};
 
 export default function ProdutoDetalhe() {
   const { id } = useParams();
@@ -69,11 +99,6 @@ export default function ProdutoDetalhe() {
   };
 
   useEffect(() => { load(); }, [id, canViewProductReport]);
-
-  const productReport = useMemo(
-    () => buildProductReport(sales, id),
-    [sales, id],
-  );
 
   if (loading) return <LoadingState className="min-h-[60vh]" label="Carregando produto..." />;
 
@@ -125,7 +150,7 @@ export default function ProdutoDetalhe() {
           </section>
 
           {canViewProductReport && (
-            <ProductSalesReport product={product} report={productReport} />
+            <ProductSalesReport product={product} sales={sales} />
           )}
 
           <section className="surface-card p-3 sm:p-4" aria-labelledby="audit-title">
@@ -167,13 +192,36 @@ export default function ProdutoDetalhe() {
   );
 }
 
-function ProductSalesReport({ product, report }) {
-  const hasSales = report.saleCount > 0;
+function ProductSalesReport({ product, sales }) {
   const unitLabel = product.unit === 'peso' ? 'kg' : 'un.';
   const [chartView, setChartView] = useState('month');
+  const [period, setPeriod] = useState('month');
+  const today = toDateInputValue(new Date());
+  const [customStart, setCustomStart] = useState(today);
+  const [customEnd, setCustomEnd] = useState(today);
+  const periodRange = useMemo(
+    () => getReportPeriodRange(period, customStart, customEnd),
+    [period, customStart, customEnd],
+  );
+  const customPeriodError = period === 'custom' && (
+    !customStart || !customEnd || customStart > customEnd
+  );
+  const report = useMemo(
+    () => buildProductReport(
+      customPeriodError ? [] : sales,
+      product.id,
+      periodRange,
+    ),
+    [customPeriodError, periodRange, product.id, sales],
+  );
+  const hasSales = report.saleCount > 0;
   const activeChart =
     PRODUCT_CHART_VIEWS.find((view) => view.key === chartView) ||
     PRODUCT_CHART_VIEWS[0];
+  const activeRows = report[activeChart.rows];
+  const rangeLabel = report.rangeStart && report.rangeEnd
+    ? `${report.rangeStart.toLocaleDateString('pt-BR')} a ${report.rangeEnd.toLocaleDateString('pt-BR')}`
+    : 'Todo o histórico disponível';
 
   return (
     <section className="surface-card mb-3 p-3 sm:p-4" aria-labelledby="product-report-title">
@@ -185,7 +233,7 @@ function ProductSalesReport({ product, report }) {
           <div>
             <h2 id="product-report-title" className="font-bold">Relatório de vendas do produto</h2>
             <p className="text-xs text-muted-foreground">
-              Análise por mês, dia da semana e hora das últimas vendas carregadas.
+              Totais e padrões calculados a partir das vendas concluídas.
             </p>
           </div>
         </div>
@@ -196,7 +244,65 @@ function ProductSalesReport({ product, report }) {
         )}
       </div>
 
-      {!hasSales ? (
+      <div className="mb-3 border-y border-border py-3">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-sm font-bold">Período do relatório</h3>
+            <p className="text-xs text-muted-foreground">
+              {rangeLabel}{report.periodDayCount ? ` · ${report.periodDayCount} dia(s)` : ''}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 sm:flex" role="group" aria-label="Período do relatório">
+            {PRODUCT_REPORT_PERIODS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                aria-pressed={period === option.key}
+                onClick={() => setPeriod(option.key)}
+                className={`min-h-8 whitespace-nowrap rounded-md px-2.5 text-xs font-bold transition ${
+                  period === option.key
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {period === 'custom' && (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-muted-foreground">
+              Data inicial
+              <input
+                type="date"
+                value={customStart}
+                max={customEnd || undefined}
+                onChange={(event) => setCustomStart(event.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+            <label className="text-xs font-semibold text-muted-foreground">
+              Data final
+              <input
+                type="date"
+                value={customEnd}
+                min={customStart || undefined}
+                max={today}
+                onChange={(event) => setCustomEnd(event.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+          </div>
+        )}
+        {customPeriodError && (
+          <p className="mt-2 text-xs font-semibold text-destructive">
+            Informe uma data inicial anterior ou igual à data final.
+          </p>
+        )}
+      </div>
+
+      {customPeriodError ? null : !hasSales ? (
         <EmptyState
           className="min-h-40 border-0 bg-muted/20"
           icon={Receipt}
@@ -209,42 +315,20 @@ function ProductSalesReport({ product, report }) {
             <ReportMetric icon={Receipt} label="Vendas" value={report.saleCount} hint="Vendas concluídas" />
             <ReportMetric icon={Package} label="Quantidade" value={`${formatNumber(report.totalQuantity)} ${unitLabel}`} hint={`${formatNumber(report.averageQuantityPerSale)} por venda`} />
             <ReportMetric icon={DollarSign} label="Faturamento" value={formatCurrency(report.totalRevenue)} hint={`${formatCurrency(report.averageRevenuePerSale)} por venda`} />
-            <ReportMetric icon={TrendingUp} label="Quando mais vende" value={report.bestWeekday?.label || '-'} hint={report.bestHour ? `${report.bestHour.label} costuma concentrar vendas` : 'Sem horário dominante'} />
-          </div>
-
-          <div className="mb-3 grid gap-2 lg:grid-cols-3">
-            <InsightCard
-              icon={CalendarDays}
-              title="Melhor mês"
-              value={report.bestMonth?.label || '-'}
-              detail={report.bestMonth ? `${formatNumber(report.bestMonth.quantity)} ${unitLabel} vendidos - ${formatCurrency(report.bestMonth.revenue)}` : 'Sem dados'}
+            <ReportMetric
+              icon={TrendingUp}
+              label="Média diária"
+              value={`${formatNumber(report.averageDailyQuantity)} ${unitLabel}/dia`}
+              hint={`${formatCurrency(report.averageDailyRevenue)} por dia em ${report.periodDayCount} dia(s)`}
             />
-            <InsightCard
-              icon={CalendarDays}
-              title="Melhor dia da semana"
-              value={report.bestWeekday?.label || '-'}
-              detail={report.bestWeekday ? `${formatNumber(report.bestWeekday.quantity)} ${unitLabel} em ${report.bestWeekday.saleCount} venda(s)` : 'Sem dados'}
-            />
-            <InsightCard
-              icon={Clock}
-              title="Melhor horário"
-              value={report.bestHour?.label || '-'}
-              detail={report.bestHour ? `${formatCurrency(report.bestHour.revenue)} faturados nesse horário` : 'Sem dados'}
-            />
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-3">
-            <Distribution title="Vendas por mês" rows={report.monthRows} unitLabel={unitLabel} />
-            <Distribution title="Vendas por dia da semana" rows={report.weekdayRows} unitLabel={unitLabel} />
-            <Distribution title="Vendas por hora" rows={report.hourRows} unitLabel={unitLabel} />
           </div>
 
           <div className="mt-3 border-t border-border pt-3">
             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold">Visão gráfica</h3>
+                <h3 className="text-sm font-bold">Análise temporal</h3>
                 <p className="text-xs text-muted-foreground">
-                  Compare quantidade vendida e faturamento líquido.
+                  Escolha como agrupar o período e compare totais e médias diárias.
                 </p>
               </div>
               <div
@@ -269,16 +353,39 @@ function ProductSalesReport({ product, report }) {
                 ))}
               </div>
             </div>
-            <ProductChartPanel
-              title={activeChart.title}
-              data={report[activeChart.rows]}
-              unitLabel={unitLabel}
-            />
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
+              <ProductChartPanel
+                title={activeChart.title}
+                data={activeRows}
+                unitLabel={unitLabel}
+              />
+              <Distribution
+                title={`Detalhamento por ${activeChart.label.toLowerCase()}`}
+                rows={activeRows}
+                unitLabel={unitLabel}
+              />
+            </div>
           </div>
 
-          <div className="mt-3 rounded-lg border border-accent/25 bg-accent/5 p-3 text-sm text-accent">
-            Este produto vende mais em <strong>{report.bestWeekday?.label}</strong>, principalmente por volta de <strong>{report.bestHour?.label}</strong>. Use esse padrão para reforçar estoque antes dos horários de pico
-            {report.weakestHour ? ` e evitar reposição pesada perto de ${report.weakestHour.label}.` : '.'}
+          <div className="mt-3 grid gap-2 border-t border-border pt-3 lg:grid-cols-3">
+            <InsightCard
+              icon={CalendarDays}
+              title="Melhor mês"
+              value={report.bestMonth?.label || '-'}
+              detail={report.bestMonth ? `${formatNumber(report.bestMonth.quantity)} ${unitLabel} · média de ${formatNumber(report.bestMonth.averageDailyQuantity)} por dia` : 'Sem dados'}
+            />
+            <InsightCard
+              icon={CalendarDays}
+              title="Melhor dia da semana"
+              value={report.bestWeekday?.label || '-'}
+              detail={report.bestWeekday ? `${formatNumber(report.bestWeekday.quantity)} ${unitLabel} · média de ${formatNumber(report.bestWeekday.averageDailyQuantity)} a cada ${report.bestWeekday.label.toLowerCase()}` : 'Sem dados'}
+            />
+            <InsightCard
+              icon={Clock}
+              title="Melhor horário"
+              value={report.bestHour?.label || '-'}
+              detail={report.bestHour ? `${formatCurrency(report.bestHour.revenue)} no total · ${formatCurrency(report.bestHour.averageDailyRevenue)} por dia` : 'Sem dados'}
+            />
           </div>
         </>
       )}
@@ -312,8 +419,8 @@ function ReportMetric({ icon: Icon, label, value, hint }) {
           <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       </div>
-      <strong className="block truncate text-lg font-black tabular-nums">{value}</strong>
-      <span className="mt-1 block truncate text-xs text-muted-foreground">{hint}</span>
+      <strong className="block break-words text-lg font-black tabular-nums">{value}</strong>
+      <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>
     </article>
   );
 }
@@ -333,10 +440,13 @@ function InsightCard({ icon: Icon, title, value, detail }) {
 function Distribution({ title, rows, unitLabel }) {
   const maxQuantity = Math.max(...rows.map((row) => Number(row.quantity || 0)), 1);
   return (
-    <section className="rounded-lg border border-border bg-muted/10 p-3">
-      <h3 className="mb-2 text-sm font-bold">{title}</h3>
+    <section className="min-w-0 rounded-lg border border-border bg-muted/10 p-3">
+      <div className="mb-2">
+        <h3 className="text-sm font-bold">{title}</h3>
+        <p className="text-[11px] text-muted-foreground">A média inclui dias sem venda.</p>
+      </div>
       {rows.length ? (
-        <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-[300px] space-y-3 overflow-y-auto overscroll-contain pr-1">
           {rows.map((row) => (
             <div key={row.key} className="text-xs">
               <div className="mb-1 flex items-center justify-between gap-2">
@@ -351,10 +461,14 @@ function Distribution({ title, rows, unitLabel }) {
                   style={{ width: `${Math.min(100, (Number(row.quantity || 0) / maxQuantity) * 100)}%` }}
                 />
               </div>
-              <div className="mt-1 flex justify-between gap-2 text-[11px] text-muted-foreground">
+              <div className="mt-1 flex flex-wrap justify-between gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
                 <span>{row.saleCount} venda(s)</span>
                 <span>{formatCurrency(row.revenue)}</span>
               </div>
+              <p className="mt-1 text-[11px] font-semibold text-foreground">
+                Média diária: {formatNumber(row.averageDailyQuantity)} {unitLabel} · {formatCurrency(row.averageDailyRevenue)}
+                <span className="font-normal text-muted-foreground"> ({row.periodDays} dia(s))</span>
+              </p>
             </div>
           ))}
         </div>
