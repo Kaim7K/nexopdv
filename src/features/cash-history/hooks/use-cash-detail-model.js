@@ -101,7 +101,9 @@ function differencePresentation(cashDifference) {
   return {
     hasDifference,
     differenceLabel: cashDifference > 0 ? 'Sobra no caixa' : 'Falta no caixa',
-    differenceTone: 'text-red-600 dark:text-red-300',
+    differenceTone: cashDifference > 0
+      ? 'text-emerald-700 dark:text-emerald-300'
+      : 'text-red-600 dark:text-red-300',
     differenceSummary: 'Revise recebimentos em dinheiro, despesas e contagem final.',
   };
 }
