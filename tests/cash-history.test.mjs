@@ -1,0 +1,75 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { handleCashRequest } from '../server/cash/routes.js';
+import { cashClosingSituation } from '../src/lib/cash-history.js';
+
+test('closing situations distinguish zero, surplus, shortage and uncounted sessions', () => {
+  for (const [difference, expected] of [[0, 'conferido'], ['0.00', 'conferido'], [0.01, 'sobra'], [-0.01, 'falta'], [null, ''], [undefined, ''], ['', '']]) {
+    assert.equal(cashClosingSituation({ status: 'fechado', difference }), expected);
+  }
+  assert.equal(cashClosingSituation({ status: 'aberto', difference: 0 }), '');
+});
+
+async function history(query = {}) {
+  const sessions = Array.from({ length: 27 }, (_, i) => ({
+    id: String(i), status: 'fechado', closing_amount: i < 23 ? 101 : i === 23 ? 99 : i === 24 ? 100 : null,
+    difference: 999, // A stale stored difference must not replace the current summary.
+  }));
+  sessions[26].status = 'aberto';
+  const snapshot = structuredClone(sessions);
+  const calls = [];
+  const sql = async (strings, ...values) => {
+    const source = strings.join('?');
+    calls.push({ source, values });
+    if (!source.includes("entity='cash_sessions'")) return [];
+    const limit = values.at(-2);
+    const offset = values.at(-1);
+    return (limit === null ? sessions : sessions.slice(offset, offset + limit))
+      .map((session) => ({ ...session, total_count: sessions.length }));
+  };
+  const res = {
+    getHeader() {}, setHeader() {},
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return body; },
+  };
+  await handleCashRequest({ req: { method: 'GET', query }, res, sql, user: { role: 'admin', market_id: 'market' }, path: ['cash', 'history'] }, {
+    text: (value) => String(value ?? ''),
+    parseDateQuery: (value) => value || null,
+    recordFromRow: (row) => row,
+    getCashSessionsSummaries: async (_sql, _market, candidates) => new Map(candidates.map(({ id }) => [id, { expected_cash: 100 }])),
+  });
+  assert.deepEqual(sessions, snapshot, 'Reading history must not mutate financial records');
+  return { ...res, calls };
+}
+
+test('surplus filtering uses all summaries before pagination and keeps existing query filters', async () => {
+  const result = await history({ situation: 'sobra', page: '2', page_size: '10', from: '2026-10-01', to: '2026-11-01', operator_id: 'operator', unit_id: 'unit', status: 'fechado' });
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.total, 23);
+  assert.equal(result.body.page_count, 3);
+  assert.equal(result.body.items.length, 10);
+  assert.equal(result.body.items[0].id, '10');
+  assert.ok(result.body.items.every((item) => item.difference === 1 && item.final_amount === 101));
+  for (const value of ['2026-10-01', '2026-11-01', 'operator', 'unit', 'fechado']) {
+    assert.ok(result.calls[0].values.includes(value));
+  }
+  const last = await history({ situation: 'sobra', page: '3', page_size: '10' });
+  assert.equal(last.body.items.length, 3);
+});
+
+test('confirmed and shortage filters exclude open and uncounted sessions; all retains them', async () => {
+  const confirmed = await history({ situation: 'conferido' });
+  assert.deepEqual(confirmed.body.items.map((item) => item.id), ['24']);
+  const shortage = await history({ situation: 'falta' });
+  assert.deepEqual(shortage.body.items.map((item) => item.difference), [-1]);
+  const all = await history({ page: '2' });
+  assert.equal(all.body.total, 27);
+  assert.equal(all.body.items.length, 7);
+  assert.equal(all.body.items.at(-1).status, 'aberto');
+  assert.equal(all.body.items.at(-1).difference, null);
+  const empty = await history({ situation: 'sobra', page: '4', page_size: '10' });
+  assert.equal(empty.body.items.length, 0);
+  assert.equal(empty.body.total, 23);
+  const invalid = await history({ situation: 'invalid' });
+  assert.equal(invalid.statusCode, 400);
+});

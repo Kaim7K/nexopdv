@@ -176,6 +176,7 @@ const realNexoApi = {
       operatorId = '',
       status = '',
       unitId = '',
+      situation = '',
     } = {}) => {
       const params = createQueryParams(
         { page, page_size: pageSize },
@@ -185,6 +186,7 @@ const realNexoApi = {
           operator_id: operatorId,
           status,
           unit_id: unitId,
+          situation,
         },
       );
       return request(`/cash/history?${params}`, {

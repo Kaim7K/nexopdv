@@ -26,6 +26,7 @@ import {
 import PaginationControls from "@/components/common/PaginationControls";
 import { StatusBadge } from "@/components/common/visualTokens";
 import { formatCurrency } from "@/lib/helpers";
+import { cashClosingSituation } from "@/lib/cash-history";
 import {
   FilterPanel,
   MetricCard,
@@ -56,6 +57,7 @@ export default function HistoricoCaixas() {
     operatorId: "",
     status: "",
     unitId: "",
+    situation: "",
   });
   const [page, setPage] = useState(1);
   const [data, setData] = useState({
@@ -83,6 +85,7 @@ export default function HistoricoCaixas() {
         operatorId: filters.operatorId,
         status: filters.status,
         unitId: filters.unitId,
+        situation: filters.situation,
       });
       if (sequence === requestSequence.current) setData(result);
     } catch (cause) {
@@ -181,14 +184,15 @@ export default function HistoricoCaixas() {
                   {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select>
               </Filter>
-              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
+              {canSeeCashBalances && <ClosingSituationFilter value={filters.situation} onChange={(value) => updateFilter("situation", value)} />}
+              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "", situation: "" }); setPage(1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
                 <FilterX className="h-4 w-4" /> Limpar
               </button>
             </div>
           </details>
         </div>
 
-        <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-6">
+        <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_minmax(11rem,1.3fr)_auto]">
           <Filter label="De"><input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
           <Filter label="Até"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
           <Filter label="Operador">
@@ -210,7 +214,8 @@ export default function HistoricoCaixas() {
               {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </Filter>
-          <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "" }); setPage(1); }} className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-bold hover:bg-muted">
+          {canSeeCashBalances && <ClosingSituationFilter value={filters.situation} onChange={(value) => updateFilter("situation", value)} />}
+          <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "", situation: "" }); setPage(1); }} className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted">
             <FilterX className="h-4 w-4" /> Limpar
           </button>
         </div>
@@ -320,7 +325,7 @@ export default function HistoricoCaixas() {
                         : item.sales_count || item.summary?.sales_count || 0}
                     </td>
                     {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
-                      {formatCurrency(item.final_amount)}
+                      <FinalAmount item={item} />
                     </td>}
                     <td className="whitespace-nowrap px-3 py-2.5">
                       <Status value={item.status} />
@@ -363,7 +368,7 @@ export default function HistoricoCaixas() {
                         : item.sales_count || item.summary?.sales_count || 0}
                     />
                     {canSeeCashBalances && <>
-                      <Value label="Final" value={formatCurrency(item.final_amount)} />
+                      <Value label="Final" value={<FinalAmount item={item} />} />
                       <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
                     </>}
                   </dl>
@@ -417,6 +422,34 @@ function Filter({ label, children }) {
 }
 function Status({ value }) {
   return <StatusBadge status={value} />;
+}
+function ClosingSituationFilter({ value, onChange }) {
+  return (
+    <Filter label="Situação do fechamento">
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="field">
+        <option value="">Todos os caixas</option>
+        <option value="conferido">Caixas conferidos</option>
+        <option value="sobra">Caixas com sobra</option>
+        <option value="falta">Caixas com falta</option>
+      </select>
+    </Filter>
+  );
+}
+function FinalAmount({ item }) {
+  const situation = cashClosingSituation(item);
+  return (
+    <>
+      <span className="block">{formatCurrency(item.final_amount)}</span>
+      {situation === "conferido" && (
+        <span className="block text-[11px] font-medium text-muted-foreground">Conferido</span>
+      )}
+      {(situation === "sobra" || situation === "falta") && (
+        <span className={`block text-xs font-semibold ${situation === "sobra" ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-300"}`}>
+          {situation === "sobra" ? "Sobra +" : "Falta −"}{formatCurrency(Math.abs(Number(item.difference)))}
+        </span>
+      )}
+    </>
+  );
 }
 function Value({ label, value }) {
   return (

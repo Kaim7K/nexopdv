@@ -6,6 +6,7 @@ import {
   cashSummaryForUser,
 } from '../cash-access.js';
 import { methodNotAllowed, send } from '../http.js';
+import { matchesCashClosingSituation } from '../../src/lib/cash-history.js';
 
 export async function handleCashRequest(
   { req, res, sql, user, path },
@@ -43,6 +44,9 @@ export async function handleCashRequest(
         user.role === 'vendedor' ? user.id : text(req.query.operator_id, 64);
       const status = text(req.query.status, 30);
       const unitId = text(req.query.unit_id, 64);
+      const situation = text(req.query.situation, 30);
+      if (situation && !['conferido', 'sobra', 'falta'].includes(situation))
+        return send(res, 400, { message: 'Situação de fechamento inválida.' });
       const rows = await sql`
         SELECT id,data,created_date,updated_date,count(*) OVER()::int AS total_count
         FROM nexo.records
@@ -53,7 +57,7 @@ export async function handleCashRequest(
           AND (${status === ''} OR data->>'status'=${status})
           AND (${unitId === ''} OR data->>'unit_id'=${unitId})
         ORDER BY COALESCE(NULLIF(data->>'opened_at','')::timestamptz,created_date) DESC
-        LIMIT ${pageSize} OFFSET ${offset}
+        LIMIT ${situation ? null : pageSize} OFFSET ${situation ? 0 : offset}
       `;
       const sessions = rows.map(recordFromRow);
       const summaries = await getCashSessionsSummaries(
@@ -98,9 +102,14 @@ export async function handleCashRequest(
           : sql`SELECT id,COALESCE(full_name,email) AS name FROM nexo.users WHERE market_id=${user.market_id} ORDER BY COALESCE(full_name,email)`,
         sql`SELECT id,name,code,active FROM nexo.market_units WHERE market_id=${user.market_id} ORDER BY name`,
       ]);
-      const total = Number(rows[0]?.total_count || 0);
+      // Differences depend on live summaries. Filter those results before slicing
+      // so totals and pages include every matching closing in the selected range.
+      const filteredItems = situation
+        ? items.filter((item) => matchesCashClosingSituation(item, situation))
+        : items;
+      const total = situation ? filteredItems.length : Number(rows[0]?.total_count || 0);
       return send(res, 200, {
-        items,
+        items: situation ? filteredItems.slice(offset, offset + pageSize) : items,
         page,
         page_size: pageSize,
         total,

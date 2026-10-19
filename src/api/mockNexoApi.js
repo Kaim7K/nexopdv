@@ -8,6 +8,7 @@ import {
   cashSessionForUser,
   cashSummaryForUser,
 } from '../../server/cash-access.js';
+import { matchesCashClosingSituation } from '../lib/cash-history.js';
 
 const STORE_KEY = 'nexo:mock-db:v4';
 const SESSION_USER_KEY = 'nexo:session-user';
@@ -948,7 +949,7 @@ export const mockNexoApi = {
         return { session, summary: cashSummary(db, session) };
       }),
     updateSettings: () => delay({ ok: true }),
-    history: ({ page = 1, pageSize = 20, from = '', to = '', operatorId = '', status = '', unitId = '' } = {}) =>
+    history: ({ page = 1, pageSize = 20, from = '', to = '', operatorId = '', status = '', unitId = '', situation = '' } = {}) =>
       withDb((db) => {
         const user = currentMockUser(db);
         if (user.role === 'vendedor')
@@ -973,7 +974,8 @@ export const mockNexoApi = {
                   sales_count: Number(summary.sales_count || 0),
                 }
               : item;
-          });
+          })
+          .filter((item) => matchesCashClosingSituation(item, situation));
         const start = (page - 1) * pageSize;
         return {
           items: items.slice(start, start + pageSize),
