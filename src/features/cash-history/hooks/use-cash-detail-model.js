@@ -35,7 +35,8 @@ function calculateAmounts(session, summary) {
     expectedBeforeExpense,
     expectedAfterExpense,
     declaredCash,
-    valueWithoutCashDrawer: roundMoney(declaredCash - openingAmount + closingEntry),
+    valueWithoutCashDrawer: roundMoney(expectedAfterExpense - openingAmount + closingEntry),
+    countedWithoutCashDrawer: roundMoney(declaredCash - openingAmount + closingEntry),
     cashDifference: declaredCash - expectedAfterExpense,
   };
 }

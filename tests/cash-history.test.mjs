@@ -1,7 +1,53 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { handleCashRequest } from '../server/cash/routes.js';
 import { cashClosingSituation } from '../src/lib/cash-history.js';
+import { useCashDetailModel } from '../src/features/cash-history/hooks/use-cash-detail-model.js';
+
+function cashDetailAmounts(session, summary) {
+  let model;
+  function Probe() {
+    model = useCashDetailModel({
+      session,
+      summary,
+      currentUser: { id: 'admin', role: 'admin' },
+      salePaymentFilter: '',
+    });
+    return null;
+  }
+  renderToStaticMarkup(createElement(Probe));
+  return model;
+}
+
+test('value without drawer uses expected cash independently of surplus or shortage', () => {
+  const summary = {
+    opening_amount: 95.4,
+    expected_cash_before_expense: 165.3,
+    closing_entry: 0,
+    closing_expense: 45,
+    expected_cash: 120.3,
+  };
+  for (const [counted, countedWithoutDrawer] of [[122.8, 27.4], [120.3, 24.9], [118.8, 23.4], [0, -95.4]]) {
+    const model = cashDetailAmounts({ status: 'fechado', closing_amount: counted }, summary);
+    assert.equal(model.valueWithoutCashDrawer, 24.9);
+    assert.equal(model.countedWithoutCashDrawer, countedWithoutDrawer);
+  }
+  const openModel = cashDetailAmounts({ status: 'aberto' }, summary);
+  assert.equal(openModel.valueWithoutCashDrawer, 24.9);
+  assert.equal(openModel.countedWithoutCashDrawer, 24.9);
+});
+
+test('both amounts without drawer retain closing adjustments and signed balances', () => {
+  const model = cashDetailAmounts(
+    { status: 'fechado', closing_amount: 80, closing_entry: 5, closing_expense: 30 },
+    { opening_amount: 100, expected_cash_before_expense: 110, closing_entry: 5, closing_expense: 30 },
+  );
+  assert.equal(model.expectedAfterExpense, 85);
+  assert.equal(model.valueWithoutCashDrawer, -10);
+  assert.equal(model.countedWithoutCashDrawer, -15);
+});
 
 test('closing situations distinguish zero, surplus, shortage and uncounted sessions', () => {
   for (const [difference, expected] of [[0, 'conferido'], ['0.00', 'conferido'], [0.01, 'sobra'], [-0.01, 'falta'], [null, ''], [undefined, ''], ['', '']]) {

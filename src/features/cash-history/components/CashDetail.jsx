@@ -101,6 +101,7 @@ export default function CashDetail({
     expectedAfterExpense,
     declaredCash,
     valueWithoutCashDrawer,
+    countedWithoutCashDrawer,
     cashDifference,
     cashMovements,
     hasDifference,
@@ -408,7 +409,7 @@ export default function CashDetail({
                   <ValueCard
                     label="Valor sem caixa"
                     value={formatCurrency(valueWithoutCashDrawer)}
-                    hint="líquido"
+                    hint="sobre o esperado"
                   />
                 </dl>
               </section>
@@ -516,6 +517,11 @@ export default function CashDetail({
                     <CashFormulaRow
                       label="Dinheiro contado"
                       value={declaredCash}
+                      total
+                    />
+                    <CashFormulaRow
+                      label="Contado sem caixa"
+                      value={countedWithoutCashDrawer}
                       total
                     />
                     <CashFormulaRow
