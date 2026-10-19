@@ -11,6 +11,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { formatDateTime } from '@/lib/helpers';
+import { normalizeProductSearchText } from '@/lib/pdv';
 import {
   ArrowDownAZ,
   ArrowDownZA,
@@ -139,23 +140,23 @@ export default function Estoque() {
     [products, config?.product_categories],
   );
 
+  const searchIndex = useMemo(
+    () => products.map((product) => ({
+      product,
+      fields: [product.name, product.category, product.barcode, product.internal_code]
+        .map(normalizeProductSearchText),
+    })),
+    [products],
+  );
+
   const filtered = useMemo(() => {
-    const searchText = deferredSearch.toLowerCase();
+    const searchText = normalizeProductSearchText(deferredSearch);
     const min = minPrice === '' ? null : Number(minPrice);
     const max = maxPrice === '' ? null : Number(maxPrice);
-    const visible = products.filter(
-      (product) =>
+    const visible = searchIndex.filter(
+      ({ product, fields }) =>
         (!searchText ||
-          [
-            product.name,
-            product.category,
-            product.barcode,
-            product.internal_code,
-          ].some((value) =>
-            String(value || '')
-              .toLowerCase()
-              .includes(searchText),
-          )) &&
+          fields.some((value) => value.includes(searchText))) &&
         (!category ||
           (category === '__uncategorized__'
             ? !String(product.category || '').trim()
@@ -174,7 +175,7 @@ export default function Estoque() {
             Number(product.quantity || 0) > 0 &&
             Number(product.quantity || 0) <= lowStockThreshold) ||
           (stock === 'zerado' && Number(product.quantity || 0) <= 0)),
-    );
+    ).map(({ product }) => product);
 
     const column = TABLE_COLUMNS.find(([key]) => key === sort.key);
     const type = column?.[2] || 'text';
@@ -191,7 +192,7 @@ export default function Estoque() {
       return sort.direction === 'asc' ? result : -result;
     });
   }, [
-    products,
+    searchIndex,
     deferredSearch,
     category,
     minPrice,
