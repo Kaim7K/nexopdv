@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Minus, Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   formatCurrency,
@@ -13,6 +13,44 @@ export default function SaleItemsList({
   onUpdatePrice,
   onRemoveItem,
 }) {
+  const listRef = useRef(null);
+  const previousItemsRef = useRef([]);
+
+  useLayoutEffect(() => {
+    const previousItems = previousItemsRef.current;
+    previousItemsRef.current = items;
+    const list = listRef.current;
+    if (!list) return;
+
+    // Follow additions, including a repeated scan of an existing product.
+    // Price edits, decreases and removals keep the operator's scroll position.
+    let latestIndex = -1;
+    items.forEach((item, index) => {
+      const previous = previousItems.find(
+        (candidate) => candidate.product_id === item.product_id,
+      );
+      if (
+        !previous ||
+        Number(item.quantity) > Number(previous.quantity) ||
+        Number(item.weight) > Number(previous.weight)
+      ) {
+        latestIndex = index;
+      }
+    });
+    if (latestIndex < 0) return;
+
+    const row = list.querySelectorAll('.pdv-sale-item')[latestIndex];
+    const header = list.querySelector('.pdv-sale-items-header');
+    const visibleTop = list.getBoundingClientRect().top + (header?.clientHeight || 0);
+    const visibleBottom = list.getBoundingClientRect().bottom;
+    const bounds = row.getBoundingClientRect();
+    if (bounds.bottom > visibleBottom) {
+      list.scrollTop += bounds.bottom - visibleBottom;
+    } else if (bounds.top < visibleTop) {
+      list.scrollTop += bounds.top - visibleTop;
+    }
+  }, [items]);
+
   if (!items.length) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-3 text-center text-muted-foreground sm:p-6">
@@ -26,8 +64,8 @@ export default function SaleItemsList({
   }
 
   return (
-    <div className="pdv-sale-items flex-1 overscroll-contain overflow-y-auto">
-      <div className="pdv-sale-items-header sticky top-0 z-10 hidden grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] gap-3 bg-card px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+    <div ref={listRef} className="pdv-sale-items min-h-0 flex-1 overscroll-contain overflow-y-auto">
+      <div className="pdv-sale-items-header sticky top-0 z-10 gap-3 bg-card px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         <span>Quantidade</span>
         <span>Produto</span>
         <span className="text-right">Valor unitário</span>
@@ -38,9 +76,9 @@ export default function SaleItemsList({
       {items.map((item, index) => (
         <div
           key={`${item.product_id}-${index}`}
-          className="pdv-sale-item grid grid-cols-[1fr_auto] gap-1.5 px-2.5 py-1.5 transition-colors sm:px-4 sm:py-2.5 lg:grid-cols-[118px_minmax(150px,1fr)_110px_105px_40px] lg:items-center lg:gap-3"
+          className="pdv-sale-item grid items-center gap-x-2 gap-y-1 px-2.5 py-1.5 transition-colors sm:px-4 sm:py-2"
         >
-          <div className="order-2 lg:order-1">
+          <div className="pdv-sale-item-quantity">
             {item.unit === 'peso' ? (
               <div className="flex items-center gap-1.5">
                 <input
@@ -104,8 +142,8 @@ export default function SaleItemsList({
             )}
           </div>
 
-          <div className="order-1 min-w-0 lg:order-2">
-            <p className="line-clamp-1 text-xs font-semibold leading-4 sm:text-sm sm:leading-5 lg:truncate">
+          <div className="pdv-sale-item-product min-w-0">
+            <p title={item.product_name} className="line-clamp-1 text-xs font-semibold leading-4 sm:text-sm sm:leading-5">
               {item.product_name}
             </p>
             <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
@@ -115,12 +153,12 @@ export default function SaleItemsList({
             </p>
           </div>
 
-          <div className="order-3 col-span-1 text-left lg:col-span-1 lg:text-right">
-            <span className="text-[10px] uppercase text-muted-foreground lg:hidden">
+          <div className="pdv-sale-item-price flex min-w-0 flex-wrap items-center gap-x-1.5">
+            <span className="pdv-sale-item-label text-[10px] uppercase text-muted-foreground">
               Unitário
             </span>
             {item.allow_pdv_price_edit ? (
-              <div className="flex items-center gap-2 lg:justify-end">
+              <div className="flex items-center gap-1.5">
                 <input
                   aria-label={`Valor unitário de ${item.product_name}`}
                   type="text"
@@ -144,8 +182,8 @@ export default function SaleItemsList({
             )}
           </div>
 
-          <div className="order-4 text-right">
-            <span className="text-[10px] uppercase text-muted-foreground lg:hidden">
+          <div className="pdv-sale-item-subtotal flex flex-wrap items-center justify-end gap-x-1.5 text-right">
+            <span className="pdv-sale-item-label text-[10px] uppercase text-muted-foreground">
               Subtotal
             </span>
             <p className="text-sm font-bold tabular-nums">
@@ -157,7 +195,7 @@ export default function SaleItemsList({
             type="button"
             aria-label={`Remover ${item.product_name}`}
             onClick={() => onRemoveItem(index)}
-            className="order-5 col-span-2 ml-auto grid h-8 w-8 place-items-center rounded-lg text-destructive hover:bg-destructive/10 sm:h-9 sm:w-9 lg:col-span-1 lg:ml-0"
+            className="pdv-sale-item-remove grid h-8 w-8 place-items-center rounded-lg text-destructive hover:bg-destructive/10 sm:h-9 sm:w-9"
           >
             <Trash2 className="h-5 w-5" />
           </button>

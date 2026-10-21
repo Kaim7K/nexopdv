@@ -1,5 +1,5 @@
-import React from 'react';
-import { Archive, Ban, Download, Eye, Loader2, MoreHorizontal, Printer, ReceiptText, X } from 'lucide-react';
+import React, { useId, useRef, useState } from 'react';
+import { Archive, Ban, Clock3, Download, Eye, Loader2, MoreHorizontal, Printer, ReceiptText, Users, X } from 'lucide-react';
 import { PaymentBadge, StatusBadge } from '@/components/common/visualTokens';
 import {
   calculateSaleTotals,
@@ -23,62 +23,63 @@ export function SaleCard({
   onCancel,
   onDelete,
 }) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsId = useId();
+  const actionsToggleRef = useRef(null);
+
   return (
-    <article className="rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.02] sm:p-3">
-      <div className="flex items-start justify-between gap-2">
+    <article className="history-record-card sale-history-card">
+      <div className="history-record-heading">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-black sm:text-base">
+          <h2 className="history-record-title">
             Venda #{sale.sale_number}
           </h2>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-            {formatDateTime(sale.created_date)}
-            {canSeeTeam && sale.seller_name ? ` · ${sale.seller_name}` : ''}
-          </p>
         </div>
         <SaleStatus sale={sale} />
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg bg-muted/25 px-2.5 py-1.5 sm:mt-3 sm:rounded-xl sm:px-3 sm:py-2">
-        <div className="min-w-0">
-          <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
-            Pagamento
-          </span>
-          <span className="mt-1 flex min-w-0 flex-wrap gap-1">
-            <SalePayments sale={sale} compact />
-          </span>
-        </div>
-        <div className="text-right">
-          <span className="block text-[9px] font-bold uppercase text-muted-foreground sm:text-[10px]">
-            Total
-          </span>
-          <strong className="block text-base font-black tabular-nums sm:text-base">
-            {formatCurrency(sale.total)}
-          </strong>
-        </div>
+      <div className="sale-history-meta">
+        <span><Clock3 aria-hidden="true" /> {formatDateTime(sale.created_date)}</span>
+        {canSeeTeam && <span title={sale.seller_name || 'Vendedor não informado'}><Users aria-hidden="true" /> {sale.seller_name || 'Vendedor não informado'}</span>}
       </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-semibold text-muted-foreground sm:mt-2 sm:gap-2 sm:text-[11px]">
-        <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
-          {sale.sale_type === 'fiado' ? 'Fiado' : 'Normal'}
-        </span>
-        {canSeeTeam && (
-          <span className="rounded-full border border-border bg-background px-2 py-0.5 sm:px-2.5 sm:py-1">
-            {sale.seller_name || '—'}
-          </span>
-        )}
-      </div>
-      <div className="mt-2 flex justify-end">
+      <dl className="sale-history-values">
+        <div className="min-w-0"><dt>Pagamento</dt><dd className="flex flex-wrap gap-1"><SalePayments sale={sale} compact /></dd></div>
+        <div className="text-right"><dt>Total</dt><dd className="sale-history-total">{formatCurrency(sale.total)}</dd></div>
+      </dl>
+      <div className="history-record-footer">
+        <SaleType sale={sale} />
+        <div className="sale-history-buttons">
         <button
           type="button"
           onClick={onDetails}
-          className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted sm:min-h-10 sm:rounded-xl sm:text-sm"
+          aria-label={`Ver detalhes da venda ${sale.sale_number}`}
+          className="history-record-details"
         >
-          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Ver detalhes
+          <Eye aria-hidden="true" className="h-3.5 w-3.5" /> Detalhes
         </button>
+        <button
+          ref={actionsToggleRef}
+          type="button"
+          className="history-record-more"
+          aria-label={`Mais ações da venda ${sale.sale_number}`}
+          aria-expanded={actionsOpen}
+          aria-controls={actionsId}
+          title="Mais ações"
+          onClick={() => setActionsOpen((open) => !open)}
+        ><MoreHorizontal aria-hidden="true" className="h-4 w-4" /></button>
+        </div>
       </div>
-      <details className="group mt-1.5 rounded-lg border border-border bg-background sm:mt-2 sm:rounded-xl">
-        <summary className="flex min-h-9 cursor-pointer list-none items-center justify-center gap-1.5 px-3 text-xs font-bold text-muted-foreground marker:hidden hover:bg-muted/60 sm:min-h-10 sm:text-sm">
-          <MoreHorizontal className="h-4 w-4" /> Mais ações
-        </summary>
-        <div className="border-t border-border p-2">
+      <div
+        id={actionsId}
+        hidden={!actionsOpen}
+        className="history-record-expanded"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+            setActionsOpen(false);
+            actionsToggleRef.current?.focus();
+          }
+        }}
+      >
           <SaleActions
             sale={sale}
             receiptLoading={receiptLoading}
@@ -93,8 +94,7 @@ export function SaleCard({
             mobile
             showDetails={false}
           />
-        </div>
-      </details>
+      </div>
     </article>
   );
 }

@@ -918,7 +918,7 @@ export default function PDV() {
             productsLoading={productsLoading}
           />
 
-          <div className="flex min-w-0 flex-1 flex-col bg-card">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
             <SaleSummary
               sale={activeSale}
               onPaymentClick={requestPayment}

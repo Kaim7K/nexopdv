@@ -7,13 +7,16 @@ import React, {
 } from "react";
 import {
   Banknote,
+  Clock3,
+  CircleCheck,
+  CircleDot,
+  Store,
+  Users,
   CalendarRange,
   Eye,
-  FilterX,
   MinusCircle,
   PlusCircle,
   ReceiptText,
-  SlidersHorizontal,
 } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
 import { useOutletContext } from "react-router-dom";
@@ -28,7 +31,6 @@ import { StatusBadge } from "@/components/common/visualTokens";
 import { formatCurrency } from "@/lib/helpers";
 import { cashClosingSituation } from "@/lib/cash-history";
 import {
-  FilterPanel,
   MetricCard,
   PageHeader,
 } from "@/components/common/AppShell";
@@ -38,6 +40,7 @@ import {
   toDateTimeStart,
   toExclusiveDateTimeEnd,
 } from "@/lib/date-helpers";
+import HistoryFilters, { FilterField } from "@/components/common/HistoryFilters";
 import CashDetail from "@/features/cash-history/components/CashDetail";
 
 const formatDate = (value) =>
@@ -148,78 +151,45 @@ export default function HistoricoCaixas() {
         description={canSeeCashBalances ? "Aberturas, fechamentos e diferenças de caixa." : "Aberturas, fechamentos e quantidade de vendas."}
       />
 
-      <FilterPanel aria-label="Filtros do histórico">
-        <div className="grid gap-1.5 sm:hidden">
-          <div className="grid grid-cols-2 gap-2">
-            <Filter label="De">
-              <input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" />
-            </Filter>
-            <Filter label="Até">
-              <input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" />
-            </Filter>
-          </div>
-          <details className="group mobile-secondary-panel">
-            <summary className="mobile-secondary-summary">
-              <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Mais filtros</span>
-              <span className="text-xs text-muted-foreground group-open:hidden">abrir</span>
-              <span className="hidden text-xs text-muted-foreground group-open:inline">fechar</span>
-            </summary>
-            <div className="grid gap-1.5 border-t border-border p-1.5">
-              <Filter label="Operador">
-                <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
-                  <option value="">Todos</option>
-                  {data.operators.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                </select>
-              </Filter>
-              <Filter label="Status">
-                <select value={filters.status} onChange={(e) => updateFilter("status", e.target.value)} className="field">
-                  <option value="">Todos</option>
-                  <option value="aberto">Em andamento</option>
-                  <option value="fechado">Fechado</option>
-                </select>
-              </Filter>
-              <Filter label="Unidade">
-                <select value={filters.unitId} onChange={(e) => updateFilter("unitId", e.target.value)} className="field">
-                  <option value="">Todas</option>
-                  {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                </select>
-              </Filter>
-              {canSeeCashBalances && <ClosingSituationFilter value={filters.situation} onChange={(value) => updateFilter("situation", value)} />}
-              <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "", situation: "" }); setPage(1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border text-sm font-bold hover:bg-muted">
-                <FilterX className="h-4 w-4" /> Limpar
-              </button>
-            </div>
-          </details>
-        </div>
-
-        <div className="hidden gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_minmax(11rem,1.3fr)_auto]">
-          <Filter label="De"><input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className="field" /></Filter>
-          <Filter label="Até"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} className="field" /></Filter>
-          <Filter label="Operador">
-            <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"} className="field">
-              <option value="">Todos</option>
-              {data.operators.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </Filter>
-          <Filter label="Status">
-            <select value={filters.status} onChange={(e) => updateFilter("status", e.target.value)} className="field">
-              <option value="">Todos</option>
-              <option value="aberto">Em andamento</option>
-              <option value="fechado">Fechado</option>
-            </select>
-          </Filter>
-          <Filter label="Unidade">
-            <select value={filters.unitId} onChange={(e) => updateFilter("unitId", e.target.value)} className="field">
-              <option value="">Todas</option>
-              {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </Filter>
-          {canSeeCashBalances && <ClosingSituationFilter value={filters.situation} onChange={(value) => updateFilter("situation", value)} />}
-          <button type="button" onClick={() => { setFilters({ from: monthStartIsoDate(), to: todayIsoDate(), operatorId: "", status: "", unitId: "", situation: "" }); setPage(1); }} className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted">
-            <FilterX className="h-4 w-4" /> Limpar
-          </button>
-        </div>
-      </FilterPanel>
+      <HistoryFilters
+        label="Filtros do histórico"
+        dates={<>
+          <FilterField label="De"><input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} /></FilterField>
+          <FilterField label="Até"><input type="date" value={filters.to} min={filters.from || undefined} onChange={(e) => updateFilter("to", e.target.value)} /></FilterField>
+        </>}
+        quickRanges={[
+          { label: 'Hoje', active: filters.from === todayIsoDate() && filters.to === todayIsoDate(), onClick: () => { setFilters((current) => ({ ...current, from: todayIsoDate(), to: todayIsoDate() })); setPage(1); } },
+          { label: 'Este mês', active: filters.from === monthStartIsoDate() && filters.to === todayIsoDate() && filters.from !== todayIsoDate(), onClick: () => { setFilters((current) => ({ ...current, from: monthStartIsoDate(), to: todayIsoDate() })); setPage(1); } },
+        ]}
+        activeFilters={[
+          ...(filters.operatorId ? [{ key: 'operator', label: data.operators.find((item) => item.id === filters.operatorId)?.name || 'Operador selecionado', onRemove: () => updateFilter('operatorId', '') }] : []),
+          ...(filters.status ? [{ key: 'status', label: filters.status === 'aberto' ? 'Em andamento' : 'Fechado', onRemove: () => updateFilter('status', '') }] : []),
+          ...(filters.unitId ? [{ key: 'unit', label: data.units.find((item) => item.id === filters.unitId)?.name || 'Unidade selecionada', onRemove: () => updateFilter('unitId', '') }] : []),
+          ...(canSeeCashBalances && filters.situation ? [{ key: 'situation', label: { conferido: 'Conferidos', sobra: 'Com sobra', falta: 'Com falta' }[filters.situation], onRemove: () => updateFilter('situation', '') }] : []),
+        ]}
+        onClear={() => { setFilters((current) => ({ ...current, operatorId: '', status: '', unitId: '', situation: '' })); setPage(1); }}
+      >
+        <FilterField label="Operador" icon={Users}>
+          <select value={filters.operatorId} onChange={(e) => updateFilter("operatorId", e.target.value)} disabled={user.role === "vendedor"}>
+            <option value="">Todos os operadores</option>
+            {data.operators.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </FilterField>
+        <FilterField label="Status" icon={CircleDot}>
+          <select value={filters.status} onChange={(e) => updateFilter("status", e.target.value)}>
+            <option value="">Todos os status</option>
+            <option value="aberto">Em andamento</option>
+            <option value="fechado">Fechado</option>
+          </select>
+        </FilterField>
+        <FilterField label="Unidade" icon={Store}>
+          <select value={filters.unitId} onChange={(e) => updateFilter("unitId", e.target.value)}>
+            <option value="">Todas as unidades</option>
+            {data.units.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </FilterField>
+        {canSeeCashBalances && <ClosingSituationFilter value={filters.situation} onChange={(value) => updateFilter("situation", value)} />}
+      </HistoryFilters>
 
       {data.items.length > 0 && (
         <section
@@ -285,107 +255,114 @@ export default function HistoricoCaixas() {
         />
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-lg border border-border bg-card shadow-none xl:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-normal text-muted-foreground">
-                <tr>
-                  <th className="whitespace-nowrap px-3 py-2.5">Operador</th>
-                  <th className="whitespace-nowrap px-3 py-2.5">Abertura</th>
-                  <th className="whitespace-nowrap px-3 py-2.5">Fechamento</th>
-                  {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>}
-                  <th className="whitespace-nowrap px-3 py-2.5 text-right">{canSeeCashBalances ? "Vendas" : "Qtd. vendas"}</th>
-                  {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Final</th>}
-                  <th className="whitespace-nowrap px-3 py-2.5">Status</th>
-                  <th className="whitespace-nowrap px-3 py-2.5">
-                    <span className="sr-only">Ações</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {data.items.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/25">
-                    <td className="px-3 py-2.5">
-                      <strong className="block">{item.seller_name}</strong>
-                      <span className="text-xs text-muted-foreground">
-                        {item.unit_name || "Unidade principal"}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
-                      {formatDate(item.opened_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
-                      {formatDate(item.closed_at)}
-                    </td>
-                    {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
-                      {formatCurrency(item.opening_amount)}
-                    </td>}
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
-                      {canSeeCashBalances
-                        ? formatCurrency(item.total_sales)
-                        : item.sales_count || item.summary?.sales_count || 0}
-                    </td>
-                    {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
-                      <FinalAmount item={item} />
-                    </td>}
-                    <td className="whitespace-nowrap px-3 py-2.5">
+          <div className="history-results" aria-label="Registros de caixas">
+            <div className="history-table overflow-hidden rounded-lg border border-border bg-card shadow-none">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-normal text-muted-foreground">
+                  <tr>
+                    <th className="whitespace-nowrap px-3 py-2.5">Operador</th>
+                    <th className="whitespace-nowrap px-3 py-2.5">Abertura</th>
+                    <th className="whitespace-nowrap px-3 py-2.5">Fechamento</th>
+                    {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>}
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right">{canSeeCashBalances ? "Vendas" : "Qtd. vendas"}</th>
+                    {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Saldo / final</th>}
+                    <th className="whitespace-nowrap px-3 py-2.5">Status</th>
+                    <th className="whitespace-nowrap px-3 py-2.5">
+                      <span className="sr-only">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {data.items.map((item) => (
+                    <tr key={item.id} className="hover:bg-muted/25">
+                      <td className="px-3 py-2.5">
+                        <strong className="block">{item.seller_name}</strong>
+                        <span className="text-xs text-muted-foreground">
+                          {item.unit_name || "Unidade principal"}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
+                        {formatDate(item.opened_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
+                        {formatDate(item.closed_at)}
+                      </td>
+                      {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
+                        {formatCurrency(item.opening_amount)}
+                      </td>}
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
+                        {canSeeCashBalances
+                          ? formatCurrency(item.total_sales)
+                          : item.sales_count || item.summary?.sales_count || 0}
+                      </td>
+                      {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
+                        <FinalAmount item={item} />
+                      </td>}
+                      <td className="whitespace-nowrap px-3 py-2.5">
+                        <Status value={item.status} />
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openDetail(item)}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
+                        >
+                          <Eye className="h-4 w-4" /> Detalhes
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="history-card-list">
+              {data.items.map((item) => (
+                  <article
+                    key={item.id}
+                    className="history-record-card cash-history-card"
+                  >
+                    <div className="history-record-heading">
+                      <div className="min-w-0">
+                        <h2 className="history-record-title">{item.seller_name}</h2>
+                        <p className="history-record-unit" title={item.unit_name || "Unidade principal"}>
+                          <Store aria-hidden="true" className="h-3 w-3 shrink-0" /> {item.unit_name || "Unidade principal"}
+                        </p>
+                      </div>
                       <Status value={item.status} />
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                    </div>
+                    <dl className="cash-history-dates">
+                      <div><dt><Clock3 aria-hidden="true" /> Abertura</dt><dd>{formatDate(item.opened_at)}</dd></div>
+                      <div><dt><CircleCheck aria-hidden="true" /> Fechamento</dt><dd>{item.closed_at ? formatDate(item.closed_at) : 'Em andamento'}</dd></div>
+                    </dl>
+                    <dl className={`cash-history-values ${canSeeCashBalances ? '' : 'cash-history-count'}`}>
+                      {canSeeCashBalances && <>
+                        <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
+                      </>}
+                      <Value
+                        label={canSeeCashBalances ? "Vendas" : "Quantidade de vendas"}
+                        value={canSeeCashBalances
+                          ? formatCurrency(item.total_sales)
+                          : item.sales_count || item.summary?.sales_count || 0}
+                      />
+                      {canSeeCashBalances && <Value label={item.status === 'fechado' ? "Final" : "Saldo atual"} value={<FinalAmount item={item} />} />}
+                    </dl>
+                    <div className="history-record-footer">
+                      {canSeeCashBalances && <div className="cash-history-movements">
+                        <span><PlusCircle aria-hidden="true" className="text-emerald-600 dark:text-emerald-400" /> Entradas <strong>{formatCurrency(item.entries)}</strong></span>
+                        <span><MinusCircle aria-hidden="true" className="text-orange-600 dark:text-orange-400" /> Retiradas <strong>{formatCurrency(item.withdrawals)}</strong></span>
+                      </div>}
                       <button
                         type="button"
                         onClick={() => openDetail(item)}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
+                        aria-label={`Ver detalhes do caixa de ${item.seller_name}, aberto em ${formatDate(item.opened_at)}`}
+                        className="history-record-details"
                       >
-                        <Eye className="h-4 w-4" /> Detalhes
+                        <Eye aria-hidden="true" className="h-3.5 w-3.5" /> Detalhes
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="grid gap-1.5 xl:hidden">
-            {data.items.map((item) => (
-                <article
-                  key={item.id}
-            className="rounded-xl border border-border bg-card p-2 shadow-sm shadow-black/[0.015] sm:p-3"
-                >
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                    <div className="min-w-0">
-                      <h2 className="text-sm font-black">{item.seller_name}</h2>
-                      <p className="truncate text-[11px] text-muted-foreground">
-                        {item.unit_name || "Unidade principal"} ·{" "}
-                        {formatDate(item.opened_at)}
-                      </p>
                     </div>
-                    <Status value={item.status} />
-                  </div>
-                  <dl className={`mt-2 grid gap-1.5 text-xs ${canSeeCashBalances ? 'grid-cols-[1fr_1fr_auto]' : 'grid-cols-1'}`}>
-                    <Value
-                      label={canSeeCashBalances ? "Vendas" : "Quantidade de vendas"}
-                      value={canSeeCashBalances
-                        ? formatCurrency(item.total_sales)
-                        : item.sales_count || item.summary?.sales_count || 0}
-                    />
-                    {canSeeCashBalances && <>
-                      <Value label="Final" value={<FinalAmount item={item} />} />
-                      <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
-                    </>}
-                  </dl>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    {canSeeCashBalances && <span className="truncate text-[11px] text-muted-foreground">
-                      Entradas {formatCurrency(item.entries)} · Retiradas {formatCurrency(item.withdrawals)}
-                    </span>}
-                    <button
-                      type="button"
-                      onClick={() => openDetail(item)}
-                      className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> Resumo
-                    </button>
-                  </div>
-                </article>
-            ))}
+                  </article>
+              ))}
+            </div>
           </div>
           <PaginationControls
             page={page}
@@ -412,27 +389,19 @@ export default function HistoricoCaixas() {
   );
 }
 
-function Filter({ label, children }) {
-  return (
-    <label className="block text-xs font-bold text-muted-foreground">
-      {label}
-      {children}
-    </label>
-  );
-}
 function Status({ value }) {
   return <StatusBadge status={value} />;
 }
 function ClosingSituationFilter({ value, onChange }) {
   return (
-    <Filter label="Situação do fechamento">
+    <FilterField label="Fechamento" icon={CircleCheck}>
       <select value={value} onChange={(event) => onChange(event.target.value)} className="field">
         <option value="">Todos os caixas</option>
         <option value="conferido">Caixas conferidos</option>
         <option value="sobra">Caixas com sobra</option>
         <option value="falta">Caixas com falta</option>
       </select>
-    </Filter>
+    </FilterField>
   );
 }
 function FinalAmount({ item }) {

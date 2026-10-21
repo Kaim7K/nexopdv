@@ -5,12 +5,15 @@ import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import PaginationControls from '@/components/common/PaginationControls';
 import {
-  ChevronDown,
+  CalendarRange,
+  CircleDot,
+  Clock3,
+  CreditCard,
+  Users,
   Download,
   History,
   Loader2,
   Search,
-  SlidersHorizontal,
 } from 'lucide-react';
 import {
   formatCurrency,
@@ -27,6 +30,7 @@ import {
   SaleType,
   paymentNames,
 } from '@/components/sales/SaleHistory';
+import HistoryFilters, { FilterField } from '@/components/common/HistoryFilters';
 import { PageHeader } from '@/components/common/AppShell';
 
 const PAGE_SIZE = 20;
@@ -83,7 +87,6 @@ export default function Vendas() {
   const [reportEnd, setReportEnd] = useState('23:59');
   const [reportSeller, setReportSeller] = useState('');
   const [reportPayment, setReportPayment] = useState('');
-  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const requestSequence = useRef(0);
 
   const receiptConfig = useMemo(
@@ -167,19 +170,15 @@ export default function Vendas() {
 
   const canCancel = (sale) => canSeeTeam || sale.seller_id === user.id;
   const hasFilters = Boolean(
-    search || reportPayment || reportSeller || filterStatus,
+    search || reportPayment || reportSeller || filterStatus || reportStart !== '00:00' || reportEnd !== '23:59',
   );
-  const activeFilterCount = [
-    search,
-    reportPayment,
-    reportSeller,
-    filterStatus,
-  ].filter(Boolean).length;
   const clearFilters = () => {
     setSearch('');
     setReportPayment('');
     setReportSeller('');
     setFilterStatus('');
+    setReportStart('00:00');
+    setReportEnd('23:59');
     setPage(1);
   };
 
@@ -351,22 +350,7 @@ export default function Vendas() {
         title="Vendas"
         description={`${total} registro${total === 1 ? '' : 's'} no período`}
       />
-      <div className="hidden">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-            <History className="h-3.5 w-3.5" /> Histórico
-          </div>
-          <h1 className="text-xl font-black tracking-tight sm:text-2xl">
-            Vendas
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {total} registro{total === 1 ? '' : 's'} no período
-          </p>
-        </div>
-      </div>
-
-      <section className="filter-surface mb-3 grid gap-2.5" aria-label="Filtros de vendas">
-        <div className={`grid gap-1.5 ${user.role === 'vendedor' ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
+        <div className={`mb-3 grid gap-1.5 ${user.role === 'vendedor' ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
           {user.role !== 'vendedor' && (
             <SaleMetric label="Faturamento" value={formatCurrency(metrics.total)} />
           )}
@@ -379,193 +363,37 @@ export default function Vendas() {
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-1.5">
-          {[
-            ['hoje', 'Hoje'],
-            ['ontem', 'Ontem'],
-            ['semana', 'Semana'],
-            ['mes', 'Mês'],
-          ].map(([range, label]) => (
-            <button
-              key={range}
-              type="button"
-              onClick={() => applyQuickRange(range)}
-              className="min-h-8 rounded-lg border border-border px-1.5 text-xs font-bold transition hover:border-accent hover:bg-accent/5"
-            >
-              {label}
-            </button>
-          ))}
+      <HistoryFilters
+        label="Filtros de vendas"
+        dates={<>
+          <FilterField label="De" icon={CalendarRange}><input aria-label="Data inicial" type="date" value={reportFrom} onChange={(event) => { setReportFrom(event.target.value); setReportTo(event.target.value); setPage(1); }} /></FilterField>
+          <FilterField label="Até" icon={CalendarRange}><input aria-label="Data final" type="date" value={reportTo} min={reportFrom || undefined} onChange={(event) => { setReportTo(event.target.value); setPage(1); }} /></FilterField>
+        </>}
+        quickRanges={[
+          ['hoje', 'Hoje', todayKey(), todayKey()],
+          ['ontem', 'Ontem', isoDate(addDays(new Date(), -1)), isoDate(addDays(new Date(), -1))],
+          ['semana', 'Semana', weekStartKey(), todayKey()],
+          ['mes', 'Mês', monthStartKey(), todayKey()],
+        ].map(([range, label, from, to], index, ranges) => ({ label, active: reportFrom === from && reportTo === to && !ranges.slice(0, index).some(([, , previousFrom, previousTo]) => previousFrom === from && previousTo === to), onClick: () => applyQuickRange(range) }))}
+        search={<label className="history-filter-search-input"><span className="sr-only">Buscar vendas</span><Search aria-hidden="true" className="h-4 w-4" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar venda" /></label>}
+        activeFilters={[
+          ...(search ? [{ key: 'search', label: 'Busca: ' + search, onRemove: () => { setSearch(''); setPage(1); } }] : []),
+          ...(canSeeTeam && reportSeller ? [{ key: 'seller', label: sellers.find((seller) => seller.id === reportSeller)?.name || 'Vendedor selecionado', onRemove: () => { setReportSeller(''); setPage(1); } }] : []),
+          ...(reportPayment ? [{ key: 'payment', label: PAYMENT_METHODS.find((payment) => payment.method === reportPayment)?.label || reportPayment, onRemove: () => { setReportPayment(''); setPage(1); } }] : []),
+          ...(filterStatus ? [{ key: 'status', label: filterStatus === 'concluida' ? 'Concluídas' : 'Canceladas', onRemove: () => { setFilterStatus(''); setPage(1); } }] : []),
+          ...(reportStart !== '00:00' || reportEnd !== '23:59' ? [{ key: 'time', label: reportStart + ' – ' + reportEnd, onRemove: () => { setReportStart('00:00'); setReportEnd('23:59'); setPage(1); } }] : []),
+        ]}
+        onClear={clearFilters}
+        actions={canExportReports && <button type="button" disabled={reporting} onClick={downloadReport} className="history-filter-export">{reporting ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Download aria-hidden="true" className="h-4 w-4" />}{reporting ? 'Gerando...' : 'Exportar'}</button>}
+      >
+        {canSeeTeam && <FilterField label="Vendedor" icon={Users}><select aria-label="Filtrar por vendedor" value={reportSeller} onChange={(event) => { setReportSeller(event.target.value); setPage(1); }}><option value="">Todos os vendedores</option>{sellers.map((seller) => <option key={seller.id} value={seller.id}>{seller.name}</option>)}</select></FilterField>}
+        <FilterField label="Pagamento" icon={CreditCard}><select aria-label="Filtrar por pagamento" value={reportPayment} onChange={(event) => { setReportPayment(event.target.value); setPage(1); }}><option value="">Todos os pagamentos</option>{PAYMENT_METHODS.map((payment) => <option key={payment.method} value={payment.method}>{payment.label}</option>)}</select></FilterField>
+        <FilterField label="Status" icon={CircleDot}><select aria-label="Filtrar por status" value={filterStatus} onChange={(event) => { setFilterStatus(event.target.value); setPage(1); }}><option value="">Todos os status</option><option value="concluida">Concluídas</option><option value="cancelada">Canceladas</option></select></FilterField>
+        <div className="history-filter-hours">
+          <FilterField label="Hora inicial" icon={Clock3}><input aria-label="Horário inicial" type="time" value={reportStart} onChange={(event) => { setReportStart(event.target.value); setPage(1); }} /></FilterField>
+          <FilterField label="Hora final" icon={Clock3}><input aria-label="Horário final" type="time" value={reportEnd} onChange={(event) => { setReportEnd(event.target.value); setPage(1); }} /></FilterField>
         </div>
-
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 sm:grid-cols-[minmax(220px,1fr)_auto]">
-          <label className="relative">
-            <span className="sr-only">Buscar vendas</span>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Buscar venda"
-              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => setAdvancedFiltersOpen((open) => !open)}
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted lg:hidden"
-            aria-expanded={advancedFiltersOpen}
-            aria-controls="sales-advanced-filters"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="hidden min-[380px]:inline">Filtros</span>
-            {activeFilterCount > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[10px] text-accent-foreground">
-                {activeFilterCount}
-              </span>
-            )}
-            <ChevronDown className={`h-4 w-4 transition ${advancedFiltersOpen ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-
-        <div
-          id="sales-advanced-filters"
-          className={`${advancedFiltersOpen ? 'grid' : 'hidden lg:grid'} gap-1.5 md:grid-cols-2 xl:grid-cols-[136px_136px_104px_104px_minmax(150px,1fr)_minmax(150px,1fr)_minmax(132px,0.8fr)_auto_auto]`}
-        >
-          <input
-            aria-label="Data inicial"
-            type="date"
-            value={reportFrom}
-            onChange={(event) => {
-              const selectedDate = event.target.value;
-              setReportFrom(selectedDate);
-              setReportTo(selectedDate);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <input
-            aria-label="Data final"
-            type="date"
-            value={reportTo}
-            min={reportFrom || undefined}
-            onChange={(event) => {
-              setReportTo(event.target.value);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <input
-            aria-label="Horário inicial"
-            type="time"
-            value={reportStart}
-            onChange={(event) => {
-              setReportStart(event.target.value);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <input
-            aria-label="Horário final"
-            type="time"
-            value={reportEnd}
-            onChange={(event) => {
-              setReportEnd(event.target.value);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm font-semibold outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          {canSeeTeam && (
-            <select
-              aria-label="Filtrar por vendedor"
-              value={reportSeller}
-              onChange={(event) => {
-                setReportSeller(event.target.value);
-                setPage(1);
-              }}
-              className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            >
-              <option value="">Todos os vendedores</option>
-              {sellers.map((seller) => (
-                <option key={seller.id} value={seller.id}>{seller.name}</option>
-              ))}
-            </select>
-          )}
-          <select
-            aria-label="Filtrar por pagamento"
-            value={reportPayment}
-            onChange={(event) => {
-              setReportPayment(event.target.value);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          >
-            <option value="">Todos os pagamentos</option>
-            {PAYMENT_METHODS.map((payment) => (
-              <option key={payment.method} value={payment.method}>{payment.label}</option>
-            ))}
-          </select>
-          <select
-            aria-label="Filtrar por status"
-            value={filterStatus}
-            onChange={(event) => {
-              setFilterStatus(event.target.value);
-              setPage(1);
-            }}
-            className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          >
-            <option value="">Todos os status</option>
-            <option value="concluida">Concluídas</option>
-            <option value="cancelada">Canceladas</option>
-          </select>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="hidden h-9 items-center justify-center rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted xl:inline-flex"
-            >
-              Limpar
-            </button>
-          )}
-          {canExportReports && (
-            <button
-              type="button"
-              disabled={reporting}
-              onClick={downloadReport}
-              className="hidden h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60 xl:inline-flex"
-            >
-              {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {reporting ? 'Gerando...' : 'Relatório'}
-            </button>
-          )}
-        </div>
-
-        <div className="-mt-1 flex flex-wrap items-center justify-end gap-1.5 xl:hidden">
-          <div className="flex flex-wrap gap-1.5">
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="min-h-9 rounded-lg border border-border px-3 text-sm font-bold transition hover:bg-muted"
-              >
-                Limpar
-              </button>
-            )}
-          </div>
-          {canExportReports && (
-            <button
-              type="button"
-              disabled={reporting}
-              onClick={downloadReport}
-              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
-            >
-              {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {reporting ? 'Gerando...' : 'Relatório'}
-            </button>
-          )}
-        </div>
-      </section>
+      </HistoryFilters>
 
       {loading && sales.length > 0 && (
         <div
@@ -606,87 +434,89 @@ export default function Vendas() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 lg:hidden">
-            {sales.map((sale) => (
-              <SaleCard
-                key={sale.id}
-                sale={sale}
-                canSeeTeam={canSeeTeam}
-                canCancel={canCancel(sale)}
-                canDelete={sale.status === 'cancelada' && user.role === 'admin'}
-                receiptLoading={receiptLoadingId === sale.id}
-                printing={printingSaleId === sale.id}
-                onDetails={() => openDetails(sale)}
-                onReceipt={() => downloadReceipt(sale)}
-                onPrint={() => printReceipt(sale)}
-                onCancel={() => requestCancel(sale)}
-                onDelete={() => requestDelete(sale)}
-              />
-            ))}
-          </div>
-          <div className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)] lg:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[960px] text-sm">
-                <thead className="bg-secondary text-[11px] font-bold uppercase tracking-normal text-secondary-foreground">
-                  <tr>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Venda</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Data e hora</th>
-                    {canSeeTeam && (
-                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Vendedor</th>
-                    )}
-                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Pagamento</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-left">Tipo</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-right">Total</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
-                    <th className="whitespace-nowrap px-3 py-2.5 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {sales.map((sale) => (
-                    <tr key={sale.id} className="transition hover:bg-muted/25">
-                      <td className="whitespace-nowrap px-3 py-2.5 font-black">
-                        #{sale.sale_number}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
-                        {formatDateTime(sale.created_date)}
-                      </td>
+          <div className="history-results" aria-label="Registros de vendas">
+            <div className="history-card-list">
+              {sales.map((sale) => (
+                <SaleCard
+                  key={sale.id}
+                  sale={sale}
+                  canSeeTeam={canSeeTeam}
+                  canCancel={canCancel(sale)}
+                  canDelete={sale.status === 'cancelada' && user.role === 'admin'}
+                  receiptLoading={receiptLoadingId === sale.id}
+                  printing={printingSaleId === sale.id}
+                  onDetails={() => openDetails(sale)}
+                  onReceipt={() => downloadReceipt(sale)}
+                  onPrint={() => printReceipt(sale)}
+                  onCancel={() => requestCancel(sale)}
+                  onDelete={() => requestDelete(sale)}
+                />
+              ))}
+            </div>
+            <div className="history-table overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[960px] text-sm">
+                  <thead className="bg-secondary text-[11px] font-bold uppercase tracking-normal text-secondary-foreground">
+                    <tr>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Venda</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Data e hora</th>
                       {canSeeTeam && (
-                        <td className="whitespace-nowrap px-3 py-2.5 font-semibold">
-                          {sale.seller_name || '-'}
-                        </td>
+                        <th className="whitespace-nowrap px-3 py-2.5 text-left">Vendedor</th>
                       )}
-                      <td className="max-w-[220px] whitespace-nowrap px-3 py-2.5 text-muted-foreground">
-                        {paymentNames(sale)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        <SaleType sale={sale} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
-                        {formatCurrency(sale.total)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-center">
-                        <SaleStatus sale={sale} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        <SaleActions
-                          sale={sale}
-                          receiptLoading={receiptLoadingId === sale.id}
-                          printing={printingSaleId === sale.id}
-                          canCancel={canCancel(sale)}
-                          canDelete={
-                            sale.status === 'cancelada' && user.role === 'admin'
-                          }
-                          onDetails={() => openDetails(sale)}
-                          onReceipt={() => downloadReceipt(sale)}
-                          onPrint={() => printReceipt(sale)}
-                          onCancel={() => requestCancel(sale)}
-                          onDelete={() => requestDelete(sale)}
-                        />
-                      </td>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Pagamento</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-left">Tipo</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-right">Total</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-center">Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {sales.map((sale) => (
+                      <tr key={sale.id} className="transition hover:bg-muted/25">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-black">
+                          #{sale.sale_number}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                          {formatDateTime(sale.created_date)}
+                        </td>
+                        {canSeeTeam && (
+                          <td className="whitespace-nowrap px-3 py-2.5 font-semibold">
+                            {sale.seller_name || '-'}
+                          </td>
+                        )}
+                        <td className="max-w-[220px] whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                          {paymentNames(sale)}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5">
+                          <SaleType sale={sale} />
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
+                          {formatCurrency(sale.total)}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-center">
+                          <SaleStatus sale={sale} />
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5">
+                          <SaleActions
+                            sale={sale}
+                            receiptLoading={receiptLoadingId === sale.id}
+                            printing={printingSaleId === sale.id}
+                            canCancel={canCancel(sale)}
+                            canDelete={
+                              sale.status === 'cancelada' && user.role === 'admin'
+                            }
+                            onDetails={() => openDetails(sale)}
+                            onReceipt={() => downloadReceipt(sale)}
+                            onPrint={() => printReceipt(sale)}
+                            onCancel={() => requestCancel(sale)}
+                            onDelete={() => requestDelete(sale)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <PaginationControls

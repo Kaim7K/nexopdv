@@ -25,7 +25,7 @@ export default function SaleSummary({
   const canMinimize = minimizedCount < maxMinimized;
 
   return (
-    <div className="pdv-sale-summary flex h-full flex-col bg-card">
+    <div className="pdv-sale-summary flex h-full min-h-0 flex-col bg-card">
       <div className="pdv-sale-summary-header flex items-center justify-between px-2.5 py-1.5 sm:px-4 sm:py-2.5">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-4 w-4 text-accent sm:h-5 sm:w-5" />
