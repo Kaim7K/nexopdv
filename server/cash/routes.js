@@ -7,6 +7,8 @@ import {
 } from '../cash-access.js';
 import { methodNotAllowed, send } from '../http.js';
 import { matchesCashClosingSituation } from '../../src/lib/cash-history.js';
+import { cashReviewState } from '../../src/lib/cash-review.js';
+import { reviewCashSession } from './review.js';
 
 export async function handleCashRequest(
   { req, res, sql, user, path },
@@ -26,6 +28,9 @@ export async function handleCashRequest(
   if (path[0] === 'cash') {
     if (!user.market_id)
       return send(res, 400, { message: 'Usuário sem mercado vinculado.' });
+
+    if (path[2] === 'review' && path.length === 3 && isUuid(path[1]))
+      return reviewCashSession({ req, res, sql, user, path }, { recordFromRow, getCashSessionSummary });
 
     if (path[1] === 'history' && req.method === 'GET') {
       if (user.role === 'vendedor')
@@ -70,6 +75,7 @@ export async function handleCashRequest(
         const summary = summaries.get(String(session.id)) || {};
         const item = {
           ...session,
+          ...cashReviewState(session, summary),
           summary,
           total_sales: Number(summary.total || 0),
           entries: Number(summary.entries || 0),
@@ -99,7 +105,7 @@ export async function handleCashRequest(
       const [operatorRows, unitRows] = await Promise.all([
         user.role === 'vendedor'
           ? [{ id: user.id, name: user.full_name || user.email }]
-          : sql`SELECT id,COALESCE(full_name,email) AS name FROM nexo.users WHERE market_id=${user.market_id} ORDER BY COALESCE(full_name,email)`,
+          : sql`SELECT id,COALESCE(full_name,email) AS name,photo_url,avatar_color FROM nexo.users WHERE market_id=${user.market_id} ORDER BY COALESCE(full_name,email)`,
         sql`SELECT id,name,code,active FROM nexo.market_units WHERE market_id=${user.market_id} ORDER BY name`,
       ]);
       // Differences depend on live summaries. Filter those results before slicing
@@ -131,12 +137,10 @@ export async function handleCashRequest(
           message: 'Caixa não encontrado ou sem permissão.',
         });
       const session = recordFromRow(row);
+      const summary = await getCashSessionSummary(sql, user.market_id, session);
       return send(res, 200, {
-        session: cashSessionForUser(user, session),
-        summary: cashSummaryForUser(
-          user,
-          await getCashSessionSummary(sql, user.market_id, session),
-        ),
+        session: { ...cashSessionForUser(user, session), ...cashReviewState(session, summary) },
+        summary: cashSummaryForUser(user, summary),
       });
     }
 

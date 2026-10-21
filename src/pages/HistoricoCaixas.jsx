@@ -42,6 +42,8 @@ import {
 } from "@/lib/date-helpers";
 import HistoryFilters, { FilterField } from "@/components/common/HistoryFilters";
 import CashDetail from "@/features/cash-history/components/CashDetail";
+import CashReview from "@/features/cash-history/components/CashReview";
+import UserAvatar from "@/components/common/UserAvatar";
 
 const formatDate = (value) =>
   value
@@ -74,6 +76,28 @@ export default function HistoricoCaixas() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [reviewing, setReviewing] = useState([]);
+  const reviewRequests = useRef(new Set());
+  const operators = useMemo(() => new Map(data.operators.map(operator => [operator.id, operator])), [data.operators]);
+  const markReviewed = async (item, removing = false) => {
+    if ((!removing && item.review_valid) || (removing && !item.reviewed_at) || item.status !== 'fechado' || reviewRequests.current.has(item.id)) return;
+    reviewRequests.current.add(item.id);
+    setReviewing(current => [...current, item.id]);
+    try {
+      const review = removing
+        ? await nexoApi.cash.unreview(item.id, item.reviewed_at)
+        : await nexoApi.cash.review(item.id, item.review_version);
+      setData(current => ({ ...current, items: current.items.map(candidate => candidate.id === item.id ? { ...candidate, ...review } : candidate) }));
+      setSelected(current => current?.session.id === item.id ? { ...current, session: { ...current.session, ...review } } : current);
+      toast.success(removing ? 'Verificação desmarcada.' : 'Caixa marcado como verificado.');
+    } catch (cause) {
+      toast.error(cause.message || 'Não foi possível verificar o caixa.');
+      load();
+    } finally {
+      reviewRequests.current.delete(item.id);
+      setReviewing(current => current.filter(id => id !== item.id));
+    }
+  };
 
   const load = useCallback(async () => {
     const sequence = ++requestSequence.current;
@@ -214,7 +238,7 @@ export default function HistoricoCaixas() {
             label="Diferenças"
             value={formatCurrency(totals.differences)}
             icon={Banknote}
-            tone={Math.abs(totals.differences) > 0.009 ? "red" : "green"}
+            tone={Math.abs(totals.differences) > 0.009 ? totals.differences > 0 ? "blue" : "red" : "default"}
           />
           </> : (
             <MetricCard
@@ -255,20 +279,18 @@ export default function HistoricoCaixas() {
         />
       ) : (
         <>
-          <div className="history-results" aria-label="Registros de caixas">
+          <div className="history-results cash-history-results" aria-label="Registros de caixas">
             <div className="history-table overflow-hidden rounded-lg border border-border bg-card shadow-none">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-normal text-muted-foreground">
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2.5">Operador</th>
-                    <th className="whitespace-nowrap px-3 py-2.5">Abertura</th>
-                    <th className="whitespace-nowrap px-3 py-2.5">Fechamento</th>
                     {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Inicial</th>}
                     <th className="whitespace-nowrap px-3 py-2.5 text-right">{canSeeCashBalances ? "Vendas" : "Qtd. vendas"}</th>
                     {canSeeCashBalances && <th className="whitespace-nowrap px-3 py-2.5 text-right">Saldo / final</th>}
                     <th className="whitespace-nowrap px-3 py-2.5">Status</th>
-                    <th className="whitespace-nowrap px-3 py-2.5">
-                      <span className="sr-only">Ações</span>
+                    <th className="whitespace-nowrap px-3 py-2.5 text-right">
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -276,16 +298,7 @@ export default function HistoricoCaixas() {
                   {data.items.map((item) => (
                     <tr key={item.id} className="hover:bg-muted/25">
                       <td className="px-3 py-2.5">
-                        <strong className="block">{item.seller_name}</strong>
-                        <span className="text-xs text-muted-foreground">
-                          {item.unit_name || "Unidade principal"}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
-                        {formatDate(item.opened_at)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
-                        {formatDate(item.closed_at)}
+                        <CashOperator item={item} operator={operators.get(item.seller_id)} compact />
                       </td>
                       {canSeeCashBalances && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
                         {formatCurrency(item.opening_amount)}
@@ -302,6 +315,8 @@ export default function HistoricoCaixas() {
                         <Status value={item.status} />
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                        <div className="cash-history-table-actions">
+                        <CashReview item={item} pending={reviewing.includes(item.id)} onReview={markReviewed} compact />
                         <button
                           type="button"
                           onClick={() => openDetail(item)}
@@ -309,6 +324,7 @@ export default function HistoricoCaixas() {
                         >
                           <Eye className="h-4 w-4" /> Detalhes
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -322,18 +338,9 @@ export default function HistoricoCaixas() {
                     className="history-record-card cash-history-card"
                   >
                     <div className="history-record-heading">
-                      <div className="min-w-0">
-                        <h2 className="history-record-title">{item.seller_name}</h2>
-                        <p className="history-record-unit" title={item.unit_name || "Unidade principal"}>
-                          <Store aria-hidden="true" className="h-3 w-3 shrink-0" /> {item.unit_name || "Unidade principal"}
-                        </p>
-                      </div>
+                      <CashOperator item={item} operator={operators.get(item.seller_id)} compact />
                       <Status value={item.status} />
                     </div>
-                    <dl className="cash-history-dates">
-                      <div><dt><Clock3 aria-hidden="true" /> Abertura</dt><dd>{formatDate(item.opened_at)}</dd></div>
-                      <div><dt><CircleCheck aria-hidden="true" /> Fechamento</dt><dd>{item.closed_at ? formatDate(item.closed_at) : 'Em andamento'}</dd></div>
-                    </dl>
                     <dl className={`cash-history-values ${canSeeCashBalances ? '' : 'cash-history-count'}`}>
                       {canSeeCashBalances && <>
                         <Value label="Inicial" value={formatCurrency(item.opening_amount)} />
@@ -347,10 +354,7 @@ export default function HistoricoCaixas() {
                       {canSeeCashBalances && <Value label={item.status === 'fechado' ? "Final" : "Saldo atual"} value={<FinalAmount item={item} />} />}
                     </dl>
                     <div className="history-record-footer">
-                      {canSeeCashBalances && <div className="cash-history-movements">
-                        <span><PlusCircle aria-hidden="true" className="text-emerald-600 dark:text-emerald-400" /> Entradas <strong>{formatCurrency(item.entries)}</strong></span>
-                        <span><MinusCircle aria-hidden="true" className="text-orange-600 dark:text-orange-400" /> Retiradas <strong>{formatCurrency(item.withdrawals)}</strong></span>
-                      </div>}
+                      <CashReview item={item} pending={reviewing.includes(item.id)} onReview={markReviewed} compact />
                       <button
                         type="button"
                         onClick={() => openDetail(item)}
@@ -378,6 +382,8 @@ export default function HistoricoCaixas() {
           data={selected}
           loading={detailLoading}
           currentUser={user}
+          onReview={markReviewed}
+          reviewPending={reviewing.includes(selected.session.id)}
           onClose={() => setSelected(null)}
           onChanged={async ({ refetchDetail = true } = {}) => {
             if (refetchDetail) await openDetail(selected.session);
@@ -392,12 +398,18 @@ export default function HistoricoCaixas() {
 function Status({ value }) {
   return <StatusBadge status={value} />;
 }
+function CashOperator({ item, operator, compact = false }) {
+  return <div className="cash-operator">
+    <UserAvatar user={{ id: item.seller_id, full_name: item.seller_name, photo_url: operator?.photo_url, avatar_color: operator?.avatar_color }} size={30} />
+    <div className="min-w-0"><h2 className="history-record-title">{item.seller_name}</h2><p className="history-record-unit">{compact ? <><Clock3 aria-hidden="true" className="h-3 w-3 shrink-0" />{formatDate(item.opened_at)}</> : <><Store aria-hidden="true" className="h-3 w-3 shrink-0" />{item.unit_name || 'Unidade principal'}</>}</p></div>
+  </div>;
+}
 function ClosingSituationFilter({ value, onChange }) {
   return (
     <FilterField label="Fechamento" icon={CircleCheck}>
       <select value={value} onChange={(event) => onChange(event.target.value)} className="field">
         <option value="">Todos os caixas</option>
-        <option value="conferido">Caixas conferidos</option>
+        <option value="conferido">Caixas sem diferença</option>
         <option value="sobra">Caixas com sobra</option>
         <option value="falta">Caixas com falta</option>
       </select>
@@ -410,10 +422,10 @@ function FinalAmount({ item }) {
     <>
       <span className="block">{formatCurrency(item.final_amount)}</span>
       {situation === "conferido" && (
-        <span className="block text-[11px] font-medium text-muted-foreground">Conferido</span>
+        <span className="block text-[11px] font-medium text-muted-foreground">Sem diferença</span>
       )}
       {(situation === "sobra" || situation === "falta") && (
-        <span className={`block text-xs font-semibold ${situation === "sobra" ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-300"}`}>
+        <span className={`block text-xs font-semibold ${situation === "sobra" ? "text-blue-700 dark:text-blue-300" : "text-red-600 dark:text-red-300"}`}>
           {situation === "sobra" ? "Sobra +" : "Falta −"}{formatCurrency(Math.abs(Number(item.difference)))}
         </span>
       )}

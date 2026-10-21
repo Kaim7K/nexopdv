@@ -2,7 +2,10 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
-import { Mail, Pencil, Search, Shield, Trash2, User, UserPlus, Users, X } from 'lucide-react';
+import { Mail, Pencil, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import UserAvatar from '@/components/common/UserAvatar';
+import AvatarColorField from '@/components/users/AvatarColorField';
+import { randomAvatarColor } from '@/lib/user-avatar';
 import EditUserModal from '@/components/users/EditUserModal';
 import CashClosingScheduleField, { defaultCashClosingSchedule } from '@/components/users/CashClosingScheduleField';
 import ImageUploadField from '@/components/ImageUploadField';
@@ -17,6 +20,7 @@ const EMPTY_FORM = {
   password: '',
   role: 'vendedor',
   photo_url: '',
+  avatar_color: '',
   cash_closing_time_enabled: false,
   cash_closing_min_time: '19:00',
   cash_closing_schedule: defaultCashClosingSchedule(),
@@ -102,6 +106,7 @@ export default function Usuarios() {
     event.preventDefault();
     const payload = {
       ...form,
+      avatar_color: user.role === 'admin' ? form.avatar_color : undefined,
       full_name: form.full_name.trim(),
       email: form.email.trim().toLowerCase(),
     };
@@ -136,7 +141,7 @@ export default function Usuarios() {
         actions={
         <button
           type="button"
-          onClick={() => setShowCreate(true)}
+          onClick={() => { setForm({ ...EMPTY_FORM, avatar_color: randomAvatarColor() }); setShowCreate(true); }}
           className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-bold text-accent-foreground shadow-sm transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-10 sm:px-4"
         >
           <UserPlus className="h-4 w-4" /> Novo funcionário
@@ -177,17 +182,12 @@ export default function Usuarios() {
         <div className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {filteredUsers.map(item => {
             const isActive = item.active !== false;
-            const isManager = ['admin', 'gerente'].includes(item.role);
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
               <article key={item.id} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:border-accent/35 hover:bg-muted/10 sm:p-3.5">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
-                  <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-lg bg-secondary text-secondary-foreground sm:h-11 sm:w-11">
-                    {item.photo_url ? (
-                      <img src={item.photo_url} alt={`Foto de ${item.full_name || item.email}`} className="h-full w-full object-cover" loading="lazy" />
-                    ) : isManager ? <Shield className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                  </div>
+                  <UserAvatar user={item} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -296,12 +296,14 @@ export default function Usuarios() {
                 value={form.photo_url}
                 onChange={value => setForm(previous => ({ ...previous, photo_url: value }))}
                 kind="user"
+                avatarColor={form.avatar_color}
                 scopeId={user?.market_id || user?.id}
                 label="Foto do usuário"
                 name={form.full_name || form.email || 'usuario'}
                 previewClassName="h-16 w-16 rounded-full"
                 objectFit="cover"
               />
+              {user.role === 'admin' && <AvatarColorField name={form.full_name || form.email} value={form.avatar_color} onChange={avatar_color => setForm(previous => ({ ...previous, avatar_color }))} />}
               </div>
               <fieldset className={`${form.role === 'vendedor' ? '' : 'hidden'} rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2`}>
                 <label className="flex cursor-pointer items-start justify-between gap-3">

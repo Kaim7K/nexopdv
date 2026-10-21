@@ -94,8 +94,8 @@ function differencePresentation(cashDifference) {
   if (!hasDifference) {
     return {
       hasDifference,
-      differenceLabel: 'Caixa conferido',
-      differenceTone: 'text-emerald-700 dark:text-emerald-300',
+      differenceLabel: 'Sem diferença no caixa',
+      differenceTone: 'text-foreground',
       differenceSummary: 'Dinheiro contado bate com o esperado.',
     };
   }
@@ -103,7 +103,7 @@ function differencePresentation(cashDifference) {
     hasDifference,
     differenceLabel: cashDifference > 0 ? 'Sobra no caixa' : 'Falta no caixa',
     differenceTone: cashDifference > 0
-      ? 'text-emerald-700 dark:text-emerald-300'
+      ? 'text-blue-700 dark:text-blue-300'
       : 'text-red-600 dark:text-red-300',
     differenceSummary: 'Revise recebimentos em dinheiro, despesas e contagem final.',
   };

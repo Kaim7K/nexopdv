@@ -5,12 +5,17 @@ import { toast } from 'react-hot-toast';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import CashClosingScheduleField, { cashClosingScheduleFromUser } from '@/components/users/CashClosingScheduleField';
+import AvatarColorField from './AvatarColorField';
+import { avatarColor } from '@/lib/user-avatar';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function EditUserModal({ user, isCurrentUser = false, actorRole = 'gerente', onClose, onSaved }) {
+  const { checkUserAuth } = useAuth();
   const [form, setForm] = useState({
     full_name: user.full_name || '',
     role: user.role,
     photo_url: user.photo_url || '',
+    avatar_color: avatarColor(user),
     active: user.active !== false,
     cash_closing_time_enabled: Boolean(user.cash_closing_time_enabled),
     cash_closing_schedule: cashClosingScheduleFromUser(user),
@@ -34,11 +39,13 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
     setSaving(true);
     try {
       const payload = { full_name: fullName, photo_url: form.photo_url };
+      if (actorRole === 'admin') payload.avatar_color = form.avatar_color;
       if (canChangeRole) payload.role = form.role;
       if (canChangeStatus) payload.active = form.active;
       payload.cash_closing_time_enabled = form.cash_closing_time_enabled;
       payload.cash_closing_schedule = form.cash_closing_schedule;
       await nexoApi.entities.User.update(user.id, payload);
+      if (isCurrentUser) await checkUserAuth({ silent: true });
       toast.success('Usuário atualizado.');
       await onSaved();
       onClose();
@@ -64,7 +71,8 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
 
         <div className="modal-body space-y-3">
         <div className="rounded-lg border border-border bg-muted/25 p-2.5 sm:p-3">
-          <ImageUploadField value={form.photo_url} onChange={value => setForm(previous => ({ ...previous, photo_url: value }))} kind="user" scopeId={user.id} label="Foto do usuário" name={form.full_name || user.email} previewClassName="h-16 w-16 rounded-full sm:h-20 sm:w-20" objectFit="cover" />
+          <ImageUploadField value={form.photo_url} onChange={value => setForm(previous => ({ ...previous, photo_url: value }))} kind="user" avatarColor={form.avatar_color} scopeId={user.id} label="Foto do usuário" name={form.full_name || user.email} previewClassName="h-16 w-16 rounded-full sm:h-20 sm:w-20" objectFit="cover" />
+          {actorRole === 'admin' && <AvatarColorField name={form.full_name || user.email} value={form.avatar_color} onChange={avatar_color => setForm(previous => ({ ...previous, avatar_color }))} />}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

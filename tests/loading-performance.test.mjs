@@ -81,6 +81,6 @@ assert.doesNotMatch(
 );
 assert.match(migration, /gin_trgm_ops/);
 assert.match(migration, /nexo_finance_transactions_type_period_idx/);
-assert.match(database, /CURRENT_SCHEMA_VERSION = 19/);
+assert.ok(Number(/CURRENT_SCHEMA_VERSION = (\d+)/.exec(database)?.[1]) >= 15, 'A versão mínima deve incluir os índices de desempenho.');
 
 console.log('Teste de carregamento e performance aprovado.');

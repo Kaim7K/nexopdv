@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   Banknote,
+  ArrowLeftRight,
   MinusCircle,
   PlusCircle,
   ReceiptText,
@@ -21,6 +22,7 @@ import { useConfirm } from "@/components/common/ConfirmProvider";
 import { useModalBehavior } from "@/hooks/use-modal-behavior";
 import { useCashDetailModel } from "@/features/cash-history/hooks/use-cash-detail-model";
 import CashRegisterModal from "@/components/pdv/CashRegisterModal";
+import CashReview from './CashReview';
 import {
   formatCurrency,
   formatCurrencyInput,
@@ -60,8 +62,12 @@ export default function CashDetail({
   currentUser,
   onClose,
   onChanged,
+  onReview = null,
+  reviewPending = false,
 }) {
   const { session, summary = {} } = data;
+  const [activeTab, setActiveTab] = useState("summary");
+  const tabsId = useId();
   const [movementOpen, setMovementOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
@@ -155,6 +161,13 @@ export default function CashDetail({
     summary.closing_expense,
     summary.closing_entry,
   ]);
+  useEffect(() => {
+    setActiveTab("summary");
+    setMovementOpen(false);
+  }, [session.id]);
+  useEffect(() => {
+    if (movementOpen) document.getElementById(`${tabsId}-movement-form`)?.querySelector('select')?.focus();
+  }, [movementOpen, tabsId]);
   const saveMovement = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -283,7 +296,7 @@ export default function CashDetail({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-detail-title"
-        className="cash-adaptive cash-mobile-modal flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[min(48rem,calc(100dvh-2rem))] sm:rounded-2xl sm:border sm:border-border/60 sm:shadow-[0_22px_70px_rgba(0,0,0,0.32)]"
+        className="cash-detail-dialog cash-adaptive cash-mobile-modal flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[min(48rem,calc(100dvh-2rem))] sm:rounded-2xl sm:border sm:border-border/60 sm:shadow-[0_22px_70px_rgba(0,0,0,0.32)]"
       >
         <header className="relative flex flex-col gap-2 border-b border-border/80 bg-muted/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="flex min-w-0 items-center gap-2.5 pr-12 sm:pr-0">
@@ -331,7 +344,7 @@ export default function CashDetail({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditing(true)}
+                  onClick={() => { setActiveTab("summary"); setEditing(true); }}
                   disabled={editingCash}
                   className="cash-touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-muted disabled:opacity-50"
                 >
@@ -361,7 +374,43 @@ export default function CashDetail({
             </button>
           </div>
         </header>
-        <div className="cash-modal-scroll flex-1 space-y-[clamp(0.5rem,2cqi,0.75rem)] overflow-y-auto overflow-x-hidden bg-card p-[clamp(0.5rem,2cqi,0.75rem)]">
+        {currentUser.role !== 'vendedor' && (
+          <div role="tablist" aria-label="Navegar pelo caixa" className="cash-detail-tabs">
+            {[
+              { id: 'summary', label: 'Resumo', icon: Banknote, count: null },
+              { id: 'sales', label: 'Vendas', icon: ReceiptText, count: summary.sales?.length || 0 },
+              { id: 'movements', label: 'Movimentações', icon: ArrowLeftRight, count: cashMovements.length },
+            ].map((tab, index, tabs) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`${tabsId}-${tab.id}-tab`}
+                aria-controls={`${tabsId}-${tab.id}-panel`}
+                aria-selected={activeTab === tab.id}
+                tabIndex={activeTab === tab.id ? 0 : -1}
+                disabled={loading}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => {
+                  let next = index;
+                  if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+                  else if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+                  else if (event.key === 'Home') next = 0;
+                  else if (event.key === 'End') next = tabs.length - 1;
+                  else return;
+                  event.preventDefault();
+                  setActiveTab(tabs[next].id);
+                  document.getElementById(`${tabsId}-${tabs[next].id}-tab`)?.focus();
+                }}
+              >
+                <tab.icon aria-hidden="true" className="h-4 w-4" />
+                <span>{tab.label}</span>
+                {tab.count !== null && <span className="cash-detail-tab-count">{tab.count}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="cash-detail-content">
           {loading ? (
             <LoadingState label="Carregando movimentação completa..." />
           ) : currentUser.role === "vendedor" ? (
@@ -377,329 +426,7 @@ export default function CashDetail({
             </section>
           ) : (
             <>
-              <section className="rounded-lg bg-muted/20 p-2.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div>
-                    <h3 className="font-bold">Resumo do caixa</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Valores principais para conferência.
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-                    {summary.sales_count || 0} venda(s)
-                  </span>
-                </div>
-                <dl className="cash-detail-summary-grid grid gap-1.5">
-                  <ValueCard
-                    label="Total vendido"
-                    value={formatCurrency(totalSales)}
-                    hint="vendas"
-                    primary
-                  />
-                  <ValueCard
-                    label="Dinheiro"
-                    value={formatCurrency(cashReceived)}
-                    hint="conferir"
-                  />
-                  <ValueCard
-                    label="Outras formas"
-                    value={formatCurrency(totalSales - cashReceived)}
-                    hint="pix/cartão"
-                  />
-                  <ValueCard
-                    label="Valor sem caixa"
-                    value={formatCurrency(valueWithoutCashDrawer)}
-                    hint="sobre o esperado"
-                  />
-                </dl>
-              </section>
-
-              <section className="overflow-hidden rounded-xl border border-emerald-500/25 bg-emerald-500/[0.035]">
-                <div className="px-3 pt-3">
-                  <h3 className="font-bold">Conferência do dinheiro</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Compare contado, esperado e diferença.
-                  </p>
-                </div>
-                <div className="cash-detail-conference-grid mx-3 mt-2 grid gap-px overflow-hidden rounded-lg bg-emerald-500/15 text-xs">
-                  <div className="bg-card px-3 py-2.5">
-                    <span className="block text-[10px] font-bold uppercase text-muted-foreground">
-                      Esperado
-                    </span>
-                    <strong className="cash-fluid-value mt-0.5 block font-bold tabular-nums">
-                      {formatCurrency(expectedAfterExpense)}
-                    </strong>
-                  </div>
-                  <div className="bg-card px-3 py-2.5">
-                    <span className="block text-[10px] font-bold uppercase text-muted-foreground">
-                      Contado
-                    </span>
-                    <strong className="cash-fluid-value mt-0.5 block font-bold tabular-nums">
-                      {formatCurrency(declaredCash)}
-                    </strong>
-                  </div>
-                  <div className="bg-card px-3 py-2.5">
-                    <span className="block text-[10px] font-bold uppercase text-muted-foreground">
-                      Diferença
-                    </span>
-                    <strong
-                      className={`cash-fluid-value mt-0.5 block font-bold tabular-nums ${differenceTone}`}
-                    >
-                      {formatCurrency(cashDifference)}
-                    </strong>
-                  </div>
-                  <div className="bg-emerald-500/[0.08] px-3 py-2.5">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                      Resultado
-                    </p>
-                    <strong
-                      className={`mt-0.5 block text-base font-bold tabular-nums ${differenceTone}`}
-                    >
-                      {differenceLabel}
-                    </strong>
-                    <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
-                      {differenceSummary}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2.5 border-t border-emerald-500/15 bg-card/65 p-3">
-                  <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-muted-foreground">
-                    Cálculo completo
-                  </div>
-                  <div className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Cálculo esperado
-                  </div>
-                  <dl className="cash-detail-calculation-grid mt-1 grid gap-px overflow-hidden rounded-lg bg-border/25 text-sm">
-                    <CashFormulaRow
-                      label="Valor inicial"
-                      value={openingAmount}
-                    />
-                    <CashFormulaRow
-                      label="Recebido em dinheiro"
-                      value={cashReceived}
-                      positive
-                    />
-                    <CashFormulaRow
-                      label="Outras entradas"
-                      value={movementEntries}
-                      positive
-                    />
-                    <CashFormulaRow
-                      label="Retiradas"
-                      value={movementWithdrawals}
-                      negative
-                    />
-                    <CashFormulaRow
-                      label="Entrada no fechamento"
-                      value={closingEntry}
-                      positive
-                    />
-                    <CashFormulaRow
-                      label="Despesa no fechamento"
-                      value={closingExpense}
-                      negative
-                    />
-                    <CashFormulaRow
-                      label="Esperado no caixa"
-                      value={expectedAfterExpense}
-                      total
-                    />
-                    <CashFormulaRow
-                      label="Valor sem caixa"
-                      value={valueWithoutCashDrawer}
-                      total
-                    />
-                  </dl>
-                  <div className="mt-2 text-[10px] font-bold uppercase text-muted-foreground">
-                    Fechamento informado
-                  </div>
-                  <dl className="cash-detail-closing-grid mt-1 grid gap-px overflow-hidden rounded-lg bg-border/25 text-sm">
-                    <CashFormulaRow
-                      label="Dinheiro contado"
-                      value={declaredCash}
-                      total
-                    />
-                    <CashFormulaRow
-                      label="Contado sem caixa"
-                      value={countedWithoutCashDrawer}
-                      total
-                    />
-                    <CashFormulaRow
-                      label="Diferença"
-                      value={cashDifference}
-                      total
-                      tone={
-                        !hasDifference
-                          ? "neutral"
-                          : cashDifference > 0
-                            ? "positive"
-                            : "negative"
-                      }
-                    />
-                    <p className="flex items-center bg-card px-3 py-2 text-xs text-muted-foreground">
-                      {session.status === "fechado"
-                        ? "Diferença entre esperado e contado."
-                        : "A conferência final aparece ao fechar."}
-                    </p>
-                  </dl>
-                </div>
-              </section>
-
-              <section className="rounded-lg bg-muted/15 p-2.5">
-                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-bold">Vendas deste caixa</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {linkedSales.length} de {summary.sales?.length || 0}{" "}
-                      venda(s)
-                    </p>
-                  </div>
-                  <label className="cash-sales-filter relative block">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      value={salePaymentFilter}
-                      onChange={(event) =>
-                        setSalePaymentFilter(event.target.value)
-                      }
-                      className="h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                      aria-label="Filtrar vendas por pagamento"
-                    >
-                      {PAYMENT_FILTERS.map((payment) => (
-                        <option
-                          key={payment.method || "todos"}
-                          value={payment.method}
-                        >
-                          {payment.method
-                            ? payment.label
-                            : "Todos os pagamentos"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {summary.sales?.length ? (
-                  linkedSales.length ? (
-                    <div className="cash-subgrid grid gap-1.5">
-                      {linkedSales.map((sale) => (
-                        <LinkedSaleButton
-                          key={sale.id}
-                          sale={sale}
-                          onClick={() => openSaleDetail(sale)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border/50 px-3 py-2.5 text-sm text-muted-foreground">
-                      Nenhuma venda encontrada para este pagamento.
-                    </div>
-                  )
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border/50 px-3 py-2.5 text-sm text-muted-foreground">
-                    Nenhuma venda vinculada a este caixa.
-                  </div>
-                )}
-              </section>
-
-              <div className="grid items-start gap-3">
-                <div className="cash-detail-operations-grid grid items-start gap-3">
-                  <section className="cash-subcontainer rounded-lg bg-muted/15 p-2.5">
-                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <h3 className="font-bold">Pagamentos</h3>
-                      {canMove && (
-                        <button
-                          type="button"
-                          onClick={() => setMovementOpen((v) => !v)}
-                          className="cash-touch-target inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground"
-                        >
-                          <PlusCircle className="h-4 w-4" /> Movimentar caixa
-                        </button>
-                      )}
-                    </div>
-                    <div className="cash-subgrid grid gap-1.5">
-                      {paymentEntries.length ? (
-                        paymentEntries.map(([method, value]) => (
-                          <div
-                            key={method}
-                            className="flex items-center justify-between gap-2 rounded-lg bg-card px-2.5 py-2 text-sm"
-                          >
-                            <span className="inline-flex items-center gap-2">
-                              <PaymentIcon
-                                method={method}
-                                className="h-4 w-4 text-muted-foreground"
-                              />
-                              {PAYMENT_LABELS[method] || method}
-                            </span>
-                            <strong>{formatCurrency(value)}</strong>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Nenhum pagamento registrado.
-                        </p>
-                      )}
-                    </div>
-                  </section>
-                  <section className="cash-subcontainer rounded-lg bg-muted/15 p-2.5">
-                    <div className="mb-2">
-                      <h3 className="font-bold">Movimentações manuais</h3>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Entradas, retiradas e ajustes fora das vendas.
-                      </p>
-                    </div>
-                    {cashMovements.length ? (
-                      <div className="divide-y divide-border/40 rounded-lg bg-card">
-                        {cashMovements.map((item) => {
-                          const reversed = ["estornado", "cancelado"].includes(
-                            item.status,
-                          );
-                          return (
-                            <div
-                              key={item.id}
-                              className={`cash-movement-row grid items-start gap-2.5 px-2.5 py-2.5 ${reversed ? "opacity-55" : ""}`}
-                            >
-                              <span
-                                className={`mt-0.5 grid h-8 w-8 place-items-center rounded-lg ${item.type === "entrada" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-red-500/10 text-red-700 dark:text-red-300"}`}
-                              >
-                                {item.type === "entrada" ? (
-                                  <PlusCircle className="h-4 w-4" />
-                                ) : (
-                                  <MinusCircle className="h-4 w-4" />
-                                )}
-                              </span>
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <strong className="text-sm">
-                                    {item.title}
-                                  </strong>
-                                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-                                    {reversed
-                                      ? "Estornado"
-                                      : movementOriginLabel(item.origin)}
-                                  </span>
-                                </div>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                  {item.note}
-                                </p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">
-                                  {formatDate(item.date)} · {item.operator}
-                                </p>
-                              </div>
-                              <strong
-                                className={`cash-movement-amount pt-1 text-sm tabular-nums ${item.type === "entrada" ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}
-                              >
-                                {item.type === "entrada" ? "+ " : "- "}
-                                {formatCurrency(item.amount)}
-                              </strong>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
-                        Nenhuma entrada, retirada ou ajuste além das vendas.
-                      </div>
-                    )}
-                  </section>
+              <div role="tabpanel" id={`${tabsId}-summary-panel`} aria-labelledby={`${tabsId}-summary-tab`} hidden={activeTab !== 'summary'} tabIndex={0} className="cash-detail-tabpanel cash-modal-scroll">
                   {editing && canManageClosed && (
                     <form
                       onSubmit={saveEdit}
@@ -797,8 +524,174 @@ export default function CashDetail({
                       </div>
                     </form>
                   )}
+              <section className="rounded-lg bg-muted/20 p-2.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold">Resumo do caixa</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Valores principais para conferência.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+                    {summary.sales_count || 0} venda(s)
+                  </span>
+                </div>
+                <dl className="cash-detail-summary-grid grid gap-1.5">
+                  <ValueCard
+                    label="Total vendido"
+                    value={formatCurrency(totalSales)}
+                    hint="vendas"
+                    primary
+                  />
+                  <ValueCard
+                    label="Dinheiro"
+                    value={formatCurrency(cashReceived)}
+                    hint="conferir"
+                  />
+                  <ValueCard
+                    label="Outras formas"
+                    value={formatCurrency(totalSales - cashReceived)}
+                    hint="pix/cartão"
+                  />
+                  <ValueCard
+                    label="Valor sem caixa"
+                    value={formatCurrency(valueWithoutCashDrawer)}
+                    hint="sobre o esperado"
+                  />
+                </dl>
+              </section>
+
+              <section className="cash-reconciliation" data-situation={!hasDifference ? 'balanced' : cashDifference > 0 ? 'surplus' : 'shortage'}>
+                <header className="cash-reconciliation-heading">
+                  <h3 className="flex items-center gap-2"><Banknote className="h-4 w-4 text-accent" />Conferência do dinheiro</h3>
+                  <p>Compare contado, esperado e diferença.</p>
+                </header>
+                <div className="cash-reconciliation-totals">
+                  <div><span>Esperado</span><strong className="cash-reconciliation-money">{formatCurrency(expectedAfterExpense)}</strong></div>
+                  <div><span>Contado</span><strong className="cash-reconciliation-money">{formatCurrency(declaredCash)}</strong></div>
+                  <div className="cash-reconciliation-difference"><span>Diferença</span><strong className={`cash-reconciliation-money ${differenceTone}`}>{formatCurrency(cashDifference)}</strong></div>
+                  <div className="cash-reconciliation-result">
+                    <span>Resultado</span>
+                    <strong>{differenceLabel}</strong><p>{differenceSummary}</p>
+                  </div>
+                </div>
+                <div className="cash-reconciliation-details">
+                  <section>
+                    <h4>Cálculo esperado</h4>
+                    <dl>
+                      <CashFormulaRow label="Valor inicial" value={openingAmount} />
+                      <CashFormulaRow label="Recebido em dinheiro" value={cashReceived} positive />
+                      <CashFormulaRow label="Outras entradas" value={movementEntries} positive />
+                      <CashFormulaRow label="Retiradas" value={movementWithdrawals} negative />
+                      <CashFormulaRow label="Entrada no fechamento" value={closingEntry} positive />
+                      <CashFormulaRow label="Despesa no fechamento" value={closingExpense} negative />
+                      <CashFormulaRow label="Esperado no caixa" value={expectedAfterExpense} total />
+                      <CashFormulaRow label="Valor sem caixa" value={valueWithoutCashDrawer} total />
+                    </dl>
+                  </section>
+                  <section>
+                    <h4>Fechamento informado</h4>
+                    <dl>
+                      <CashFormulaRow label="Dinheiro contado" value={declaredCash} total />
+                      <CashFormulaRow label="Contado sem caixa" value={countedWithoutCashDrawer} total />
+                      <CashFormulaRow label="Diferença" value={cashDifference} total tone={!hasDifference ? 'neutral' : cashDifference > 0 ? 'positive' : 'negative'} />
+                    </dl>
+                    <p className="cash-reconciliation-note">{session.status === 'fechado' ? 'Diferença entre o valor esperado e o dinheiro contado.' : 'A conferência final aparece ao fechar o caixa.'}</p>
+                  </section>
+                </div>
+              </section>
+
+                  <section className="cash-subcontainer rounded-lg bg-muted/15 p-2.5">
+                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <h3 className="font-bold">Pagamentos</h3>
+
+                    </div>
+                    <div className="cash-subgrid grid gap-1.5">
+                      {paymentEntries.length ? (
+                        paymentEntries.map(([method, value]) => (
+                          <div
+                            key={method}
+                            className="flex items-center justify-between gap-2 rounded-lg bg-card px-2.5 py-2 text-sm"
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              <PaymentIcon
+                                method={method}
+                                className="h-4 w-4 text-muted-foreground"
+                              />
+                              {PAYMENT_LABELS[method] || method}
+                            </span>
+                            <strong>{formatCurrency(value)}</strong>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Nenhum pagamento registrado.
+                        </p>
+                      )}
+                    </div>
+                  </section>
+              </div>
+              <div role="tabpanel" id={`${tabsId}-sales-panel`} aria-labelledby={`${tabsId}-sales-tab`} hidden={activeTab !== 'sales'} tabIndex={0} className="cash-detail-tabpanel cash-modal-scroll">
+              <section className="rounded-lg bg-muted/15 p-2.5">
+                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-bold">Vendas deste caixa</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {linkedSales.length} de {summary.sales?.length || 0}{" "}
+                      venda(s)
+                    </p>
+                  </div>
+                  <label className="cash-sales-filter relative block">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={salePaymentFilter}
+                      onChange={(event) =>
+                        setSalePaymentFilter(event.target.value)
+                      }
+                      className="h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm font-semibold outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                      aria-label="Filtrar vendas por pagamento"
+                    >
+                      {PAYMENT_FILTERS.map((payment) => (
+                        <option
+                          key={payment.method || "todos"}
+                          value={payment.method}
+                        >
+                          {payment.method
+                            ? payment.label
+                            : "Todos os pagamentos"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {summary.sales?.length ? (
+                  linkedSales.length ? (
+                    <div className="cash-subgrid grid gap-1.5">
+                      {linkedSales.map((sale) => (
+                        <LinkedSaleButton
+                          key={sale.id}
+                          sale={sale}
+                          onClick={() => openSaleDetail(sale)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border/50 px-3 py-2.5 text-sm text-muted-foreground">
+                      Nenhuma venda encontrada para este pagamento.
+                    </div>
+                  )
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/50 px-3 py-2.5 text-sm text-muted-foreground">
+                    Nenhuma venda vinculada a este caixa.
+                  </div>
+                )}
+              </section>
+
+              </div>
+              <div role="tabpanel" id={`${tabsId}-movements-panel`} aria-labelledby={`${tabsId}-movements-tab`} hidden={activeTab !== 'movements'} tabIndex={0} className="cash-detail-tabpanel cash-modal-scroll">
                   {movementOpen && (
                     <form
+                      id={`${tabsId}-movement-form`}
                       onSubmit={saveMovement}
                       className="cash-operation-form cash-movement-form grid gap-2.5 rounded-xl border border-accent/30 bg-accent/5 p-[clamp(0.625rem,2cqi,1rem)]"
                     >
@@ -850,11 +743,89 @@ export default function CashDetail({
                       </button>
                     </form>
                   )}
-                </div>
+                  <section className="cash-subcontainer rounded-lg bg-muted/15 p-2.5">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                      <h3 className="font-bold">Movimentações manuais</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Entradas, retiradas e ajustes fora das vendas.
+                      </p>
+                      </div>
+                      {canMove && (
+                        <button
+                          type="button"
+                          onClick={() => setMovementOpen((v) => !v)}
+                          aria-expanded={movementOpen}
+                          aria-controls={`${tabsId}-movement-form`}
+                          className="cash-touch-target inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-bold text-accent-foreground"
+                        >
+                          {movementOpen ? <X className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />} {movementOpen ? 'Cancelar movimentação' : 'Movimentar caixa'}
+                        </button>
+                      )}
+                    </div>
+                    {cashMovements.length ? (
+                      <div className="divide-y divide-border/40 rounded-lg bg-card">
+                        {cashMovements.map((item) => {
+                          const reversed = ["estornado", "cancelado"].includes(
+                            item.status,
+                          );
+                          return (
+                            <div
+                              key={item.id}
+                              className={`cash-movement-row grid items-start gap-2.5 px-2.5 py-2.5 ${reversed ? "opacity-55" : ""}`}
+                            >
+                              <span
+                                className={`mt-0.5 grid h-8 w-8 place-items-center rounded-lg ${item.type === "entrada" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-red-500/10 text-red-700 dark:text-red-300"}`}
+                              >
+                                {item.type === "entrada" ? (
+                                  <PlusCircle className="h-4 w-4" />
+                                ) : (
+                                  <MinusCircle className="h-4 w-4" />
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <strong className="text-sm">
+                                    {item.title}
+                                  </strong>
+                                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                                    {reversed
+                                      ? "Estornado"
+                                      : movementOriginLabel(item.origin)}
+                                  </span>
+                                </div>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {item.note}
+                                </p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">
+                                  {formatDate(item.date)} · {item.operator}
+                                </p>
+                              </div>
+                              <strong
+                                className={`cash-movement-amount pt-1 text-sm tabular-nums ${item.type === "entrada" ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}
+                              >
+                                {item.type === "entrada" ? "+ " : "- "}
+                                {formatCurrency(item.amount)}
+                              </strong>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+                        Nenhuma entrada, retirada ou ajuste além das vendas.
+                      </div>
+                    )}
+                  </section>
               </div>
             </>
           )}
         </div>
+        {!loading && !editing && onReview && session.status === 'fechado' && ['admin', 'gerente'].includes(currentUser.role) && (
+          <footer className="cash-detail-review-footer">
+            <CashReview item={session} pending={reviewPending} onReview={onReview} />
+          </footer>
+        )}
         {selectedSale && (
           <SaleDetailModal
             sale={selectedSale}
@@ -905,23 +876,21 @@ function CashFormulaRow({
   tone = "neutral",
 }) {
   const sign = negative ? "- " : positive ? "+ " : "";
+  const displayedValue = negative || positive ? Math.abs(Number(value || 0)) : Number(value || 0);
   const toneClass =
     tone === "positive"
-      ? "text-emerald-600 dark:text-emerald-300"
+      ? "text-blue-700 dark:text-blue-300"
       : tone === "negative"
         ? "text-red-600 dark:text-red-300"
         : "text-foreground";
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${
-        total ? "bg-card font-bold" : "bg-card/80"
-      }`}
+      className={`cash-detail-formula-row ${total ? 'is-total' : ''}`}
     >
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={`text-sm tabular-nums ${total ? toneClass : ""}`}>
-        {sign}
-        {formatCurrency(Math.abs(Number(value || 0)))}
+      <dt>{label}</dt>
+      <dd className={total ? toneClass : ''}>
+        {`${sign}${formatCurrency(displayedValue)}`}
       </dd>
     </div>
   );

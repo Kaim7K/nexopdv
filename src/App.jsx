@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BrowserRouter as Router,
   Navigate,
@@ -78,8 +79,9 @@ function App() {
           <AppErrorBoundary>
             <AuthenticatedApp />
           </AppErrorBoundary>
-          <HotToaster
+          {createPortal(<HotToaster
             position="top-right"
+            containerStyle={{ zIndex: 2147483200 }}
             toastOptions={{ duration: 3000, className: 'nexo-toast' }}
           >
             {(t) => (
@@ -102,7 +104,7 @@ function App() {
                 )}
               </ToastBar>
             )}
-          </HotToaster>
+          </HotToaster>, document.body)}
         </ConfirmProvider>
       </AuthProvider>
     </Router>

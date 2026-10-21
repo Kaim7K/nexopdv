@@ -34,39 +34,41 @@ export default function HistoryFilters({
 
   return (
     <section className="filter-surface history-filters" aria-label={label}>
-      <div className="history-filter-heading">
-        <div className="history-filter-period">
-          <span className="history-filter-label"><CalendarRange aria-hidden="true" className="h-4 w-4" /> Período</span>
-          {quickRanges.length > 0 && (
-            <div className="history-filter-presets" aria-label="Períodos rápidos">
-              {quickRanges.map(({ label: rangeLabel, active, onClick }) => (
-                <button key={rangeLabel} type="button" aria-pressed={active} onClick={onClick}>
-                  {rangeLabel}
-                </button>
-              ))}
-            </div>
-          )}
+      <div className={`history-filter-toolbar ${search ? 'has-search' : ''} ${actions ? 'has-actions' : ''}`}>
+        <div className="history-filter-heading">
+          <div className="history-filter-period">
+            <span className="history-filter-label"><CalendarRange aria-hidden="true" className="h-4 w-4" /> Período</span>
+            {quickRanges.length > 0 && (
+              <div className="history-filter-presets" aria-label="Períodos rápidos">
+                {quickRanges.map(({ label: rangeLabel, active, onClick }) => (
+                  <button key={rangeLabel} type="button" aria-pressed={active} onClick={onClick}>
+                    {rangeLabel}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={`history-filter-main ${search ? 'has-search' : ''}`}>
+          <div className="history-filter-dates">{dates}</div>
+          {search && <div className="history-filter-search">{search}</div>}
+          <button
+            ref={toggleRef}
+            type="button"
+            className="history-filter-toggle"
+            aria-label="Filtros adicionais"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+            Filtros
+            {activeFilters.length > 0 && <span className="history-filter-count">{activeFilters.length}</span>}
+            <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
         </div>
         {actions && <div className="history-filter-actions">{actions}</div>}
-      </div>
-
-      <div className={`history-filter-main ${search ? 'has-search' : ''}`}>
-        <div className="history-filter-dates">{dates}</div>
-        {search && <div className="history-filter-search">{search}</div>}
-        <button
-          ref={toggleRef}
-          type="button"
-          className="history-filter-toggle"
-          aria-label="Filtros adicionais"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
-          Filtros
-          {activeFilters.length > 0 && <span className="history-filter-count">{activeFilters.length}</span>}
-          <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
       </div>
 
       {activeFilters.length > 0 && (

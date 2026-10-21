@@ -9,6 +9,14 @@ import {
   cashSummaryForUser,
 } from '../../server/cash-access.js';
 import { matchesCashClosingSituation } from '../lib/cash-history.js';
+import { normalizeAvatarColor, randomAvatarColor } from '../lib/user-avatar.js';
+import { cashReviewFingerprint, cashReviewState } from '../lib/cash-review.js';
+import { productDuplicateMessage } from '../lib/product-duplicates.js';
+
+function assertMockProductAvailable(product, products, excludeId = null) {
+  const message = productDuplicateMessage(product, products, excludeId);
+  if (message) throw new Error(message);
+}
 
 const STORE_KEY = 'nexo:mock-db:v4';
 const SESSION_USER_KEY = 'nexo:session-user';
@@ -444,6 +452,7 @@ function normalizeDb(db, seeded = seedDb()) {
     : seeded.cashMovements;
   next.fiados = Array.isArray(next.fiados) ? next.fiados : seeded.fiados;
   next.users = Array.isArray(next.users) && next.users.length ? next.users : seeded.users;
+  next.users.forEach(user => { user.avatar_color = normalizeAvatarColor(user.avatar_color) || randomAvatarColor(); });
   next.systemConfig = Array.isArray(next.systemConfig)
     ? next.systemConfig
     : seeded.systemConfig;
@@ -574,15 +583,21 @@ function entityApi(name) {
       withDb((db) => collection(db, name).find((item) => item.id === itemId) || null),
     create: (data) =>
       withDb((db) => {
+        if (name === 'Product') assertMockProductAvailable(data, db.products);
         const item = { id: id(name.toLowerCase()), ...data, created_date: nowIso(), updated_date: nowIso() };
         collection(db, name).unshift(item);
         return item;
       }),
     update: (itemId, data) =>
       withDb((db) => {
+        if (name === 'User' && data.avatar_color !== undefined) {
+          if (currentMockUser(db).role !== 'admin') throw new Error('Apenas administradores podem alterar a cor do avatar.');
+          if (!normalizeAvatarColor(data.avatar_color)) throw new Error('Cor de avatar inválida.');
+        }
         const items = collection(db, name);
         const index = items.findIndex((item) => item.id === itemId);
         if (index < 0) throw new Error('Registro não encontrado.');
+        if (name === 'Product' && (data.name !== undefined || data.barcode !== undefined)) assertMockProductAvailable({ ...items[index], ...data }, items, itemId);
         items[index] = { ...items[index], ...data, updated_date: nowIso() };
         return items[index];
       }),
@@ -799,7 +814,9 @@ export const mockNexoApi = {
   users: {
     create: (data) =>
       withDb((db) => {
-        const user = { id: id('usr'), market_id: demoUser.market_id, unit_id: demoUser.unit_id, ...data };
+        if (data.avatar_color !== undefined && currentMockUser(db).role !== 'admin') throw new Error('Apenas administradores podem escolher a cor do avatar.');
+        if (data.avatar_color !== undefined && !normalizeAvatarColor(data.avatar_color)) throw new Error('Cor de avatar inválida.');
+        const user = { id: id('usr'), market_id: demoUser.market_id, unit_id: demoUser.unit_id, ...data, avatar_color: normalizeAvatarColor(data.avatar_color) || randomAvatarColor() };
         db.users.push(user);
         return user;
       }),
@@ -818,10 +835,11 @@ export const mockNexoApi = {
       withDb((db) => db.products.find((product) => product.barcode === barcode) || null),
     quickCreate: (barcode, name, salePrice) =>
       withDb((db) => {
+        assertMockProductAvailable({ barcode, name }, db.products);
         const product = makeProduct([name, 'Sem categoria', Number(salePrice || 0), 0], db.products.length);
         product.barcode = barcode;
         db.products.unshift(product);
-        return product;
+        return { created: true, product };
       }),
     deleteInactive: () =>
       withDb((db) => {
@@ -834,7 +852,8 @@ export const mockNexoApi = {
     bulkUpdate: (products) =>
       withDb((db) => {
         for (const product of products || []) {
-          const existing = db.products.find((item) => item.id === product.id || item.barcode === product.barcode);
+          const existing = db.products.find((item) => (product.id && item.id === product.id) || (product.barcode && item.barcode === product.barcode));
+          assertMockProductAvailable(product, db.products, existing?.id || null);
           if (existing) Object.assign(existing, product, { updated_date: nowIso() });
           else db.products.push({ id: id('prd'), status: 'ativo', created_date: nowIso(), ...product });
         }
@@ -865,6 +884,33 @@ export const mockNexoApi = {
     reset: () => delay({ ok: true }),
   },
   cash: {
+    unreview: (cashId, reviewedAt) => withDb((db) => {
+      const user = currentMockUser(db);
+      if (!['admin', 'gerente'].includes(user.role)) throw new Error('Apenas gerentes e administradores podem desmarcar verificações.');
+      const session = db.cashSessions.find(item => item.id === cashId && item.market_id === user.market_id);
+      if (!session) throw new Error('Caixa não encontrado.');
+      if (session.status !== 'fechado') throw new Error('Somente caixas fechados podem ter a verificação desmarcada.');
+      if (session.reviewed_at) {
+        if (session.reviewed_at !== reviewedAt) throw new Error('A verificação mudou. Atualize o histórico antes de desmarcar.');
+        db.audits.push({ id: id('audit'), action_type: 'caixa_verificacao_removida', entity_id: cashId, user_id: user.id, user_name: user.full_name || user.email, created_date: nowIso(), details: { previous_reviewed_at: session.reviewed_at, previous_reviewed_by: session.reviewed_by } });
+        Object.assign(session, { reviewed_at: null, reviewed_by: null, reviewed_by_name: null, review_fingerprint: null });
+      }
+      return cashReviewState(session, cashSummary(db, session));
+    }),
+    review: (cashId, version) => withDb((db) => {
+      const user = currentMockUser(db);
+      if (!['admin', 'gerente'].includes(user.role)) throw new Error('Apenas gerentes e administradores podem verificar caixas.');
+      const session = db.cashSessions.find(item => item.id === cashId && item.market_id === user.market_id);
+      if (!session) throw new Error('Caixa não encontrado.');
+      if (session.status !== 'fechado') throw new Error('Feche o caixa antes de verificá-lo.');
+      const summary = cashSummary(db, session);
+      if (!cashReviewState(session, summary).review_valid) {
+        if (version !== cashReviewFingerprint(session, summary)) throw new Error('Os dados mudaram. Atualize o histórico e confira novamente.');
+        Object.assign(session, { reviewed_at: nowIso(), reviewed_by: user.id, reviewed_by_name: user.full_name || user.email, review_fingerprint: cashReviewFingerprint(session, summary) });
+        db.audits.push({ id: id('audit'), action_type: 'caixa_verificado', entity_id: cashId, user_id: user.id, user_name: session.reviewed_by_name, created_date: session.reviewed_at });
+      }
+      return cashReviewState(session, summary);
+    }),
     current: () =>
       withDb((db) => {
         const user = currentMockUser(db);
@@ -960,6 +1006,7 @@ export const mockNexoApi = {
             const summary = cashSummary(db, session);
             const item = {
               ...session,
+              ...cashReviewState(session, summary),
               summary,
               total_sales: summary.total,
               entries: summary.entries + Number(session.closing_entry || 0),
@@ -981,7 +1028,7 @@ export const mockNexoApi = {
           items: items.slice(start, start + pageSize),
           total: items.length,
           page_count: Math.max(1, Math.ceil(items.length / pageSize)),
-          operators: (user.role === 'vendedor' ? [user] : mockUsers(db)).map((item) => ({ id: item.id, name: item.full_name || item.email })),
+          operators: (user.role === 'vendedor' ? [user] : mockUsers(db)).map((item) => ({ id: item.id, name: item.full_name || item.email, photo_url: item.photo_url, avatar_color: item.avatar_color })),
           units: [{ id: demoUser.unit_id, name: demoUser.unit_name }],
         };
       }),
@@ -993,7 +1040,7 @@ export const mockNexoApi = {
         const session = db.cashSessions.find((item) => item.id === cashId);
         const summary = cashSummary(db, session);
         return {
-          session: cashSessionForUser(user, session),
+          session: { ...cashSessionForUser(user, session), ...cashReviewState(session, summary) },
           summary: cashSummaryForUser(user, summary),
         };
       }),

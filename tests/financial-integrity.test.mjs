@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const [migration, closingEntryMigration, api, finance, cashSummary, db, paymentModal, financeUi] = await Promise.all([
@@ -40,7 +40,8 @@ for (const statement of migrationStatements) {
   );
 }
 
-assert.match(db, /CURRENT_SCHEMA_VERSION = 19/, 'A aplicação deve exigir a migração mais recente.');
+const latestMigration = Math.max(...(await readdir(new URL('../database/migrations/', import.meta.url))).map(name => Number(/^(\d+)_/.exec(name)?.[1] || 0)));
+assert.equal(Number(/CURRENT_SCHEMA_VERSION = (\d+)/.exec(db)?.[1]), latestMigration, 'A aplicação deve exigir a migração mais recente.');
 assert.match(migration, /cash_close/, 'Fechamentos precisam ter uma origem financeira válida.');
 assert.match(closingEntryMigration, /cash_close_entry/, 'Entradas no fechamento precisam de origem financeira idempotente.');
 assert.match(migration, /nexo_sales_client_operation_uidx/, 'Vendas devem rejeitar repetição da mesma operação.');

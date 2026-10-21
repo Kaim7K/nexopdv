@@ -195,6 +195,8 @@ const realNexoApi = {
       });
     },
     detail: (id) => request(`/cash/${id}`, { cacheTTL: 5_000 }),
+    review: (id, version) => request(`/cash/${id}/review`, { method: 'POST', body: { version } }),
+    unreview: (id, reviewedAt) => request(`/cash/${id}/review`, { method: 'DELETE', body: { reviewed_at: reviewedAt } }),
     remove: (id) =>
       request(`/cash/${id}`, {
         method: 'DELETE',

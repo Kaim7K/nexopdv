@@ -56,6 +56,12 @@ test('closing situations distinguish zero, surplus, shortage and uncounted sessi
   assert.equal(cashClosingSituation({ status: 'aberto', difference: 0 }), '');
 });
 
+test('a zero cash difference uses the normal text color while surplus and shortage stay distinct', () => {
+  assert.equal(cashDetailAmounts({ closing_amount: 145.4 }, { expected_cash: 145.4 }).differenceTone, 'text-foreground');
+  assert.match(cashDetailAmounts({ closing_amount: 146.4 }, { expected_cash: 145.4 }).differenceTone, /blue/);
+  assert.match(cashDetailAmounts({ closing_amount: 144.4 }, { expected_cash: 145.4 }).differenceTone, /red/);
+});
+
 async function history(query = {}) {
   const sessions = Array.from({ length: 27 }, (_, i) => ({
     id: String(i), status: 'fechado', closing_amount: i < 23 ? 101 : i === 23 ? 99 : i === 24 ? 100 : null,

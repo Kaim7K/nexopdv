@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { isSupportedImageFile, optimizeImageFile } from '@/lib/image-file';
+import UserAvatar from '@/components/common/UserAvatar';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const MAX_SIZE = 8 * 1024 * 1024;
@@ -16,6 +17,7 @@ export default function ImageUploadField({
   previewClassName = 'h-16 w-16 rounded-lg',
   objectFit = 'contain',
   capture = undefined,
+  avatarColor = undefined,
 }) {
   void scopeId;
   const inputRef = useRef(null);
@@ -55,6 +57,8 @@ export default function ImageUploadField({
         <div className={`${previewClassName} grid flex-shrink-0 place-items-center overflow-hidden border border-border bg-white`}>
           {value ? (
             <img src={value} alt={label} decoding="async" className={`h-full w-full ${objectFit === 'cover' ? 'object-cover' : 'object-contain p-1'}`} />
+          ) : kind === 'user' ? (
+            <UserAvatar user={{ full_name: name, avatar_color: avatarColor }} size={48} />
           ) : (
             <ImageIcon className="h-6 w-6 text-muted-foreground/45" />
           )}

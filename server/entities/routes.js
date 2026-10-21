@@ -6,6 +6,7 @@ import {
   normalizeCashClosingTime,
 } from '../cash-access.js';
 import { send } from '../http.js';
+import { normalizeAvatarColor } from '../../src/lib/user-avatar.js';
 
 export async function handleEntityRequest(
   { req, res, sql, user, path },
@@ -46,7 +47,7 @@ export async function handleEntityRequest(
       return send(
         res,
         200,
-        await sql`SELECT id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id} AND active=true ORDER BY full_name NULLS LAST,email`,
+        await sql`SELECT id,email,full_name,role,photo_url,avatar_color,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule,created_date,updated_date FROM nexo.users WHERE market_id=${user.market_id} AND active=true ORDER BY full_name NULLS LAST,email`,
       );
     if (req.method === 'DELETE') {
       if (!isUuid(id))
@@ -126,6 +127,11 @@ export async function handleEntityRequest(
       return send(res, 200, { ok: true });
     }
     if (req.method === 'PATCH') {
+      if (req.body.avatar_color !== undefined && user.role !== 'admin')
+        return send(res, 403, { message: 'Apenas administradores podem alterar a cor do avatar.' });
+      const avatarColor = req.body.avatar_color === undefined ? null : normalizeAvatarColor(req.body.avatar_color);
+      if (req.body.avatar_color !== undefined && !avatarColor)
+        return send(res, 400, { message: 'Escolha uma das cores de avatar disponíveis.' });
       if (!isUuid(id))
         return send(res, 400, { message: 'Usuário inválido.' });
       if (req.body.role && !USER_ROLES.includes(req.body.role))
@@ -197,7 +203,7 @@ export async function handleEntityRequest(
           message: 'Configuração de horário de fechamento inválida.',
         });
       const [u] =
-        await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time WHEN ${closingSchedule !== undefined} THEN ${Object.values(closingSchedule || {})[0] || null}::time ELSE cash_closing_min_time END,cash_closing_schedule=CASE WHEN ${closingSchedule !== undefined} THEN ${JSON.stringify(closingSchedule || {})}::jsonb ELSE cash_closing_schedule END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
+        await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),avatar_color=COALESCE(${avatarColor},avatar_color),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time WHEN ${closingSchedule !== undefined} THEN ${Object.values(closingSchedule || {})[0] || null}::time ELSE cash_closing_min_time END,cash_closing_schedule=CASE WHEN ${closingSchedule !== undefined} THEN ${JSON.stringify(closingSchedule || {})}::jsonb ELSE cash_closing_schedule END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,avatar_color,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
       return send(res, 200, u);
     }
   }
@@ -393,7 +399,7 @@ export async function handleEntityRequest(
       await assertProductBarcodeAvailable(
         sql,
         user.market_id,
-        recordPayload.barcode,
+        recordPayload,
       );
       const [capacity] =
         await sql`SELECT market.product_limit,(SELECT count(*)::int FROM nexo.records WHERE market_id=market.id AND entity='products') AS product_count FROM nexo.markets market WHERE market.id=${user.market_id}`;
@@ -614,13 +620,15 @@ export async function handleEntityRequest(
         });
       recordPayload = normalizeProductPayload(req.body, true);
       validateProductPayload(recordPayload, true);
-      if (recordPayload.barcode !== undefined)
+      if (recordPayload.barcode !== undefined || recordPayload.name !== undefined) {
+        const [current] = await sql`SELECT data FROM nexo.records WHERE id=${id} AND market_id=${user.market_id} AND entity='products'`;
         await assertProductBarcodeAvailable(
           sql,
           user.market_id,
-          recordPayload.barcode,
+          { ...current?.data, ...recordPayload },
           id,
         );
+      }
     }
     if (table === 'system_configs') {
       const [currentConfig] =

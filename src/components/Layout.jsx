@@ -5,13 +5,13 @@ import {
   ChevronsRight,
   LogOut,
   Menu,
-  User as UserIcon,
   X,
 } from 'lucide-react';
 import { nexoApi } from '@/api/nexoApi';
 import { useAuth } from '@/lib/AuthContext';
 import { CashRegisterProvider } from '@/lib/CashRegisterContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import UserAvatar from '@/components/common/UserAvatar';
 import { usePageMetadata } from '@/hooks/use-page-metadata';
 import {
   applySidebarPalette,
@@ -354,19 +354,7 @@ export default function Layout() {
 
         <div className={`app-sidebar-footer p-3 ${sidebarCollapsed ? 'md:p-2.5' : ''}`}>
           <div className={`flex items-center gap-2.5 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/70 p-2 ${sidebarCollapsed ? 'md:justify-center md:border-transparent md:bg-transparent md:p-0' : ''}`}>
-            <div className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-lg bg-sidebar-accent xl:h-10 xl:w-10">
-              {user.photo_url ? (
-                <img
-                  src={user.photo_url}
-                  alt={`Foto de ${user.full_name || user.email}`}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <UserIcon className="h-4 w-4 text-sidebar-foreground/55" />
-              )}
-            </div>
+            <UserAvatar user={user} size={36} />
             <div className={`min-w-0 flex-1 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
               <div className="truncate text-sm font-bold">
                 {user.full_name || user.email}

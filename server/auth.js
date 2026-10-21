@@ -36,6 +36,7 @@ export function publicUser(user) {
     full_name: user.full_name,
     role: user.role,
     photo_url: user.photo_url,
+    avatar_color: user.avatar_color,
     market_id: user.market_id,
     market_name: user.market_name,
     logo_url: user.logo_url,
@@ -69,7 +70,7 @@ export async function authenticateCredentials(sql, input) {
 
   const rows = await sql`
     SELECT
-      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
+      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id,
       u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
       unit.name AS unit_name,
       m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
@@ -146,7 +147,7 @@ export async function currentUser(req, sql) {
 
     const rows = await sql`
       SELECT
-        u.id, u.email, u.full_name, u.role, u.photo_url, u.market_id, u.unit_id,
+        u.id, u.email, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id,
         u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
         unit.name AS unit_name,
         m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,

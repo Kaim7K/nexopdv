@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
+import { productDuplicateMessage } from '../src/lib/product-duplicates.js';
 import { randomUUID } from 'node:crypto';
+import { normalizeAvatarColor, randomAvatarColor } from '../src/lib/user-avatar.js';
 import {
   assertDatabaseReady,
   CURRENT_SCHEMA_VERSION,
@@ -585,19 +587,21 @@ function normalizeProductPayload(data, partial = false) {
 async function assertProductBarcodeAvailable(
   sql,
   marketId,
-  barcode,
+  product,
   excludeId = null,
 ) {
-  const normalized = text(barcode, 180);
-  if (!normalized) return;
+  const normalized = text(product.barcode, 180);
   const rows =
     await sql`SELECT id FROM nexo.records WHERE market_id=${marketId} AND entity='products' AND data->>'barcode'=${normalized} AND (${excludeId === null} OR id<>${excludeId}::uuid) LIMIT 1`;
-  if (rows.length)
+  if (normalized && rows.length)
     throw new AppError(
       409,
       'DUPLICATE_BARCODE',
       'Já existe um produto com este código de barras.',
     );
+  const products = await sql`SELECT id,data FROM nexo.records WHERE market_id=${marketId} AND entity='products'`;
+  const message = productDuplicateMessage(product, products.map((row) => ({ ...row.data, id: row.id })), excludeId);
+  if (message) throw new AppError(409, 'DUPLICATE_PRODUCT', message);
 }
 
 function normalizeAuditPayload(data, user, type) {
@@ -1063,6 +1067,7 @@ async function routeHandler(req, res) {
       track_stock: defaults.default_product_track_stock !== 'false',
       quick_created: true,
     };
+    await assertProductBarcodeAvailable(sql, user.market_id, productPayload);
     const auditPayload = {
       action_type: 'produto_cadastrado_rapido',
       entity_type: 'product',
@@ -1426,6 +1431,10 @@ async function routeHandler(req, res) {
       });
     const hash = await bcrypt.hash(req.body.password, 12);
     const email = String(req.body.email).trim().toLowerCase();
+    if (req.body.avatar_color !== undefined && user.role !== 'admin')
+      return send(res, 403, { message: 'Apenas administradores podem escolher a cor do avatar.' });
+    const avatarColor = req.body.avatar_color === undefined ? randomAvatarColor() : normalizeAvatarColor(req.body.avatar_color);
+    if (!avatarColor) return send(res, 400, { message: 'Escolha uma das cores de avatar disponíveis.' });
     const photoUrl = req.body.photo_url
       ? normalizeImageValue(req.body.photo_url)
       : null;
@@ -1467,7 +1476,7 @@ async function routeHandler(req, res) {
     const legacyClosingTime =
       Object.values(resolvedClosingSchedule)[0] || closingTime;
     const [created] =
-      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,cash_closing_time_enabled,cash_closing_min_time,cash_closing_schedule) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${closingTimeEnabled},${legacyClosingTime}::time,${JSON.stringify(resolvedClosingSchedule)}::jsonb) RETURNING id,email,full_name,role,photo_url,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
+      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,cash_closing_min_time,cash_closing_schedule) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${avatarColor},${closingTimeEnabled},${legacyClosingTime}::time,${JSON.stringify(resolvedClosingSchedule)}::jsonb) RETURNING id,email,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
     return send(res, 201, created);
   }
   if (path[0] === 'sales')
@@ -1502,8 +1511,8 @@ async function routeHandler(req, res) {
     const seenNames = new Set();
     const seenBarcodes = new Set();
     const cleanProducts = normalizedProducts.filter((product) => {
-      const nameKey = productNameKey(product.name);
       const barcodeKey = text(product.barcode, 180);
+      const nameKey = `${productNameKey(product.name)}|${barcodeKey}`;
       if (
         seenNames.has(nameKey) ||
         (barcodeKey && seenBarcodes.has(barcodeKey))
@@ -1540,7 +1549,10 @@ async function routeHandler(req, res) {
       const match =
         (isUuid(product.id) && existingById.get(product.id)) ||
         (product.barcode && existingByBarcode.get(product.barcode)) ||
-        existingByName.get(productNameKey(product.name));
+        (() => {
+          const named = existingByName.get(productNameKey(product.name));
+          return named && (!product.barcode || !named.data?.barcode || product.barcode === named.data.barcode) ? named : null;
+        })();
       if (match) {
         existingCount += 1;
         if (existingMode === 'keep') continue;
@@ -1593,6 +1605,14 @@ async function routeHandler(req, res) {
         return send(res, 409, {
           message: `O código de barras ${conflict.barcode} já pertence a outro produto.`,
         });
+    }
+    const candidates = existingRows.map((row) => ({ ...row.data, id: row.id }));
+    for (const product of cleanProducts) {
+      const message = productDuplicateMessage(product, candidates, product.id || null);
+      if (message) throw new AppError(409, 'DUPLICATE_PRODUCT', message);
+      const index = candidates.findIndex((item) => item.id === product.id);
+      if (index >= 0) candidates[index] = product;
+      else candidates.push(product);
     }
     const payload = JSON.stringify(cleanProducts);
     await sql`WITH input AS (SELECT item FROM jsonb_array_elements(${payload}::jsonb) item), updated AS (UPDATE nexo.records record SET data=record.data || (input.item-'id'),updated_date=now() FROM input WHERE input.item?'id' AND record.id=(input.item->>'id')::uuid AND record.market_id=${user.market_id} AND record.entity='products') INSERT INTO nexo.records(market_id,entity,data) SELECT ${user.market_id},'products',item FROM input WHERE NOT item?'id'`;

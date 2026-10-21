@@ -243,18 +243,18 @@ export default function CashRegisterModal({
                     />
                   )}
                   {canSeeCashBalances && <div
-                    className={`cash-reconcile-segment p-[clamp(0.625rem,2cqi,0.75rem)] ${hasCountedCash && !isBalanced ? "bg-amber-500/[0.07]" : "bg-emerald-500/[0.07]"}`}
+                    className={`cash-reconcile-segment p-[clamp(0.625rem,2cqi,0.75rem)] ${hasCountedCash && !isBalanced ? difference > 0 ? "bg-blue-500/[0.07]" : "bg-amber-500/[0.07]" : "bg-emerald-500/[0.07]"}`}
                   >
                     <span className="block text-[11px] font-bold uppercase tracking-[0.045em] text-muted-foreground">
                       Diferença
                     </span>
                     <strong
-                      className={`mt-1 block text-xl font-bold tabular-nums sm:text-2xl ${hasCountedCash && !isBalanced ? "text-amber-700 dark:text-amber-300" : "text-accent"}`}
+                      className={`mt-1 block text-xl font-bold tabular-nums sm:text-2xl ${hasCountedCash && !isBalanced ? difference > 0 ? "text-blue-700 dark:text-blue-300" : "text-amber-700 dark:text-amber-300" : "text-foreground"}`}
                     >
                       {hasCountedCash ? formatCurrency(difference) : "—"}
                     </strong>
                     <span
-                      className={`mt-2 inline-flex items-center gap-1.5 text-xs font-bold ${hasCountedCash && !isBalanced ? "text-amber-700 dark:text-amber-300" : "text-accent"}`}
+                      className={`mt-2 inline-flex items-center gap-1.5 text-xs font-bold ${hasCountedCash && !isBalanced ? difference > 0 ? "text-blue-700 dark:text-blue-300" : "text-amber-700 dark:text-amber-300" : "text-accent"}`}
                     >
                       {hasCountedCash && isBalanced ? (
                         <CheckCircle2 className="h-4 w-4" />
