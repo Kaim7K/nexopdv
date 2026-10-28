@@ -20,12 +20,12 @@
       "destination": "/api/index?path=$1"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap.xml"
+      "source": "/",
+      "destination": "/index.html"
     },
     {
       "source": "/((?!api/|assets/|landing/|brand/|manifest.json|robots.txt|sitemap.xml|nexo-icon.svg|nexo-pdv-og.png).*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     }
   ],
   "headers": [
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "source": "/(login|pdv|estoque|produto/:path*|vendas|fiados|relatorios|usuarios|configuracoes|auditoria|admin/:path*)",
+      "source": "/:path((?:login|pdv|estoque|produto|vendas|caixas|fiados|relatorios|financeiro|usuarios|configuracoes|auditoria|admin|api|app\\.html)(?:/.*)?)",
       "headers": [
         {
           "key": "X-Robots-Tag",

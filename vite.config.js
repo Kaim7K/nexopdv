@@ -3,10 +3,21 @@ import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'private-preview-shell',
+    configurePreviewServer(server) {
+      // Match the production SPA rewrite without serving landing HTML on private URLs.
+      server.middlewares.use((req, _res, next) => {
+        const pathname = new URL(req.url, 'http://localhost').pathname;
+        if (pathname !== '/' && !pathname.split('/').pop().includes('.')) req.url = '/app.html';
+        next();
+      });
+    },
+  }],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
     chunkSizeWarningLimit: 550,
+    manifest: true,
     rollupOptions: {
       output: {
         manualChunks(id) {

@@ -1,3 +1,4 @@
+import { SITE_ORIGIN } from '@/config/seo';
 import { useEffect } from 'react';
 
 function upsertMeta(selector, attributes) {
@@ -47,10 +48,11 @@ export function usePageMetadata({
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: title || 'Nexo PDV' });
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
 
-    const origin = window.location.origin;
+    const origin = SITE_ORIGIN;
     const canonical = canonicalPath ? new URL(canonicalPath, origin).toString() : '';
     setCanonical(canonical);
     if (canonical) upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
+    else document.head.querySelector('meta[property="og:url"]')?.remove();
     if (imagePath) {
       const image = new URL(imagePath, origin).toString();
       upsertMeta('meta[property="og:image"]', { property: 'og:image', content: image });

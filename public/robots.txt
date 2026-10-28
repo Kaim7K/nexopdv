@@ -11,3 +11,10 @@ Disallow: /usuarios
 Disallow: /configuracoes
 Disallow: /auditoria
 Disallow: /admin/
+Disallow: /caixas
+Disallow: /financeiro
+Disallow: /admin
+Disallow: /api/
+Disallow: /app.html
+
+Sitemap: https://nexopdvnovo.vercel.app/sitemap.xml

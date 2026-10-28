@@ -22,6 +22,7 @@ import {
   WalletCards,
   Zap,
 } from 'lucide-react';
+import { SITE_ORIGIN } from '@/config/seo';
 import { usePageMetadata } from '@/hooks/use-page-metadata';
 
 const APP_IMAGES = {
@@ -458,59 +459,61 @@ function PlanCard({ plan, contactHref }) {
   );
 }
 
+// Shared by the public-only build renderer and the browser.
+export function getLandingStructuredData() {
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Nexo PDV',
+      url: `${SITE_ORIGIN}/`,
+      logo: `${SITE_ORIGIN}/brand/nexo-logo.svg`,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'Nexo PDV',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description:
+        'Sistema PDV web para mercadinhos com caixa, estoque, fiados, financeiro, relatórios e controle de equipe.',
+      offers: {
+        '@type': 'AggregateOffer',
+        lowPrice: '79',
+        highPrice: '229',
+        priceCurrency: 'BRL',
+        availability: 'https://schema.org/InStock',
+      },
+      featureList: [
+        'PDV web',
+        'Controle de estoque',
+        'Relatórios de vendas',
+        'Controle de fiados',
+        'Financeiro',
+        'Permissões de usuários',
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQS.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    },
+  ];
+}
+
 export default function Landing() {
   const contactHref = getWhatsAppHref();
   useLandingReveal();
 
   const structuredData = useMemo(
-    () => [
-      {
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        name: 'Nexo PDV',
-        url: typeof window === 'undefined' ? undefined : window.location.origin,
-        logo:
-          typeof window === 'undefined'
-            ? undefined
-            : `${window.location.origin}/brand/nexo-logo.svg`,
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'Nexo PDV',
-        applicationCategory: 'BusinessApplication',
-        operatingSystem: 'Web',
-        description:
-          'Sistema PDV web para mercadinhos com caixa, estoque, fiados, financeiro, relatórios e controle de equipe.',
-        offers: {
-          '@type': 'AggregateOffer',
-          lowPrice: '79',
-          highPrice: '229',
-          priceCurrency: 'BRL',
-          availability: 'https://schema.org/InStock',
-        },
-        featureList: [
-          'PDV web',
-          'Controle de estoque',
-          'Relatórios de vendas',
-          'Controle de fiados',
-          'Financeiro',
-          'Permissões de usuários',
-        ],
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: FAQS.map((item) => ({
-          '@type': 'Question',
-          name: item.question,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: item.answer,
-          },
-        })),
-      },
-    ],
+    getLandingStructuredData,
     [],
   );
 
