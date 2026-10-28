@@ -605,7 +605,10 @@ function entityApi(name) {
       withDb((db) => {
         const items = collection(db, name);
         const index = items.findIndex((item) => item.id === itemId);
-        if (index >= 0) items.splice(index, 1);
+        if (index >= 0) {
+          if (name === 'Product') { db.productTrash ||= []; db.productTrash.push({ ...clone(items[index]), deleted_at: nowIso() }); }
+          items.splice(index, 1);
+        }
         return { ok: true };
       }),
   };
@@ -841,6 +844,15 @@ export const mockNexoApi = {
         db.products.unshift(product);
         return { created: true, product };
       }),
+    trash: (page = 1) => withDb((db) => ({ items: (db.productTrash || []).slice((page - 1) * 25, page * 25), page, page_count: Math.max(1, Math.ceil((db.productTrash || []).length / 25)), legacy_incidents: [] })),
+    restore: (productId) => withDb((db) => {
+      const product = (db.productTrash || []).find((item) => item.id === productId);
+      if (!product) { if (db.products.some((item) => item.id === productId)) return { restored: true }; throw new Error('Copia nao encontrada na lixeira.'); }
+      assertMockProductAvailable(product, db.products);
+      const { deleted_at: _date, ...original } = product; db.products.push(original);
+      db.productTrash = db.productTrash.filter((item) => item.id !== productId);
+      return { restored: true, id: productId };
+    }),
     deleteInactive: () => Promise.reject(new Error('Limpeza de produtos suspensa por seguranca. Nenhum produto foi excluido.')),
   },
   stock: {

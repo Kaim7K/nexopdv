@@ -87,6 +87,8 @@ const realNexoApi = {
         },
         timeout: 60_000,
       }),
+    trash: (page = 1) => request(`/products/trash?page=${page}`, { cacheTTL: 0 }),
+    restore: (id) => request(`/products/trash/${encodeURIComponent(id)}/restore`, { method: 'POST', body: {} }),
     deleteInactive: () =>
       request('/products/delete-inactive', {
         method: 'POST',

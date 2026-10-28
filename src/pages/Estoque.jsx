@@ -1,3 +1,4 @@
+import ProductTrash from '@/components/stock/ProductTrash';
 import { hasPlanFeature } from '@/lib/plan-catalog';
 import React, {
   lazy,
@@ -85,6 +86,7 @@ export default function Estoque() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [showTrash, setShowTrash] = useState(false);
   const [deletingInactive, setDeletingInactive] = useState(false);
 
   const load = async () => {
@@ -471,10 +473,10 @@ export default function Estoque() {
   const handleDeleteProduct = async (product) => {
     if (!['admin', 'gerente'].includes(user.role) || deletingId) return;
     const confirmed = await confirm({
-      title: `Excluir "${product.name}"?`,
+      title: `Enviar "${product.name}" à lixeira?`,
       description:
-        'O produto será removido do cadastro. As vendas anteriores e seus registros de auditoria continuarão preservados.',
-      confirmLabel: 'Excluir produto',
+        'O produto será enviado à lixeira com uma cópia completa para restauração. As vendas anteriores continuarão preservadas.',
+      confirmLabel: 'Enviar à lixeira',
       tone: 'destructive',
     });
     if (!confirmed) return;
@@ -490,7 +492,7 @@ export default function Estoque() {
         next.delete(product.id);
         return next;
       });
-      toast.success('Produto excluído do estoque.');
+      toast.success('Produto enviado à lixeira. Use “Lixeira / recuperar produtos” para desfazer.');
     } catch (error) {
       if (error.status === 404) {
         setProducts((current) =>
@@ -624,6 +626,11 @@ export default function Estoque() {
           saving={saving}
           dirtyCount={dirty.size}
           canDeleteInactive={false}
+          canRecover={['admin', 'gerente'].includes(user.role)}
+          onRecovery={() => {
+            if (dirty.size) { toast.error('Salve as alterações do estoque antes de abrir a lixeira.'); return; }
+            setShowTrash(true);
+          }}
           deletingInactive={deletingInactive}
           inactiveCount={inactiveCandidates.length}
           onExport={download}
@@ -758,6 +765,8 @@ export default function Estoque() {
           onPageChange={setPage}
         />
       )}
+
+      {showTrash && <ProductTrash onClose={() => setShowTrash(false)} onRestored={() => { nexoApi.cache.clear('/products'); nexoApi.cache.clear('/entities/Product'); void load(); }} />}
 
       {productModal?.mode === 'loading' && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">

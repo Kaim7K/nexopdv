@@ -1,3 +1,4 @@
+import { handleProductTrash } from '../server/product-trash.js';
 import { publicPlanOffers } from '../server/public-plans.js';
 import { planAccessError } from '../server/plan-access.js';
 import { hasPlanFeature } from '../src/lib/plan-catalog.js';
@@ -858,6 +859,9 @@ async function routeHandler(req, res) {
   const accessError = moduleAccessError(user, path, req.method);
   if (accessError) return send(res, 403, { message: accessError });
 
+  if (path[0] === 'products' && path[1] === 'trash')
+    return handleProductTrash({ req, res, sql, user, path });
+
   if (path[0] === 'finance')
     return handleFinanceRequest({ req, res, sql, user, path });
 
@@ -1128,7 +1132,7 @@ async function routeHandler(req, res) {
       });
     return send(res, 410, {
       code: 'UNSAFE_PRODUCT_CLEANUP_DISABLED',
-      message: 'A limpeza de produtos foi suspensa para proteger o estoque. Nenhum produto foi excluido. Utilize a edicao individual enquanto a recuperacao e revisada.',
+      message: 'A limpeza de produtos foi suspensa para proteger o estoque. Nenhum produto foi excluído. Utilize a edição individual enquanto a recuperação é revisada.',
     });
   }
 

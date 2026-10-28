@@ -1,3 +1,4 @@
+import { archiveProduct } from '../product-trash.js';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { roundMoney } from '../cash-summary.js';
@@ -667,37 +668,11 @@ export async function handleEntityRequest(
   }
   if (table === 'products' && req.method === 'DELETE') {
     if (!isUuid(id)) return send(res, 400, { message: 'Produto inválido.' });
-    const [removed] = await sql`
-      DELETE FROM nexo.records
-      WHERE id=${id} AND market_id=${user.market_id} AND entity='products'
-      RETURNING id,data
-    `;
-    if (!removed)
-      return send(res, 404, {
-        message: 'Produto não encontrado ou já excluído.',
-      });
-    try {
-      const auditData = {
-        action_type: 'produto_excluido',
-        entity_type: 'product',
-        entity_id: removed.id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        description: `Produto ${text(removed.data?.name, 180) || 'sem nome'} excluído do estoque`,
-        details: {
-          barcode: text(removed.data?.barcode, 180),
-          internal_code: text(removed.data?.internal_code, 180),
-        },
-      };
-      await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditData)}::jsonb)`;
-    } catch (auditError) {
-      console.error(
-        'Falha ao auditar exclusão de produto:',
-        auditError?.message,
-      );
-    }
-    return send(res, 200, { ok: true });
+    const removed = await archiveProduct(sql, user, id);
+    if (!removed) return send(res, 404, { message: 'Produto não encontrado ou já enviado à lixeira.' });
+    return send(res, 200, { ok: true, recoverable: true, id });
   }
+
   if (req.method === 'DELETE') {
     if (!isUuid(id))
       return send(res, 400, { message: 'Identificador inválido.' });

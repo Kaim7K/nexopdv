@@ -22,7 +22,9 @@
     "visual:responsive": "node scripts/visual-responsive-check.mjs",
     "test:seo": "node tests/seo.test.mjs",
     "test:launch": "node tests/launch-plans.test.mjs && node tests/launch-browser.mjs",
-    "capture:landing": "node scripts/capture-landing-product.mjs"
+    "capture:landing": "node scripts/capture-landing-product.mjs",
+    "test:recovery:sql": "node tests/product-trash-sql.test.mjs",
+    "test:recovery:browser": "node tests/product-trash-browser.test.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

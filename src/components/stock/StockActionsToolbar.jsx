@@ -3,6 +3,8 @@ import { ChevronDown, Download, Plus, Save, Trash2, Upload } from 'lucide-react'
 
 /**
  * @typedef {Object} StockActionsProps
+ * @property {boolean} [canRecover]
+ * @property {() => void} [onRecovery]
  * @property {boolean} loading
  * @property {boolean} exporting
  * @property {boolean} importing
@@ -24,6 +26,8 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
   fileRef,
 ) {
   const {
+    canRecover = false,
+    onRecovery,
     loading,
     exporting,
     importing,
@@ -80,6 +84,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
         </button>
       </div>
 
+      {canRecover && <button type="button" onClick={onRecovery} disabled={loading || saving || importing} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold hover:bg-muted disabled:opacity-50"><Trash2 className="h-4 w-4" /> Lixeira / recuperar produtos</button>}
       <details className="group mobile-secondary-panel sm:hidden">
         <summary className="mobile-secondary-summary">
           <span>Mais ações</span>
