@@ -35,7 +35,6 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
     dirtyCount,
     canDeleteInactive,
     deletingInactive,
-    inactiveCount,
     onExport,
     onImport,
     onSave,
@@ -54,7 +53,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
       : 'Salvo';
   const inactiveLabel = deletingInactive
     ? 'Apagando...'
-    : `Inativos${inactiveCount ? ` (${inactiveCount})` : ''}`;
+    : 'Revisar sem venda (3 meses)';
 
   return (
     <div className="grid w-full min-w-0 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2 xl:w-auto xl:flex-nowrap">
@@ -110,7 +109,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
               destructive
               icon={Trash2}
               onClick={onDeleteInactive}
-              disabled={deletingInactive || !inactiveCount || loading}
+              disabled={deletingInactive || loading || saving || importing}
             >
               {inactiveLabel}
             </SecondaryButton>
@@ -138,8 +137,8 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
             destructive
             icon={Trash2}
             onClick={onDeleteInactive}
-            disabled={deletingInactive || !inactiveCount || loading}
-            title="Apaga produtos que não possuem venda há pelo menos 2 meses"
+            disabled={deletingInactive || loading || saving || importing}
+            title="Apaga produtos que não possuem venda há pelo menos 3 meses"
           >
             {inactiveLabel}
           </SecondaryButton>

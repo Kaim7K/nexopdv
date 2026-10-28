@@ -89,10 +89,11 @@ const realNexoApi = {
       }),
     trash: (page = 1) => request(`/products/trash?page=${page}`, { cacheTTL: 0 }),
     restore: (id) => request(`/products/trash/${encodeURIComponent(id)}/restore`, { method: 'POST', body: {} }),
-    deleteInactive: () =>
-      request('/products/delete-inactive', {
+    previewInactive: () => request('/products/inactive-cleanup', { cacheTTL: 0 }),
+    deleteInactive: (products) =>
+      request('/products/inactive-cleanup', {
         method: 'POST',
-        body: { confirmation: 'APAGAR_INATIVOS' },
+        body: { confirmation: 'LIXEIRA_SEM_VENDA_3_MESES', products },
         timeout: 60_000,
       }),
   },

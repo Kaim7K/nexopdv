@@ -86,9 +86,8 @@ export default function ProductTrash({ onClose, onRestored }) {
         </header>
         <div className="modal-body space-y-4">
           <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-            A limpeza automática de inativos está suspensa. A lixeira protege as
-            exclusões feitas após esta atualização. Produtos apagados
-            anteriormente sem cópia precisam de recuperação a partir de backup.
+            Produtos removidos pela limpeza de 3 meses podem ser recuperados aqui.
+            Exclusões antigas sem cópia precisam de recuperação a partir de backup.
           </p>
           {error && (
             <p role="alert" className="text-sm text-destructive">

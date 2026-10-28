@@ -39,3 +39,16 @@ O `apply` valida o incidente/mercado e a integridade do manifesto, bloqueia a li
 - Para testar as consultas em PostgreSQL isolado, sem credenciais de produção: `npm install --prefix artifacts/recovery-sql --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.5.13`, seguido de `node tests/product-trash-sql.test.mjs`. Verifica snapshot integral, rollback por falha de auditoria, isolamento entre mercados, permissões, conflitos e repetição de restauração.
 
 Nenhum desses testes acessa ou recupera o banco oficial. O utilitário de recuperação só deve ser aplicado à origem histórica e ao destino explicitamente verificados.
+
+
+## Limpeza corrigida: tres meses sem venda
+
+O botao Revisar sem venda (3 meses) consulta o servidor autenticado. Considera
+vendas concluidas do historico e last_sale_at; nunca vendidos usam cadastro.
+Tres meses sao meses de calendario, incluindo o instante limite. O status ativo
+ou a quantidade em estoque nao substituem a regra de ausencia de vendas.
+A lista confirmada tem IDs e versoes explicitos. Se algum item mudar ou deixar
+de ser elegivel, o lote e recusado. Sao processados ate 3000 itens por revisao.
+A operacao move snapshots completos para product_trash e audita atomicamente;
+nao apaga historico de vendas. A rota antiga permanece bloqueada para clientes antigos.
+Teste PostgreSQL isolado: node tests/product-inactive-sql.test.mjs

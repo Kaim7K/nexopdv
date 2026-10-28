@@ -1,3 +1,4 @@
+import { handleInactiveCleanup } from '../server/product-inactive.js';
 import { handleProductTrash } from '../server/product-trash.js';
 import { publicPlanOffers } from '../server/public-plans.js';
 import { planAccessError } from '../server/plan-access.js';
@@ -1119,6 +1120,8 @@ async function routeHandler(req, res) {
       );
     return send(res, 200, { product: recordFromRow(existing), created: false });
   }
+
+  if (path[0] === 'products' && path[1] === 'inactive-cleanup') return handleInactiveCleanup({req,res,sql,user});
 
   if (path[0] === 'products' && path[1] === 'delete-inactive') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);

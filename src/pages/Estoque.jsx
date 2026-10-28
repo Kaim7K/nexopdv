@@ -510,53 +510,29 @@ export default function Estoque() {
     }
   };
 
-  const inactivityCutoff = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 2);
-    return date;
-  }, [products.length]);
-  const inactiveCandidates = useMemo(
-    () =>
-      products.filter((product) => {
-        const reference = product.last_sale_at || product.created_date;
-        const timestamp = reference ? new Date(reference).getTime() : 0;
-        return (
-          Number.isFinite(timestamp) && timestamp < inactivityCutoff.getTime()
-        );
-      }),
-    [products, inactivityCutoff],
-  );
-
   const handleDeleteInactive = async () => {
-    if (
-      !['admin', 'gerente'].includes(user.role) ||
-      deletingInactive ||
-      !inactiveCandidates.length
-    )
-      return;
-    const confirmed = await confirm({
-      title: `Apagar ${inactiveCandidates.length} produto(s) inativo(s)?`,
-      description:
-        'Serão removidos produtos sem venda há pelo menos dois meses. As vendas antigas continuarão no histórico.',
-      confirmLabel: 'Apagar inativos',
-      tone: 'destructive',
-    });
-    if (!confirmed) return;
+    if (!['admin', 'gerente'].includes(user.role) || deletingInactive || dirty.size) return;
     setDeletingInactive(true);
     try {
-      const result = await nexoApi.products.deleteInactive();
-      toast.success(
-        `${Number(result.deleted || 0)} produto(s) inativo(s) apagado(s).`,
-      );
+      const { products: candidates } = await nexoApi.products.previewInactive();
+      if (!candidates.length) { toast('Nenhum produto sem venda há 3 meses.'); return; }
+      const confirmed = await confirm({
+        title: `Enviar ${candidates.length} produto(s) à lixeira?`,
+        description: <span className="block max-h-[45vh] overflow-y-auto text-left" tabIndex={0}>
+          Sem vendas há pelo menos 3 meses. Para itens nunca vendidos, conta a data de cadastro.
+          Todos poderão ser recuperados pela lixeira.
+          {candidates.map(p => <span className="block py-1" key={p.id}>{p.name}</span>)}
+        </span>,
+        confirmLabel: 'Enviar à lixeira', tone: 'destructive',
+      });
+      if (!confirmed) return;
+      const result = await nexoApi.products.deleteInactive(candidates.map(({id,updated_date})=>({id,updated_date})));
+      toast.success(`${result.deleted} produto(s) enviados à lixeira. É possível desfazer.`);
+      nexoApi.cache.clear('/products');
       captureView();
       await load();
-    } catch (error) {
-      toast.error(
-        error.message || 'Não foi possível apagar os produtos inativos.',
-      );
-    } finally {
-      setDeletingInactive(false);
-    }
+    } catch(error) { toast.error(error.message || 'Não foi possível limpar os produtos.'); }
+    finally { setDeletingInactive(false); }
   };
 
   const hasFilters = Boolean(
@@ -625,14 +601,14 @@ export default function Estoque() {
           importing={importing}
           saving={saving}
           dirtyCount={dirty.size}
-          canDeleteInactive={false}
+          canDeleteInactive={['admin', 'gerente'].includes(user.role) && !dirty.size}
           canRecover={['admin', 'gerente'].includes(user.role)}
           onRecovery={() => {
             if (dirty.size) { toast.error('Salve as alterações do estoque antes de abrir a lixeira.'); return; }
             setShowTrash(true);
           }}
           deletingInactive={deletingInactive}
-          inactiveCount={inactiveCandidates.length}
+          inactiveCount={0}
           onExport={download}
           onImport={uploadSpreadsheet}
           onSave={saveInline}

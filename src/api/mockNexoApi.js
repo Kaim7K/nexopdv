@@ -853,6 +853,7 @@ export const mockNexoApi = {
       db.productTrash = db.productTrash.filter((item) => item.id !== productId);
       return { restored: true, id: productId };
     }),
+    previewInactive: () => Promise.reject(new Error('Limpeza dispon?vel apenas no servidor autenticado.')),
     deleteInactive: () => Promise.reject(new Error('Limpeza de produtos suspensa por seguranca. Nenhum produto foi excluido.')),
   },
   stock: {
