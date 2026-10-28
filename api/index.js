@@ -1126,48 +1126,10 @@ async function routeHandler(req, res) {
       return send(res, 403, {
         message: 'Sem permissão para apagar produtos inativos.',
       });
-    if (req.body.confirmation !== 'APAGAR_INATIVOS')
-      return send(res, 400, { message: 'Confirmação inválida.' });
-    const removed = await sql`
-      WITH candidates AS (
-        SELECT id, data
-        FROM nexo.records
-        WHERE market_id=${user.market_id}
-          AND entity='products'
-          AND COALESCE(
-            CASE
-              WHEN COALESCE(data->>'last_sale_at','') ~ '^\d{4}-\d{2}-\d{2}T' THEN (data->>'last_sale_at')::timestamptz
-              ELSE NULL
-            END,
-            created_date
-          ) < now() - interval '2 months'
-      )
-      DELETE FROM nexo.records product
-      USING candidates
-      WHERE product.id=candidates.id
-      RETURNING product.id
-    `;
-    const deleted = removed.length;
-    if (deleted) {
-      try {
-        const auditData = {
-          action_type: 'produtos_inativos_excluidos',
-          entity_type: 'product',
-          entity_id: null,
-          user_id: user.id,
-          user_name: user.full_name || user.email,
-          description: `${deleted} produto(s) sem venda há 2 meses foram excluídos`,
-          details: { deleted },
-        };
-        await sql`INSERT INTO nexo.records(market_id,entity,data) VALUES(${user.market_id},'general_audits',${JSON.stringify(auditData)}::jsonb)`;
-      } catch (auditError) {
-        console.error(
-          'Falha ao auditar exclusão de produtos inativos:',
-          auditError?.message,
-        );
-      }
-    }
-    return send(res, 200, { deleted });
+    return send(res, 410, {
+      code: 'UNSAFE_PRODUCT_CLEANUP_DISABLED',
+      message: 'A limpeza de produtos foi suspensa para proteger o estoque. Nenhum produto foi excluido. Utilize a edicao individual enquanto a recuperacao e revisada.',
+    });
   }
 
   if (path[0] === 'products' && path[1] === 'catalog') {

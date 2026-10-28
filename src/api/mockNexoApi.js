@@ -841,12 +841,7 @@ export const mockNexoApi = {
         db.products.unshift(product);
         return { created: true, product };
       }),
-    deleteInactive: () =>
-      withDb((db) => {
-        const before = db.products.length;
-        db.products = db.products.filter((product) => product.status !== 'inativo');
-        return { deleted: before - db.products.length };
-      }),
+    deleteInactive: () => Promise.reject(new Error('Limpeza de produtos suspensa por seguranca. Nenhum produto foi excluido.')),
   },
   stock: {
     bulkUpdate: (products) =>

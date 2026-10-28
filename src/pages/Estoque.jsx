@@ -623,7 +623,7 @@ export default function Estoque() {
           importing={importing}
           saving={saving}
           dirtyCount={dirty.size}
-          canDeleteInactive={hasPlanFeature(user, 'advanced_stock') && ['admin', 'gerente'].includes(user.role)}
+          canDeleteInactive={false}
           deletingInactive={deletingInactive}
           inactiveCount={inactiveCandidates.length}
           onExport={download}
