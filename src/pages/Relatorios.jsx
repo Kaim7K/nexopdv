@@ -1,3 +1,6 @@
+import { BasicReports } from '@/components/plans/BasicOperations';
+import { hasPlanFeature } from '@/lib/plan-catalog';
+import { useAuth } from '@/lib/AuthContext';
 import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -61,6 +64,11 @@ const PaymentChart = lazy(() =>
 );
 
 export default function Relatorios() {
+  const { user } = useAuth();
+  return hasPlanFeature(user, 'advanced_reports') ? <AdvancedReports /> : <BasicReports />;
+}
+
+function AdvancedReports() {
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

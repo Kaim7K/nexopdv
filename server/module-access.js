@@ -1,3 +1,4 @@
+import { catalogPlan } from '../src/lib/plan-catalog.js';
 const ENTITY_MODULES = {
   Sale: 'vendas',
   FiadoRecord: 'fiados',
@@ -41,7 +42,11 @@ function requiredOptions(path, method) {
 
 export function moduleAccessError(user, path, method) {
   if (user.role === 'super_admin') return null;
-  const enabled = user.enabled_modules || [];
+  const plan = catalogPlan(user);
+  if (plan && path[0] === 'entities' && path[1] === 'FiadoRecord' && !plan.enabled_modules.includes('fiados')) {
+    return 'Fiados não estão incluídos neste plano.';
+  }
+  const enabled = (user.enabled_modules || []).filter((key) => !plan || plan.enabled_modules.includes(key));
   const options = requiredOptions(path, method);
   if (options.length && !options.some((module) => enabled.includes(module))) {
     return 'Esta funcionalidade não está habilitada para o mercado.';

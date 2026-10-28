@@ -21,6 +21,8 @@ export function PdvTopBar({
   userLabel,
   cashOpen,
   cashLoading,
+  showCash = true,
+  canMinimize = true,
   hasItems,
   canUsePdv,
   onCashClick,
@@ -55,11 +57,9 @@ export function PdvTopBar({
           <span className="flex items-center gap-1.5">
             <Kbd>F6</Kbd> Descartar
           </span>
-          <span className="flex items-center gap-1.5">
-            <Kbd>F7</Kbd> Minimizar
-          </span>
+          {canMinimize && <span className="flex items-center gap-1.5"><Kbd>F7</Kbd> Minimizar</span>}
         </div>
-        <button
+        {showCash && <button
           type="button"
           onClick={onCashClick}
           disabled={cashLoading}
@@ -78,7 +78,7 @@ export function PdvTopBar({
           <span className="hidden sm:inline">
             {cashOpen ? 'Caixa aberto' : 'Abrir caixa'}
           </span>
-        </button>
+        </button>}
         <button
           type="button"
           onClick={onPriceCorrection}

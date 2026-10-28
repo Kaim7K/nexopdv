@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '@/lib/plan-catalog';
 import React, {
   lazy,
   Suspense,
@@ -187,6 +188,8 @@ export default function PDV() {
   }, []);
 
   const canUsePdv = canUseOperationalCash;
+  const canUseCash = hasPlanFeature(user, 'cash_management');
+  const canUseSimultaneous = hasPlanFeature(user, 'simultaneous_sales');
   const continuePath = useMemo(() => {
     const enabled = Array.isArray(user.enabled_modules)
       ? user.enabled_modules
@@ -778,6 +781,7 @@ export default function PDV() {
         };
 
   const handleMinimize = (draft = {}) => {
+    if (!canUseSimultaneous) { toast.error('Vendas simultâneas disponíveis a partir do Profissional.'); return; }
     const saleToMinimize = { ...activeSale, ...draft };
     if (!saleToMinimize.items.length) return;
     if (minimizedSales.length >= maxMinimized) {
@@ -886,6 +890,8 @@ export default function PDV() {
         temporaryNumber={activeSale.temporary_number}
         userLabel={user.full_name || user.email}
         cashOpen={Boolean(cashState.session)}
+        showCash={canUseCash}
+        canMinimize={canUseSimultaneous}
         cashLoading={cashLoading}
         hasItems={Boolean(activeSale.items.length)}
         canUsePdv={canUsePdv}
@@ -931,7 +937,7 @@ export default function PDV() {
               onRemoveItem={removeItem}
               canDiscount
               minimizedCount={minimizedSales.length}
-              maxMinimized={maxMinimized}
+              maxMinimized={canUseSimultaneous ? maxMinimized : 0}
             />
           </div>
         </div>
@@ -941,6 +947,8 @@ export default function PDV() {
         {showPayment && canUsePdv && (
           <PaymentModal
             sale={activeSale}
+            allowFiado={(user.enabled_modules || []).includes('fiados')}
+            canMinimize={canUseSimultaneous}
             onClose={() => setShowPayment(false)}
             onComplete={completeSale}
             onMinimize={(draft) => {

@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '@/lib/plan-catalog';
 import {
   createContext,
   useCallback,
@@ -11,8 +12,8 @@ import { nexoApi } from '@/api/nexoApi';
 const CashRegisterContext = createContext(null);
 
 const emptyCashState = (user) => ({
-  required: user?.role === 'vendedor' && Boolean(user?.require_cash_register),
-  market_requires_cash: Boolean(user?.require_cash_register),
+  required: user?.role === 'vendedor' && Boolean(user?.require_cash_register) && hasPlanFeature(user, 'cash_management'),
+  market_requires_cash: Boolean(user?.require_cash_register) && hasPlanFeature(user, 'cash_management'),
   session: null,
   summary: null,
 });

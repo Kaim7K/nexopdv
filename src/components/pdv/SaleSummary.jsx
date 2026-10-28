@@ -85,7 +85,7 @@ export default function SaleSummary({
 
       {!canMinimize && (
         <div className="-mt-1 flex items-center gap-1 px-4 pb-3 text-xs text-orange-600 dark:text-orange-400">
-          <AlertTriangle className="h-3.5 w-3.5" /> Limite de {maxMinimized} vendas minimizadas atingido
+          <AlertTriangle className="h-3.5 w-3.5" /> {maxMinimized === 0 ? 'Vendas simultâneas disponíveis a partir do Profissional.' : `Limite de ${maxMinimized} vendas minimizadas atingido`}
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { catalogPlan } from '../src/lib/plan-catalog.js';
 import { AppError } from "./errors.js";
 import {
   buildCashSessionSummary,
@@ -287,7 +288,7 @@ export async function ensureFinanceMaintenance(sql, user) {
 
   const promise = (async () => {
     await ensureFinanceSetup(sql, user);
-    await generateRecurringTransactions(sql, marketId);
+    if (!catalogPlan(user) || catalogPlan(user).key === 'completo') await generateRecurringTransactions(sql, marketId);
   })();
   financeMaintenance.set(marketId, { promise, completedAt: 0 });
   try {

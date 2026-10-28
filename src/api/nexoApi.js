@@ -95,10 +95,10 @@ const realNexoApi = {
       }),
   },
   stock: {
-    bulkUpdate: (products, existingMode = 'update') =>
+    bulkUpdate: (products, existingMode = 'update', operation = 'import') =>
       request('/stock/import', {
         method: 'POST',
-        body: { products, existing_mode: existingMode },
+        body: { products, existing_mode: existingMode, operation },
         timeout: 60_000,
       }),
   },

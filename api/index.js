@@ -1,3 +1,7 @@
+import { publicPlanOffers } from '../server/public-plans.js';
+import { planAccessError } from '../server/plan-access.js';
+import { hasPlanFeature } from '../src/lib/plan-catalog.js';
+import { COMMERCIAL_FEATURES, PLAN_MARKERS, catalogConfigurationError } from '../src/lib/plan-catalog.js';
 import bcrypt from 'bcryptjs';
 import { productDuplicateMessage } from '../src/lib/product-duplicates.js';
 import { randomUUID } from 'node:crypto';
@@ -70,6 +74,7 @@ const MARKET_MODULES = [
   'configuracoes',
 ];
 const MARKET_FEATURES = [
+  ...COMMERCIAL_FEATURES, ...PLAN_MARKERS,
   'email_sending',
   'email_branding',
   'market_logo',
@@ -130,7 +135,7 @@ const text = (value, max = 500) =>
     .slice(0, max);
 const hasFeature = (user, feature) =>
   user.role === 'super_admin' ||
-  (user.enabled_features || []).includes(feature);
+  ((user.enabled_features || []).includes(feature) && hasPlanFeature(user, feature));
 const productNameKey = (value) =>
   text(value, 180)
     .normalize('NFD')
@@ -780,6 +785,13 @@ async function routeHandler(req, res) {
     return send(res, 200, { ok: true, processed: results.length, results });
   }
 
+  if (path[0] === 'public' && path[1] === 'plans' && path.length === 2) {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    const rows = await sql`SELECT name,monthly_price,user_limit,enabled_modules,enabled_features,active FROM nexo.plans WHERE active=true ORDER BY monthly_price,name`;
+    res.setHeader('Cache-Control', 'no-store');
+    return send(res, 200, { plans: publicPlanOffers(rows) });
+  }
+
   if (path[0] === 'auth' && path[1] === 'login') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     const authenticated = await authenticateCredentials(sql, req.body);
@@ -841,6 +853,8 @@ async function routeHandler(req, res) {
     });
     return send(res, 200, result);
   }
+  const planError = planAccessError(user, path, req.method, req.body || {});
+  if (planError) return send(res, 403, { code: 'FEATURE_NOT_AVAILABLE', message: planError });
   const accessError = moduleAccessError(user, path, req.method);
   if (accessError) return send(res, 403, { message: accessError });
 
@@ -1393,6 +1407,7 @@ async function routeHandler(req, res) {
       { req, res, sql, user, path },
       {
         MARKET_FEATURES,
+        catalogConfigurationError,
         MARKET_MODULES,
         isUuid,
         normalizeImageValue,
@@ -1475,8 +1490,12 @@ async function routeHandler(req, res) {
       });
     const legacyClosingTime =
       Object.values(resolvedClosingSchedule)[0] || closingTime;
-    const [created] =
-      await sql`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,cash_closing_min_time,cash_closing_schedule) VALUES(${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${avatarColor},${closingTimeEnabled},${legacyClosingTime}::time,${JSON.stringify(resolvedClosingSchedule)}::jsonb) RETURNING id,email,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
+    const [, createdRows] = await sql.transaction((tx) => [
+      tx`SELECT id FROM nexo.markets WHERE id=${user.market_id} FOR UPDATE`,
+      tx`INSERT INTO nexo.users(market_id,email,password_hash,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,cash_closing_min_time,cash_closing_schedule) SELECT ${user.market_id},${email},${hash},${String(req.body.full_name || email).trim() || email},${req.body.role || 'vendedor'},${photoUrl},${avatarColor},${closingTimeEnabled},${legacyClosingTime}::time,${JSON.stringify(resolvedClosingSchedule)}::jsonb FROM nexo.markets capacity WHERE capacity.id=${user.market_id} AND ((SELECT count(*) FROM nexo.users existing WHERE existing.market_id=capacity.id AND existing.active) < COALESCE(CASE WHEN capacity.enabled_features ? 'catalog:essencial' THEN 1 WHEN capacity.enabled_features ? 'catalog:profissional' THEN 5 WHEN capacity.enabled_features ? 'catalog:completo' THEN 15 ELSE capacity.user_limit END,2147483647)) RETURNING id,email,full_name,role,photo_url,avatar_color,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`,
+    ]);
+    const created = createdRows[0];
+    if (!created) return send(res, 409, { code: 'USER_LIMIT_REACHED', message: 'O limite de usuários do plano foi atingido.' });
     return send(res, 201, created);
   }
   if (path[0] === 'sales')

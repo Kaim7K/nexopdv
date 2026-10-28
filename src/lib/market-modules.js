@@ -1,3 +1,4 @@
+import { COMMERCIAL_FEATURES, hasPlanFeature } from './plan-catalog.js';
 export const MARKET_MODULES = [
   {
     key: 'pdv',
@@ -54,6 +55,7 @@ export const MARKET_MODULES = [
 export const MARKET_MODULE_KEYS = MARKET_MODULES.map((module) => module.key);
 
 export const MARKET_FEATURES = [
+  ...COMMERCIAL_FEATURES.map((key) => ({ key, label: ({ simultaneous_sales: 'Vendas simultâneas', advanced_stock: 'Estoque avançado e edição em lote', advanced_reports: 'Relatórios avançados', advanced_finance: 'Gestão financeira avançada', cash_management: 'Abertura, fechamento e conferência de caixa', advanced_permissions: 'DRE, metas, conciliação e permissões avançadas' })[key], group: 'Plano comercial', description: 'Disponibilidade definida pelo modelo comercial.' })),
   {
     key: 'email_sending',
     label: 'Envio de e-mails',
@@ -129,10 +131,8 @@ export const MARKET_FEATURES = [
   },
 ];
 
-export const MARKET_FEATURE_KEYS = MARKET_FEATURES.map(
-  (feature) => feature.key,
-);
+export const MARKET_FEATURE_KEYS = MARKET_FEATURES.map((feature) => feature.key);
 
 export const hasMarketFeature = (user, feature) =>
   user?.role === 'super_admin' ||
-  (user?.enabled_features || []).includes(feature);
+  ((user?.enabled_features || []).includes(feature) && hasPlanFeature(user, feature));

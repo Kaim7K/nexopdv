@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '../../src/lib/plan-catalog.js';
 import { randomUUID } from 'node:crypto';
 import { roundMoney } from '../cash-summary.js';
 import {
@@ -609,6 +610,7 @@ export async function handleCashRequest(
     }
 
     if (path[1] === 'current') {
+      if (!hasPlanFeature(user, 'cash_management')) return send(res, 200, { required: false, market_requires_cash: false, session: null, summary: null });
       if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
       const session = await findOpenCashSession(sql, user.market_id, user.id);
       const summary = session

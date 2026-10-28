@@ -21,8 +21,9 @@ export default function StockProductViews({
   onInlineEdit,
   hasFilters,
   onClearFilters,
+  advancedReports = true,
 }) {
-  const canViewReports = ['gerente', 'admin'].includes(userRole);
+  const canViewReports = advancedReports && ['gerente', 'admin'].includes(userRole);
 
   if (viewMode === 'grid') {
     return (

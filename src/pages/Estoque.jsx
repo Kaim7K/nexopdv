@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '@/lib/plan-catalog';
 import React, {
   lazy,
   Suspense,
@@ -229,6 +230,11 @@ export default function Estoque() {
   };
 
   const editInline = (id, key, value, type) => {
+    if (!hasPlanFeature(user, 'advanced_stock')) {
+      const product = products.find((item) => item.id === id);
+      if (product) void openProductModal('edit', product);
+      return;
+    }
     setProducts((current) =>
       current.map((product) =>
         product.id === id
@@ -240,6 +246,7 @@ export default function Estoque() {
   };
 
   const saveInline = async () => {
+    if (!hasPlanFeature(user, 'advanced_stock')) { toast.error('Use o formulário do produto para editar no Essencial. Edição em lote disponível no Profissional.'); return; }
     const changed = products.filter((product) => dirty.has(product.id));
     if (!changed.length) return;
     if (
@@ -263,6 +270,7 @@ export default function Estoque() {
             EDITABLE_COLUMNS.map(([key]) => [key, product[key]]),
           ),
         })),
+        'update', 'batch',
       );
       setDirty(new Set());
       setProducts((current) =>
@@ -615,7 +623,7 @@ export default function Estoque() {
           importing={importing}
           saving={saving}
           dirtyCount={dirty.size}
-          canDeleteInactive={['admin', 'gerente'].includes(user.role)}
+          canDeleteInactive={hasPlanFeature(user, 'advanced_stock') && ['admin', 'gerente'].includes(user.role)}
           deletingInactive={deletingInactive}
           inactiveCount={inactiveCandidates.length}
           onExport={download}
@@ -720,6 +728,7 @@ export default function Estoque() {
           />
         ) : (
           <StockProductViews
+              advancedReports={hasPlanFeature(user, 'advanced_reports')}
             viewMode={viewMode}
             products={visibleProducts}
             lowStockThreshold={lowStockThreshold}

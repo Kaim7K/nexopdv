@@ -56,7 +56,7 @@ const METHOD_SHORT_LABELS = {
   fiado: 'Fiado',
 };
 
-export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard }) {
+export default function PaymentModal({ sale, onClose, onComplete, onMinimize, onDiscard, allowFiado = true, canMinimize = true }) {
   const [payments, setPayments] = useState(sale.payments || []);
   const [observation, setObservation] = useState(sale.observation || '');
   const [showFiadoForm, setShowFiadoForm] = useState((sale.payments || []).some(payment => payment.method === 'fiado'));
@@ -227,7 +227,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {PAYMENT_METHODS.map(method => {
+                  {PAYMENT_METHODS.filter(method => allowFiado || method.method !== 'fiado').map(method => {
                     const Icon = METHOD_ICONS[method.method];
                     const alreadySelected = payments.some(payment => payment.method === method.method);
                     const disabled = remaining <= 0 && !alreadySelected;
@@ -287,7 +287,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
         <div className="modal-footer">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <button type="button" onClick={onDiscard} disabled={completing} className="modal-button border border-transparent text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /> Descartar</button>
-            <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing} className="modal-button border border-border bg-background hover:bg-muted"><Minimize2 className="h-4 w-4" /> Minimizar</button>
+            <button type="button" onClick={() => onMinimize({ payments: normalizedPayments(), observation, sale_type: hasFiado ? 'fiado' : 'normal', fiado: hasFiado ? fiadoData : undefined })} disabled={completing || !canMinimize} title={canMinimize ? 'Minimizar venda' : 'Disponível a partir do Profissional'} className="modal-button border border-border bg-background hover:bg-muted"><Minimize2 className="h-4 w-4" /> Minimizar</button>
             <button type="button" onClick={handleComplete} disabled={!payments.length || completing} className="modal-button col-span-2 bg-accent px-5 text-accent-foreground hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground sm:ml-auto"><Check className="h-5 w-5" /> {completing ? 'Concluindo...' : 'Concluir venda'}</button>
           </div>
         </div>

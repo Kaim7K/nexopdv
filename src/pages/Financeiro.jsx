@@ -1,3 +1,6 @@
+import { BasicFinance } from '@/components/plans/BasicOperations';
+import { canUseFinanceSection, hasPlanFeature } from '@/lib/plan-catalog';
+import { useAuth } from '@/lib/AuthContext';
 import React, {
   lazy,
   Suspense,
@@ -143,6 +146,12 @@ function rangePreset(key) {
 }
 
 export default function Financeiro() {
+  const { user } = useAuth();
+  return hasPlanFeature(user, 'advanced_finance') ? <AdvancedFinance /> : <BasicFinance />;
+}
+
+function AdvancedFinance() {
+  const { user } = useAuth();
   const [active, setActive] = useState('overview');
   const [bootstrap, setBootstrap] = useState(null),
     [dashboard, setDashboard] = useState(null);
@@ -176,8 +185,8 @@ export default function Financeiro() {
   };
   const availableNav = NAV_ITEMS.filter(
     ([key]) =>
-      key !== 'purchases' ||
-      (bootstrap?.enabled_features || []).includes('integrated_purchases'),
+      canUseFinanceSection(user, key) && (key !== 'purchases' ||
+      (bootstrap?.enabled_features || []).includes('integrated_purchases')),
   );
   const primaryNav = availableNav.filter(([key]) => PRIMARY_NAV_KEYS.has(key));
   const secondaryGroups = NAV_GROUPS.map((group) => ({
@@ -324,7 +333,7 @@ export default function Financeiro() {
         </div>
       )}
       <FinanceSection
-        active={active}
+        active={nav[0]}
         dashboard={dashboard}
         bootstrap={bootstrap}
         range={range}
@@ -1570,6 +1579,7 @@ function Goals({ bootstrap, data, refreshAll }) {
 }
 
 function Reports({ dashboard, range, canExport }) {
+  const { user } = useAuth();
   const exportCsv = () => {
     const rows = [
       ['Indicador', 'Valor'],
@@ -1628,7 +1638,7 @@ function Reports({ dashboard, range, canExport }) {
           'Produtos mais lucrativos',
           'Perdas de estoque',
           'Resultado por unidade',
-        ].map((label) => (
+        ].filter((label) => (label !== 'DRE' || hasPlanFeature(user, 'advanced_permissions')) && (label !== 'Compras por fornecedor' || canUseFinanceSection(user, 'purchases'))).map((label) => (
           <article
             key={label}
             className="surface-card flex items-center gap-3 p-4"
@@ -1981,7 +1991,8 @@ function RecurringPanel({ bootstrap, refreshAll }) {
 }
 
 function PermissionsPanel({ bootstrap, refreshAll }) {
-  if (!bootstrap.permissions.manage_permissions) return null;
+  const { user } = useAuth();
+  if (!bootstrap.permissions.manage_permissions || !hasPlanFeature(user, 'advanced_permissions')) return null;
   const labels = {
     view: 'Visualizar financeiro',
     create: 'Registrar lançamentos',

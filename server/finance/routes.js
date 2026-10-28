@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '../../src/lib/plan-catalog.js';
 import { AppError } from '../errors.js';
 import { methodNotAllowed, send } from '../http.js';
 import {
@@ -45,8 +46,11 @@ export async function handleFinanceRequest({ req, res, sql, user, path }) {
   const permissions = await financePermissions(sql, user);
   requirePermission(permissions, "view");
 
-  if (section === "bootstrap" && req.method === "GET")
-    return send(res, 200, await loadBootstrap(sql, user, permissions));
+  if (section === "bootstrap" && req.method === "GET") {
+    const bootstrap = await loadBootstrap(sql, user, permissions);
+    if (!hasPlanFeature(user, 'advanced_permissions')) bootstrap.permissions = { ...bootstrap.permissions, manage_permissions: false };
+    return send(res, 200, bootstrap);
+  }
   if (section === "dashboard" && req.method === "GET") {
     const dashboard = await loadDashboard(sql, user.market_id, req.query);
     if (!permissions.view_profit) {
@@ -68,6 +72,8 @@ export async function handleFinanceRequest({ req, res, sql, user, path }) {
         ({ cost, profit, ...item }) => item,
       );
     }
+    if (!hasPlanFeature(user, 'advanced_permissions')) { delete dashboard.dre; delete dashboard.goals; }
+    if (!hasPlanFeature(user, 'advanced_finance')) return send(res, 200, { summary: { net_revenue: dashboard.summary.net_revenue, expenses: dashboard.summary.expenses }, range: dashboard.range });
     return send(res, 200, dashboard);
   }
   if (section === "ledger" && req.method === "GET")

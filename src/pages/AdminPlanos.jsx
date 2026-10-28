@@ -1,3 +1,4 @@
+import { PLAN_CATALOG, planTemplate } from '@/lib/plan-catalog';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Check,
@@ -115,6 +116,17 @@ export default function AdminPlanos() {
     } finally {
       setSaving(false);
     }
+  };
+  const applyLaunchTemplate = (key) => {
+    if (!key) { setForm(EMPTY); return; }
+    const template = planTemplate(key);
+    setForm({
+      ...EMPTY,
+      ...template,
+      monthly_price: String(template.monthly_price),
+      user_limit: String(template.user_limit),
+      trial_days: '0', product_limit: '', unit_limit: '1',
+    });
   };
   const changeStatus = async (item, status) => {
     if (['cancelada', 'suspensa', 'inadimplente'].includes(status)) {
@@ -620,6 +632,13 @@ export default function AdminPlanos() {
               </button>
             </div>
             <div className="modal-body grid gap-3 sm:grid-cols-2">
+            {!editing && <label className="grid gap-2 text-sm font-semibold sm:col-span-2">Modelo de lançamento
+              <select className="field" defaultValue="" onChange={(event) => applyLaunchTemplate(event.target.value)}>
+                <option value="">Configuração personalizada</option>
+                {PLAN_CATALOG.map((plan) => <option key={plan.key} value={plan.key}>{plan.name} · {formatCurrency(plan.monthly_price)}/mês · {plan.user_limit} usuário(s)</option>)}
+              </select>
+              <span className="text-xs font-normal text-muted-foreground">Cria um novo plano. Não altera contratos existentes. Teste gratuito e desconto anual não são ativados.</span>
+            </label>}
             <Field label="Nome">
               <input
                 required

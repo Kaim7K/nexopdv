@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { hasPlanFeature } from '@/lib/plan-catalog';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
@@ -479,7 +480,7 @@ export default function Configuracoes() {
           {canCustomizeSidebar && <option value="config-sidebar">Cores da barra lateral</option>}
           <option value="config-sales">Vendas abertas</option>
           <option value="config-stock">Estoque baixo</option>
-          {user?.role === 'admin' && <option value="config-cash">Abertura de caixa</option>}
+          {user?.role === 'admin' && hasPlanFeature(user, 'cash_management') && <option value="config-cash">Abertura de caixa</option>}
           <option value="config-categories">Categorias de produtos</option>
           {canUseStockAlerts && ['admin', 'gerente'].includes(user?.role) && <option value="config-restock">Relatório de reposição</option>}
           {user?.role === 'admin' && <option value="config-reset">Zerar dados</option>}
@@ -758,7 +759,7 @@ export default function Configuracoes() {
           </label>
         </section>
 
-        {user?.role === 'admin' && (
+        {user?.role === 'admin' && hasPlanFeature(user, 'cash_management') && (
           <section id="config-cash" className="mobile-dense-section scroll-mt-14 lg:col-span-4">
             <h2 className="flex items-center gap-2 font-bold">
               <LockKeyhole className="h-5 w-5 text-accent" /> Abertura de caixa

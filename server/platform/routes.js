@@ -1,3 +1,4 @@
+import { catalogPlan } from '../../src/lib/plan-catalog.js';
 import bcrypt from 'bcryptjs';
 import { roundMoney } from '../cash-summary.js';
 import { methodNotAllowed, send } from '../http.js';
@@ -6,6 +7,7 @@ export async function handlePlatformRequest(
   { req, res, sql, user, path },
   {
     MARKET_FEATURES,
+    catalogConfigurationError,
     MARKET_MODULES,
     isUuid,
     normalizeImageValue,
@@ -136,6 +138,8 @@ export async function handlePlatformRequest(
         );
       }
       const source = req.body || {};
+      const configurationError = catalogConfigurationError(source);
+      if (configurationError) return send(res, 400, { message: configurationError });
       const name = text(source.name, 120);
       const description = text(source.description, 1000);
       const monthlyPrice = Number(source.monthly_price);
@@ -429,7 +433,7 @@ export async function handlePlatformRequest(
       const features =
         selectedPlan?.enabled_features ||
         req.body.enabled_features ||
-        MARKET_FEATURES;
+        MARKET_FEATURES.filter((feature) => !feature.startsWith('catalog:'));
       if (
         !Array.isArray(modules) ||
         modules.some((module) => !MARKET_MODULES.includes(module))
@@ -516,8 +520,12 @@ export async function handlePlatformRequest(
       const modulesUpdate = selectedPlan?.enabled_modules || b.enabled_modules;
       const featuresUpdate =
         selectedPlan?.enabled_features || b.enabled_features;
-      const [market] =
-        await sql`WITH changed AS (UPDATE nexo.markets SET name=COALESCE(${updatedName},name),logo_url=COALESCE(${logoUrl},logo_url),primary_color=COALESCE(${b.primary_color || null},primary_color),secondary_color=COALESCE(${b.secondary_color || null},secondary_color),enabled_modules=COALESCE(${modulesUpdate ? JSON.stringify(modulesUpdate) : null}::jsonb,enabled_modules),enabled_features=COALESCE(${featuresUpdate ? JSON.stringify(featuresUpdate) : null}::jsonb,enabled_features),require_cash_register=COALESCE(${typeof b.require_cash_register === 'boolean' ? b.require_cash_register : null},require_cash_register),active=CASE WHEN ${status}::text IS NOT NULL THEN ${!['suspenso', 'cancelado'].includes(status)} ELSE COALESCE(${typeof b.active === 'boolean' ? b.active : null},active) END,status=COALESCE(${status},status),plan_id=CASE WHEN ${planId !== undefined} THEN ${planId || null}::uuid ELSE plan_id END,subscription_due_date=COALESCE(${b.subscription_due_date || null}::date,subscription_due_date),user_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.user_limit ?? null} ELSE COALESCE(${b.user_limit || null},user_limit) END,product_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.product_limit ?? null} ELSE COALESCE(${b.product_limit || null},product_limit) END,unit_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.unit_limit ?? null} ELSE COALESCE(${b.unit_limit || null},unit_limit) END,updated_date=now() WHERE id=${id} RETURNING *),log AS (INSERT INTO nexo.market_change_log(market_id,actor_id,action,details) SELECT id,${user.id},'mercado_atualizado',jsonb_build_object('fields',${JSON.stringify(Object.keys(b || {}))}::jsonb) FROM changed) SELECT * FROM changed`;
+      const [, marketRows] = await sql.transaction((tx) => [
+        tx`SELECT id FROM nexo.markets WHERE id=${id} FOR UPDATE`,
+        tx`WITH changed AS (UPDATE nexo.markets SET name=COALESCE(${updatedName},name),logo_url=COALESCE(${logoUrl},logo_url),primary_color=COALESCE(${b.primary_color || null},primary_color),secondary_color=COALESCE(${b.secondary_color || null},secondary_color),enabled_modules=COALESCE(${modulesUpdate ? JSON.stringify(modulesUpdate) : null}::jsonb,enabled_modules),enabled_features=COALESCE(${featuresUpdate ? JSON.stringify(featuresUpdate) : null}::jsonb,enabled_features),require_cash_register=COALESCE(${typeof b.require_cash_register === 'boolean' ? b.require_cash_register : null},require_cash_register),active=CASE WHEN ${status}::text IS NOT NULL THEN ${!['suspenso', 'cancelado'].includes(status)} ELSE COALESCE(${typeof b.active === 'boolean' ? b.active : null},active) END,status=COALESCE(${status},status),plan_id=CASE WHEN ${planId !== undefined} THEN ${planId || null}::uuid ELSE plan_id END,subscription_due_date=COALESCE(${b.subscription_due_date || null}::date,subscription_due_date),user_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.user_limit ?? null} ELSE COALESCE(${b.user_limit || null},user_limit) END,product_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.product_limit ?? null} ELSE COALESCE(${b.product_limit || null},product_limit) END,unit_limit=CASE WHEN ${Boolean(planId)} THEN ${selectedPlan?.unit_limit ?? null} ELSE COALESCE(${b.unit_limit || null},unit_limit) END,updated_date=now() WHERE id=${id} AND (${!catalogPlan(selectedPlan)} OR (SELECT count(*) FROM nexo.users existing WHERE existing.market_id=${id} AND existing.active) <= ${catalogPlan(selectedPlan)?.user_limit || 2147483647}) AND (${!catalogPlan(selectedPlan) || catalogPlan(selectedPlan)?.key === 'completo'} OR NOT EXISTS(SELECT 1 FROM nexo.records cash WHERE cash.market_id=${id} AND cash.entity='cash_sessions' AND cash.data->>'status'='aberto')) RETURNING *),log AS (INSERT INTO nexo.market_change_log(market_id,actor_id,action,details) SELECT id,${user.id},'mercado_atualizado',jsonb_build_object('fields',${JSON.stringify(Object.keys(b || {}))}::jsonb) FROM changed) SELECT * FROM changed`,
+      ]);
+      const market = marketRows[0];
+      if (!market && catalogPlan(selectedPlan)) return send(res, 409, { code: 'PLAN_CHANGE_BLOCKED', message: 'Revise o limite de usuários e feche os caixas abertos antes de aplicar este plano.' });
       if (market && planId)
         await sql`WITH selected_plan AS (SELECT * FROM nexo.plans WHERE id=${planId} AND active),closed AS (UPDATE nexo.subscriptions SET status='cancelada',cancelled_at=now(),cancellation_reason='Troca de plano',updated_date=now() WHERE market_id=${id} AND status IN ('teste','ativa','inadimplente','suspensa')) INSERT INTO nexo.subscriptions(market_id,plan_id,status,monthly_price,current_period_ends_at) SELECT ${id},id,'ativa',monthly_price,now()+interval '1 month' FROM selected_plan`;
       if (market && status) {

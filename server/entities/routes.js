@@ -141,7 +141,7 @@ export async function handleEntityRequest(
           message: 'Você não pode desativar o próprio acesso.',
         });
       const [target] =
-        await sql`SELECT id,role,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule FROM nexo.users WHERE id=${id} AND market_id=${user.market_id} AND active=true`;
+        await sql`SELECT id,role,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule FROM nexo.users WHERE id=${id} AND market_id=${user.market_id}`;
       if (!target)
         return send(res, 404, { message: 'Usuário não encontrado.' });
       if (user.role === 'gerente') {
@@ -202,8 +202,12 @@ export async function handleEntityRequest(
         return send(res, 400, {
           message: 'Configuração de horário de fechamento inválida.',
         });
-      const [u] =
-        await sql`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),avatar_color=COALESCE(${avatarColor},avatar_color),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time WHEN ${closingSchedule !== undefined} THEN ${Object.values(closingSchedule || {})[0] || null}::time ELSE cash_closing_min_time END,cash_closing_schedule=CASE WHEN ${closingSchedule !== undefined} THEN ${JSON.stringify(closingSchedule || {})}::jsonb ELSE cash_closing_schedule END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} RETURNING id,email,full_name,role,photo_url,avatar_color,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`;
+      const [, changedUsers] = await sql.transaction((tx) => [
+        tx`SELECT id FROM nexo.markets WHERE id=${user.market_id} FOR UPDATE`,
+        tx`UPDATE nexo.users SET role=COALESCE(${req.body.role || null},role),full_name=COALESCE(${fullName},full_name),photo_url=COALESCE(${photoUrl},photo_url),avatar_color=COALESCE(${avatarColor},avatar_color),active=COALESCE(${typeof req.body.active === 'boolean' ? req.body.active : null},active),cash_closing_time_enabled=COALESCE(${typeof req.body.cash_closing_time_enabled === 'boolean' ? req.body.cash_closing_time_enabled : null},cash_closing_time_enabled),cash_closing_min_time=CASE WHEN ${closingTime !== undefined} THEN ${closingTime}::time WHEN ${closingSchedule !== undefined} THEN ${Object.values(closingSchedule || {})[0] || null}::time ELSE cash_closing_min_time END,cash_closing_schedule=CASE WHEN ${closingSchedule !== undefined} THEN ${JSON.stringify(closingSchedule || {})}::jsonb ELSE cash_closing_schedule END,updated_date=now() WHERE id=${id} AND market_id=${user.market_id} AND (${req.body.active !== true} OR active OR (SELECT count(*) FROM nexo.users existing WHERE existing.market_id=${user.market_id} AND existing.active) < COALESCE((SELECT CASE WHEN capacity.enabled_features ? 'catalog:essencial' THEN 1 WHEN capacity.enabled_features ? 'catalog:profissional' THEN 5 WHEN capacity.enabled_features ? 'catalog:completo' THEN 15 ELSE capacity.user_limit END FROM nexo.markets capacity WHERE capacity.id=${user.market_id}),2147483647)) RETURNING id,email,full_name,role,photo_url,avatar_color,active,cash_closing_time_enabled,to_char(cash_closing_min_time,'HH24:MI') AS cash_closing_min_time,cash_closing_schedule`,
+      ]);
+      const u = changedUsers[0];
+      if (!u) return send(res, 409, { code: 'USER_LIMIT_REACHED', message: 'O limite de usuários do plano foi atingido.' });
       return send(res, 200, u);
     }
   }

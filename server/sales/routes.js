@@ -1,3 +1,4 @@
+import { hasPlanFeature } from '../../src/lib/plan-catalog.js';
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../errors.js';
 import {
@@ -229,6 +230,7 @@ if (path[0] === 'sales' && path[1] === 'complete' && req.method === 'POST') {
   if (
     user.role === 'vendedor' &&
     user.require_cash_register &&
+    hasPlanFeature(user, 'cash_management') &&
     !openCashSession
   ) {
     return send(res, 409, {
