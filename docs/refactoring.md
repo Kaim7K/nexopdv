@@ -20,6 +20,8 @@ A página continua responsável pelo carregamento existente, estados e apresenta
 
 As entradas dos cálculos são somente lidas. Todos os mapas e listas de trabalho são novos; os registros recebidos não são alterados. As bibliotecas de gráficos continuam sendo carregadas sob demanda.
 
+O ESLint ignora `artifacts/` e `dist/`, que contêm resultados de testes, builds e cópias geradas de bibliotecas. A análise do código-fonte permanece habilitada. Isso evita falhas por comentários de regras internas presentes nas dependências compiladas durante a comparação no navegador.
+
 ## Proteções contra regressão
 
 `tests/fixtures/report-model-baseline.json` contém os resultados capturados do código do checkpoint, antes da otimização, usando os dados fixos de `report-scenarios.mjs`. Não deve ser regenerado automaticamente a partir da implementação atual. Qualquer mudança intencional desses resultados exige revisão da regra de negócio.
