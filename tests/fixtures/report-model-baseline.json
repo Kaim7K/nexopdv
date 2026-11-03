@@ -1,0 +1,2914 @@
+{
+  "0:hour": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "0h",
+          "revenue": 18,
+          "sales": 1,
+          "average": 18
+        },
+        {
+          "key": 11,
+          "label": "11h",
+          "revenue": 0,
+          "sales": 1,
+          "average": 0
+        },
+        {
+          "key": 23,
+          "label": "23h",
+          "revenue": 10.01,
+          "sales": 1,
+          "average": 10.01
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "0h",
+        "revenue": 18,
+        "sales": 1,
+        "average": 18
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "0:day": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": "2026-03-01",
+          "label": "01/03",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": "2026-03-01",
+        "label": "01/03",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "0:weekday": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "Dom",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "Dom",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "0:month": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 2,
+          "label": "mar",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 2,
+        "label": "mar",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "1:hour": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-22T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "0h",
+          "revenue": 18,
+          "sales": 1,
+          "average": 18
+        },
+        {
+          "key": 11,
+          "label": "11h",
+          "revenue": 0,
+          "sales": 1,
+          "average": 0
+        },
+        {
+          "key": 23,
+          "label": "23h",
+          "revenue": 10.01,
+          "sales": 1,
+          "average": 10.01
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "0h",
+        "revenue": 18,
+        "sales": 1,
+        "average": 18
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "1:day": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-22T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": "2026-03-01",
+          "label": "01/03",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": "2026-03-01",
+        "label": "01/03",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "1:weekday": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-22T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "Dom",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "Dom",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "1:month": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-22T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "yesterday"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 40.04999999999999,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 2,
+          "label": "mar",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 2,
+        "label": "mar",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "2:hour": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-04-01T02:59:59.000Z",
+      "prevStartDate": "2026-02-01T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-month-start"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 366.8333333333333,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "0h",
+          "revenue": 18,
+          "sales": 1,
+          "average": 18
+        },
+        {
+          "key": 11,
+          "label": "11h",
+          "revenue": 0,
+          "sales": 1,
+          "average": 0
+        },
+        {
+          "key": 23,
+          "label": "23h",
+          "revenue": 10.01,
+          "sales": 1,
+          "average": 10.01
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "0h",
+        "revenue": 18,
+        "sales": 1,
+        "average": 18
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "2:day": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-04-01T02:59:59.000Z",
+      "prevStartDate": "2026-02-01T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-month-start"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 366.8333333333333,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": "2026-03-01",
+          "label": "01/03",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": "2026-03-01",
+        "label": "01/03",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "2:weekday": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-04-01T02:59:59.000Z",
+      "prevStartDate": "2026-02-01T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-month-start"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 366.8333333333333,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "Dom",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "Dom",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "2:month": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-04-01T02:59:59.000Z",
+      "prevStartDate": "2026-02-01T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-month-start"
+    ],
+    "summary": {
+      "totalRevenue": 28.009999999999998,
+      "grossRevenue": 30.009999999999998,
+      "totalDiscount": 2,
+      "revenueChange": 366.8333333333333,
+      "totalSales": 3,
+      "avgTicket": 9.336666666666666,
+      "totalItems": 3,
+      "itemsPerSale": 1,
+      "cancelled": 1,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 2,
+          "revenue": 18,
+          "sales": 1
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 2,
+          "revenue": 18
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        }
+      },
+      "paymentData": [
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 64.26276329882185
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 35.737236701178155
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 64.26276329882185
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 2,
+            "revenue": 10.01,
+            "items": 1,
+            "average": 5.005,
+            "share": 35.737236701178155
+          }
+        ]
+      ],
+      "pendingFiado": 25.5,
+      "dailyData": [
+        {
+          "date": "01/03",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 2,
+          "label": "mar",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 2,
+        "label": "mar",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "01/03",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "3:hour": {
+    "range": {
+      "startDate": "2026-01-01T03:00:00.000Z",
+      "endDate": "2027-01-01T02:59:59.000Z",
+      "prevStartDate": "2025-01-01T03:00:00.000Z",
+      "prevEndDate": "2026-01-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "yesterday",
+      "previous-month-start",
+      "current-year-start",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-year-end"
+    ],
+    "summary": {
+      "totalRevenue": 66.00999999999999,
+      "grossRevenue": 68.00999999999999,
+      "totalDiscount": 2,
+      "revenueChange": 144.48148148148147,
+      "totalSales": 6,
+      "avgTicket": 11.001666666666665,
+      "totalItems": 7,
+      "itemsPerSale": 1.1666666666666667,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 5,
+          "revenue": 50,
+          "sales": 3
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        },
+        "name:Avulso": {
+          "name": "Avulso",
+          "qty": 1,
+          "revenue": 6,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 5,
+          "revenue": 50
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        },
+        "Sem categoria": {
+          "qty": 1,
+          "revenue": 6
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 30.29843963035904
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 27.268595667323137
+        },
+        {
+          "method": "credito",
+          "name": "Cartão de Crédito",
+          "value": 12,
+          "percentage": 18.179063778215422
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 15.1643690349947
+        },
+        {
+          "method": "outros",
+          "name": "Outros",
+          "value": 6,
+          "percentage": 9.089531889107711
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 2,
+            "revenue": 30,
+            "items": 3,
+            "average": 15,
+            "share": 45.44765944553856
+          }
+        ],
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 30.29843963035904
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 3,
+            "revenue": 16.009999999999998,
+            "items": 2,
+            "average": 5.336666666666666,
+            "share": 24.25390092410241
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "jan.",
+          "value": 12
+        },
+        {
+          "date": "fev.",
+          "value": 26
+        },
+        {
+          "date": "mar.",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "0h",
+          "revenue": 36,
+          "sales": 3,
+          "average": 12
+        },
+        {
+          "key": 11,
+          "label": "11h",
+          "revenue": 0,
+          "sales": 1,
+          "average": 0
+        },
+        {
+          "key": 23,
+          "label": "23h",
+          "revenue": 30.009999999999998,
+          "sales": 2,
+          "average": 15.004999999999999
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "0h",
+        "revenue": 36,
+        "sales": 3,
+        "average": 12
+      },
+      "bestDay": {
+        "date": "mar.",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "3:day": {
+    "range": {
+      "startDate": "2026-01-01T03:00:00.000Z",
+      "endDate": "2027-01-01T02:59:59.000Z",
+      "prevStartDate": "2025-01-01T03:00:00.000Z",
+      "prevEndDate": "2026-01-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "yesterday",
+      "previous-month-start",
+      "current-year-start",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-year-end"
+    ],
+    "summary": {
+      "totalRevenue": 66.00999999999999,
+      "grossRevenue": 68.00999999999999,
+      "totalDiscount": 2,
+      "revenueChange": 144.48148148148147,
+      "totalSales": 6,
+      "avgTicket": 11.001666666666665,
+      "totalItems": 7,
+      "itemsPerSale": 1.1666666666666667,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 5,
+          "revenue": 50,
+          "sales": 3
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        },
+        "name:Avulso": {
+          "name": "Avulso",
+          "qty": 1,
+          "revenue": 6,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 5,
+          "revenue": 50
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        },
+        "Sem categoria": {
+          "qty": 1,
+          "revenue": 6
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 30.29843963035904
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 27.268595667323137
+        },
+        {
+          "method": "credito",
+          "name": "Cartão de Crédito",
+          "value": 12,
+          "percentage": 18.179063778215422
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 15.1643690349947
+        },
+        {
+          "method": "outros",
+          "name": "Outros",
+          "value": 6,
+          "percentage": 9.089531889107711
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 2,
+            "revenue": 30,
+            "items": 3,
+            "average": 15,
+            "share": 45.44765944553856
+          }
+        ],
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 30.29843963035904
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 3,
+            "revenue": 16.009999999999998,
+            "items": 2,
+            "average": 5.336666666666666,
+            "share": 24.25390092410241
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "jan.",
+          "value": 12
+        },
+        {
+          "date": "fev.",
+          "value": 26
+        },
+        {
+          "date": "mar.",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": "2026-01-01",
+          "label": "01/01",
+          "revenue": 12,
+          "sales": 1,
+          "average": 12
+        },
+        {
+          "key": "2026-02-01",
+          "label": "01/02",
+          "revenue": 6,
+          "sales": 1,
+          "average": 6
+        },
+        {
+          "key": "2026-02-28",
+          "label": "28/02",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        },
+        {
+          "key": "2026-03-01",
+          "label": "01/03",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": "2026-03-01",
+        "label": "01/03",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "mar.",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "3:weekday": {
+    "range": {
+      "startDate": "2026-01-01T03:00:00.000Z",
+      "endDate": "2027-01-01T02:59:59.000Z",
+      "prevStartDate": "2025-01-01T03:00:00.000Z",
+      "prevEndDate": "2026-01-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "yesterday",
+      "previous-month-start",
+      "current-year-start",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-year-end"
+    ],
+    "summary": {
+      "totalRevenue": 66.00999999999999,
+      "grossRevenue": 68.00999999999999,
+      "totalDiscount": 2,
+      "revenueChange": 144.48148148148147,
+      "totalSales": 6,
+      "avgTicket": 11.001666666666665,
+      "totalItems": 7,
+      "itemsPerSale": 1.1666666666666667,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 5,
+          "revenue": 50,
+          "sales": 3
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        },
+        "name:Avulso": {
+          "name": "Avulso",
+          "qty": 1,
+          "revenue": 6,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 5,
+          "revenue": 50
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        },
+        "Sem categoria": {
+          "qty": 1,
+          "revenue": 6
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 30.29843963035904
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 27.268595667323137
+        },
+        {
+          "method": "credito",
+          "name": "Cartão de Crédito",
+          "value": 12,
+          "percentage": 18.179063778215422
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 15.1643690349947
+        },
+        {
+          "method": "outros",
+          "name": "Outros",
+          "value": 6,
+          "percentage": 9.089531889107711
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 2,
+            "revenue": 30,
+            "items": 3,
+            "average": 15,
+            "share": 45.44765944553856
+          }
+        ],
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 30.29843963035904
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 3,
+            "revenue": 16.009999999999998,
+            "items": 2,
+            "average": 5.336666666666666,
+            "share": 24.25390092410241
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "jan.",
+          "value": 12
+        },
+        {
+          "date": "fev.",
+          "value": 26
+        },
+        {
+          "date": "mar.",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "Dom",
+          "revenue": 34.01,
+          "sales": 4,
+          "average": 8.5025
+        },
+        {
+          "key": 4,
+          "label": "Qui",
+          "revenue": 12,
+          "sales": 1,
+          "average": 12
+        },
+        {
+          "key": 6,
+          "label": "Sab",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        }
+      ],
+      "bestBreakdown": {
+        "key": 0,
+        "label": "Dom",
+        "revenue": 34.01,
+        "sales": 4,
+        "average": 8.5025
+      },
+      "bestDay": {
+        "date": "mar.",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "3:month": {
+    "range": {
+      "startDate": "2026-01-01T03:00:00.000Z",
+      "endDate": "2027-01-01T02:59:59.000Z",
+      "prevStartDate": "2025-01-01T03:00:00.000Z",
+      "prevEndDate": "2026-01-01T02:59:59.000Z"
+    },
+    "periodIds": [
+      "today-start",
+      "today-end",
+      "yesterday",
+      "previous-month-start",
+      "current-year-start",
+      "zero"
+    ],
+    "previousIds": [
+      "previous-year-end"
+    ],
+    "summary": {
+      "totalRevenue": 66.00999999999999,
+      "grossRevenue": 68.00999999999999,
+      "totalDiscount": 2,
+      "revenueChange": 144.48148148148147,
+      "totalSales": 6,
+      "avgTicket": 11.001666666666665,
+      "totalItems": 7,
+      "itemsPerSale": 1.1666666666666667,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 5,
+          "revenue": 50,
+          "sales": 3
+        },
+        "apple": {
+          "name": "Maçã",
+          "qty": 1,
+          "revenue": 10.01,
+          "sales": 1
+        },
+        "name:Avulso": {
+          "name": "Avulso",
+          "qty": 1,
+          "revenue": 6,
+          "sales": 1
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 5,
+          "revenue": 50
+        },
+        "Frutas": {
+          "qty": 0.5,
+          "revenue": 5.01
+        },
+        "Hortifruti": {
+          "qty": 0.5,
+          "revenue": 5
+        },
+        "Sem categoria": {
+          "qty": 1,
+          "revenue": 6
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 30.29843963035904
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 27.268595667323137
+        },
+        {
+          "method": "credito",
+          "name": "Cartão de Crédito",
+          "value": 12,
+          "percentage": 18.179063778215422
+        },
+        {
+          "method": "pix",
+          "name": "Pix",
+          "value": 10.01,
+          "percentage": 15.1643690349947
+        },
+        {
+          "method": "outros",
+          "name": "Outros",
+          "value": 6,
+          "percentage": 9.089531889107711
+        }
+      ],
+      "sellerData": [
+        [
+          "Ana",
+          {
+            "count": 2,
+            "revenue": 30,
+            "items": 3,
+            "average": 15,
+            "share": 45.44765944553856
+          }
+        ],
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 30.29843963035904
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 3,
+            "revenue": 16.009999999999998,
+            "items": 2,
+            "average": 5.336666666666666,
+            "share": 24.25390092410241
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "jan.",
+          "value": 12
+        },
+        {
+          "date": "fev.",
+          "value": 26
+        },
+        {
+          "date": "mar.",
+          "value": 28.009999999999998
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "jan",
+          "revenue": 12,
+          "sales": 1,
+          "average": 12
+        },
+        {
+          "key": 1,
+          "label": "fev",
+          "revenue": 26,
+          "sales": 2,
+          "average": 13
+        },
+        {
+          "key": 2,
+          "label": "mar",
+          "revenue": 28.009999999999998,
+          "sales": 3,
+          "average": 9.336666666666666
+        }
+      ],
+      "bestBreakdown": {
+        "key": 2,
+        "label": "mar",
+        "revenue": 28.009999999999998,
+        "sales": 3,
+        "average": 9.336666666666666
+      },
+      "bestDay": {
+        "date": "mar.",
+        "value": 28.009999999999998
+      }
+    }
+  },
+  "4:hour": {
+    "range": {
+      "startDate": "2026-02-28T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-02-26T03:00:01.000Z",
+      "prevEndDate": "2026-02-28T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "yesterday",
+      "zero"
+    ],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 38,
+      "grossRevenue": 40,
+      "totalDiscount": 2,
+      "revenueChange": 0,
+      "totalSales": 3,
+      "avgTicket": 12.666666666666666,
+      "totalItems": 4,
+      "itemsPerSale": 1.3333333333333333,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 4,
+          "revenue": 38,
+          "sales": 2
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 4,
+          "revenue": 38
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 52.63157894736842
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 47.368421052631575
+        }
+      ],
+      "sellerData": [
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 52.63157894736842
+          }
+        ],
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 47.368421052631575
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 1,
+            "revenue": 0,
+            "items": 0,
+            "average": 0,
+            "share": 0
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "28/02",
+          "value": 20
+        },
+        {
+          "date": "01/03",
+          "value": 18
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "0h",
+          "revenue": 18,
+          "sales": 1,
+          "average": 18
+        },
+        {
+          "key": 11,
+          "label": "11h",
+          "revenue": 0,
+          "sales": 1,
+          "average": 0
+        },
+        {
+          "key": 23,
+          "label": "23h",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        }
+      ],
+      "bestBreakdown": {
+        "key": 23,
+        "label": "23h",
+        "revenue": 20,
+        "sales": 1,
+        "average": 20
+      },
+      "bestDay": {
+        "date": "28/02",
+        "value": 20
+      }
+    }
+  },
+  "4:day": {
+    "range": {
+      "startDate": "2026-02-28T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-02-26T03:00:01.000Z",
+      "prevEndDate": "2026-02-28T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "yesterday",
+      "zero"
+    ],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 38,
+      "grossRevenue": 40,
+      "totalDiscount": 2,
+      "revenueChange": 0,
+      "totalSales": 3,
+      "avgTicket": 12.666666666666666,
+      "totalItems": 4,
+      "itemsPerSale": 1.3333333333333333,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 4,
+          "revenue": 38,
+          "sales": 2
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 4,
+          "revenue": 38
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 52.63157894736842
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 47.368421052631575
+        }
+      ],
+      "sellerData": [
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 52.63157894736842
+          }
+        ],
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 47.368421052631575
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 1,
+            "revenue": 0,
+            "items": 0,
+            "average": 0,
+            "share": 0
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "28/02",
+          "value": 20
+        },
+        {
+          "date": "01/03",
+          "value": 18
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": "2026-02-28",
+          "label": "28/02",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        },
+        {
+          "key": "2026-03-01",
+          "label": "01/03",
+          "revenue": 18,
+          "sales": 2,
+          "average": 9
+        }
+      ],
+      "bestBreakdown": {
+        "key": "2026-02-28",
+        "label": "28/02",
+        "revenue": 20,
+        "sales": 1,
+        "average": 20
+      },
+      "bestDay": {
+        "date": "28/02",
+        "value": 20
+      }
+    }
+  },
+  "4:weekday": {
+    "range": {
+      "startDate": "2026-02-28T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-02-26T03:00:01.000Z",
+      "prevEndDate": "2026-02-28T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "yesterday",
+      "zero"
+    ],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 38,
+      "grossRevenue": 40,
+      "totalDiscount": 2,
+      "revenueChange": 0,
+      "totalSales": 3,
+      "avgTicket": 12.666666666666666,
+      "totalItems": 4,
+      "itemsPerSale": 1.3333333333333333,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 4,
+          "revenue": 38,
+          "sales": 2
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 4,
+          "revenue": 38
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 52.63157894736842
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 47.368421052631575
+        }
+      ],
+      "sellerData": [
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 52.63157894736842
+          }
+        ],
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 47.368421052631575
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 1,
+            "revenue": 0,
+            "items": 0,
+            "average": 0,
+            "share": 0
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "28/02",
+          "value": 20
+        },
+        {
+          "date": "01/03",
+          "value": 18
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 0,
+          "label": "Dom",
+          "revenue": 18,
+          "sales": 2,
+          "average": 9
+        },
+        {
+          "key": 6,
+          "label": "Sab",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        }
+      ],
+      "bestBreakdown": {
+        "key": 6,
+        "label": "Sab",
+        "revenue": 20,
+        "sales": 1,
+        "average": 20
+      },
+      "bestDay": {
+        "date": "28/02",
+        "value": 20
+      }
+    }
+  },
+  "4:month": {
+    "range": {
+      "startDate": "2026-02-28T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-02-26T03:00:01.000Z",
+      "prevEndDate": "2026-02-28T02:59:59.999Z"
+    },
+    "periodIds": [
+      "today-start",
+      "yesterday",
+      "zero"
+    ],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 38,
+      "grossRevenue": 40,
+      "totalDiscount": 2,
+      "revenueChange": 0,
+      "totalSales": 3,
+      "avgTicket": 12.666666666666666,
+      "totalItems": 4,
+      "itemsPerSale": 1.3333333333333333,
+      "cancelled": 2,
+      "productMap": {
+        "rice": {
+          "name": "Arroz",
+          "qty": 4,
+          "revenue": 38,
+          "sales": 2
+        }
+      },
+      "categoryMap": {
+        "Mercearia": {
+          "qty": 4,
+          "revenue": 38
+        }
+      },
+      "paymentData": [
+        {
+          "method": "debito",
+          "name": "Cartão de Débito",
+          "value": 20,
+          "percentage": 52.63157894736842
+        },
+        {
+          "method": "dinheiro",
+          "name": "Dinheiro",
+          "value": 18,
+          "percentage": 47.368421052631575
+        }
+      ],
+      "sellerData": [
+        [
+          "Bruno",
+          {
+            "count": 1,
+            "revenue": 20,
+            "items": 2,
+            "average": 20,
+            "share": 52.63157894736842
+          }
+        ],
+        [
+          "Ana",
+          {
+            "count": 1,
+            "revenue": 18,
+            "items": 2,
+            "average": 18,
+            "share": 47.368421052631575
+          }
+        ],
+        [
+          "Sem identificacao",
+          {
+            "count": 1,
+            "revenue": 0,
+            "items": 0,
+            "average": 0,
+            "share": 0
+          }
+        ]
+      ],
+      "pendingFiado": 37.5,
+      "dailyData": [
+        {
+          "date": "28/02",
+          "value": 20
+        },
+        {
+          "date": "01/03",
+          "value": 18
+        }
+      ],
+      "breakdownData": [
+        {
+          "key": 1,
+          "label": "fev",
+          "revenue": 20,
+          "sales": 1,
+          "average": 20
+        },
+        {
+          "key": 2,
+          "label": "mar",
+          "revenue": 18,
+          "sales": 2,
+          "average": 9
+        }
+      ],
+      "bestBreakdown": {
+        "key": 1,
+        "label": "fev",
+        "revenue": 20,
+        "sales": 1,
+        "average": 20
+      },
+      "bestDay": {
+        "date": "28/02",
+        "value": 20
+      }
+    }
+  },
+  "5:hour": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 1,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 25.5,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "5:day": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 1,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 25.5,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "5:weekday": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 1,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 25.5,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "5:month": {
+    "range": {
+      "startDate": "2026-03-01T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.999Z",
+      "prevStartDate": "2026-02-28T03:00:00.000Z",
+      "prevEndDate": "2026-03-01T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 1,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 25.5,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "6:hour": {
+    "range": {
+      "startDate": "2026-03-02T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-03-02T02:59:59.999Z",
+      "prevEndDate": "2026-03-02T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 0,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 0,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "6:day": {
+    "range": {
+      "startDate": "2026-03-02T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-03-02T02:59:59.999Z",
+      "prevEndDate": "2026-03-02T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 0,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 0,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "6:weekday": {
+    "range": {
+      "startDate": "2026-03-02T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-03-02T02:59:59.999Z",
+      "prevEndDate": "2026-03-02T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 0,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 0,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  },
+  "6:month": {
+    "range": {
+      "startDate": "2026-03-02T03:00:00.000Z",
+      "endDate": "2026-03-02T02:59:59.000Z",
+      "prevStartDate": "2026-03-02T02:59:59.999Z",
+      "prevEndDate": "2026-03-02T02:59:59.999Z"
+    },
+    "periodIds": [],
+    "previousIds": [],
+    "summary": {
+      "totalRevenue": 0,
+      "grossRevenue": 0,
+      "totalDiscount": 0,
+      "revenueChange": 0,
+      "totalSales": 0,
+      "avgTicket": 0,
+      "totalItems": 0,
+      "itemsPerSale": 0,
+      "cancelled": 0,
+      "productMap": {},
+      "categoryMap": {},
+      "paymentData": [],
+      "sellerData": [],
+      "pendingFiado": 0,
+      "dailyData": [],
+      "breakdownData": []
+    }
+  }
+}
