@@ -1,4 +1,6 @@
 import { hasPlanFeature } from '@/lib/plan-catalog';
+import { completeWithConfirmation } from '@/lib/sale-confirmation';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 import React, {
   lazy,
   Suspense,
@@ -77,6 +79,14 @@ export default function PDV() {
     clearCashContext,
   } = useCashRegister();
   const draftStorageKey = `nexo:pdv:draft:${user.market_id || user.id}`;
+  const pendingStorageKey = `nexo:pdv:pending:${user.market_id}:${user.id}`;
+  const [pendingSale, setPendingSale] = useState(() => {
+    try { return JSON.parse(window.localStorage.getItem(pendingStorageKey) || 'null'); }
+    catch { return null; }
+  });
+  const [confirmingSale, setConfirmingSale] = useState(false);
+  const confirmingSaleRef = useRef(false);
+  const pendingModalRef = useModalBehavior({ active: Boolean(pendingSale), closeOnEscape: false });
   const [initialDraft] = useState(() => readSavedPdvDraft(draftStorageKey));
   const [products, setProducts] = useState([]);
   const [activeSale, setActiveSale] = useState(
@@ -117,6 +127,7 @@ export default function PDV() {
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const modalsOpen =
+    Boolean(pendingSale) ||
     showPayment ||
     showQuickProduct ||
     showReceipt ||
@@ -856,6 +867,7 @@ export default function PDV() {
   };
 
   const completeSale = async (paymentData) => {
+    if (confirmingSaleRef.current) return;
     const operationId =
       activeSale.client_operation_id || globalThis.crypto?.randomUUID?.();
     if (!activeSale.client_operation_id)
@@ -863,28 +875,57 @@ export default function PDV() {
         ...current,
         client_operation_id: operationId,
       }));
-    try {
-      const sale = await nexoApi.sales.complete({
+    const payload = pendingSale || {
         ...activeSale,
         ...paymentData,
         client_operation_id: operationId,
-      });
+    };
+    try {
+      // A separate journal survives the regular draft's inactivity expiration.
+      window.localStorage.setItem(pendingStorageKey, JSON.stringify(payload));
+    } catch {
+      toast.error('Não foi possível guardar a operação neste navegador. Libere espaço e tente novamente. A venda ainda não foi enviada.');
+      return;
+    }
+    confirmingSaleRef.current = true;
+    setConfirmingSale(true);
+    setPendingSale(payload);
+    setShowPayment(false);
+    try {
+      const sale = await completeWithConfirmation(nexoApi.sales, payload);
+      try { window.localStorage.removeItem(pendingStorageKey); } catch { /* Server confirmation is authoritative. */ }
+      setPendingSale(null);
       setShowPayment(false);
       setShowReceipt(sale);
       setActiveSale(createEmptySale());
       setSearchQuery('');
-      syncSoldProducts(sale.items || activeSale.items);
+      if (pendingSale) {
+        nexoApi.cache.clear('/products');
+        await loadProducts();
+      } else {
+        syncSoldProducts(sale.items || activeSale.items);
+      }
       if (Number.isFinite(Number(sale.sale_number)))
         setSaleNumber(Number(sale.sale_number) + 1);
       else getNextSaleNumber();
       await refreshCash().catch(() => null);
     } catch (error) {
+      if (!error.uncertain && (!pendingSale || [400, 409].includes(error.status))) {
+        try { window.localStorage.removeItem(pendingStorageKey); } catch { /* Preserve journal if storage is unavailable. */ }
+        setPendingSale(null);
+        setActiveSale(payload);
+        setShowPayment(true);
+      }
       toast.error(error.message || 'Erro ao concluir venda.');
+    } finally {
+      confirmingSaleRef.current = false;
+      setConfirmingSale(false);
     }
   };
 
   return (
     <div className="pdv-root flex h-full flex-col bg-muted/20">
+      {pendingSale && <div ref={pendingModalRef} tabIndex={-1} className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pending-sale-title"><div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-xl"><h2 id="pending-sale-title" className="text-lg font-bold">{confirmingSale ? 'Confirmando venda...' : 'Venda aguardando confirmação'}</h2><p className="my-4 text-sm text-muted-foreground">Os itens e o pagamento desta operação foram preservados. A conferência usa o mesmo identificador para evitar uma segunda venda. Aguarde a confirmação antes de iniciar outra.</p><button type="button" disabled={confirmingSale} onClick={() => completeSale({})} className="min-h-11 rounded-lg bg-accent px-4 font-bold text-accent-foreground">{confirmingSale ? 'Aguarde...' : 'Conferir e tentar novamente'}</button></div></div>}
       <PdvTopBar
         saleNumber={saleNumber}
         temporaryNumber={activeSale.temporary_number}

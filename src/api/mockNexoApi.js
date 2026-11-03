@@ -12,6 +12,8 @@ import { matchesCashClosingSituation } from '../lib/cash-history.js';
 import { normalizeAvatarColor, randomAvatarColor } from '../lib/user-avatar.js';
 import { cashReviewFingerprint, cashReviewState } from '../lib/cash-review.js';
 import { productDuplicateMessage } from '../lib/product-duplicates.js';
+import { hasPlanFeature } from '../lib/plan-catalog.js';
+import { managementModules, productInsights, canReadPayables, marginDeclines } from '../lib/management-insights.js';
 
 function assertMockProductAvailable(product, products, excludeId = null) {
   const message = productDuplicateMessage(product, products, excludeId);
@@ -763,6 +765,25 @@ function transactionList(db, filters = {}) {
 }
 
 export const mockNexoApi = {
+  management: {
+    overview: () => {
+      const db = readDb();
+      const user = currentMockUser(db);
+      if (!['gerente', 'admin'].includes(user.role)) throw new Error('Acesso exclusivo da gestão.');
+      const modules = managementModules(user);
+      const sales = db.sales.filter(sale => sale.status === 'concluida' && localDate(new Date(sale.created_date)) === today());
+      const fiados = db.fiados.filter(item => item.status === 'pendente');
+      const config = Object.fromEntries(db.systemConfig.map(item => [item.key, item.value]));
+      const insights = modules.includes('estoque') ? productInsights(db.products, Number(config.limite_estoque_baixo) || 5) : null;
+      if (insights && !hasPlanFeature(user, 'advanced_reports')) { insights.margin = null; insights.idle = null; }
+      const end = new Date(); end.setDate(end.getDate() + 7);
+      const payables = db.finance.transactions.filter(item => item.type === 'expense' && ['pending','partial','overdue'].includes(item.status) && item.due_date && item.due_date <= localDate(end));
+      return delay({ generated_at: nowIso(), modules, products: insights, margin_declines: hasPlanFeature(user, 'advanced_reports') && modules.includes('relatorios') ? marginDeclines(db.sales) : null,
+        sales: modules.some(key => ['vendas','relatorios'].includes(key)) ? { count: sales.length, has_sales: db.sales.some(item => item.status === 'concluida'), total: sales.reduce((sum, item) => sum + Number(item.total || 0), 0) } : null,
+        fiados: modules.includes('fiados') ? { count: fiados.length, items: fiados.slice(0, 5).map(item => ({ id: item.id, name: item.responsible_name, amount: item.total_amount })) } : null,
+        payables: canReadPayables(user) ? { count: payables.length, items: payables.slice(0,5).map(item => ({ ...item, amount: Number(item.amount) - Number(item.paid_amount || 0) })) } : null, configured: Boolean(config.nome_mercado) });
+    },
+  },
   system: {
     reloadStatus: () =>
       delay({ reload_token: localStorage.getItem(SYSTEM_RELOAD_KEY) || '0' }),
@@ -778,6 +799,8 @@ export const mockNexoApi = {
     },
   },
   auth: {
+    forgotPassword: async (_email) => { throw new Error('A recuperação por e-mail não envia mensagens no ambiente de demonstração. Procure o administrador da loja.'); },
+    resetPassword: async (_token, _password) => { throw new Error('Links de recuperação não são válidos no ambiente de demonstração.'); },
     me: () => withDb((db) => currentMockUser(db)),
     login: (email = '', password = '', _remember = true) => {
       const normalizedEmail = String(email).trim().toLowerCase();
@@ -1083,6 +1106,11 @@ export const mockNexoApi = {
       }),
   },
   sales: {
+    operation: (operationId) => {
+      const db = readDb();
+      const user = currentMockUser(db);
+      return delay({ sale: db.sales.find(sale => sale.client_operation_id === operationId && sale.seller_id === user.id) || null });
+    },
     productHistory: (productId) =>
       withDb((db) =>
         db.sales.filter(

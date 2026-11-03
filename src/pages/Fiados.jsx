@@ -1,5 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
 import { toast } from 'react-hot-toast';
 import { Archive, Ban, Banknote, CalendarRange, Check, Clock, CreditCard, HandCoins, Phone, QrCode, RotateCcw, Search, X } from 'lucide-react';
@@ -26,6 +26,7 @@ const SETTLEMENT_METHODS = [
 ];
 
 export default function Fiados() {
+  const [params] = useSearchParams();
   const confirm = useConfirm();
   const { user } = /** @type {any} */ (useOutletContext());
   const isGerente = user.role === 'gerente' || user.role === 'admin';
@@ -34,7 +35,7 @@ export default function Fiados() {
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(() => ['pendente','quitado','cancelado'].includes(params.get('status')) ? params.get('status') : '');
   const [settledFrom, setSettledFrom] = useState('');
   const [settledTo, setSettledTo] = useState('');
   const [settleFiado, setSettleFiado] = useState(null);

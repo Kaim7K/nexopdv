@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 
 const PAGE_LOADERS = {
+  Inicio: () => import('@/pages/Inicio'),
+  RecuperarAcesso: () => import('@/pages/RecuperarAcesso'),
   Login: () => import('@/pages/Login'),
   Landing: () => import('@/pages/Landing'),
   PDV: () => import('@/pages/PDV'),
@@ -40,6 +42,7 @@ const PAGE_LOADERS = {
 const page = (name) => lazy(PAGE_LOADERS[name]);
 
 export const PUBLIC_ROUTES = [
+  { path: '/recuperar-acesso', Component: page('RecuperarAcesso'), fallbackLabel: 'Preparando recuperação...' },
   {
     path: '/',
     Component: page('Landing'),
@@ -53,6 +56,7 @@ export const PUBLIC_ROUTES = [
 ];
 
 export const PRIVATE_ROUTES = [
+  { path: '/inicio', Component: page('Inicio') },
   { path: '/pdv', Component: page('PDV') },
   { path: '/estoque', Component: page('Estoque') },
   { path: '/produto/:id', Component: page('ProdutoDetalhe') },
@@ -72,6 +76,7 @@ export const PRIVATE_ROUTES = [
 ];
 
 export const MENU_ITEMS = [
+  { path: '/inicio', label: 'Visão geral', icon: Gauge, roles: ['gerente', 'admin'], alwaysAvailable: true },
   {
     path: '/pdv',
     label: 'PDV',

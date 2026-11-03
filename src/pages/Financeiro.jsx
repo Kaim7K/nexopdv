@@ -1,6 +1,7 @@
 import { BasicFinance } from '@/components/plans/BasicOperations';
 import { canUseFinanceSection, hasPlanFeature } from '@/lib/plan-catalog';
 import { useAuth } from '@/lib/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import React, {
   lazy,
   Suspense,
@@ -152,7 +153,8 @@ export default function Financeiro() {
 
 function AdvancedFinance() {
   const { user } = useAuth();
-  const [active, setActive] = useState('overview');
+  const [params] = useSearchParams();
+  const [active, setActive] = useState(() => params.get('tab') === 'payables' && canUseFinanceSection(user, 'payables') ? 'payables' : 'overview');
   const [bootstrap, setBootstrap] = useState(null),
     [dashboard, setDashboard] = useState(null);
   const [range, setRange] = useState(rangePreset('month')),

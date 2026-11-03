@@ -1,4 +1,5 @@
 import { BasicReports } from '@/components/plans/BasicOperations';
+import ManagementPanel from '@/components/management/ManagementPanel';
 import { hasPlanFeature } from '@/lib/plan-catalog';
 import { useAuth } from '@/lib/AuthContext';
 import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
@@ -65,7 +66,7 @@ const PaymentChart = lazy(() =>
 
 export default function Relatorios() {
   const { user } = useAuth();
-  return hasPlanFeature(user, 'advanced_reports') ? <AdvancedReports /> : <BasicReports />;
+  return <><div className="page-shell"><h2 className="mb-4 text-lg font-bold">Ações para hoje</h2><ManagementPanel /></div>{hasPlanFeature(user, 'advanced_reports') ? <AdvancedReports /> : <BasicReports />}</>;
 }
 
 function AdvancedReports() {

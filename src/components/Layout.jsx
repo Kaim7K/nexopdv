@@ -198,7 +198,7 @@ export default function Layout() {
     return MENU_ITEMS.filter(
       (item) =>
         item.roles.includes(user.role) &&
-        (user.role === 'super_admin' ||
+        (item.alwaysAvailable || user.role === 'super_admin' ||
           enabled.includes(item.module || item.path.split('/')[1])),
     );
   }, [user]);

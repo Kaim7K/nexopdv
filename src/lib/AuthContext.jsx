@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   const validationRef = useRef(false);
   const authRequestRef = useRef(null);
   const isPrivateRoute =
-    location.pathname !== '/' && location.pathname !== '/login';
+    !['/', '/login', '/recuperar-acesso'].includes(location.pathname);
   const [isLoadingAuth, setLoading] = useState(() =>
     isPrivateRoute ? !user : false,
   );

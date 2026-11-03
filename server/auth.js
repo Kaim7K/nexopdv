@@ -70,7 +70,7 @@ export async function authenticateCredentials(sql, input) {
 
   const rows = await sql`
     SELECT
-      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id,
+      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
       u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
       unit.name AS unit_name,
       m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
@@ -110,7 +110,7 @@ export async function createSession(user, res, sessionHours = 12) {
     3600,
     Math.min(90 * 24 * 3600, Number(sessionHours || 12) * 3600),
   );
-  const token = await new SignJWT({})
+  const token = await new SignJWT({ passwordResetAt: user.password_reset_at ? new Date(user.password_reset_at).toISOString() : null })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setSubject(String(user.id))
     .setIssuer(ISSUER)
@@ -147,7 +147,7 @@ export async function currentUser(req, sql) {
 
     const rows = await sql`
       SELECT
-        u.id, u.email, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id,
+        u.id, u.email, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
         u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
         unit.name AS unit_name,
         m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
@@ -162,7 +162,9 @@ export async function currentUser(req, sql) {
         AND (u.role = 'super_admin' OR m.active = true)
       LIMIT 1
     `;
-    return rows[0] || null;
+    const user = rows[0];
+    if (user?.password_reset_at && payload.passwordResetAt !== new Date(user.password_reset_at).toISOString()) return null;
+    return user || null;
   } catch {
     return null;
   }

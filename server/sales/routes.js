@@ -20,6 +20,11 @@ export async function handleSalesRequest(
     text,
   },
 ) {
+if (path[0] === 'sales' && path[1] === 'operation' && req.method === 'GET') {
+  if (!user.market_id || !isUuid(path[2])) return send(res, 400, { message: 'Operação inválida.' });
+  const [sale] = await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='sales' AND data->>'client_operation_id'=${path[2]} AND data->>'seller_id'=${user.id} LIMIT 1`;
+  return send(res, 200, { sale: sale ? recordFromRow(sale) : null });
+}
 if (path[0] === 'sales' && path[1] === 'list' && req.method === 'GET') {
   if (!user.market_id)
     return send(res, 400, { message: 'Usuário sem mercado.' });
@@ -222,6 +227,15 @@ if (path[0] === 'sales' && path[1] === 'next' && req.method === 'GET') {
 if (path[0] === 'sales' && path[1] === 'complete' && req.method === 'POST') {
   if (!user.market_id)
     return send(res, 400, { message: 'Usuário sem mercado.' });
+  // Recover an already committed sale before checking prices or a cash session
+  // that may have changed since the response was lost.
+  if (req.body.client_operation_id && isUuid(req.body.client_operation_id)) {
+    const [existing] = await sql`SELECT id,data,created_date,updated_date FROM nexo.records WHERE market_id=${user.market_id} AND entity='sales' AND data->>'client_operation_id'=${req.body.client_operation_id} LIMIT 1`;
+    if (existing) {
+      if (existing.data.seller_id !== user.id) return send(res, 409, { message: 'Esta operação pertence a outro vendedor.' });
+      return send(res, 200, recordFromRow(existing));
+    }
+  }
   const openCashSession = await findOpenCashSession(
     sql,
     user.market_id,

@@ -31,7 +31,7 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
   const location = useLocation();
   const isPublicRoute =
-    location.pathname === '/' || location.pathname === '/login';
+    location.pathname === '/' || location.pathname === '/login' || location.pathname === '/recuperar-acesso';
 
   // A landing e o login aparecem imediatamente; apenas rotas privadas aguardam a sessão.
   if (isLoadingAuth && !isPublicRoute) {

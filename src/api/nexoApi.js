@@ -45,7 +45,10 @@ const entityNames = [
 const realNexoApi = {
   entities: Object.fromEntries(entityNames.map((name) => [name, entity(name)])),
   cache: httpClient.cache,
+  management: { overview: () => request('/management/overview') },
   auth: {
+    forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+    resetPassword: (token, password) => request('/auth/reset-password', { method: 'POST', body: { token, password } }),
     me: () => request('/auth/me', { cacheTTL: 15_000 }),
     login: (email, password, remember = true) =>
       request('/auth/login', { method: 'POST', body: { email, password, remember } }),
@@ -215,6 +218,7 @@ const realNexoApi = {
       }),
   },
   sales: {
+    operation: (id) => request(`/sales/operation/${encodeURIComponent(id)}`),
     complete: (data) =>
       request('/sales/complete', { method: 'POST', body: data }),
     nextNumber: () => request('/sales/next', { cacheTTL: 3_000 }),

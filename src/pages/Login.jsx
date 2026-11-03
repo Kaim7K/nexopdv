@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from 'react-router-dom';
 import { nexoApi } from "@/api/nexoApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ export default function Login() {
         /* opcional */
       }
       window.location.href =
-        user.role === 'super_admin' ? '/admin/mercados' : '/pdv';
+        user.role === 'super_admin' ? '/admin/mercados' : ['gerente', 'admin'].includes(user.role) ? '/inicio' : '/pdv';
     } catch (err) {
       setError(err.message || "Email ou senha inválidos");
     } finally {
@@ -71,6 +72,7 @@ export default function Login() {
         </div>
       )}
 
+      <Link to="/recuperar-acesso" className="mb-4 inline-block text-sm text-accent underline">Esqueci minha senha</Link>
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>

@@ -14,7 +14,8 @@ try {
   await page.locator('input[type="email"]').fill("demo@nexopdv.local");
   await page.locator('input[type="password"]').fill("demo123");
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL("**/pdv");
+  await page.waitForURL("**/inicio");
+  await page.goto(`${base}/pdv`);
   await page.locator(".pdv-product-card").first().waitFor();
   const mock = await page.evaluate(() =>
     localStorage.getItem("nexo:mock-db:v4"),

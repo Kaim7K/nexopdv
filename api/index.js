@@ -28,6 +28,8 @@ import { createRequestContext } from '../server/request-context.js';
 import { moduleAccessError } from '../server/module-access.js';
 import { handleEntityRequest } from '../server/entities/routes.js';
 import { handleSalesRequest } from '../server/sales/routes.js';
+import { handleManagement } from '../server/management.js';
+import { handlePasswordRecovery } from '../server/password-recovery.js';
 import { handleCashRequest } from '../server/cash/routes.js';
 import { handlePlatformRequest } from '../server/platform/routes.js';
 import { AppError } from '../server/errors.js';
@@ -794,6 +796,9 @@ async function routeHandler(req, res) {
     return send(res, 200, { plans: publicPlanOffers(rows) });
   }
 
+  if (path[0] === 'auth' && ['forgot-password', 'reset-password'].includes(path[1]))
+    return handlePasswordRecovery({ req, res, sql, path });
+
   if (path[0] === 'auth' && path[1] === 'login') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     const authenticated = await authenticateCredentials(sql, req.body);
@@ -859,6 +864,9 @@ async function routeHandler(req, res) {
   if (planError) return send(res, 403, { code: 'FEATURE_NOT_AVAILABLE', message: planError });
   const accessError = moduleAccessError(user, path, req.method);
   if (accessError) return send(res, 403, { message: accessError });
+
+  if (path[0] === 'management' && path[1] === 'overview')
+    return handleManagement({ req, res, sql, user });
 
   if (path[0] === 'products' && path[1] === 'trash')
     return handleProductTrash({ req, res, sql, user, path });

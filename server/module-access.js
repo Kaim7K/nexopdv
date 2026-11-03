@@ -12,7 +12,7 @@ function cashModule(action) {
 }
 
 function salesModule(action) {
-  if (['complete', 'next'].includes(action)) return 'pdv';
+  if (['complete', 'next', 'operation'].includes(action)) return 'pdv';
   if (action === 'report') return 'relatorios';
   return 'vendas';
 }
