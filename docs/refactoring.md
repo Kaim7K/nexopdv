@@ -118,6 +118,18 @@ Não houve alteração de API, serviço financeiro, SQL, banco ou publicação. 
 
 A suíte existente, os cinco testes novos, tipos, lint e build passaram. A comparação de navegador passou em 1366 px e 390 px, preservando textos, totais, dados enviados, parcelas e transições dos rascunhos. Falhas e novas tentativas, motivos obrigatórios, cache do catálogo e reinicialização do formulário também passaram. Todos os registros anteriores do contexto de demonstração permaneceram iguais, e os dois rascunhos criados pelo teste foram mantidos no histórico. O servidor local respondeu com modo mock habilitado e os três perfis de simulação presentes.
 
+## Etapa 6: conciliação e metas
+
+O checkpoint desta etapa é `186b4fb`. Os painéis foram movidos para `features/finance/reconciliation/ReconciliationPanel.jsx` e `features/finance/goals/GoalsPanel.jsx`, com carregamento sob demanda. O arquivo principal passou de 1.138 para 916 linhas. Os corpos dos componentes foram comparados com o checkpoint e permaneceram idênticos, incluindo cálculos, campos, validações, mensagens e chamadas da API.
+
+`npm run test:finance-controls` compara versões compiladas do checkpoint e da refatoração em 1366 px e 390 px. Usa respostas representativas de conciliação com divergência e caixa aberto. No formulário de metas, verifica campo obrigatório, conversão numérica do payload, botão desabilitado durante a requisição, falha sem apagar o valor e limpeza do valor após sucesso. Compara textos e payloads e confere a igualdade integral do banco local antes e depois. As respostas e a criação de metas são simuladas em contextos descartáveis; esse teste não valida persistência real ou SQL. Também verifica que cada novo módulo é solicitado apenas ao abrir sua seção.
+
+O chunk principal gerado tem 58.115 bytes, contra 62.881 na etapa anterior. Os novos chunks têm 3.132 bytes para conciliação e 3.833 para metas. Isso mede a distribuição do código compilado, sem garantir redução do tamanho total ou do tempo de carregamento.
+
+Não houve alteração de API, serviço financeiro, SQL, dados existentes ou publicação. O ambiente local na porta 5177 permanece com modo de demonstração e os três simuladores de cargo.
+
+A suíte existente, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras, com textos e payloads iguais ao checkpoint, falha e nova tentativa preservadas e banco de demonstração integralmente igual. Os novos módulos não foram solicitados na visão geral e foram carregados ao abrir suas respectivas seções. Os resultados ficam em `artifacts/refactor/controls/browser/comparison.json`.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
