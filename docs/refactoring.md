@@ -130,6 +130,16 @@ Não houve alteração de API, serviço financeiro, SQL, dados existentes ou pub
 
 A suíte existente, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras, com textos e payloads iguais ao checkpoint, falha e nova tentativa preservadas e banco de demonstração integralmente igual. Os novos módulos não foram solicitados na visão geral e foram carregados ao abrir suas respectivas seções. Os resultados ficam em `artifacts/refactor/controls/browser/comparison.json`.
 
+## Etapa 7: configurações financeiras, recorrências e permissões
+
+Após a melhoria das duas visões gerais registrada em `60d28f4`, a seção de configurações foi extraída para `features/finance/settings/FinanceSettingsPanel.jsx`. O módulo reúne regras, categorias, recorrências e permissões por usuário e é carregado somente ao abrir Configurações. O arquivo principal passou de 916 para aproximadamente 500 linhas. Os corpos dos três componentes foram comparados com o checkpoint e permaneceram idênticos.
+
+`npm run test:finance-settings` compila a página anterior e a refatorada, comparando desktop e celular. Verifica limite de imposto, payloads, botão desabilitado durante a requisição, falha sem apagar campos, nova tentativa, limpeza do cadastro de categoria, conversão numérica da recorrência e restauração do checkbox quando a alteração de permissão falha. Confere que o novo módulo não é solicitado na visão geral, apenas ao abrir Configurações. Compara a igualdade integral do banco de demonstração antes e depois.
+
+O teste acrescenta categorias ativas e um gerente à resposta de bootstrap de cada contexto descartável, sem alterar registros. As gravações são interceptadas para simular falhas e sucessos; a comparação valida os contratos e a interface, sem executar persistência real ou SQL. Os resultados ficam em `artifacts/refactor/settings/browser/comparison.json`.
+
+A suíte existente, tipos, lint, build e comparação de navegador passaram. Não houve alteração de serviço, API, SQL ou dados de produção. As melhorias das duas visões gerais têm cobertura específica em `npm run test:overview` e documentação em `docs/overview-refresh.md`. A versão local continua ativa na porta 5177 com os três simuladores de cargo.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
