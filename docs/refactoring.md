@@ -100,6 +100,24 @@ O banco de produção, o serviço financeiro e as operações de escrita existen
 
 A suíte existente, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras: formulários e payloads iguais ao checkpoint, validação nativa preservada, requisições pendentes com botão desabilitado, falhas sem limpeza de campos, uma única inclusão por sucesso e nenhum registro existente alterado. A condição de exibição da conta padrão e o carregamento sob demanda dos dois módulos também passaram. O servidor local respondeu com modo de demonstração habilitado e os três perfis do simulador presentes.
 
+## Etapa 5: compras do Financeiro
+
+O checkpoint desta etapa é `01f1b84`. A listagem e as ações da tela estão em `features/finance/purchases/PurchasesPanel.jsx`, e o formulário em `PurchaseModal.jsx`. O módulo é carregado ao abrir Compras. O arquivo principal de Financeiro foi reduzido de 1.593 para 1.138 linhas.
+
+`purchase-model.js` reúne a criação do formulário inicial, o cálculo de subtotal/total e a montagem do payload. Mantém a seleção da conta padrão, os campos de nota e anexo, a conversão numérica de quantidade/custo, o arredondamento anterior e o desconto/frete enviados no formato existente. A parcela continua marcada como paga apenas para dinheiro e Pix. As opções de pagamento foram movidas para um módulo compartilhado, usado também pelo formulário de recorrências, sem mudar valores ou ordem.
+
+Cinco testes novos cobrem defaults e isolamento de estado entre formulários, quantidades fracionadas, precisão de custo, ordem do arredondamento, total não negativo, preservação dos metadados e status da parcela por meio de pagamento.
+
+O comando `npm run test:purchases-refactor` acrescenta a comparação da página anterior com a refatorada em desktop e celular. Verifica carregamento do catálogo somente ao abrir o formulário, falha e nova tentativa, reuso do catálogo, campos obrigatórios, quantidade mínima, adição/remoção de linhas, total exibido, payloads, rascunho, desistência da confirmação, confirmação, motivo obrigatório, falha e nova tentativa de estorno e cancelamento de rascunho. Os registros existentes são comparados integralmente e os rascunhos novos permanecem no histórico.
+
+O fornecedor de demonstração recebe um indicador de ativo na preparação de cada contexto descartável, pois o seed local não contém esse campo e o formulário lista somente fornecedores ativos. Essa preparação não altera o aplicativo, o ambiente local do usuário ou produção. O teste de demonstração compara chamadas e transições da interface; ele não executa o SQL de movimentação de estoque, custos e contas, que não foi modificado nesta etapa.
+
+O chunk principal passou de 70.722 bytes (17.819 gzip) para 62.881 bytes (16.109 gzip). O chunk de Compras tem 9.163 bytes (3.439 gzip). Essas medidas são dos arquivos gerados, não uma garantia de tempo total de carregamento. As medições e comparações locais ficam em `artifacts/refactor/purchases/`.
+
+Não houve alteração de API, serviço financeiro, SQL, banco ou publicação. A versão local de demonstração permanece na porta 5177 com os simuladores de cargo.
+
+A suíte existente, os cinco testes novos, tipos, lint e build passaram. A comparação de navegador passou em 1366 px e 390 px, preservando textos, totais, dados enviados, parcelas e transições dos rascunhos. Falhas e novas tentativas, motivos obrigatórios, cache do catálogo e reinicialização do formulário também passaram. Todos os registros anteriores do contexto de demonstração permaneceram iguais, e os dois rascunhos criados pelo teste foram mantidos no histórico. O servidor local respondeu com modo mock habilitado e os três perfis de simulação presentes.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
