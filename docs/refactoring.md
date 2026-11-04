@@ -56,10 +56,24 @@ Medição local em Node 24.18.0, após encerrar as outras tarefas de validação
 
 Esses tempos variam por máquina. A suíte existente, os 30 testes novos, checagem de tipos, lint e build passaram. A comparação no navegador passou para os cinco períodos nas duas larguras, sem diferenças nos textos e valores exibidos nem erros de JavaScript. Não foi alterada a API e não foram executadas operações em produção.
 
+## Etapa 2: carregamento, componentes e destaques
+
+A página foi reduzida de 862 para 644 linhas. Indicadores e estados dos gráficos estão em `ReportMetrics.jsx`, pagamentos e resumo executivo em `ReportSummaries.jsx`, e a apresentação dos rankings em `ReportRanking.jsx`. A extração mantém os mesmos elementos, textos, classes e controles.
+
+`useReportData` passa a coordenar o carregamento. As três consultas continuam paralelas e preservam ordenação, limites e dados retornados: 5.000 vendas, 500 fiados e catálogo de 2.000 produtos. O resultado é publicado como um conjunto completo, sem misturar partes de carregamentos diferentes. Em falhas, os dados anteriores são mantidos; a nova tentativa conserva o fluxo existente. Resultados e erros de uma requisição que termine depois de sair da tela são ignorados. Não há cancelamento de requisições compartilhadas nem mudança no cache da API.
+
+`buildBreakdownHighlights` calcula os limites de melhor e pior resultado uma vez por conjunto de dados e critério. As linhas de celular e desktop consultam o mesmo mapa. O trabalho anterior repetia um percurso completo por linha; o novo cálculo é linear e lê cada métrica uma vez por registro. Cores, empates e o comportamento para um único resultado permanecem iguais.
+
+Foram acrescentados quatro testes de dados e destaques aos 30 testes de cálculo anteriores. A comparação de navegador também verifica os quatro agrupamentos, os dois critérios de destaque e a ordenação dos três rankings. Um teste separado exercita falha de carregamento, nova tentativa e resposta tardia após navegação, conferindo que os registros de demonstração permanecem intactos e que as três opções do simulador de cargo continuam presentes.
+
+Os testes de navegador usam caches próprios, separados do servidor local do usuário. O ambiente de demonstração na porta 5177 permanece ativo, com os simuladores de Vendedor, Gerente e Administrador. Não houve migração, acesso ao banco de produção ou publicação.
+
+A suíte existente, os 34 testes específicos de relatórios, tipos, lint e build passaram. A comparação ampliada de navegador passou nas duas larguras, incluindo textos, valores, cores e ordenações. O teste de falha/nova tentativa e resposta tardia também passou, preservando os registros de demonstração. O chunk de Relatórios ficou em 8.765 bytes gzip neste build, contra 8.601 bytes ao fim da etapa 1; esta etapa prioriza manutenção e redução do trabalho repetido, sem alegar redução do pacote.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
-2. Separar componentes maiores da interface, preservando comparações de comportamento.
+2. Continuar separando as seções maiores da interface conforme houver benefício, preservando comparações de comportamento.
 3. Aplicar a mesma abordagem ao Financeiro e depois ao PDV, mantendo testes de valores, permissões e idempotência como condições para cada mudança.
 4. Preparar homologação, backup restaurável do banco e publicação acompanhada quando houver uma etapa de deploy.
 

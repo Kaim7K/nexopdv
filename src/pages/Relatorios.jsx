@@ -2,9 +2,7 @@ import { BasicReports } from '@/components/plans/BasicOperations';
 import ManagementPanel from '@/components/management/ManagementPanel';
 import { hasPlanFeature } from '@/lib/plan-catalog';
 import { useAuth } from '@/lib/AuthContext';
-import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { nexoApi } from '@/api/nexoApi';
-import { toast } from 'react-hot-toast';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -19,7 +17,6 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
-  Users,
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/lib/helpers';
 import {
@@ -28,7 +25,11 @@ import {
   partitionReportSales,
 } from '@/features/reports/report-model';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
-import RankingList from '@/components/common/RankingList';
+import Ranking from '@/components/reports/ReportRanking';
+import { ChartEmpty, ChartLoading, StatCard, MiniMetric } from '@/components/reports/ReportMetrics';
+import { PaymentLegend, ExecutiveSummary } from '@/components/reports/ReportSummaries';
+import { useReportData } from '@/features/reports/use-report-data';
+import { buildBreakdownHighlights } from '@/features/reports/breakdown-highlights';
 import { PageHeader } from '@/components/common/AppShell';
 
 const PERIODS = [
@@ -68,14 +69,10 @@ export default function Relatorios() {
 }
 
 function AdvancedReports() {
-  const [sales, setSales] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const { sales, fiados, products, loading, loadError, loadData } = useReportData();
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
-  const [fiados, setFiados] = useState([]);
   const [breakdown, setBreakdown] = useState('hour');
   const [breakdownMetric, setBreakdownMetric] = useState('revenue');
   const [productRankingSort, setProductRankingSort] = useState('revenue');
@@ -87,30 +84,6 @@ function AdvancedReports() {
     period !== 'custom' ||
     !customRangeComplete ||
     new Date(customStart) <= new Date(customEnd);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    setLoadError('');
-    try {
-      const [saleData, fiadoData, productData] = await Promise.all([
-        nexoApi.entities.Sale.list('-created_date', 5000),
-        nexoApi.entities.FiadoRecord.list('-created_date', 500),
-        nexoApi.products.catalog(2000),
-      ]);
-      setSales(saleData);
-      setFiados(fiadoData);
-      setProducts(productData);
-    } catch (error) {
-      setLoadError(error.message || 'Não foi possível carregar os relatórios.');
-      toast.error('Erro ao carregar dados.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const { startDate, endDate, prevStartDate, prevEndDate } = useMemo(
     () => getReportPeriod(period, customStart, customEnd),
@@ -151,6 +124,11 @@ function AdvancedReports() {
       breakdown,
       cancelledCount,
     ],
+  );
+
+  const breakdownHighlights = useMemo(
+    () => buildBreakdownHighlights(stats.breakdownData, breakdownMetric),
+    [stats.breakdownData, breakdownMetric],
   );
 
   const productRankingRows = useMemo(() => {
@@ -449,7 +427,7 @@ function AdvancedReports() {
               {stats.breakdownData.map((row) => (
                 <article
                   key={row.key}
-                  className={`rounded-lg border p-2.5 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
+                  className={`rounded-lg border p-2.5 ${breakdownHighlights.get(row)}`}
                 >
                   <strong className="block text-sm">{row.label}</strong>
                   <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
@@ -491,7 +469,7 @@ function AdvancedReports() {
                   {stats.breakdownData.map((row) => (
                     <tr
                       key={row.key}
-                      className={`border-t border-border/70 ${getBreakdownTone(row, stats.breakdownData, breakdownMetric)}`}
+                      className={`border-t border-border/70 ${breakdownHighlights.get(row)}`}
                     >
                       <td className="px-4 py-3 font-bold">{row.label}</td>
                       <td className="px-4 py-3 font-semibold">
@@ -661,201 +639,5 @@ function AdvancedReports() {
         </div>
       </section>
     </div>
-  );
-}
-
-function ChartEmpty({ text }) {
-  return (
-    <div className="grid h-36 place-items-center rounded-xl border border-dashed border-border bg-muted/15 p-4 text-center text-sm text-muted-foreground sm:h-48">
-      {text}
-    </div>
-  );
-}
-
-function ChartLoading({ height = 'h-40 sm:h-[240px]' }) {
-  return (
-    <div
-      role="status"
-      aria-label="Carregando gráfico"
-      className={`${height} animate-pulse rounded-xl bg-muted/60 motion-reduce:animate-none`}
-    />
-  );
-}
-
-function StatCard({ icon: Icon, label, value, change = 0, alert = false }) {
-  return (
-    <div className={`metric-tile text-card-foreground ${alert ? 'border-orange-400/60' : ''}`}>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground sm:text-[11px]">
-          {label}
-        </span>
-        <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted ${alert ? 'text-orange-500' : 'text-accent'}`}>
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-      </div>
-      <div className="truncate text-lg font-black tabular-nums sm:text-xl">{value}</div>
-      {change !== 0 && (
-        <div
-          className={`mt-1 flex items-center gap-1 text-xs font-semibold ${change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
-        >
-          {change > 0 ? (
-            <TrendingUp className="h-3.5 w-3.5" />
-          ) : (
-            <TrendingDown className="h-3.5 w-3.5" />
-          )}
-          {formatNumber(Math.abs(change))}%
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MiniMetric({ icon: Icon, label, value, hint }) {
-  return (
-    <article className="metric-tile flex min-w-0 items-center gap-2.5 sm:gap-3">
-      <div className="grid h-7 w-7 flex-none place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent sm:h-8 sm:w-8">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-xs font-semibold text-muted-foreground">{label}</p>
-        <strong className="mt-0.5 block truncate text-base font-black">
-          {value}
-        </strong>
-        <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:text-[11px]">
-          {hint}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function getBreakdownTone(row, rows, metric) {
-  const values = rows.map((item) => Number(item[metric] || 0));
-  const best = Math.max(...values);
-  const worst = Math.min(...values);
-  const value = Number(row[metric] || 0);
-  if (!values.length || best === worst) return 'border-border bg-muted/15';
-  if (value === best)
-    return 'border-emerald-500/35 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100';
-  if (value === worst)
-    return 'border-red-500/35 bg-red-500/10 text-red-950 dark:text-red-100';
-  return 'border-border bg-card';
-}
-
-function PaymentLegend({ rows }) {
-  return (
-    <div className="space-y-2">
-      {rows.map((row) => (
-        <article
-          key={row.method}
-          className="rounded-xl border border-border bg-muted/15 p-3"
-        >
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="font-bold">{row.name}</span>
-            <strong className="tabular-nums">{formatCurrency(row.value)}</strong>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-accent"
-              style={{ width: `${Math.min(100, row.percentage)}%` }}
-            />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {row.percentage.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do faturamento
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ExecutiveSummary({ stats }) {
-  const rows = [
-    ['Melhor dia', stats.bestDay?.date || '-', stats.bestDay ? formatCurrency(stats.bestDay.value) : 'Sem vendas'],
-    ['Melhor recorte', stats.bestBreakdown?.label || '-', stats.bestBreakdown ? `${stats.bestBreakdown.sales} venda(s)` : 'Sem vendas'],
-    ['Produtos no ranking', Object.keys(stats.productMap || {}).length, 'Itens com faturamento'],
-    ['Fiado pendente', formatCurrency(stats.pendingFiado), stats.pendingFiado > 0 ? 'Acompanhar recebimento' : 'Sem pendências'],
-  ];
-  return (
-    <section className="surface-card p-3 text-card-foreground sm:p-4">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-        <Users className="h-4 w-4 text-accent" /> Resumo executivo
-      </h3>
-      <div className="grid gap-2">
-        {rows.map(([label, value, detail]) => (
-          <div
-            key={label}
-            className="flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-muted/15 px-3 py-2.5 text-sm"
-          >
-            <span className="min-w-0">
-              <span className="block font-semibold">{label}</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {detail}
-              </span>
-            </span>
-            <strong className="flex-none text-right tabular-nums">{value}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Ranking({ title, rows, sortKey = 'revenue', onSortKeyChange }) {
-  const renderRow = (row, index) => (
-    <div
-      key={`${row.name}-${index}`}
-      className="relative flex items-center justify-between gap-3 overflow-hidden rounded-lg px-1 py-1.5 text-sm"
-    >
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-black text-accent">
-          {index + 1}
-        </span>
-        <span className="truncate">{row.name}</span>
-      </span>
-      <span className="flex-shrink-0 text-right font-bold">
-        {row.value}
-        <span className="ml-1 hidden text-xs font-normal text-muted-foreground sm:inline">
-          ({row.detail})
-        </span>
-      </span>
-      <div className="sr-only">
-        Participação: {formatNumber(row.percent || 0)}%
-      </div>
-      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-muted">
-        <div
-          className="h-full bg-accent"
-          style={{ width: `${Math.min(100, Number(row.percent || 0))}%` }}
-        />
-      </div>
-    </div>
-  );
-
-  return (
-    <RankingList
-      title={title}
-      items={rows}
-      renderItem={renderRow}
-      headerActions={
-        onSortKeyChange && (
-          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => onSortKeyChange('revenue')}
-              className={`rounded-md px-2.5 py-1.5 transition ${sortKey === 'revenue' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Receita
-            </button>
-            <button
-              type="button"
-              onClick={() => onSortKeyChange('items')}
-              className={`rounded-md px-2.5 py-1.5 transition ${sortKey === 'items' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Itens
-            </button>
-          </div>
-        )
-      }
-    />
   );
 }

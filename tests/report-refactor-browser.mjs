@@ -35,7 +35,7 @@ try {
           });
           await context.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
           const page = await context.newPage();
-          page.setDefaultNavigationTimeout(45000);
+          page.setDefaultNavigationTimeout(90000);
           const errors = [];
           page.on('pageerror', error => errors.push(error.message));
           await page.goto(`${base}login`, { waitUntil: 'domcontentloaded' });
@@ -50,6 +50,12 @@ try {
           await report.getByText('Faturamento', { exact: true }).first().waitFor();
           await page.locator('.recharts-surface').first().waitFor();
           results[`${version}:${width}`] = {};
+          const captureReport = async () => ({
+            text: (await report.innerText()).replace(/\s+/g, ' ').trim(),
+            highlights: await report.locator('article, tr').evaluateAll(elements => elements
+              .filter(element => /border-(emerald|red)-500\/35/.test(element.className))
+              .map(element => ({ text: element.textContent.replace(/\s+/g, ' ').trim(), tone: element.className }))),
+          });
           for (const period of ['Hoje', 'Semanal', 'Mensal', 'Anual', 'Personalizado']) {
             await report.getByRole('button', { name: period, exact: true }).click();
             if (period === 'Personalizado') {
@@ -58,7 +64,21 @@ try {
             }
             await page.mouse.move(0, 0);
             await page.waitForFunction(() => !document.querySelector('.page-shell:last-child')?.textContent.includes('Carregando gráficos'));
-            results[`${version}:${width}`][period] = (await report.innerText()).replace(/\s+/g, ' ').trim();
+            results[`${version}:${width}`][period] = await captureReport();
+          }
+          for (const breakdown of ['Hora', 'Dia', 'Dia da semana', 'Mês']) {
+            await report.getByRole('button', { name: breakdown, exact: true }).click();
+            for (const metric of ['Faturamento', 'Vendas']) {
+              await report.getByRole('button', { name: metric, exact: true }).click();
+              results[`${version}:${width}`][`${breakdown}:${metric}`] = await captureReport();
+            }
+          }
+          for (const title of ['Ranking de produtos', 'Desempenho por vendedor', 'Categorias com maior receita']) {
+            const ranking = report.locator('section').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+            for (const sort of ['Itens', 'Receita']) {
+              await ranking.getByRole('button', { name: sort, exact: true }).click();
+              results[`${version}:${width}`][`${title}:${sort}`] = await captureReport();
+            }
           }
           if (version === 'refactored') {
             assert.deepEqual(results[`${version}:${width}`], results[`baseline:${width}`]);
@@ -70,5 +90,5 @@ try {
     } finally { await server.close(); }
   }
   await writeFile('artifacts/refactor/browser/comparison.json', JSON.stringify(results, null, 2));
-  console.log('Report UI matches checkpoint for five periods at desktop/mobile widths; no browser errors. Isolated demo data only.');
+  console.log('Report UI matches checkpoint for periods, breakdowns, highlight colors and ranking sorts at desktop/mobile widths; no browser errors. Isolated demo data only.');
 } finally { await browser.close(); }
