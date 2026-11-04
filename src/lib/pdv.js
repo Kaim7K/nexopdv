@@ -9,8 +9,16 @@ export const normalizeProductSearchText = value =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-const searchTokens = value =>
-  normalizeProductSearchText(value).split(' ').filter(Boolean);
+const searchCollator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+
+const prepareSearchQuery = query => {
+  const normalized = normalizeProductSearchText(query);
+  return {
+    normalized,
+    compact: normalized.replaceAll(' ', ''),
+    tokens: normalized.split(' ').filter(Boolean),
+  };
+};
 
 const levenshteinDistance = (first, second) => {
   if (first === second) return 0;
@@ -43,24 +51,24 @@ const similarTokenScore = (queryToken, targetToken) => {
   if (targetToken.includes(queryToken)) return 86;
   if (queryToken.length >= 4 && queryToken.includes(targetToken)) return 76;
 
-  const distance = levenshteinDistance(queryToken, targetToken);
   const longest = Math.max(queryToken.length, targetToken.length);
   const allowedDistance = longest <= 5 ? 1 : longest <= 8 ? 2 : 3;
+  // Edit distance cannot be smaller than the difference in word lengths.
+  if (Math.abs(queryToken.length - targetToken.length) > allowedDistance) return 0;
+  const distance = levenshteinDistance(queryToken, targetToken);
   if (distance > allowedDistance) return 0;
   return Math.max(50, 78 - distance * 10);
 };
 
-export const getProductSearchScore = (product, query) => {
-  const normalizedQuery = normalizeProductSearchText(query);
+const scoreProduct = (product, prepared) => {
+  const { normalized: normalizedQuery, compact: compactQuery, tokens: queryTokens } = prepared;
   if (!normalizedQuery) return 0;
 
-  const compactQuery = normalizedQuery.replaceAll(' ', '');
   const barcode = String(product.barcode || '');
   const internalCode = normalizeProductSearchText(product.internal_code);
   if (barcode && barcode.includes(compactQuery)) return 220;
   if (internalCode && internalCode.includes(compactQuery)) return 190;
 
-  const queryTokens = searchTokens(normalizedQuery);
   if (!queryTokens.length) return 0;
 
   const name = normalizeProductSearchText(product.name);
@@ -68,34 +76,36 @@ export const getProductSearchScore = (product, query) => {
   const haystack = [name, category, internalCode].filter(Boolean).join(' ');
   if (haystack.includes(normalizedQuery)) return 170;
 
-  const targetTokens = searchTokens(haystack);
+  const targetTokens = haystack.split(' ').filter(Boolean);
   if (!targetTokens.length) return 0;
 
-  const tokenScoreTotal = queryTokens.reduce((sum, queryToken) => {
-    const best = targetTokens.reduce(
-      (max, targetToken) =>
-        Math.max(max, similarTokenScore(queryToken, targetToken)),
-      0,
-    );
-    return sum + best;
-  }, 0);
+  let tokenScoreTotal = 0;
+  let matchedTokens = 0;
+  for (const queryToken of queryTokens) {
+    let best = 0;
+    for (const targetToken of targetTokens) {
+      best = Math.max(best, similarTokenScore(queryToken, targetToken));
+    }
+    tokenScoreTotal += best;
+    if (best >= 50) matchedTokens++;
+  }
   const averageTokenScore = tokenScoreTotal / queryTokens.length;
-  const matchedTokens = queryTokens.filter(queryToken =>
-    targetTokens.some(targetToken => similarTokenScore(queryToken, targetToken) >= 50),
-  ).length;
   const coverage = matchedTokens / queryTokens.length;
   const fieldBoost = name.startsWith(queryTokens[0]) ? 18 : 0;
 
   return averageTokenScore * coverage + fieldBoost;
 };
 
+export const getProductSearchScore = (product, query) =>
+  scoreProduct(product, prepareSearchQuery(query));
+
 export const searchProducts = (products, query, { limit = 10 } = {}) => {
-  const normalizedQuery = normalizeProductSearchText(query);
-  if (!normalizedQuery) return [];
+  const prepared = prepareSearchQuery(query);
+  if (!prepared.normalized) return [];
   return products
     .map(product => ({
       product,
-      score: getProductSearchScore(product, normalizedQuery),
+      score: scoreProduct(product, prepared),
     }))
     .filter(result => result.score >= SEARCH_MIN_SCORE)
     .sort(
@@ -103,10 +113,9 @@ export const searchProducts = (products, query, { limit = 10 } = {}) => {
         second.score - first.score ||
         Number(second.product.sales_count || 0) -
           Number(first.product.sales_count || 0) ||
-        String(first.product.name || '').localeCompare(
+        searchCollator.compare(
+          String(first.product.name || ''),
           String(second.product.name || ''),
-          'pt-BR',
-          { numeric: true, sensitivity: 'base' },
         ),
     )
     .slice(0, limit)

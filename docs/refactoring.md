@@ -158,6 +158,10 @@ A divisão dos arquivos compilados foi ajustada para impedir que as bibliotecas 
 
 A função de seleção da grade foi estabilizada e a leitura do limite de vendas minimizadas passou a compartilhar a consulta de configuração do layout. Na comparação com `53ecd71`, dez adições ao carrinho passaram de dez novas renderizações da grade para zero, e as requisições de configuração na abertura sem cache passaram de duas para uma. Os cenários foram medidos em desktop e celular. Busca, carrinho, limite, restauração de venda, pagamento em dinheiro e baixa de estoque têm comparação específica em `npm run test:pdv-performance`. A metodologia e os limites estão em `docs/pdv-performance.md`.
 
+## Etapa 11: processamento da busca de produtos
+
+A busca passou a preparar a consulta uma única vez, reutilizar as pontuações das palavras e o comparador de nomes e evitar cálculos de distância descartáveis pelo comprimento. Pontuações, resultados e ordenação foram comparados com uma cópia congelada de `39a34af`. No benchmark local com 1.200 produtos e doze consultas, a mediana passou de 382,88 para 82,79 ms; essa medida não representa o tempo total do sistema. A seleção, a captura por código de barras e o carrinho também passaram na comparação de navegador em desktop e celular, com banco de demonstração preservado. Os comandos e limites da medição estão em `docs/product-search-performance.md`.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
