@@ -86,6 +86,20 @@ O serviço financeiro, os cálculos do servidor, as consultas, as operações de
 
 A suíte existente, os quatro novos testes, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras: textos e valores iguais ao checkpoint, mesmos nomes e bytes dos CSVs, botões de exportação ausentes quando a permissão é negada e registros de demonstração preservados. O teste também confirmou que o módulo de análises não é solicitado na visão geral e passa a ser solicitado ao abrir o fluxo de caixa. A versão local e os três simuladores de cargo continuaram ativos.
 
+## Etapa 4: fornecedores e contas financeiras
+
+O ponto de comparação desta etapa é `d9d0550`. Os painéis foram extraídos para `features/finance/references/SuppliersPanel.jsx` e `AccountsPanel.jsx`, mantendo os formulários, estados, chamadas da API, mensagens, atualização da listagem e limpeza dos campos. Cada painel passa a ser carregado quando for aberto. O arquivo principal de Financeiro foi reduzido de 1.793 para 1.593 linhas.
+
+O cadastro de fornecedor continua enviando nome, documento, e-mail e telefone. A criação de conta mantém os tipos disponíveis, a conversão numérica do saldo inicial e a opção de conta padrão, com a mesma condição de recursos habilitados. Nenhuma regra de saldo, transferência, pagamento, permissão no servidor ou contrato HTTP foi modificada.
+
+O teste `npm run test:finance-references` compila a página anterior e a refatorada com os mesmos dados e relógio, em desktop e celular. Exercita campos obrigatórios, rejeição nativa de saldo inicial negativo, botão desabilitado durante a requisição, erro sem limpeza do formulário, nova tentativa, campos reinicializados após sucesso e atualização das listas. Compara os payloads enviados e confere que cada sucesso acrescenta apenas o registro esperado, preservando todos os registros existentes. Também verifica a condição de exibição da conta padrão e o carregamento de cada módulo apenas ao abrir seu painel. As gravações desse teste ocorrem somente em bancos locais de demonstração de contextos descartáveis.
+
+Neste build, o chunk principal passou de 74.876 bytes (18.390 gzip) para 70.722 bytes (17.819 gzip). Os novos chunks têm 2.572 bytes (1.218 gzip) para fornecedores e 3.747 bytes (1.583 gzip) para contas. Essas medidas não representam o tamanho total da aplicação ou uma garantia de tempo de carregamento. Os resultados ficam em `artifacts/refactor/references/`.
+
+O banco de produção, o serviço financeiro e as operações de escrita existentes permaneceram intactos. Não houve publicação ou migração. A versão local na porta 5177 foi mantida ativa.
+
+A suíte existente, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras: formulários e payloads iguais ao checkpoint, validação nativa preservada, requisições pendentes com botão desabilitado, falhas sem limpeza de campos, uma única inclusão por sucesso e nenhum registro existente alterado. A condição de exibição da conta padrão e o carregamento sob demanda dos dois módulos também passaram. O servidor local respondeu com modo de demonstração habilitado e os três perfis do simulador presentes.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.

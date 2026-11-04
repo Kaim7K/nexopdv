@@ -28,7 +28,8 @@
     "test:management": "node tests/management-recovery.test.mjs && node tests/management-browser.mjs",
     "benchmark:reports": "node scripts/benchmark-report-filter.mjs",
     "test:reports": "node tests/report-model.test.mjs && node tests/report-data.test.mjs && node tests/report-refactor-browser.mjs && node tests/report-loading-browser.mjs",
-    "test:finance-refactor": "node tests/finance-analysis.test.mjs && node tests/finance-refactor-browser.mjs"
+    "test:finance-refactor": "node tests/finance-analysis.test.mjs && node tests/finance-refactor-browser.mjs",
+    "test:finance-references": "node tests/finance-references-browser.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",
