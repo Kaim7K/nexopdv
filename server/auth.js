@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
 import { getRuntimeConfig } from './config.js';
 import { AppError } from './errors.js';
+import { compactAccountImage } from './account-media.js';
 
 const SESSION_COOKIE = 'nexo_session';
 const ISSUER = 'nexo-pdv';
@@ -35,11 +36,11 @@ export function publicUser(user) {
     email: user.email,
     full_name: user.full_name,
     role: user.role,
-    photo_url: user.photo_url,
+    photo_url: compactAccountImage(user.photo_url, 'avatar', user.id),
     avatar_color: user.avatar_color,
     market_id: user.market_id,
     market_name: user.market_name,
-    logo_url: user.logo_url,
+    logo_url: compactAccountImage(user.logo_url, 'logo', user.market_id),
     primary_color: user.primary_color,
     secondary_color: user.secondary_color,
     enabled_modules: user.enabled_modules || [],
@@ -70,10 +71,10 @@ export async function authenticateCredentials(sql, input) {
 
   const rows = await sql`
     SELECT
-      u.id, u.email, u.password_hash, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
+      u.id, u.email, u.password_hash, u.full_name, u.role, CASE WHEN u.photo_url LIKE 'data:image/%' THEN '/api/account-media/avatar?v=' || md5(u.id::text || ':' || u.photo_url) ELSE u.photo_url END AS photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
       u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
       unit.name AS unit_name,
-      m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
+      m.name AS market_name, CASE WHEN m.logo_url LIKE 'data:image/%' THEN '/api/account-media/logo?v=' || md5(m.id::text || ':' || m.logo_url) ELSE m.logo_url END AS logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
       COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
       COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
       COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice
@@ -147,10 +148,10 @@ export async function currentUser(req, sql) {
 
     const rows = await sql`
       SELECT
-        u.id, u.email, u.full_name, u.role, u.photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
+        u.id, u.email, u.full_name, u.role, CASE WHEN u.photo_url LIKE 'data:image/%' THEN '/api/account-media/avatar?v=' || md5(u.id::text || ':' || u.photo_url) ELSE u.photo_url END AS photo_url, u.avatar_color, u.market_id, u.unit_id, u.password_reset_at,
         u.cash_closing_time_enabled, u.cash_closing_min_time, u.cash_closing_schedule,
         unit.name AS unit_name,
-        m.name AS market_name, m.logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
+        m.name AS market_name, CASE WHEN m.logo_url LIKE 'data:image/%' THEN '/api/account-media/logo?v=' || md5(m.id::text || ':' || m.logo_url) ELSE m.logo_url END AS logo_url, m.primary_color, m.secondary_color, m.enabled_modules, m.enabled_features, m.require_cash_register,
         COALESCE((SELECT value FROM nexo.platform_settings WHERE key='maintenance_mode'),'false'::jsonb) AS maintenance_mode,
         COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='maintenance_message'),'') AS maintenance_message,
         COALESCE((SELECT value #>> '{}' FROM nexo.platform_settings WHERE key='platform_notice'),'') AS platform_notice

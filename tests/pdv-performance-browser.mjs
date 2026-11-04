@@ -15,7 +15,7 @@ try {
     const plugins = [{ name: 'measure-pdv-in-tests', transform(code, id) {
       const path = id.replaceAll('\\', '/');
       if (path.endsWith('/src/components/pdv/ProductGrid.jsx')) return code.replace('function ProductGrid({ products, onSelect, loading }) {', 'function ProductGrid({ products, onSelect, loading }) { globalThis.__gridRenders = (globalThis.__gridRenders || 0) + 1;');
-      if (path.endsWith('/src/api/nexoApi.js')) return code + '\n nexoApi.entities.SystemConfig = realNexoApi.entities.SystemConfig;';
+      if (path.endsWith('/src/api/nexoApi.js')) return code + '\n nexoApi.entities.SystemConfig = realNexoApi.entities.SystemConfig; nexoApi.system.appearance = realNexoApi.system.appearance;';
     } }];
     if (version === 'baseline') plugins.push({ name: 'baseline-pdv', enforce: 'pre', load(id) { if (id.replaceAll('\\', '/').endsWith('/src/pages/PDV.jsx')) return originalPage; } });
     await build({ logLevel: 'error', plugins, define: { 'import.meta.env.VITE_MOCK_API': '"true"' }, build: { outDir } });
@@ -37,7 +37,7 @@ try {
           const errors = [], configurationRequests = [];
           page.on('pageerror', error => errors.push(error.message));
           // Exercise the real HTTP client/cache for configuration; other APIs use disposable demo data.
-          await page.route('**/api/entities/SystemConfig?*', async route => {
+          await page.route(/\/api\/(?:entities\/SystemConfig\?|system\/appearance)/, async route => {
             const url = new URL(route.request().url());
             configurationRequests.push(url.pathname + url.search);
             let values = await page.evaluate(() => JSON.parse(localStorage.getItem('nexo:mock-db:v4')).systemConfig);
@@ -47,7 +47,7 @@ try {
               const filters = JSON.parse(url.searchParams.get('filters'));
               values = values.filter(item => Object.entries(filters).every(([key, value]) => item[key] === value));
             }
-            await route.fulfill({ contentType: 'application/json', body: JSON.stringify(values) });
+            await route.fulfill({ contentType: 'application/json', body: JSON.stringify(url.pathname.endsWith('/appearance') ? Object.fromEntries(values.map(item => [item.key, item.value])) : values) });
           });
           const base = server.resolvedUrls.local[0];
           await page.goto(`${base}login`, { waitUntil: 'domcontentloaded' });

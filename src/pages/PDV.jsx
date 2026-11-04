@@ -548,10 +548,9 @@ export default function PDV() {
   const loadMaxMinimized = async () => {
     try {
       // Share the layout's cached/in-flight configuration request.
-      const configs = await nexoApi.entities.SystemConfig.list();
-      const limit = configs.find((item) => item.key === 'limite_vendas_minimizadas');
-      if (limit)
-        setMaxMinimized(Number.parseInt(limit.value, 10) || 3);
+      const config = await nexoApi.system.appearance();
+      if (config.limite_vendas_minimizadas !== undefined)
+        setMaxMinimized(Number.parseInt(config.limite_vendas_minimizadas, 10) || 3);
     } catch {
       // Optional configuration.
     }

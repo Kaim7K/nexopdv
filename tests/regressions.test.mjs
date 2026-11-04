@@ -81,7 +81,7 @@ assert.match(api, /path\[0\] === 'sales' && path\[1\] === 'report'/, 'A API deve
 assert.match(api, /path\[0\] === 'products' && path\[1\] === 'catalog'/, 'O catálogo leve deve evitar carregar imagens completas junto com os produtos.');
 assert.match(api, /parseFiltersQuery/, 'Filtros JSON invalidos devem retornar erro controlado.');
 assert.match(api, /INVALID_FILTERS/, 'Filtros invalidos da API generica devem retornar 400 em vez de erro interno.');
-assert.match(api, /path\[0\] === 'auth' && path\[1\] === 'logout'[\s\S]*await assertDatabaseReady/, 'Logout deve limpar a sessao mesmo quando o banco nao estiver disponivel.');
+assert.match(api, /path\[0\] === 'auth' && path\[1\] === 'logout'[\s\S]*await timing\.measure\('schema'/, 'Logout deve limpar a sessao mesmo quando o banco nao estiver disponivel.');
 assert.match(stock, /Última venda/, 'O estoque deve mostrar a última venda de cada produto.');
 assert.match(stock, /previewInactive/, 'O estoque deve revisar no servidor os produtos sem venda por 3 meses.');
 assert.match(receiptPdf, /Vendas do período/, 'O relatório deve detalhar as vendas do período.');

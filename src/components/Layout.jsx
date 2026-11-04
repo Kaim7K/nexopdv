@@ -176,12 +176,8 @@ export default function Layout() {
     window.addEventListener('nexo:config-updated', onConfigUpdated);
 
     if (user.market_id) {
-      nexoApi.entities.SystemConfig.list()
-        .then((configs) =>
-          applyConfig(
-            Object.fromEntries(configs.map((item) => [item.key, item.value])),
-          ),
-        )
+      nexoApi.system.appearance()
+        .then(applyConfig)
         .catch(() => {
           /* mantém o cache visual enquanto a rede se recupera */
         });

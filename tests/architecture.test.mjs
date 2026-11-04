@@ -22,7 +22,7 @@ for (const file of runtimeFiles) {
 }
 
 const api = await read('api/index.js');
-assert.match(api, /await assertDatabaseReady\(sql\)/, 'API não valida a versão do banco');
+assert.match(api, /await timing\.measure\('schema', \(\) => assertDatabaseReady\(sql\)\)/, 'API não valida a versão do banco');
 assert.match(api, /authenticateCredentials/, 'API não usa o módulo de autenticação');
 assert.doesNotMatch(api, /\b(?:FROM|INTO|UPDATE|DELETE FROM)\s+(?:users|markets|records)\b/i, 'API acessa tabelas públicas legadas');
 

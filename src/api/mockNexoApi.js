@@ -785,6 +785,7 @@ export const mockNexoApi = {
     },
   },
   system: {
+    appearance: () => withDb(db => Object.fromEntries(db.systemConfig.map(item => [item.key, item.value]))),
     reloadStatus: () =>
       delay({ reload_token: localStorage.getItem(SYSTEM_RELOAD_KEY) || '0' }),
   },

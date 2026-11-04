@@ -8,19 +8,20 @@ const INVALIDATION_RULES = [
   },
   {
     matches: (path) => path.startsWith('/sales') || path.startsWith('/entities/Sale'),
-    scopes: ['/sales', '/entities/Sale', '/finance', '/cash'],
+    scopes: ['/sales', '/entities/Sale', '/finance', '/cash', '/products/catalog'],
   },
   { matches: (path) => path.startsWith('/entities/FiadoRecord'), scopes: ['/entities/FiadoRecord', '/finance'] },
   { matches: (path) => path.startsWith('/cash'), scopes: ['/cash', '/finance'] },
   { matches: (path) => path.startsWith('/stock-alerts'), scopes: ['/stock-alerts'] },
   {
     matches: (path) => path.startsWith('/entities/SystemConfig'),
-    scopes: ['/entities/SystemConfig', '/stock-alerts'],
+    scopes: ['/entities/SystemConfig', '/stock-alerts', '/system/appearance'],
   },
 ];
 
 export function createResponseCache({ maxEntries = 160 } = {}) {
   const entries = new Map();
+  let revision = 0;
 
   function prune() {
     const now = Date.now();
@@ -31,6 +32,7 @@ export function createResponseCache({ maxEntries = 160 } = {}) {
   }
 
   function clear(path = '') {
+    revision++;
     if (!path || GLOBAL_INVALIDATION.test(path)) {
       entries.clear();
       return;
@@ -43,6 +45,20 @@ export function createResponseCache({ maxEntries = 160 } = {}) {
 
   return {
     clear,
+    get revision() { return revision; },
+    getCatalog(path) {
+      const requested = /^\/products\/catalog\?limit=([1-9]\d*)$/.exec(path);
+      if (!requested || Number(requested[1]) > 3000) return undefined;
+      prune();
+      const limit = Number(requested[1]);
+      for (const [key, cached] of entries) {
+        const previous = /^GET:\/products\/catalog\?limit=([1-9]\d*)$/.exec(key);
+        if (!previous || Number(previous[1]) > 3000 || !Array.isArray(cached.data)) continue;
+        const previousLimit = Number(previous[1]);
+        if (previousLimit >= limit || cached.data.length < previousLimit) return cached.data.slice(0, limit);
+      }
+      return undefined;
+    },
     get(key) {
       prune();
       const cached = entries.get(key);

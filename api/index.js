@@ -1,6 +1,8 @@
 import { handleInactiveCleanup } from '../server/product-inactive.js';
 import { handleProductTrash } from '../server/product-trash.js';
 import { publicPlanOffers } from '../server/public-plans.js';
+import { attachServerTiming } from '../server/server-timing.js';
+import { handleAccountMedia, handleAppearance } from '../server/account-media.js';
 import { planAccessError } from '../server/plan-access.js';
 import { hasPlanFeature } from '../src/lib/plan-catalog.js';
 import { COMMERCIAL_FEATURES, PLAN_MARKERS, catalogConfigurationError } from '../src/lib/plan-catalog.js';
@@ -729,7 +731,7 @@ function validateProductPayload(data, partial = false) {
     throw new AppError(400, 'INVALID_PRODUCT', 'Controle de estoque inválido.');
 }
 
-async function routeHandler(req, res) {
+async function routeHandler(req, res, timing) {
   const { sql, path } = await createRequestContext(req);
 
   if (path[0] === 'sitemap.xml') {
@@ -757,7 +759,7 @@ async function routeHandler(req, res) {
 
   if (path[0] === 'health') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-    const databaseVersion = await assertDatabaseReady(sql);
+    const databaseVersion = await timing.measure('schema', () => assertDatabaseReady(sql));
     const [status] = await sql`
       SELECT EXISTS(
         SELECT 1 FROM nexo.users WHERE role = 'super_admin' AND active = true
@@ -778,7 +780,7 @@ async function routeHandler(req, res) {
     return send(res, 200, { ok: true });
   }
 
-  await assertDatabaseReady(sql);
+  await timing.measure('schema', () => assertDatabaseReady(sql));
 
   if (path[0] === 'cron' && path[1] === 'stock-alerts') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -817,7 +819,7 @@ async function routeHandler(req, res) {
     await createSession(authenticated, res, sessionHours);
     return send(res, 200, { ok: true, user: publicUser(authenticated) });
   }
-  const user = await currentUser(req, sql);
+  const user = await timing.measure('auth', () => currentUser(req, sql));
   if (!user)
     return send(res, 401, {
       code: 'SESSION_EXPIRED',
@@ -840,6 +842,10 @@ async function routeHandler(req, res) {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     return send(res, 200, publicUser(user));
   }
+  if (path[0] === 'system' && path[1] === 'appearance')
+    return handleAppearance({ req, res, sql, user });
+  if (path[0] === 'account-media' && path.length === 2)
+    return handleAccountMedia({ req, res, sql, user, kind: path[1] });
   if (path[0] === 'products' && path[1] === 'barcode-lookup') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
     const product = await lookupBarcode(req.query.barcode);
@@ -1159,7 +1165,7 @@ async function routeHandler(req, res) {
         message: 'Produtos não estão habilitados para o mercado.',
       });
     const limit = Math.max(1, Math.min(Number(req.query.limit) || 1000, 3000));
-    const rows = await sql`
+    const rows = await timing.measure('catalog', () => sql`
       WITH sales_by_product AS (
         SELECT
           (item->>'product_id')::uuid AS product_id,
@@ -1186,7 +1192,7 @@ async function routeHandler(req, res) {
       WHERE market_id=${user.market_id} AND entity='products'
       ORDER BY updated_date DESC
       LIMIT ${limit}
-    `;
+    `);
     const products = rows.map((row) => ({
       id: row.id,
       ...(row.data || {}),
@@ -1643,8 +1649,9 @@ async function routeHandler(req, res) {
 }
 
 export default async function handler(req, res) {
+  const timing = attachServerTiming(res);
   try {
-    return await routeHandler(req, res);
+    return await routeHandler(req, res, timing);
   } catch (error) {
     return handleError(error, res);
   }

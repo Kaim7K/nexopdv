@@ -58,6 +58,7 @@ const realNexoApi = {
     },
   },
   system: {
+    appearance: () => request('/system/appearance', { cacheTTL: 45_000 }),
     reloadStatus: () => request('/system/reload'),
   },
   users: {

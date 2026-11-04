@@ -6,8 +6,7 @@ export const CURRENT_SCHEMA_VERSION = 21;
 const READY_CACHE_MS = 60_000;
 
 let client;
-let checkedAt = 0;
-let checkedVersion = 0;
+const readiness = new WeakMap();
 
 export function getDb() {
   if (!client) client = neon(getRuntimeConfig().databaseUrl);
@@ -15,8 +14,18 @@ export function getDb() {
 }
 
 export async function assertDatabaseReady(sql = getDb()) {
-  if (Date.now() - checkedAt < READY_CACHE_MS) return checkedVersion;
+  let state = readiness.get(sql);
+  if (!state) { state = { checkedAt: 0, checkedVersion: 0, pending: null }; readiness.set(sql, state); }
+  if (state.checkedVersion >= CURRENT_SCHEMA_VERSION && Date.now() - state.checkedAt < READY_CACHE_MS) return state.checkedVersion;
+  if (state.pending) return state.pending;
+  const pending = checkDatabaseVersion(sql, state).finally(() => {
+    if (state.pending === pending) state.pending = null;
+  });
+  state.pending = pending;
+  return pending;
+}
 
+async function checkDatabaseVersion(sql, state) {
   try {
     const rows = await sql`
       SELECT COALESCE(MAX(version), 0)::int AS version
@@ -30,12 +39,12 @@ export async function assertDatabaseReady(sql = getDb()) {
         `Banco na versão ${version}; aplicação exige a versão ${CURRENT_SCHEMA_VERSION}. Faça um novo deploy.`
       );
     }
-    checkedVersion = version;
-    checkedAt = Date.now();
+    state.checkedVersion = version;
+    state.checkedAt = Date.now();
     return version;
   } catch (error) {
-    checkedAt = 0;
-    checkedVersion = 0;
+    state.checkedAt = 0;
+    state.checkedVersion = 0;
     if (error instanceof AppError) throw error;
     if (error?.code === '42P01' || error?.code === '3F000') {
       throw new AppError(503, 'DATABASE_NOT_MIGRATED', 'O banco ainda não foi preparado. Faça um novo deploy.');

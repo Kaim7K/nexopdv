@@ -70,23 +70,26 @@ export function createHttpClient({ baseUrl = '/api', fetchImpl = fetch } = {}) {
     const ttl = method === 'GET' ? Number(options.cacheTTL || 0) : 0;
     const key = `${method}:${path}`;
     if (ttl > 0) {
-      const cached = cache.get(key);
+      const exact = cache.get(key);
+      const cached = exact !== undefined ? exact : cache.getCatalog(path);
       if (cached !== undefined) return Promise.resolve(cached);
-      if (inFlight.has(key)) return inFlight.get(key);
+      const pending = inFlight.get(key);
+      if (pending?.revision === cache.revision) return pending.promise;
     }
 
     const latest = latestOptions(options);
+    const revision = cache.revision;
     const promise = perform(path, latest.options)
       .then((data) => {
-        if (ttl > 0) cache.set(key, data, ttl);
+        if (ttl > 0 && cache.revision === revision) cache.set(key, data, ttl);
         if (method !== 'GET') cache.clear(path);
         return data;
       })
       .finally(() => {
-        inFlight.delete(key);
+        if (inFlight.get(key)?.promise === promise) inFlight.delete(key);
         if (options.latestKey && latestControllers.get(options.latestKey) === latest.controller) latestControllers.delete(options.latestKey);
       });
-    if (ttl > 0) inFlight.set(key, promise);
+    if (ttl > 0) inFlight.set(key, { promise, revision });
     return promise;
   }
 
