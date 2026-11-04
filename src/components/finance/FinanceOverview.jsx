@@ -5,6 +5,7 @@ import {
   ArrowUpCircle,
   ChevronDown,
   ChevronRight,
+  Plus,
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
@@ -57,155 +58,42 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
     },
   ];
   return (
-    <div className="space-y-3">
-      <section aria-labelledby="financial-summary-title">
-        <div className="mb-2">
-          <h3 id="financial-summary-title" className="text-base font-bold">
-            Resumo financeiro
-          </h3>
-          <p className="hidden">
-            Período selecionado.
-          </p>
+    <div className="space-y-5">
+      <section aria-labelledby="financial-summary-title" className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h3 id="financial-summary-title" className="text-base font-bold">Resumo financeiro</h3><p className="mt-1 text-sm text-muted-foreground">Resultado do período e posição atual das contas.</p></div>
+          <div className="flex flex-wrap gap-2 no-print">
+            <button type="button" onClick={() => onAddTransaction('revenue')} disabled={!canCreate} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"><Plus aria-hidden="true" className="h-4 w-4" />Nova entrada</button>
+            <button type="button" onClick={() => onNavigate('cashflow')} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:bg-muted">Ver fluxo<ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <MetricCard
-              key={card.label}
-              {...card}
-              value={formatCurrency(card.value)}
-            />
-          ))}
+        <div className="grid gap-3 min-[380px]:grid-cols-2 xl:grid-cols-4">
+          {cards.map(card => <OverviewMetricCard key={card.label} {...card} value={formatCurrency(card.value)} />)}
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 text-xs no-print sm:flex sm:flex-wrap sm:items-center">
-        <h3 className="sr-only">Ações financeiras rápidas</h3>
-        <span className="sr-only">
-          Atalhos
-        </span>
-        <button
-          type="button"
-          onClick={() => onAddTransaction('revenue')}
-          disabled={!canCreate}
-          className="min-h-9 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 font-bold text-accent transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Nova entrada
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('cashflow')}
-          className="min-h-9 rounded-lg border border-border bg-card px-3 font-bold text-accent transition hover:border-accent/30 hover:bg-accent/5"
-        >
-          Ver fluxo
-        </button>
-      </div>
-
       {data?.alerts?.length > 0 && (
-        <section
-          aria-labelledby="financial-alerts-title"
-          className="surface-card overflow-hidden"
-        >
-          <div className="flex items-center gap-3 border-b border-border px-3 py-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300">
-              <AlertTriangle className="h-4 w-4" />
-            </span>
-            <div>
-              <h3 id="financial-alerts-title" className="text-sm font-bold">
-                Atenção
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                {data.alerts.length}{' '}
-                {data.alerts.length === 1
-                  ? 'aviso encontrado'
-                  : 'avisos encontrados'}
-              </p>
-            </div>
-          </div>
-          <div className="divide-y divide-border">
-            {data.alerts.slice(0, 3).map((alert) => (
-              <div key={alert.type} className="flex gap-3 px-3 py-2.5">
-                <span
-                  className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === 'critical' ? 'bg-destructive' : 'bg-amber-500'}`}
-                  aria-hidden="true"
-                />
-                <div>
-                  <h4 className="text-xs font-bold">{alert.title}</h4>
-                  <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
-                    {alert.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <section aria-labelledby="financial-alerts-title" className="overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/5">
+          <div className="flex items-center gap-3 px-4 py-3"><AlertTriangle aria-hidden="true" className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" /><h3 id="financial-alerts-title" className="text-sm font-bold">Atenção ao financeiro</h3><span className="ml-auto text-xs text-muted-foreground">{data.alerts.length} {data.alerts.length === 1 ? 'aviso' : 'avisos'}</span></div>
+          <ul className="divide-y divide-amber-500/20 border-t border-amber-500/20">{data.alerts.map((alert, index) => <li key={`${alert.type}-${index}`} className="flex gap-3 px-4 py-3"><span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.severity === 'critical' ? 'bg-destructive' : 'bg-amber-500'}`} /><div><h4 className="text-sm font-semibold">{alert.title}</h4><p className="mt-1 text-xs leading-5 text-muted-foreground">{alert.description}</p></div></li>)}</ul>
         </section>
       )}
 
-      <details className="surface-card group overflow-hidden xl:hidden">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
-          <span>
-            <strong className="block text-sm">Gráfico e compromissos</strong>
-            <span className="hidden">
-              Tendência e pendências.
-            </span>
-          </span>
-          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-180" />
-        </summary>
-        <div className="space-y-2.5 border-t border-border p-2.5">
-          <ChartCard title="Entradas, saídas e lucro">
-            <Suspense fallback={<ChartSkeleton height="h-[180px]" />}>
-              <FinanceTrendChart data={data?.series || []} />
-            </Suspense>
-          </ChartCard>
-          <section className="surface-card p-2.5">
-            <h3 className="text-sm font-bold">Próximos compromissos</h3>
-            <div className="mt-2 space-y-1.5">
-              <FinancialPositionRow label="Contas a pagar" value={summary.payable} help="Ainda precisam ser pagas" tone="negative" onClick={() => onNavigate('payables')} />
-              <FinancialPositionRow label="Contas a receber" value={summary.receivable} help="Inclui fiados pendentes" tone="positive" onClick={() => onNavigate('receivables')} />
-              <FinancialPositionRow label="Dinheiro em caixa" value={summary.cash_available} help="Caixa físico, carteira e cofre" onClick={() => onNavigate('accounts')} />
-            </div>
-          </section>
+      <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
+        <div className="surface-card min-w-0 p-4 sm:p-5">
+          <div className="mb-5"><h3 className="font-bold">Entradas, saídas e lucro</h3><p className="mt-1 text-xs text-muted-foreground">Acompanhe a evolução dos valores no período.</p></div>
+          {data?.series?.length > 0 ? <Suspense fallback={<ChartSkeleton height="h-[260px]" />}><FinanceTrendChart data={data.series} /></Suspense> : <div className="flex min-h-[260px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 text-center"><TrendingUp aria-hidden="true" className="h-6 w-6 text-muted-foreground" /><p className="text-sm font-semibold">Sem movimentação no período</p><p className="text-xs text-muted-foreground">As entradas e saídas aparecerão aqui.</p></div>}
         </div>
-      </details>
-
-      <section className="hidden gap-3 xl:grid xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
-        <ChartCard title="Entradas, saídas e lucro">
-          <p className="hidden">
-            Evolução diária do dinheiro.
-          </p>
-          <Suspense fallback={<ChartSkeleton height="h-[220px] sm:h-[240px]" />}>
-            <FinanceTrendChart data={data?.series || []} />
-          </Suspense>
-        </ChartCard>
-        <section className="surface-card p-3 sm:p-4">
-          <h3 className="text-sm font-bold">Próximos compromissos</h3>
-          <p className="hidden">
-            Pendências que afetam o saldo.
-          </p>
-          <div className="mt-2 space-y-1.5">
-            <FinancialPositionRow
-              label="Contas a pagar"
-              value={summary.payable}
-              help="Ainda precisam ser pagas"
-              tone="negative"
-              onClick={() => onNavigate('payables')}
-            />
-            <FinancialPositionRow
-              label="Contas a receber"
-              value={summary.receivable}
-              help="Inclui fiados pendentes"
-              tone="positive"
-              onClick={() => onNavigate('receivables')}
-            />
-            <FinancialPositionRow
-              label="Dinheiro em caixa"
-              value={summary.cash_available}
-              help="Caixa físico, carteira e cofre"
-              onClick={() => onNavigate('accounts')}
-            />
+        <section className="surface-card min-w-0 p-4 sm:p-5" aria-labelledby="financial-position-title">
+          <h3 id="financial-position-title" className="font-bold">Próximos compromissos</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Pendências e dinheiro disponível agora.</p>
+          <div className="mt-5 space-y-3">
+            <FinancialPositionRow label="Contas a pagar" value={summary.payable} help="Ainda precisam ser pagas" tone="negative" onClick={() => onNavigate('payables')} />
+            <FinancialPositionRow label="Contas a receber" value={summary.receivable} help="Inclui fiados pendentes" tone="positive" onClick={() => onNavigate('receivables')} />
+            <FinancialPositionRow label="Dinheiro em caixa" value={summary.cash_available} help="Caixa físico, carteira e cofre" onClick={() => onNavigate('accounts')} />
           </div>
         </section>
       </section>
-
       <details
         className="surface-card group overflow-hidden"
         onToggle={(event) => setAnalyticsOpen(event.currentTarget.open)}
@@ -213,7 +101,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:hidden hover:bg-muted/40">
           <span>
             <strong className="block text-sm">Análises detalhadas</strong>
-            <span className="hidden">
+            <span className="mt-1 block text-xs text-muted-foreground">
               Margem, categorias, pagamentos e produtos.
             </span>
           </span>
@@ -269,6 +157,20 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
   );
 }
 
+function OverviewMetricCard({ label, value, help, change = null, icon: Icon, tone }) {
+  const tones = {
+    positive: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    negative: 'bg-red-500/10 text-red-700 dark:text-red-300',
+    info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+    neutral: 'bg-muted text-muted-foreground',
+  };
+  return <article className="surface-card min-w-0 p-4 sm:p-5">
+    <div className="flex items-start justify-between gap-2"><h4 className="pt-1 text-sm font-medium text-muted-foreground">{label}</h4><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${tones[tone]}`}><Icon aria-hidden="true" className="h-4 w-4" /></span></div>
+    <p className="mt-4 break-words text-xl font-bold tracking-tight tabular-nums sm:text-2xl">{value}</p>
+    <div className="mt-2 flex flex-wrap items-center gap-2"><p className="text-xs leading-5 text-muted-foreground">{help}</p>{change !== null && change !== undefined && <span title="Comparação com o período anterior" className={`rounded-md px-2 py-1 text-xs font-semibold ${change >= 0 ? tones.positive : tones.negative}`}>{change > 0 ? '+' : ''}{change}%</span>}</div>
+  </article>;
+}
+
 function FinancialPositionRow({
   label,
   value,
@@ -286,11 +188,11 @@ function FinancialPositionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-2 rounded-xl border border-border p-2 text-left transition hover:border-accent/40 hover:bg-accent/5 sm:p-2.5"
+      className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5"
     >
       <span className="min-w-0">
-        <strong className="block text-xs">{label}</strong>
-        <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+        <strong className="block text-sm">{label}</strong>
+        <span className="mt-1 block text-xs text-muted-foreground">
           {help}
         </span>
       </span>
