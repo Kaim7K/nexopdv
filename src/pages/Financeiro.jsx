@@ -7,6 +7,7 @@ import React, {
   Suspense,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -117,24 +118,30 @@ function AdvancedFinance() {
     [error, setError] = useState('');
   const [transactionType, setTransactionType] = useState(null),
     [revision, setRevision] = useState(0);
+  const requestSequence = useRef(0);
+  const { from, to } = range;
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     setError('');
     try {
       const [base, data] = await Promise.all([
         nexoApi.finance.bootstrap(),
-        nexoApi.finance.dashboard(range),
+        nexoApi.finance.dashboard({ from, to }),
       ]);
+      if (sequence !== requestSequence.current) return;
       setBootstrap(base);
       setDashboard(data);
     } catch (cause) {
+      if (sequence !== requestSequence.current) return;
       setError(cause.message || 'Não foi possível carregar a área financeira.');
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
-  }, [range, revision]);
+  }, [from, to, revision]);
   useEffect(() => {
     load();
+    return () => { requestSequence.current++; };
   }, [load]);
   const refresh = () => {
     nexoApi.cache.clear('/finance');

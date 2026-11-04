@@ -162,6 +162,10 @@ A função de seleção da grade foi estabilizada e a leitura do limite de venda
 
 A busca passou a preparar a consulta uma única vez, reutilizar as pontuações das palavras e o comparador de nomes e evitar cálculos de distância descartáveis pelo comprimento. Pontuações, resultados e ordenação foram comparados com uma cópia congelada de `39a34af`. No benchmark local com 1.200 produtos e doze consultas, a mediana passou de 382,88 para 82,79 ms; essa medida não representa o tempo total do sistema. A seleção, a captura por código de barras e o carrinho também passaram na comparação de navegador em desktop e celular, com banco de demonstração preservado. Os comandos e limites da medição estão em `docs/product-search-performance.md`.
 
+## Etapa 12: respostas concorrentes no Financeiro
+
+O resumo e os painéis de movimentações, recebíveis e conciliação agora ignoram respostas e erros de consultas superadas ou desmontadas. Selecionar novamente as mesmas datas não dispara outra carga. Os caches HTTP e os cálculos permanecem. Os testes de concorrência, falha, atualização e nova tentativa passam em desktop e celular, com banco de demonstração integralmente preservado. A comparação normal de movimentações e recebíveis com o checkpoint anterior também passou. O pré-renderizador recebeu uma pasta de cache separada após reproduzir uma falha de dependência no servidor local. Os detalhes estão em `docs/finance-period-loading.md`.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.

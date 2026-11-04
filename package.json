@@ -39,7 +39,8 @@
     "check:bundle": "node scripts/check-initial-bundle.mjs",
     "test:pdv-performance": "node tests/pdv-performance-browser.mjs",
     "test:product-search": "node tests/product-search.test.mjs && node tests/product-search-browser.mjs",
-    "benchmark:product-search": "node scripts/benchmark-product-search.mjs"
+    "benchmark:product-search": "node scripts/benchmark-product-search.mjs",
+    "test:finance-period": "node tests/finance-period-browser.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

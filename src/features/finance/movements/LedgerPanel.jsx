@@ -1,21 +1,10 @@
-import { useEffect, useState } from 'react';
 import { ArrowDownCircle, ArrowRightLeft, ArrowUpCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { nexoApi } from '@/api/nexoApi';
+import { useFinancePeriodData } from '@/features/finance/use-finance-period-data';
 import { EmptyState, LoadingState } from '@/components/common/PageState';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 
 export default function LedgerPanel({ range }) {
-  const [data, setData] = useState(null),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    nexoApi.finance
-      .ledger(range)
-      .then(setData)
-      .catch((error) => toast.error(error.message))
-      .finally(() => setLoading(false));
-  }, [range]);
+  const { data, loading } = useFinancePeriodData('ledger', range);
   if (loading) return <LoadingState />;
   return <GenericMovementList items={data?.items || []} />;
 }

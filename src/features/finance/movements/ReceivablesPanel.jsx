@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react';
 import { CircleDollarSign } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { nexoApi } from '@/api/nexoApi';
+import { useFinancePeriodData } from '@/features/finance/use-finance-period-data';
 import { EmptyState, LoadingState } from '@/components/common/PageState';
 import { MetricCard } from '@/components/finance/FinanceOverview';
 import { StatusBadge } from '@/components/finance/TransactionList';
 import { formatCurrency, formatDate } from '@/lib/helpers';
 
 export default function ReceivablesPanel({ range }) {
-  const [data, setData] = useState(null),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    nexoApi.finance
-      .receivables(range)
-      .then(setData)
-      .catch((error) => toast.error(error.message))
-      .finally(() => setLoading(false));
-  }, [range]);
+  const { data, loading } = useFinancePeriodData('receivables', range);
   if (loading) return <LoadingState />;
   return (
     <div className="space-y-4">

@@ -5,6 +5,8 @@ import { createServer } from 'vite';
 // No browser, user session or database is involved in rendering this component.
 process.env.NODE_ENV = 'production';
 const server = await createServer({
+  // SSR production transforms must not overwrite the running dev server's cache.
+  cacheDir: 'artifacts/vite-prerender-cache',
   mode: 'production',
   optimizeDeps: { noDiscovery: true, entries: [] },
   server: { middlewareMode: true, watch: null, hmr: false },

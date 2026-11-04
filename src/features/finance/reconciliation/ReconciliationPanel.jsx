@@ -1,22 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { nexoApi } from '@/api/nexoApi';
+import { useFinancePeriodData } from '@/features/finance/use-finance-period-data';
 import { EmptyState, LoadingState } from '@/components/common/PageState';
 import { MetricCard } from '@/components/finance/FinanceOverview';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 
 export default function Reconciliation({ range }) {
-  const [data, setData] = useState(null),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    nexoApi.finance
-      .reconciliation(range)
-      .then(setData)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  }, [range]);
+  const { data, loading } = useFinancePeriodData('reconciliation', range);
   if (loading) return <LoadingState />;
   return (
     <div className="space-y-4">

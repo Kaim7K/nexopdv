@@ -15,6 +15,8 @@ export default defineConfig({
     },
   }],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  // Scan the real app entry, not generated HTML from disposable browser builds.
+  optimizeDeps: { entries: ['index.html'] },
   build: {
     chunkSizeWarningLimit: 550,
     manifest: true,
