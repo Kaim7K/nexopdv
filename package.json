@@ -36,7 +36,8 @@
     "test:finance-settings": "node tests/finance-settings-browser.mjs",
     "test:finance-movements": "node tests/finance-movements-browser.mjs",
     "test:bundle-loading": "node tests/bundle-loading-browser.mjs",
-    "check:bundle": "node scripts/check-initial-bundle.mjs"
+    "check:bundle": "node scripts/check-initial-bundle.mjs",
+    "test:pdv-performance": "node tests/pdv-performance-browser.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

@@ -547,11 +547,11 @@ export default function PDV() {
 
   const loadMaxMinimized = async () => {
     try {
-      const configs = await nexoApi.entities.SystemConfig.filter({
-        key: 'limite_vendas_minimizadas',
-      });
-      if (configs.length > 0)
-        setMaxMinimized(Number.parseInt(configs[0].value, 10) || 3);
+      // Share the layout's cached/in-flight configuration request.
+      const configs = await nexoApi.entities.SystemConfig.list();
+      const limit = configs.find((item) => item.key === 'limite_vendas_minimizadas');
+      if (limit)
+        setMaxMinimized(Number.parseInt(limit.value, 10) || 3);
     } catch {
       // Optional configuration.
     }
@@ -672,6 +672,12 @@ export default function PDV() {
     if (Number(product.quantity || 0) <= 0)
       toast(`⚠️ Estoque baixo: ${product.name}`);
   }, []);
+
+  const selectProduct = useCallback((product) => {
+    addProductToSale(product);
+    setSearchQuery('');
+    setShowResults(false);
+  }, [addProductToSale]);
 
   const updateQuantity = useCallback((index, quantity) =>
     setActiveSale((previous) => ({
@@ -956,11 +962,7 @@ export default function PDV() {
             onSearchFocus={() => setShowResults(true)}
             showResults={showResults}
             searchResults={searchResults}
-            onSelectProduct={(product) => {
-              addProductToSale(product);
-              setSearchQuery('');
-              setShowResults(false);
-            }}
+            onSelectProduct={selectProduct}
             products={products}
             productsLoading={productsLoading}
           />

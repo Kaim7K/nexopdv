@@ -154,6 +154,10 @@ A suíte existente, tipos, lint, build e comparação de navegador passaram. A v
 
 A divisão dos arquivos compilados foi ajustada para impedir que as bibliotecas de gráficos, PDF e arrastar e soltar entrem como dependências estáticas do arquivo inicial. O JavaScript dessa árvore passou de 1.236.659 para 335.330 bytes antes da compressão, uma redução de 72,9% na medida. As funções permanecem disponíveis sob demanda. A metodologia, os limites da medição e os testes estão em `docs/bundle-optimization.md`. A suíte existente, tipos, lint, build e o teste dos gráficos, vendas minimizadas e downloads reais de Excel e PDF no navegador passaram com dados de demonstração preservados.
 
+## Etapa 10: requisições e renderizações do PDV
+
+A função de seleção da grade foi estabilizada e a leitura do limite de vendas minimizadas passou a compartilhar a consulta de configuração do layout. Na comparação com `53ecd71`, dez adições ao carrinho passaram de dez novas renderizações da grade para zero, e as requisições de configuração na abertura sem cache passaram de duas para uma. Os cenários foram medidos em desktop e celular. Busca, carrinho, limite, restauração de venda, pagamento em dinheiro e baixa de estoque têm comparação específica em `npm run test:pdv-performance`. A metodologia e os limites estão em `docs/pdv-performance.md`.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
