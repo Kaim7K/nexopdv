@@ -70,6 +70,22 @@ Os testes de navegador usam caches próprios, separados do servidor local do usu
 
 A suíte existente, os 34 testes específicos de relatórios, tipos, lint e build passaram. A comparação ampliada de navegador passou nas duas larguras, incluindo textos, valores, cores e ordenações. O teste de falha/nova tentativa e resposta tardia também passou, preservando os registros de demonstração. O chunk de Relatórios ficou em 8.765 bytes gzip neste build, contra 8.601 bytes ao fim da etapa 1; esta etapa prioriza manutenção e redução do trabalho repetido, sem alegar redução do pacote.
 
+## Etapa 3: componentes de análise do Financeiro
+
+O estado anterior desta página está no commit `1da7486`. O arquivo principal de Financeiro passou de 2.087 para 1.793 linhas. O filtro de períodos foi extraído para `FinancePeriodFilter.jsx`, e a função de datas para `features/finance/finance-period.js`, mantendo a convenção ISO e os intervalos existentes.
+
+Os painéis de fluxo de caixa, resultados e central de relatórios estão em `features/finance/analysis/FinancialAnalysis.jsx`. São carregados sob demanda, com um estado de carregamento local à seção; navegação e cabeçalho permanecem disponíveis. A biblioteca dos gráficos continua carregada sob demanda.
+
+A montagem das linhas e a serialização do CSV estão em `finance-export.js`. Foram preservados ordem das colunas, números sem arredondamento adicional, BOM UTF-8, separador por ponto e vírgula, escape de aspas, quebras de linha e o nome do arquivo. As permissões de exportação continuam sendo calculadas e repassadas pela página financeira.
+
+Foram acrescentados quatro testes de períodos e CSV, cobrindo mês anterior, virada de ano, ano bissexto, comportamento ISO perto da meia-noite, imutabilidade das entradas e conteúdo exportado. A comparação de navegador compila a página do checkpoint e a refatorada com os mesmos dados, relógio e fuso, em 1366 px e 390 px. Verifica visão geral, fluxo de caixa, resultados, relatórios, cinco atalhos de período, arquivos CSV e bloqueio de exportação. Nenhum cadastro, pagamento, cancelamento ou saldo é alterado pelo teste.
+
+Neste build local, o chunk principal de Financeiro passou de 79.598 bytes (19.728 gzip) para 74.876 bytes (18.390 gzip). O novo chunk de análises tem 7.311 bytes (3.034 gzip). Essas medidas descrevem os arquivos gerados; não representam, sozinhas, o tempo total de carregamento nem redução do tamanho total da aplicação. Os resultados locais ficam em `artifacts/refactor/finance/`.
+
+O serviço financeiro, os cálculos do servidor, as consultas, as operações de escrita, os contratos HTTP e o banco permaneceram intactos. Não houve publicação ou migração.
+
+A suíte existente, os quatro novos testes, tipos, lint e build passaram. A comparação de navegador passou nas duas larguras: textos e valores iguais ao checkpoint, mesmos nomes e bytes dos CSVs, botões de exportação ausentes quando a permissão é negada e registros de demonstração preservados. O teste também confirmou que o módulo de análises não é solicitado na visão geral e passa a ser solicitado ao abrir o fluxo de caixa. A versão local e os três simuladores de cargo continuaram ativos.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.

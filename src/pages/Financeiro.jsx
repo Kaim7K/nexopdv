@@ -14,12 +14,9 @@ import {
   ArrowRightLeft,
   ArrowUpCircle,
   BarChart3,
-  CalendarRange,
   Check,
   ChevronDown,
-  ChevronRight,
   CircleDollarSign,
-  ClipboardList,
   Download,
   FileBarChart,
   Landmark,
@@ -27,7 +24,6 @@ import {
   PackagePlus,
   Plus,
   Receipt,
-  RefreshCw,
   Settings,
   Store,
   Target,
@@ -50,11 +46,9 @@ import {
   ModalActions,
   ReferenceCards,
 } from '@/components/finance/FinanceUi';
-import FinanceOverview, {
-  ChartCard,
-  ChartSkeleton,
-  MetricCard,
-} from '@/components/finance/FinanceOverview';
+import FinanceOverview, { MetricCard } from '@/components/finance/FinanceOverview';
+import PeriodFilter from '@/components/finance/FinancePeriodFilter';
+import { rangePreset } from '@/features/finance/finance-period';
 import {
   StatusBadge,
 } from '@/components/finance/TransactionList';
@@ -113,10 +107,14 @@ const PRIMARY_NAV_KEYS = new Set([
   'movements',
   'payables',
 ]);
-const CashFlowChart = lazy(() =>
-  import('@/components/finance/FinanceCharts').then((module) => ({
-    default: module.CashFlowChart,
-  })),
+const CashFlow = lazy(() =>
+  import('@/features/finance/analysis/FinancialAnalysis').then(module => ({ default: module.CashFlow })),
+);
+const Results = lazy(() =>
+  import('@/features/finance/analysis/FinancialAnalysis').then(module => ({ default: module.Results })),
+);
+const Reports = lazy(() =>
+  import('@/features/finance/analysis/FinancialAnalysis').then(module => ({ default: module.Reports })),
 );
 const PAYMENT_OPTIONS = [
   'dinheiro',
@@ -127,25 +125,6 @@ const PAYMENT_OPTIONS = [
   'transferencia',
   'outros',
 ];
-function rangePreset(key) {
-  const end = new Date(),
-    start = new Date(end);
-  if (key === 'yesterday') {
-    start.setDate(start.getDate() - 1);
-    end.setDate(end.getDate() - 1);
-  }
-  if (key === '7days') start.setDate(start.getDate() - 6);
-  if (key === 'month') start.setDate(1);
-  if (key === 'previous') {
-    start.setMonth(start.getMonth() - 1, 1);
-    end.setDate(0);
-  }
-  return {
-    from: start.toISOString().slice(0, 10),
-    to: end.toISOString().slice(0, 10),
-  };
-}
-
 export default function Financeiro() {
   const { user } = useAuth();
   return hasPlanFeature(user, 'advanced_finance') ? <AdvancedFinance /> : <BasicFinance />;
@@ -334,15 +313,17 @@ function AdvancedFinance() {
           {error}
         </div>
       )}
-      <FinanceSection
-        active={nav[0]}
-        dashboard={dashboard}
-        bootstrap={bootstrap}
-        range={range}
-        refresh={refresh}
-        onNavigate={setActive}
-        onAddTransaction={setTransactionType}
-      />
+      <Suspense fallback={<LoadingState label="Carregando seção financeira..." />}>
+        <FinanceSection
+          active={nav[0]}
+          dashboard={dashboard}
+          bootstrap={bootstrap}
+          range={range}
+          refresh={refresh}
+          onNavigate={setActive}
+          onAddTransaction={setTransactionType}
+        />
+      </Suspense>
       <TransactionModal
         open={Boolean(transactionType)}
         onClose={() => setTransactionType(null)}
@@ -353,85 +334,6 @@ function AdvancedFinance() {
           refresh();
         }}
       />
-    </div>
-  );
-}
-
-function PeriodFilter({ range, setRange, loading, onRefresh }) {
-  const [preset, setPreset] = useState('month');
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <select
-        className="field mt-0 min-w-40 flex-1 sm:w-auto sm:flex-none"
-        aria-label="Período rápido"
-        value={preset}
-        onChange={(event) => {
-          const value = event.target.value;
-          setPreset(value);
-          if (value !== 'custom') setRange(rangePreset(value));
-        }}
-      >
-        <option value="today">Hoje</option>
-        <option value="yesterday">Ontem</option>
-        <option value="7days">Últimos 7 dias</option>
-        <option value="month">Este mês</option>
-        <option value="previous">Mês anterior</option>
-        <option value="custom">Período personalizado</option>
-      </select>
-      <details className="group relative">
-        <summary className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold marker:hidden hover:bg-muted">
-          <CalendarRange className="h-4 w-4" />
-          <span className="hidden sm:inline">Escolher datas</span>
-          <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
-        </summary>
-        <div className="absolute right-0 z-20 mt-2 w-[min(330px,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-4 shadow-xl">
-          <p className="text-xs font-bold">Período personalizado</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="text-[11px] font-semibold text-muted-foreground">
-              De
-              <input
-                type="date"
-                className="field mt-1"
-                value={range.from}
-                onChange={(event) => {
-                  setPreset('custom');
-                  const selectedDate = event.target.value;
-                  setRange((value) => ({
-                    ...value,
-                    from: selectedDate,
-                    to: selectedDate,
-                  }));
-                }}
-              />
-            </label>
-            <label className="text-[11px] font-semibold text-muted-foreground">
-              Até
-              <input
-                type="date"
-                className="field mt-1"
-                value={range.to}
-                min={range.from}
-                onChange={(event) => {
-                  setPreset('custom');
-                  setRange((value) => ({
-                    ...value,
-                    to: event.target.value,
-                  }));
-                }}
-              />
-            </label>
-          </div>
-        </div>
-      </details>
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={loading}
-        aria-label="Atualizar"
-        className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-3 hover:bg-muted"
-      >
-        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      </button>
     </div>
   );
 }
@@ -610,107 +512,6 @@ function ReceivablesPanel({ range }) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function CashFlow({ data }) {
-  const series = data?.series || [];
-  const incoming = series.reduce((s, i) => s + i.revenue, 0),
-    outgoing = series.reduce((s, i) => s + i.expense, 0);
-  return (
-    <div className="space-y-4">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Saldo inicial estimado"
-          value={formatCurrency(
-            (data?.summary?.financial_balance || 0) - incoming + outgoing,
-          )}
-          help="Saldo atual descontando o fluxo realizado"
-        />
-        <MetricCard
-          label="Entradas realizadas"
-          value={formatCurrency(incoming)}
-          help="Recebimentos do período"
-        />
-        <MetricCard
-          label="Saídas realizadas"
-          value={formatCurrency(outgoing)}
-          help="Pagamentos do período"
-        />
-        <MetricCard
-          label="Saldo final"
-          value={formatCurrency(data?.summary?.financial_balance)}
-          help="Saldo atual das contas"
-        />
-      </section>
-      <ChartCard title="Evolução diária">
-        <Suspense fallback={<ChartSkeleton height="h-[340px]" />}>
-          <CashFlowChart data={series} />
-        </Suspense>
-      </ChartCard>
-    </div>
-  );
-}
-function Results({ data }) {
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="surface-card overflow-hidden">
-        <div className="border-b border-border p-4">
-          <h3 className="font-bold">DRE simplificada</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Clique nas áreas de lançamentos para investigar a origem dos
-            valores.
-          </p>
-        </div>
-        <div className="divide-y divide-border">
-          {(data?.dre || []).map((row, index) => (
-            <div
-              key={row.key}
-              className={`flex items-start justify-between gap-4 p-4 ${['gross_profit', 'result'].includes(row.key) ? 'bg-accent/5' : ''}`}
-            >
-              <div>
-                <strong className="text-sm">
-                  {index + 1}. {row.label}
-                </strong>
-                <p className="mt-1 text-xs text-muted-foreground">{row.help}</p>
-              </div>
-              <strong
-                className={`shrink-0 tabular-nums ${row.value < 0 ? 'text-destructive' : row.key === 'result' ? 'text-accent' : ''}`}
-              >
-                {formatCurrency(row.value)}
-              </strong>
-            </div>
-          ))}
-        </div>
-      </section>
-      <div className="space-y-3">
-        <MetricCard
-          label="Lucro líquido estimado"
-          value={formatCurrency(data?.summary?.estimated_profit)}
-          help="Não é o mesmo que faturamento ou saldo disponível"
-        />
-        <MetricCard
-          label="Margem líquida"
-          value={`${Number(data?.summary?.margin || 0).toLocaleString('pt-BR')}%`}
-          help="Parcela da receita que permaneceu como resultado"
-        />
-        <MetricCard
-          label="Custo das mercadorias"
-          value={formatCurrency(data?.summary?.cogs)}
-          help="Calculado pelo custo registrado de cada item vendido"
-        />
-        {data?.summary?.missing_cost_items > 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
-            <strong>
-              {data.summary.missing_cost_items} item(ns) sem custo confiável
-            </strong>
-            <p className="mt-1 text-xs text-muted-foreground">
-              O lucro pode estar incompleto até que os custos sejam cadastrados.
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -1580,83 +1381,6 @@ function Goals({ bootstrap, data, refreshAll }) {
   );
 }
 
-function Reports({ dashboard, range, canExport }) {
-  const { user } = useAuth();
-  const exportCsv = () => {
-    const rows = [
-      ['Indicador', 'Valor'],
-      ['Faturamento bruto', dashboard.summary.gross_revenue],
-      ['Receita líquida', dashboard.summary.net_revenue],
-      ['Despesas', dashboard.summary.expenses],
-      ['Lucro estimado', dashboard.summary.estimated_profit],
-      ['Margem', dashboard.summary.margin],
-      [],
-      ['Data', 'Receitas', 'Despesas', 'Lucro'],
-      ...dashboard.series.map((i) => [i.date, i.revenue, i.expense, i.profit]),
-    ];
-    downloadCsv(rows, `financeiro-${range.from}-${range.to}.csv`);
-  };
-  return (
-    <div className="space-y-4">
-      <section className="surface-card p-5">
-        <h3 className="font-bold">Central de relatórios</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Os arquivos usam os mesmos cálculos rastreáveis exibidos no painel.
-        </p>
-        {canExport ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={exportCsv}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
-            >
-              <Download className="h-4 w-4" /> Exportar planilha (CSV)
-            </button>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
-            >
-              <ClipboardList className="h-4 w-4" /> Imprimir / salvar PDF
-            </button>
-          </div>
-        ) : (
-          <p className="mt-4 rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-            A exportação de relatórios não está incluída neste plano.
-          </p>
-        )}
-      </section>
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          'Receitas',
-          'Despesas',
-          'Contas a pagar',
-          'Contas a receber',
-          'Fluxo de caixa',
-          'Lucro e margem',
-          'DRE',
-          'Vendas por pagamento',
-          'Compras por fornecedor',
-          'Produtos mais lucrativos',
-          'Perdas de estoque',
-          'Resultado por unidade',
-        ].filter((label) => (label !== 'DRE' || hasPlanFeature(user, 'advanced_permissions')) && (label !== 'Compras por fornecedor' || canUseFinanceSection(user, 'purchases'))).map((label) => (
-          <article
-            key={label}
-            className="surface-card flex items-center gap-3 p-4"
-          >
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
-              <FileBarChart className="h-5 w-5" />
-            </div>
-            <strong className="min-w-0 flex-1 text-sm">{label}</strong>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </article>
-        ))}
-      </section>
-    </div>
-  );
-}
-
 function FinanceSettings({ bootstrap, refreshAll }) {
   const [settings, setSettings] = useState({ ...bootstrap.settings }),
     [category, setCategory] = useState({ name: '', type: 'expense' }),
@@ -2065,22 +1789,4 @@ function PermissionsPanel({ bootstrap, refreshAll }) {
       </div>
     </section>
   );
-}
-
-function downloadCsv(rows, name) {
-  const content = rows
-    .map((row) =>
-      row
-        .map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`)
-        .join(';'),
-    )
-    .join('\n');
-  const url = URL.createObjectURL(
-    new Blob([`\ufeff${content}`], { type: 'text/csv;charset=utf-8' }),
-  );
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }
