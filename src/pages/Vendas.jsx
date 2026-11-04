@@ -1,3 +1,4 @@
+import { useContainerMinWidth } from '@/hooks/use-responsive-layout';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { hasMarketFeature } from '@/lib/market-modules';
@@ -59,6 +60,7 @@ const weekStartKey = () => {
 };
 
 export default function Vendas() {
+  const { ref: resultsRef, matches: showTable } = useContainerMinWidth(1080);
   const { user, config } = /** @type {any} */ (useOutletContext());
   const canExportReports =
     user.role !== 'vendedor' && hasMarketFeature(user, 'report_export');
@@ -434,8 +436,8 @@ export default function Vendas() {
         </div>
       ) : (
         <>
-          <div className="history-results" aria-label="Registros de vendas">
-            <div className="history-card-list">
+          <div ref={resultsRef} className="history-results" aria-label="Registros de vendas">
+            {!showTable ? <div className="history-card-list">
               {sales.map((sale) => (
                 <SaleCard
                   key={sale.id}
@@ -453,7 +455,7 @@ export default function Vendas() {
                 />
               ))}
             </div>
-            <div className="history-table overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+            : <div className="history-table overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[960px] text-sm">
                   <thead className="bg-secondary text-[11px] font-bold uppercase tracking-normal text-secondary-foreground">
@@ -517,7 +519,7 @@ export default function Vendas() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </div>}
           </div>
           <PaginationControls
             page={page}

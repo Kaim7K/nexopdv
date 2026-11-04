@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
+import { useMediaQuery } from '@/hooks/use-responsive-layout';
 import StockGridView from '@/components/stock/StockGridView';
 import StockMobileList from '@/components/stock/StockMobileList';
 import StockTable from '@/components/stock/StockTable';
@@ -23,6 +24,12 @@ export default function StockProductViews({
   onClearFilters,
   advancedReports = true,
 }) {
+  const viewRef = useRef(null);
+  const commitFocusedField = useCallback(() => {
+    const field = document.activeElement;
+    if (viewRef.current?.contains(field) && field instanceof HTMLElement) field.blur();
+  }, []);
+  const showTable = useMediaQuery('(min-width: 1280px)', commitFocusedField);
   const canViewReports = advancedReports && ['gerente', 'admin'].includes(userRole);
 
   if (viewMode === 'grid') {
@@ -50,8 +57,8 @@ export default function StockProductViews({
   const canDelete = ['admin', 'gerente'].includes(userRole);
 
   return (
-    <>
-      <StockMobileList
+    <div ref={viewRef} className="contents">
+      {!showTable ? <StockMobileList
         products={products}
         lowStockThreshold={lowStockThreshold}
         dirty={dirty}
@@ -63,8 +70,7 @@ export default function StockProductViews({
         onDelete={onDelete}
         hasFilters={hasFilters}
         onClearFilters={onClearFilters}
-      />
-      <StockTable
+      /> : <StockTable
         products={products}
         lowStockThreshold={lowStockThreshold}
         dirty={dirty}
@@ -80,7 +86,7 @@ export default function StockProductViews({
         onInlineEdit={onInlineEdit}
         hasFilters={hasFilters}
         onClearFilters={onClearFilters}
-      />
-    </>
+      />}
+    </div>
   );
 }

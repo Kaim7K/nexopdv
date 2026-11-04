@@ -166,6 +166,10 @@ A busca passou a preparar a consulta uma única vez, reutilizar as pontuações 
 
 O resumo e os painéis de movimentações, recebíveis e conciliação agora ignoram respostas e erros de consultas superadas ou desmontadas. Selecionar novamente as mesmas datas não dispara outra carga. Os caches HTTP e os cálculos permanecem. Os testes de concorrência, falha, atualização e nova tentativa passam em desktop e celular, com banco de demonstração integralmente preservado. A comparação normal de movimentações e recebíveis com o checkpoint anterior também passou. O pré-renderizador recebeu uma pasta de cache separada após reproduzir uma falha de dependência no servidor local. Os detalhes estão em `docs/finance-period-loading.md`.
 
+## Etapa 13: retirar apresentações duplicadas e animações de entrada
+
+Estoque e Vendas passaram a montar apenas a apresentação apropriada, mantendo os breakpoints de viewport e contêiner existentes. A edição focada do estoque é confirmada antes da desmontagem ao redimensionar. Relatórios deixou de repetir o painel da Visão geral e a consulta associada, e os gráficos de relatórios e financeiro passam a aparecer sem animação de entrada. A comparação com `85c775f` passou em seis larguras, com produtos, vendas, indicadores, ações e edição preservados. As contagens, cobertura e limites da medição estão em `docs/navigation-rendering-fixes.md`.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.

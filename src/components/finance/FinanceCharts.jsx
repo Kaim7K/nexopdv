@@ -49,21 +49,21 @@ export function FinanceTrendChart({ data = [] }) {
           labelFormatter={formatDate}
         />
         <Legend />
-        <Area
+        <Area isAnimationActive={false}
           type="monotone"
           dataKey="revenue"
           name="Entradas"
           stroke="#16a06a"
           fill="url(#finance-revenue)"
         />
-        <Area
+        <Area isAnimationActive={false}
           type="monotone"
           dataKey="expense"
           name="Saídas"
           stroke="#ef4444"
           fill="transparent"
         />
-        <Area
+        <Area isAnimationActive={false}
           type="monotone"
           dataKey="profit"
           name="Lucro"
@@ -79,7 +79,7 @@ export function ExpenseCategoryChart({ data = [] }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <PieChart>
-        <Pie
+        <Pie isAnimationActive={false}
           data={data}
           dataKey="value"
           nameKey="label"
@@ -111,13 +111,13 @@ export function CashFlowChart({ data = [] }) {
         <YAxis tickFormatter={compactMoney} fontSize={11} />
         <Tooltip formatter={formatCurrency} />
         <Legend />
-        <Bar
+        <Bar isAnimationActive={false}
           dataKey="revenue"
           name="Entradas"
           fill="#16a06a"
           radius={[5, 5, 0, 0]}
         />
-        <Bar
+        <Bar isAnimationActive={false}
           dataKey="expense"
           name="Saídas"
           fill="#ef4444"

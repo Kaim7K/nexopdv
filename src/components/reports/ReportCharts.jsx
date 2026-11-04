@@ -57,7 +57,7 @@ export function BreakdownChart({ data }) {
           formatter={(value) => formatCurrency(value)}
           contentStyle={TOOLTIP_STYLE}
         />
-        <Bar
+        <Bar isAnimationActive={false}
           dataKey="revenue"
           name="Faturamento"
           fill="hsl(var(--chart-1))"
@@ -95,7 +95,7 @@ export function DailyRevenueChart({ data }) {
           contentStyle={TOOLTIP_STYLE}
           labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
         />
-        <Bar dataKey="value" fill="hsl(var(--chart-1))" radius={[5, 5, 0, 0]} />
+        <Bar isAnimationActive={false} dataKey="value" fill="hsl(var(--chart-1))" radius={[5, 5, 0, 0]} />
         <Legend />
       </BarChart>
     </ResponsiveContainer>
@@ -106,7 +106,7 @@ export function PaymentChart({ data }) {
   return (
     <ResponsiveContainer width="100%" height={compactChartHeight(270)}>
       <PieChart>
-        <Pie
+        <Pie isAnimationActive={false}
           data={data}
           dataKey="value"
           nameKey="name"
@@ -175,14 +175,14 @@ export function ProductSalesChart({ data, unitLabel }) {
           labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
         />
         <Legend />
-        <Bar
+        <Bar isAnimationActive={false}
           yAxisId="quantity"
           dataKey="quantity"
           name="Quantidade"
           fill="hsl(var(--chart-1))"
           radius={[5, 5, 0, 0]}
         />
-        <Line
+        <Line isAnimationActive={false}
           yAxisId="revenue"
           type="monotone"
           dataKey="revenue"
