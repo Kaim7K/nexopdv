@@ -20,9 +20,12 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       output: {
+        // Keep shared dependencies out of feature chunks to avoid pulling lazy
+        // charts, PDF and drag-and-drop libraries into the initial module graph.
+        onlyExplicitManualChunks: true,
         manualChunks(id) {
-          if (id.includes('react-router-dom')) return 'router';
-          if (id.includes('node_modules/react')) return 'react-vendor';
+          if (/\/node_modules\/react-router(?:-dom)?\//.test(id)) return 'router';
+          if (/\/node_modules\/(?:react|react-dom|scheduler|use-sync-external-store|react-is)\//.test(id)) return 'react-vendor';
           if (id.includes('recharts')) return 'charts';
           if (id.includes('@hello-pangea/dnd')) return 'dnd';
           if (id.includes('@radix-ui')) return 'radix-ui';

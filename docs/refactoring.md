@@ -150,6 +150,10 @@ As respostas dessas duas consultas são simuladas no navegador para cobrir os es
 
 A suíte existente, tipos, lint, build e comparação de navegador passaram. A versão local permanece ativa na porta 5177 com modo mock e os perfis Vendedor, Gerente e Administrador presentes no simulador.
 
+## Etapa 9: reduzir o peso inicial
+
+A divisão dos arquivos compilados foi ajustada para impedir que as bibliotecas de gráficos, PDF e arrastar e soltar entrem como dependências estáticas do arquivo inicial. O JavaScript dessa árvore passou de 1.236.659 para 335.330 bytes antes da compressão, uma redução de 72,9% na medida. As funções permanecem disponíveis sob demanda. A metodologia, os limites da medição e os testes estão em `docs/bundle-optimization.md`. A suíte existente, tipos, lint, build e o teste dos gráficos, vendas minimizadas e downloads reais de Excel e PDF no navegador passaram com dados de demonstração preservados.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.
