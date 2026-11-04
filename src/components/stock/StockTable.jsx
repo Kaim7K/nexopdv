@@ -38,7 +38,7 @@ const TABLE_COLUMNS = [
     key: 'sale_price',
     label: 'Venda',
     sortKey: 'sale_price',
-    width: 'w-[105px]',
+    width: 'w-[140px]',
     type: 'number',
   },
   {
@@ -65,7 +65,7 @@ const TABLE_COLUMNS = [
   {
     key: 'actions',
     label: 'Ações',
-    width: 'w-[145px]',
+    width: 'w-[185px]',
     sticky: 'right',
   },
 ];
@@ -94,7 +94,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-      <table className="hidden w-full min-w-[1025px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+      <table className="hidden w-full min-w-[1140px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col

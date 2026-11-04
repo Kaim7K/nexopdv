@@ -56,7 +56,7 @@ const StockActionsToolbar = forwardRef(function StockActionsToolbar(
     : 'Revisar sem venda (3 meses)';
 
   return (
-    <div className="grid w-full min-w-0 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2 xl:w-auto xl:flex-nowrap">
+    <div className="grid w-full min-w-0 max-w-full gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
       <input
         ref={fileRef}
         hidden

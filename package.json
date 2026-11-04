@@ -42,7 +42,8 @@
     "benchmark:product-search": "node scripts/benchmark-product-search.mjs",
     "test:finance-period": "node tests/finance-period-browser.mjs",
     "profile:navigation": "node scripts/profile-navigation.mjs",
-    "test:navigation-rendering": "node tests/navigation-rendering-browser.mjs"
+    "test:navigation-rendering": "node tests/navigation-rendering-browser.mjs",
+    "test:page-header": "node tests/page-header-browser.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

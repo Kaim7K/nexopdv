@@ -18,8 +18,8 @@ export function PageHeader({
   tone = 'accent',
 }) {
   return (
-    <header className="page-header">
-      <div className="flex w-full min-w-0 items-center gap-3 xl:w-auto xl:flex-1">
+    <header className="page-header flex-wrap">
+      <div className="flex w-full min-w-0 max-w-full items-center gap-3 xl:w-auto xl:flex-[1_0_18rem]">
         <span
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${toneClasses[tone] || toneClasses.accent}`}
         >
@@ -38,7 +38,7 @@ export function PageHeader({
         </div>
       </div>
       {actions && (
-        <div className="flex w-full min-w-0 flex-wrap gap-1.5 xl:w-auto xl:shrink-0 xl:justify-end">
+        <div className="flex w-full min-w-0 max-w-full flex-wrap gap-1.5 xl:w-auto xl:justify-end">
           {actions}
         </div>
       )}
