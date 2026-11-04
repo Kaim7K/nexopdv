@@ -140,6 +140,16 @@ O teste acrescenta categorias ativas e um gerente à resposta de bootstrap de ca
 
 A suíte existente, tipos, lint, build e comparação de navegador passaram. Não houve alteração de serviço, API, SQL ou dados de produção. As melhorias das duas visões gerais têm cobertura específica em `npm run test:overview` e documentação em `docs/overview-refresh.md`. A versão local continua ativa na porta 5177 com os três simuladores de cargo.
 
+## Etapa 8: movimentações e recebíveis
+
+O checkpoint desta etapa é `c96601b`. A listagem de movimentações e o painel de recebíveis foram extraídos para `features/finance/movements/LedgerPanel.jsx` e `ReceivablesPanel.jsx`. Cada módulo é carregado apenas ao abrir sua seção. O arquivo principal ficou com aproximadamente 377 linhas. Os corpos dos componentes foram comparados com o checkpoint e permaneceram idênticos, incluindo datas, status, mensagens, tratamento de falha e regras de exibição dos valores.
+
+`npm run test:finance-movements` compila o checkpoint e a página refatorada em contextos descartáveis e compara desktop e celular. Verifica entradas e saídas, a regra existente de fallback entre valor realizado e valor da movimentação, recebíveis de origens diferentes com o mesmo ID, vencimento ausente, total a receber, troca de período, listas vazias, erro e nova tentativa ao reabrir a seção. Compara os parâmetros enviados à API e a igualdade integral do banco de demonstração antes e depois. Também confirma o carregamento dos novos módulos apenas ao navegar para cada painel e a ausência de transbordamento horizontal.
+
+As respostas dessas duas consultas são simuladas no navegador para cobrir os estados de forma determinística. Não há gravações financeiras nesse teste, nem validação de SQL. Os resultados ficam em `artifacts/refactor/movements/browser/comparison.json`. Nenhuma regra de negócio, serviço, API, SQL ou dado de produção foi alterado.
+
+A suíte existente, tipos, lint, build e comparação de navegador passaram. A versão local permanece ativa na porta 5177 com modo mock e os perfis Vendedor, Gerente e Administrador presentes no simulador.
+
 ## Próximas etapas
 
 1. Medir o carregamento de dados dos relatórios e sua cobertura histórica antes de alterar consultas, limites ou cache.

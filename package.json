@@ -33,7 +33,8 @@
     "test:purchases-refactor": "node tests/purchase-model.test.mjs && node tests/purchases-refactor-browser.mjs",
     "test:finance-controls": "node tests/finance-controls-browser.mjs",
     "test:overview": "node tests/overview-browser.mjs",
-    "test:finance-settings": "node tests/finance-settings-browser.mjs"
+    "test:finance-settings": "node tests/finance-settings-browser.mjs",
+    "test:finance-movements": "node tests/finance-movements-browser.mjs"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

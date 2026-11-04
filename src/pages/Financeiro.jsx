@@ -29,23 +29,16 @@ import {
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import { nexoApi } from '@/api/nexoApi';
 import {
-  EmptyState,
   ErrorState,
   LoadingState,
 } from '@/components/common/PageState';
-import FinanceOverview, { MetricCard } from '@/components/finance/FinanceOverview';
+import FinanceOverview from '@/components/finance/FinanceOverview';
 import PeriodFilter from '@/components/finance/FinancePeriodFilter';
 import { rangePreset } from '@/features/finance/finance-period';
 import {
-  StatusBadge,
-} from '@/components/finance/TransactionList';
-import {
-  formatCurrency,
   formatDate,
-  formatDateTime,
 } from '@/lib/helpers';
 import {
   TransactionModal,
@@ -106,6 +99,8 @@ const Purchases = lazy(() => import('@/features/finance/purchases/PurchasesPanel
 const Reconciliation = lazy(() => import('@/features/finance/reconciliation/ReconciliationPanel'));
 const Goals = lazy(() => import('@/features/finance/goals/GoalsPanel'));
 const FinanceSettings = lazy(() => import('@/features/finance/settings/FinanceSettingsPanel'));
+const LedgerPanel = lazy(() => import('@/features/finance/movements/LedgerPanel'));
+const ReceivablesPanel = lazy(() => import('@/features/finance/movements/ReceivablesPanel'));
 export default function Financeiro() {
   const { user } = useAuth();
   return hasPlanFeature(user, 'advanced_finance') ? <AdvancedFinance /> : <BasicFinance />;
@@ -379,120 +374,4 @@ function FinanceSection({
       />
     );
   return <FinanceSettings bootstrap={bootstrap} refreshAll={refresh} />;
-}
-
-function LedgerPanel({ range }) {
-  const [data, setData] = useState(null),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    nexoApi.finance
-      .ledger(range)
-      .then(setData)
-      .catch((error) => toast.error(error.message))
-      .finally(() => setLoading(false));
-  }, [range]);
-  if (loading) return <LoadingState />;
-  return <GenericMovementList items={data?.items || []} />;
-}
-function GenericMovementList({ items }) {
-  if (!items.length)
-    return (
-      <EmptyState
-        icon={ArrowRightLeft}
-        title="Nenhuma movimentação no período"
-        description="Vendas, recebimentos e lançamentos aparecerão aqui automaticamente."
-      />
-    );
-  return (
-    <div className="surface-card divide-y divide-border overflow-hidden">
-      {items.map((item) => (
-        <article
-          key={item.id}
-          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
-        >
-          <div
-            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${item.type === 'revenue' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive'}`}
-          >
-            {item.type === 'revenue' ? (
-              <ArrowUpCircle className="h-5 w-5" />
-            ) : (
-              <ArrowDownCircle className="h-5 w-5" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <strong className="block truncate text-sm">
-              {item.description}
-            </strong>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatDateTime(item.date)} · {item.origin} · {item.actor}
-            </p>
-          </div>
-          <strong
-            className={`text-base tabular-nums ${item.type === 'revenue' ? 'text-emerald-600' : 'text-destructive'}`}
-          >
-            {item.type === 'revenue' ? '+' : 'âˆ’'}{' '}
-            {formatCurrency(item.realized_amount || item.amount)}
-          </strong>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ReceivablesPanel({ range }) {
-  const [data, setData] = useState(null),
-    [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    nexoApi.finance
-      .receivables(range)
-      .then(setData)
-      .catch((error) => toast.error(error.message))
-      .finally(() => setLoading(false));
-  }, [range]);
-  if (loading) return <LoadingState />;
-  return (
-    <div className="space-y-4">
-      <MetricCard
-        label="Saldo a receber"
-        value={formatCurrency(data?.total)}
-        help="Receitas externas e vendas fiadas ainda pendentes"
-      />
-      {!data?.items?.length ? (
-        <EmptyState
-          icon={CircleDollarSign}
-          title="Nenhum valor pendente"
-          description="As vendas fiadas e receitas futuras aparecerão aqui."
-        />
-      ) : (
-        <div className="grid gap-3">
-          {data.items.map((item) => (
-            <article
-              key={`${item.kind}:${item.id}`}
-              className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
-            >
-              <div className="min-w-0 flex-1">
-                <strong className="text-sm">
-                  {item.client || item.description}
-                </strong>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {item.client ? item.description : item.category} · vence{' '}
-                  {formatDate(item.due_date) || 'sem data'}
-                </p>
-              </div>
-              <div className="sm:text-right">
-                <strong className="text-base tabular-nums">
-                  {formatCurrency(item.remaining_amount)}
-                </strong>
-                <div className="mt-1">
-                  <StatusBadge status={item.status} />
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
