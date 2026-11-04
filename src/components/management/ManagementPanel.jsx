@@ -5,6 +5,7 @@ import { ArrowRight, RefreshCw } from 'lucide-react';
 import { DaySummary, PendingLists, ProductInsights } from './ManagementCards';
 import { ErrorState, LoadingState } from '@/components/common/PageState';
 import GettingStarted from './GettingStarted';
+import { validateOverviewResponse } from './overview-response';
 
 export default function ManagementPanel({ onboarding = false }) {
   const [data, setData] = useState(null);
@@ -13,7 +14,7 @@ export default function ManagementPanel({ onboarding = false }) {
   const load = useCallback(async (isActive = () => Boolean(true)) => {
     setLoading(true);
     setError('');
-    try { const result = await nexoApi.management.overview(); if (isActive()) setData(result); }
+    try { const result = validateOverviewResponse(await nexoApi.management.overview()); if (isActive()) setData(result); }
     catch (cause) { if (isActive()) setError(cause.message || 'Não foi possível atualizar o resumo.'); }
     finally { if (isActive()) setLoading(false); }
   }, []);

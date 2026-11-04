@@ -69,6 +69,17 @@ try {
       await page.getByRole('button', { name: /Tentar novamente/ }).click();
       await page.getByRole('heading', { name: 'Seu dia em números' }).waitFor();
       assert.deepEqual(await db(), before);
+      await page.evaluate(async () => {
+        const { nexoApi } = await import('/src/api/nexoApi.js');
+        const original = nexoApi.management.overview;
+        globalThis.restoreOverview = () => { nexoApi.management.overview = original; };
+        nexoApi.management.overview = async () => null;
+      });
+      await page.getByRole('button', { name: 'Atualizar resumo' }).click();
+      await page.getByText('O resumo da loja veio incompleto. Tente atualizar novamente.', { exact: true }).waitFor();
+      await page.evaluate(() => globalThis.restoreOverview());
+      await page.getByRole('button', { name: /Tentar novamente/ }).click();
+      await page.getByRole('heading', { name: 'Seu dia em números' }).waitFor();
       await page.goto(`${base}/financeiro`, { waitUntil: 'domcontentloaded' });
       await page.getByRole('heading', { name: 'Resumo financeiro' }).waitFor();
       const finance = page.locator('.page-shell').filter({ has: page.getByRole('heading', { name: 'Financeiro', level: 1, exact: true }) });
