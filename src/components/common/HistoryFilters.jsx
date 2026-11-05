@@ -1,6 +1,7 @@
 import React, { useId, useRef, useState } from 'react';
-import { CalendarRange, Check, ChevronDown, FilterX, SlidersHorizontal, X } from 'lucide-react';
+import { CalendarRange, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import DatePicker from './DatePicker';
+import ActiveFilters from './ActiveFilters';
 
 export function FilterField({ label, icon: Icon = null, children }) {
   const generatedId = useId();
@@ -71,18 +72,7 @@ export default function HistoryFilters({
         {actions && <div className="history-filter-actions">{actions}</div>}
       </div>
 
-      {activeFilters.length > 0 && (
-        <div className="history-filter-active" aria-label="Filtros ativos">
-          {activeFilters.map(({ key, label: filterLabel, onRemove }) => (
-            <button key={key} type="button" onClick={onRemove} aria-label={`Remover filtro: ${filterLabel}`} className="history-filter-chip">
-              <Check aria-hidden="true" className="h-3 w-3 shrink-0" />
-              <span>{filterLabel}</span>
-              <X aria-hidden="true" className="h-3 w-3 shrink-0" />
-            </button>
-          ))}
-          <button type="button" onClick={onClear} className="history-filter-clear"><FilterX aria-hidden="true" className="h-3.5 w-3.5" /> Limpar filtros</button>
-        </div>
-      )}
+      <ActiveFilters items={activeFilters} onClear={onClear} />
 
       <div
         id={panelId}

@@ -140,7 +140,7 @@ export default function ReceiptModal({ sale, config = /** @type {Record<string, 
 
   return (
     <div className="modal-overlay">
-      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" className="modal-panel receipt-modal-panel sm:max-w-2xl">
+      <div ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" data-modal-size="standard" className="modal-panel receipt-modal-panel sm:max-w-2xl">
         <div className="modal-header no-print">
           <div>
             <h2 id="receipt-modal-title" className="modal-title">Recibo da venda</h2>

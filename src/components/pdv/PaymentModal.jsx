@@ -173,7 +173,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
 
   return (
     <div className="modal-overlay bg-slate-950/75" role="presentation">
-      <div ref={modalRef} tabIndex={-1} className="modal-panel sm:max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <div ref={modalRef} tabIndex={-1} data-modal-size="standard" className="modal-panel sm:max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="payment-title">
         <div className="modal-header">
           <div>
             <h2 id="payment-title" className="modal-title">Forma de pagamento</h2>
@@ -232,7 +232,7 @@ export default function PaymentModal({ sale, onClose, onComplete, onMinimize, on
                     const alreadySelected = payments.some(payment => payment.method === method.method);
                     const disabled = remaining <= 0 && !alreadySelected;
                     return (
-                      <button key={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`group flex min-h-10 items-center gap-2 rounded-lg border px-2.5 text-left transition hover:-translate-y-px hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
+                      <button key={method.method} aria-pressed={alreadySelected} data-payment-method={method.method} type="button" onClick={() => addPayment(method.method)} disabled={disabled} className={`group flex min-h-10 items-center gap-2 rounded-lg border px-2.5 text-left transition hover:-translate-y-px hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 sm:min-h-11 ${METHOD_STYLES[method.method] || 'border-border text-accent'}`}>
                         <span className="grid h-7 w-7 flex-none place-items-center rounded-md bg-white/65 dark:bg-black/15"><Icon className="h-4 w-4" /></span>
                         <span className="truncate text-xs font-black sm:text-sm">{METHOD_SHORT_LABELS[method.method] || method.label}</span>
                       </button>

@@ -1,0 +1,94 @@
+.icon-action {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  vertical-align: middle;
+}
+.icon-action > button.icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.625rem;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--card));
+  box-shadow: none;
+}
+.icon-action-compact > button.icon-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+.icon-action.icon-action-overlay { position: absolute; top: 0.375rem; right: 0.375rem; }
+.icon-action > button.icon-button:hover:not(:disabled) {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--input));
+  background: hsl(var(--muted));
+}
+.icon-action > button.icon-button-danger {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive) / 0.25);
+}
+.icon-action > button.icon-button-danger:hover:not(:disabled) {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive) / 0.4);
+  background: hsl(var(--destructive) / 0.07);
+}
+.icon-action > button.icon-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.icon-button > svg { width: 1rem; height: 1rem; pointer-events: none; }
+.icon-button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.action-tooltip {
+  position: fixed;
+  z-index: 2147483300;
+  width: max-content;
+  max-width: min(19rem, calc(100vw - 1.5rem));
+  padding: 0.5rem 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  color: hsl(var(--popover-foreground));
+  background: hsl(var(--popover));
+  box-shadow: 0 4px 16px hsl(var(--foreground) / 0.12);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
+}
+.action-tooltip-below { transform: translate(-50%, 0); }
+.stock-actions-toolbar { align-items: center; }
+.cash-history-card .history-record-footer > .icon-action { margin-left: auto; }
+
+@media (max-width: 639px), (pointer: coarse) {
+  .icon-action > button.icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  .stock-mobile-record { flex-wrap: wrap; row-gap: 0.5rem; padding-block: 0.625rem; }
+  .stock-mobile-record > button:first-child { flex-basis: 100%; }
+  .stock-mobile-record > div:last-child { margin-left: auto; }
+}
+
+@media (max-width: 767px) {
+  body:has(.stock-actions-toolbar):has(.mock-role-switcher) .workspace-panel::after {
+    content: '';
+    flex: none;
+    height: calc(3.5rem + env(safe-area-inset-bottom));
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+}
+
+@media print {
+  .action-tooltip { display: none; }
+}

@@ -80,7 +80,7 @@ export default function QuickProductModal({ barcode, onSave, onClose }) {
         aria-modal="true"
         aria-labelledby="quick-product-title"
         aria-describedby="quick-product-description"
-        className="modal-panel sm:max-w-md"
+        data-modal-size="compact" className="modal-panel sm:max-w-md"
       >
         <div className="modal-header">
           <div>

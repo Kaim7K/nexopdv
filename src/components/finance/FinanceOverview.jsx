@@ -67,7 +67,7 @@ export default function Overview({ data, onNavigate, onAddTransaction, canCreate
             <button type="button" onClick={() => onNavigate('cashflow')} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:bg-muted">Ver fluxo<ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
           </div>
         </div>
-        <div className="grid gap-3 min-[380px]:grid-cols-2 xl:grid-cols-4">
+        <div className="finance-overview-metrics grid gap-3 min-[380px]:grid-cols-2 xl:grid-cols-4">
           {cards.map(card => <OverviewMetricCard key={card.label} {...card} value={formatCurrency(card.value)} />)}
         </div>
       </section>
@@ -164,7 +164,7 @@ function OverviewMetricCard({ label, value, help, change = null, icon: Icon, ton
     info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
     neutral: 'bg-muted text-muted-foreground',
   };
-  return <article className="surface-card min-w-0 p-4 sm:p-5">
+  return <article className="finance-overview-metric surface-card min-w-0 p-4 sm:p-5">
     <div className="flex items-start justify-between gap-2"><h4 className="pt-1 text-sm font-medium text-muted-foreground">{label}</h4><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${tones[tone]}`}><Icon aria-hidden="true" className="h-4 w-4" /></span></div>
     <p className="mt-4 break-words text-xl font-bold tracking-tight tabular-nums sm:text-2xl">{value}</p>
     <div className="mt-2 flex flex-wrap items-center gap-2"><p className="text-xs leading-5 text-muted-foreground">{help}</p>{change !== null && change !== undefined && <span title="Comparação com o período anterior" className={`rounded-md px-2 py-1 text-xs font-semibold ${change >= 0 ? tones.positive : tones.negative}`}>{change > 0 ? '+' : ''}{change}%</span>}</div>

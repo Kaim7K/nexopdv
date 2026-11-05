@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React, {
   useCallback,
   useEffect,
@@ -167,7 +168,7 @@ export default function HistoricoCaixas() {
   );
 
   return (
-    <div className="page-shell space-y-2.5 sm:space-y-4">
+    <div className="page-shell ui-refined cash-workspace space-y-2.5 sm:space-y-4">
       <PageHeader
         icon={Banknote}
         eyebrow="Abertura e fechamento"
@@ -317,13 +318,13 @@ export default function HistoricoCaixas() {
                       <td className="whitespace-nowrap px-3 py-2.5 text-right">
                         <div className="cash-history-table-actions">
                         <CashReview item={item} pending={reviewing.includes(item.id)} onReview={markReviewed} compact />
-                        <button
-                          type="button"
+                        <IconButton
+                          compact
+                          label={`Ver detalhes do caixa de ${item.seller_name}, aberto em ${formatDate(item.opened_at)}`}
                           onClick={() => openDetail(item)}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
                         >
-                          <Eye className="h-4 w-4" /> Detalhes
-                        </button>
+                          <Eye />
+                        </IconButton>
                         </div>
                       </td>
                     </tr>
@@ -355,14 +356,13 @@ export default function HistoricoCaixas() {
                     </dl>
                     <div className="history-record-footer">
                       <CashReview item={item} pending={reviewing.includes(item.id)} onReview={markReviewed} compact />
-                      <button
-                        type="button"
-                        onClick={() => openDetail(item)}
-                        aria-label={`Ver detalhes do caixa de ${item.seller_name}, aberto em ${formatDate(item.opened_at)}`}
-                        className="history-record-details"
-                      >
-                        <Eye aria-hidden="true" className="h-3.5 w-3.5" /> Detalhes
-                      </button>
+                      <IconButton
+                          compact
+                          label={`Ver detalhes do caixa de ${item.seller_name}, aberto em ${formatDate(item.opened_at)}`}
+                          onClick={() => openDetail(item)}
+                        >
+                          <Eye />
+                        </IconButton>
                     </div>
                   </article>
               ))}

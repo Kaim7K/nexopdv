@@ -67,54 +67,56 @@ export default function PurchaseModal({
       description="Salve os produtos e valores como rascunho. O estoque e as contas só mudam após confirmar a compra."
       onClose={onClose}
       disabled={saving}
+      formLayout
       wide
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Fornecedor">
-            <select
-              required
-              className="field"
-              value={form.supplier_id}
-              onChange={(e) =>
-                setForm((v) => ({ ...v, supplier_id: e.target.value }))
-              }
-            >
-              <option value="">Selecione</option>
-              {bootstrap.suppliers
-                .filter((s) => s.active)
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+      <form onSubmit={submit} className="modal-form">
+        <div className="modal-body space-y-4">
+          <div className="adaptive-form-fields modal-field-group grid gap-4 sm:grid-cols-3">
+            <Field label="Fornecedor">
+              <select
+                required
+                className="field"
+                value={form.supplier_id}
+                onChange={(e) =>
+                  setForm((v) => ({ ...v, supplier_id: e.target.value }))
+                }
+              >
+                <option value="">Selecione</option>
+                {bootstrap.suppliers
+                  .filter((s) => s.active)
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="Data da compra">
+              <input
+                type="date"
+                className="field"
+                value={form.issue_date}
+                onChange={(e) =>
+                  setForm((v) => ({ ...v, issue_date: e.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Forma de pagamento">
+              <select
+                className="field"
+                value={form.payment_method}
+                onChange={(e) =>
+                  setForm((v) => ({ ...v, payment_method: e.target.value }))
+                }
+              >
+                {PAYMENT_OPTIONS.map((v) => (
+                  <option key={v} value={v}>
+                    {getPaymentLabel(v)}
                   </option>
                 ))}
-            </select>
-          </Field>
-          <Field label="Data da compra">
-            <input
-              type="date"
-              className="field"
-              value={form.issue_date}
-              onChange={(e) =>
-                setForm((v) => ({ ...v, issue_date: e.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Forma de pagamento">
-            <select
-              className="field"
-              value={form.payment_method}
-              onChange={(e) =>
-                setForm((v) => ({ ...v, payment_method: e.target.value }))
-              }
-            >
-              {PAYMENT_OPTIONS.map((v) => (
-                <option key={v} value={v}>
-                  {getPaymentLabel(v)}
-                </option>
-              ))}
-            </select>
-          </Field>
+              </select>
+            </Field>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -138,44 +140,53 @@ export default function PurchaseModal({
           {form.items.map((item, index) => (
             <div
               key={index}
-              className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-[minmax(0,1fr)_100px_130px_40px]"
+              className="purchase-item grid gap-3 rounded-xl border border-border p-3 sm:grid-cols-[minmax(0,1fr)_100px_130px_44px]"
             >
-              <select
-                required
-                className="field mt-0"
-                value={item.product_id}
-                onChange={(e) =>
-                  updateItem(index, 'product_id', e.target.value)
-                }
-              >
-                <option value="">Produto</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.internal_code || p.barcode || 'sem código'})
-                  </option>
-                ))}
-              </select>
-              <input
-                required
-                aria-label="Quantidade"
-                type="number"
-                min="0.001"
-                step="0.001"
-                className="field mt-0"
-                value={item.quantity}
-                onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-              />
-              <input
-                required
-                aria-label="Custo unitário"
-                type="number"
-                min="0"
-                step="0.0001"
-                className="field mt-0"
-                value={item.unit_cost}
-                onChange={(e) => updateItem(index, 'unit_cost', e.target.value)}
-                placeholder="Custo unit."
-              />
+              <label>
+                Produto
+                <select
+                  required
+                  className="field mt-0"
+                  value={item.product_id}
+                  onChange={(e) =>
+                    updateItem(index, 'product_id', e.target.value)
+                  }
+                >
+                  <option value="">Produto</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.internal_code || p.barcode || 'sem código'})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Quantidade
+                <input
+                  required
+                  aria-label="Quantidade"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  className="field mt-0"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                />
+              </label>
+              <label>
+                Custo unitário
+                <input
+                  required
+                  aria-label="Custo unitário"
+                  type="number"
+                  min="0"
+                  step="0.0001"
+                  className="field mt-0"
+                  value={item.unit_cost}
+                  onChange={(e) => updateItem(index, 'unit_cost', e.target.value)}
+                  placeholder="Custo unit."
+                />
+              </label>
               <button
                 type="button"
                 aria-label="Remover produto"
@@ -186,14 +197,14 @@ export default function PurchaseModal({
                     items: v.items.filter((_, i) => i !== index),
                   }))
                 }
-                className="grid h-11 place-items-center rounded-xl text-destructive disabled:opacity-30"
+                className="purchase-remove grid h-11 place-items-center rounded-xl border border-destructive/20 text-destructive disabled:opacity-30"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           ))}
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="adaptive-form-fields modal-field-group grid gap-4 sm:grid-cols-3">
           <Field label="Desconto">
             <input
               type="number"
@@ -234,6 +245,7 @@ export default function PurchaseModal({
           }
           label="Nota fiscal ou comprovante"
         />
+        </div>
         <ModalActions
           saving={saving}
           onClose={onClose}

@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React, { useEffect, useState } from "react";
 import { BarChart3, Download, RefreshCw } from "lucide-react";
 import { nexoApi } from "@/api/nexoApi";
@@ -67,7 +68,7 @@ export default function AdminRelatorios() {
     URL.revokeObjectURL(url);
   };
   return (
-    <div className="page-shell space-y-3 sm:space-y-5">
+    <div className="page-shell ui-refined admin-workspace platform-reports space-y-3 sm:space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -87,7 +88,7 @@ export default function AdminRelatorios() {
           <Download className="h-4 w-4" /> Exportar CSV
         </button>
       </header>
-      <section className="grid gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:gap-3">
+      <section className="grid gap-2 rounded-xl border border-border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:gap-3">
         <button
           type="button"
           onClick={applyToday}
@@ -116,15 +117,11 @@ export default function AdminRelatorios() {
             onChange={(e) => setFilters((v) => ({ ...v, to: e.target.value }))}
           />
         </label>
-        <button
-          type="button"
-          onClick={() => load()}
-          disabled={loading}
-          className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />{" "}
-          Atualizar
-        </button>
+        <span className="mt-auto inline-flex">
+          <IconButton label="Atualizar" onClick={() => load()} disabled={loading} aria-busy={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </IconButton>
+        </span>
       </section>
       {loading && !data ? (
         <LoadingState label="Processando indicadores..." />

@@ -27,7 +27,7 @@ export default function Suppliers({ bootstrap, refreshAll }) {
     }
   };
   return (
-    <div className="grid content-start gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
+    <div className="finance-reference-layout grid content-start gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
       <form onSubmit={save} className="surface-card h-fit space-y-3 p-3">
         <h3 className="font-bold">Novo fornecedor</h3>
         <Field label="Nome">

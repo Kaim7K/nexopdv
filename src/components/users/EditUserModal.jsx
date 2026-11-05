@@ -58,7 +58,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
 
   return (
     <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !saving && onClose()} role="presentation">
-      <form ref={modalRef} onSubmit={save} className="modal-panel sm:max-w-lg" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+      <form ref={modalRef} onSubmit={save} data-modal-size="standard" className="modal-panel ui-refined-modal sm:max-w-lg" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
         <div className="modal-header">
           <div>
             <h2 id="edit-user-title" className="modal-title">Editar usuário</h2>
@@ -75,7 +75,7 @@ export default function EditUserModal({ user, isCurrentUser = false, actorRole =
           {actorRole === 'admin' && <AvatarColorField name={form.full_name || user.email} value={form.avatar_color} onChange={avatar_color => setForm(previous => ({ ...previous, avatar_color }))} />}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="modal-field-group grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-semibold sm:col-span-2">
             Nome completo <span className="text-destructive">*</span>
             <input required autoFocus value={form.full_name} onChange={event => setForm(previous => ({ ...previous, full_name: event.target.value }))} className="mt-1.5 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-11" />

@@ -16,14 +16,8 @@ import {
 } from 'recharts';
 import { formatCurrency, formatNumber } from '@/lib/helpers';
 
-const CHART_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(280 65% 60%)',
-];
+import { CHART_COLORS } from './chart-colors';
+
 const TOOLTIP_STYLE = {
   backgroundColor: 'hsl(var(--popover))',
   border: '1px solid hsl(var(--border))',
@@ -113,8 +107,9 @@ export function PaymentChart({ data }) {
           cx="50%"
           cy="50%"
           outerRadius={86}
-          label={({ value }) => formatCurrency(value)}
-          labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+          innerRadius={46}
+          paddingAngle={2}
+          labelLine={false}
         >
           {data.map((item, index) => (
             <Cell

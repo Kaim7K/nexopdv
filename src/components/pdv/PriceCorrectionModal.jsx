@@ -39,7 +39,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="price-correction-title"
-        className="modal-panel sm:max-w-lg"
+        data-modal-size="standard" className="modal-panel sm:max-w-lg"
       >
         <div className="modal-header">
           <div>
@@ -63,7 +63,7 @@ export default function PriceCorrectionModal({ items, onSave, onClose }) {
           <div className="text-sm text-muted-foreground">
             Selecione o item com valor incorreto:
           </div>
-          <div className="max-h-40 space-y-1 overflow-y-auto sm:max-h-48">
+          <div className="space-y-2">
             {items.map((item, i) => (
               <button
                 type="button"

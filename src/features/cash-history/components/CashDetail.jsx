@@ -289,6 +289,7 @@ export default function CashDetail({
     }
   };
   return (
+    <>
     <div className="modal-overlay cash-modal-overlay" role="presentation">
       <section
         ref={modalRef}
@@ -296,7 +297,8 @@ export default function CashDetail({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cash-detail-title"
-        className="cash-detail-dialog cash-adaptive cash-mobile-modal flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[min(48rem,calc(100dvh-2rem))] sm:rounded-2xl sm:border sm:border-border/60 sm:shadow-[0_22px_70px_rgba(0,0,0,0.32)]"
+        data-modal-size="wide"
+        className="cash-detail-dialog ui-refined-modal cash-adaptive cash-mobile-modal flex h-dvh w-full max-w-6xl flex-col overflow-hidden bg-card sm:h-auto sm:max-h-[min(48rem,calc(100dvh-2rem))] sm:rounded-2xl sm:border sm:border-border/60 sm:shadow-[0_22px_70px_rgba(0,0,0,0.32)]"
       >
         <header className="relative flex flex-col gap-2 border-b border-border/80 bg-muted/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="flex min-w-0 items-center gap-2.5 pr-12 sm:pr-0">
@@ -826,6 +828,8 @@ export default function CashDetail({
             <CashReview item={session} pending={reviewPending} onReview={onReview} />
           </footer>
         )}
+      </section>
+    </div>
         {selectedSale && (
           <SaleDetailModal
             sale={selectedSale}
@@ -851,8 +855,7 @@ export default function CashDetail({
             userRole={currentUser.role}
           />
         )}
-      </section>
-    </div>
+    </>
   );
 }
 

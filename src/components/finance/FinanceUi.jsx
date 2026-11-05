@@ -20,7 +20,7 @@ export function ReferenceCards({ items = [], empty, render }) {
 }
 export function Field({ label, children }) {
   return (
-    <label className="block text-xs font-bold text-muted-foreground">
+    <label className="finance-field block text-sm font-semibold text-foreground">
       {label}
       {children}
     </label>
@@ -28,7 +28,7 @@ export function Field({ label, children }) {
 }
 export function ModalActions({ saving, onClose, label = 'Salvar' }) {
   return (
-    <div className="modal-footer -mx-3 -mb-3 mt-3 sm:-mx-4 sm:-mb-4">
+    <div className="modal-footer">
       <div className="modal-actions">
         <button
           type="button"
@@ -50,7 +50,7 @@ export function ModalActions({ saving, onClose, label = 'Salvar' }) {
     </div>
   );
 }
-export function FinanceModal({ title, description = '', onClose, children, wide = false, disabled = false }) {
+export function FinanceModal({ title, description = '', onClose, children, wide = false, disabled = false, formLayout = false }) {
   const modalRef = useModalBehavior({ onClose, disabled });
   return (
     <div
@@ -65,7 +65,8 @@ export function FinanceModal({ title, description = '', onClose, children, wide 
         aria-modal="true"
         aria-labelledby="finance-modal-title"
         aria-describedby={description ? 'finance-modal-description' : undefined}
-        className={`modal-panel ${wide ? 'sm:max-w-5xl' : 'sm:max-w-xl'}`}
+        data-modal-size={wide ? 'wide' : 'standard'}
+        className={`modal-panel ui-refined-modal finance-form-modal ${wide ? 'sm:max-w-5xl' : 'sm:max-w-xl'}`}
       >
         <header className="modal-header">
           <div className="flex min-w-0 items-center gap-3">
@@ -91,7 +92,7 @@ export function FinanceModal({ title, description = '', onClose, children, wide 
             <X className="h-5 w-5" />
           </button>
         </header>
-        <div className="modal-body">{children}</div>
+        {formLayout ? children : <div className="modal-body">{children}</div>}
       </section>
     </div>
   );
@@ -118,37 +119,40 @@ export function CancellationModal({
       description={description}
       onClose={onClose}
       disabled={saving}
+      formLayout
     >
       <form
         onSubmit={(event) => {
           event.preventDefault();
           if (valid && !saving) onConfirm(reason.trim());
         }}
-        className="space-y-4"
+        className="modal-form"
       >
-        {subject && (
-          <div className="rounded-xl border border-border bg-muted/25 px-3 py-2.5 text-sm font-semibold">
-            {subject}
-          </div>
-        )}
-        <label className="block text-sm font-bold">
-          Motivo do cancelamento
-          <textarea
-            autoFocus
-            required
-            minLength={5}
-            maxLength={500}
-            rows={3}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Ex.: lançamento duplicado ou compra devolvida ao fornecedor"
-            className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <span className="mt-1 block text-xs font-normal text-muted-foreground">
-            Escreva pelo menos 5 caracteres para manter uma auditoria clara.
-          </span>
-        </label>
-        <div className="modal-actions">
+        <div className="modal-body space-y-4">
+          {subject && (
+            <div className="rounded-xl border border-border bg-muted/25 px-3 py-2.5 text-sm font-semibold">
+              {subject}
+            </div>
+          )}
+          <label className="block text-sm font-bold">
+            Motivo do cancelamento
+            <textarea
+              autoFocus
+              required
+              minLength={5}
+              maxLength={500}
+              rows={3}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Ex.: lançamento duplicado ou compra devolvida ao fornecedor"
+              className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              Escreva pelo menos 5 caracteres para manter uma auditoria clara.
+            </span>
+          </label>
+        </div>
+        <div className="modal-footer"><div className="modal-actions">
           <button type="button" onClick={onClose} disabled={saving} className="modal-button border border-border hover:bg-muted disabled:opacity-50">
             Voltar
           </button>
@@ -156,7 +160,7 @@ export function CancellationModal({
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? 'Cancelando...' : 'Confirmar cancelamento'}
           </button>
-        </div>
+        </div></div>
       </form>
     </FinanceModal>
   );

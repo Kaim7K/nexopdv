@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React from 'react';
 import { BarChart3, Copy, Package, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
@@ -42,7 +43,7 @@ export default function StockMobileList({
         return (
           <article
             key={product.id}
-            className={`flex min-w-0 items-center gap-1.5 border-l-2 px-2 py-1.5 transition-colors ${stateClass}`}
+            className={`stock-mobile-record flex min-w-0 items-center gap-1.5 border-l-2 px-2 py-1.5 transition-colors ${stateClass}`}
           >
             <button
               type="button"
@@ -65,10 +66,10 @@ export default function StockMobileList({
                 )}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold text-foreground">
+                <span className="block whitespace-normal break-words text-sm font-semibold leading-snug text-foreground">
                   {product.name}
                 </span>
-                <span className="block truncate text-[10px] text-muted-foreground">
+                <span className="mt-0.5 block whitespace-normal text-[11px] leading-snug text-muted-foreground">
                   {product.category || 'Sem categoria'} · {stockLabel}
                 </span>
               </span>
@@ -132,19 +133,8 @@ function RowAction({
   destructive = false,
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      aria-label={label}
-      title={title}
-      className={`grid h-8 w-8 place-items-center rounded-md border bg-card transition-colors disabled:cursor-wait disabled:opacity-50 ${
-        destructive
-          ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
-          : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-      }`}
-    >
+    <IconButton compact label={label || title} onClick={onClick} disabled={disabled} variant={destructive ? 'danger' : 'default'}>
       {children}
-    </button>
+    </IconButton>
   );
 }

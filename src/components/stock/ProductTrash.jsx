@@ -63,7 +63,7 @@ export default function ProductTrash({ onClose, onRestored }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-trash-title"
-        className="modal-panel sm:max-w-3xl"
+        data-modal-size="wide" className="modal-panel sm:max-w-3xl"
       >
         <header className="modal-header">
           <div>

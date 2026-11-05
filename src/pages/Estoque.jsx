@@ -536,7 +536,7 @@ export default function Estoque() {
   };
 
   const hasFilters = Boolean(
-    search || category || minPrice || maxPrice || stock !== 'todos',
+    search || category || minPrice || maxPrice || stock !== 'todos' || imageFilter !== 'all',
   );
   const clearFilters = () => {
     setSearch('');
@@ -587,7 +587,7 @@ export default function Estoque() {
   }, [loading, pageCount, setPage]);
 
   return (
-    <div className="page-shell !max-w-[1700px]">
+    <div className="page-shell ui-refined stock-workspace !max-w-[1700px]">
       <PageHeader
         icon={Package}
         eyebrow="Produtos e quantidades"
@@ -674,7 +674,6 @@ export default function Estoque() {
         onPageSizeChange={setPageSize}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        hasFilters={hasFilters}
         onClearFilters={clearFilters}
       />
 

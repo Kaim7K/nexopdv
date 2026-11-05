@@ -342,7 +342,7 @@ export default function Configuracoes() {
     );
   if (loadError && !Object.keys(configs).length)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined settings-workspace">
         <ErrorState description={loadError} onRetry={loadConfigs} />
       </div>
     );
@@ -417,7 +417,8 @@ export default function Configuracoes() {
   };
 
   return (
-    <form onSubmit={handleSave} className="page-shell">
+    <form onSubmit={handleSave} className="page-shell ui-refined settings-workspace">
+      <div className="settings-save-header">
       <PageHeader
         icon={Store}
         eyebrow="Seu mercado"
@@ -438,6 +439,7 @@ export default function Configuracoes() {
           </button>
         }
       />
+      </div>
       <div className="hidden">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -464,7 +466,7 @@ export default function Configuracoes() {
         </button>
       </div>
 
-      <label className="sticky top-1 z-20 mb-3 block rounded-xl border border-border bg-card/95 p-1.5 shadow-sm backdrop-blur sm:hidden">
+      <label className="settings-jump mb-3 block rounded-xl border border-border bg-card/95 p-1.5 shadow-sm backdrop-blur sm:hidden">
         <span className="sr-only">Ir para uma configuração</span>
         <select
           defaultValue=""
@@ -498,7 +500,7 @@ export default function Configuracoes() {
               Identificação, recibos e relatórios.
             </p>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="adaptive-form-fields grid gap-2.5 sm:grid-cols-2">
             <label className="block text-sm font-semibold sm:col-span-2">
               Nome do mercado <span className="text-destructive">*</span>
               <input

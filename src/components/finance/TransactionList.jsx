@@ -1,5 +1,6 @@
 import React from 'react';
-import { Receipt } from 'lucide-react';
+import IconButton from '@/components/common/IconButton';
+import { Copy, Pencil, Receipt } from 'lucide-react';
 import { EmptyState } from '@/components/common/PageState';
 import { formatCurrency, formatDate } from '@/lib/helpers';
 
@@ -170,22 +171,14 @@ function RowActions({ item, onPay, onEdit, onCancel, onDuplicate }) {
         </button>
       )}
       {onDuplicate && (
-        <button
-          type="button"
-          onClick={() => onDuplicate(item)}
-          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold hover:bg-muted"
-        >
-          Duplicar
-        </button>
+        <IconButton compact label={`Duplicar lançamento: ${item.description}`} onClick={() => onDuplicate(item)}>
+          <Copy />
+        </IconButton>
       )}
       {onEdit && ['pending', 'partial', 'overdue'].includes(item.status) && (
-        <button
-          type="button"
-          onClick={() => onEdit(item)}
-          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold hover:bg-muted"
-        >
-          Editar
-        </button>
+        <IconButton compact label={`Editar lançamento: ${item.description}`} onClick={() => onEdit(item)}>
+          <Pencil />
+        </IconButton>
       )}
       {onCancel && !['cancelled', 'reversed'].includes(item.status) && (
         <button

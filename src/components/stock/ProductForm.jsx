@@ -317,7 +317,7 @@ export default function ProductForm({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="modal-panel sm:max-w-3xl lg:max-h-[min(42rem,calc(100dvh-2rem))]"
+        data-modal-size="wide" className="modal-panel ui-refined-modal sm:max-w-3xl lg:max-h-[min(42rem,calc(100dvh-2rem))]"
       >
         <div className="modal-header">
           <div>
@@ -402,6 +402,7 @@ export default function ProductForm({
           </section>
           </details>
 
+          <div className="modal-field-group">
           <div>
             <label
               htmlFor="product-name"
@@ -409,7 +410,7 @@ export default function ProductForm({
             >
               Nome do produto *
             </label>
-            <div className="mt-1 flex gap-2">
+            <div className="product-name-control mt-1 flex gap-2">
               <input
                 id="product-name"
                 type="text"
@@ -427,12 +428,12 @@ export default function ProductForm({
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent px-3 text-sm font-bold text-accent hover:bg-accent/10"
               >
                 <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Padronizar</span>
+                <span>Padronizar</span>
               </button>
             </div>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="adaptive-form-fields grid gap-2.5 sm:grid-cols-2">
             <ProductCategoryField
               category={form.category}
               open={categoryMenuOpen}
@@ -472,7 +473,9 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          </div>
+
+          <div className="adaptive-form-fields modal-field-group grid gap-2.5 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="product-barcode"
@@ -530,7 +533,7 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="adaptive-form-fields product-pricing-fields modal-field-group grid gap-2.5 sm:grid-cols-3">
             <div>
               <label
                 htmlFor="product-sale-price"
@@ -595,6 +598,7 @@ export default function ProductForm({
             </div>
           </div>
 
+          <div className="modal-field-group">
           <div>
             <label
               htmlFor="product-status"
@@ -613,7 +617,7 @@ export default function ProductForm({
             </select>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="product-form-options grid gap-2 sm:grid-cols-2">
           <label className="flex min-h-9 items-center gap-2 rounded-lg border border-border bg-muted/15 px-3 py-1.5">
             <input
               type="checkbox"
@@ -652,6 +656,7 @@ export default function ProductForm({
               </span>
             </span>
           </label>
+          </div>
           </div>
         </div>
 

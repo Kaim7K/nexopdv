@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React, { useEffect, useState } from 'react';
 import {
   BarChart3,
@@ -17,14 +18,14 @@ const TABLE_COLUMNS = [
     key: 'name',
     label: 'Produto',
     sortKey: 'name',
-    width: 'w-[230px]',
+    width: 'w-[290px]',
     sticky: 'left',
   },
   {
     key: 'category',
     label: 'Categoria',
     sortKey: 'category',
-    width: 'w-[130px]',
+    width: 'w-[180px]',
     type: 'text',
   },
   {
@@ -59,7 +60,7 @@ const TABLE_COLUMNS = [
     key: 'status',
     label: 'Status',
     sortKey: 'status',
-    width: 'w-[105px]',
+    width: 'w-[125px]',
     type: 'text',
   },
   {
@@ -94,7 +95,7 @@ export default function StockTable({
   onClearFilters,
 }) {
   return (
-      <table className="hidden w-full min-w-[1140px] table-fixed border-separate border-spacing-0 text-sm xl:table">
+      <table className="stock-data-table hidden w-full min-w-[1270px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
           <col
@@ -290,6 +291,7 @@ function ProductIdentity({ product, onEdit, onInlineEdit }) {
           aria-label={`Produto ${product.name}`}
           className={`${inputClass} h-7 px-1.5 font-bold`}
           type="text"
+          title={product.name}
           value={product.name ?? ''}
           onCommit={(value) => onInlineEdit(product.id, 'name', value, 'text')}
         />
@@ -356,6 +358,7 @@ function CellEditor({
             aria-label={`${label} de ${product.name}`}
             className={`${inputClass} pl-7 pr-2 font-bold tabular-nums`}
             type="number"
+            fixedDecimals
             min="0"
             step="0.01"
             value={product[fieldKey] ?? ''}
@@ -425,8 +428,10 @@ function CellEditor({
   );
 }
 
-function InlineField({ value, onCommit, ...props }) {
+function InlineField({ value, onCommit, fixedDecimals = false, ...props }) {
   const [draft, setDraft] = useState(value ?? '');
+  const [focused, setFocused] = useState(false);
+  const cancelled = React.useRef(false);
 
   useEffect(() => {
     setDraft(value ?? '');
@@ -439,15 +444,19 @@ function InlineField({ value, onCommit, ...props }) {
   return (
     <input
       {...props}
-      value={draft}
+      type={fixedDecimals && !focused ? 'text' : props.type}
+      inputMode={fixedDecimals ? 'decimal' : undefined}
+      value={fixedDecimals && !focused && draft !== '' ? Number(draft).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : draft}
+      onFocus={() => { cancelled.current = false; setFocused(true); }}
       onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
+      onBlur={() => { if (!cancelled.current) commit(); setFocused(false); }}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
           event.currentTarget.blur();
         }
         if (event.key === 'Escape') {
+          cancelled.current = true;
           setDraft(value ?? '');
           event.currentTarget.blur();
         }
@@ -497,19 +506,8 @@ function ActionButton({
   destructive = false,
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      aria-label={label}
-      title={title}
-      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border bg-card !shadow-none transition-colors active:scale-95 disabled:cursor-wait disabled:opacity-50 ${
-        destructive
-          ? 'border-destructive/25 text-destructive hover:bg-destructive/10'
-          : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-      }`}
-    >
+    <IconButton compact label={label || title} onClick={onClick} disabled={disabled} variant={destructive ? 'danger' : 'default'}>
       {children}
-    </button>
+    </IconButton>
   );
 }

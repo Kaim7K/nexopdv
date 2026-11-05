@@ -340,41 +340,43 @@ export function TransactionModal({
       }
       onClose={onClose}
       disabled={saving}
+      formLayout
       description={item ? 'Atualize valor, datas e status.' : initialType === 'expense' ? 'Registre a saída do caixa ou conta.' : 'Informe valor, origem e status.'}
     >
-      <form onSubmit={submit} className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Tipo">
-            <select
-              className="field"
-              value={form.type}
-              onChange={(e) =>
-                setForm((v) => ({
-                  ...v,
-                  type: e.target.value,
-                  category_id: '',
-                }))
-              }
-            >
-              <option value="expense">Despesa</option>
-              <option value="revenue">Receita externa</option>
-              <option value="loss">Perda ou avaria</option>
-              <option value="transfer">Transferência entre contas</option>
-            </select>
-          </Field>
-          <Field label="Valor">
-            <input
-              required
-              min="0.01"
-              step="0.01"
-              inputMode="decimal"
-              className="field"
-              value={form.amount}
-              onChange={(e) =>
-                setForm((v) => ({ ...v, amount: e.target.value }))
-              }
-            />
-          </Field>
+      <form onSubmit={submit} className="modal-form">
+        <div className="modal-body space-y-3">
+          <div className="adaptive-form-fields modal-field-group grid gap-3 sm:grid-cols-2">
+            <Field label="Tipo">
+              <select
+                className="field"
+                value={form.type}
+                onChange={(e) =>
+                  setForm((v) => ({
+                    ...v,
+                    type: e.target.value,
+                    category_id: '',
+                  }))
+                }
+              >
+                <option value="expense">Despesa</option>
+                <option value="revenue">Receita externa</option>
+                <option value="loss">Perda ou avaria</option>
+                <option value="transfer">Transferência entre contas</option>
+              </select>
+            </Field>
+            <Field label="Valor">
+              <input
+                required
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+                className="field"
+                value={form.amount}
+                onChange={(e) =>
+                  setForm((v) => ({ ...v, amount: e.target.value }))
+                }
+              />
+            </Field>
         </div>
         <Field label="Descrição">
           <input
@@ -389,7 +391,7 @@ export function TransactionModal({
             placeholder="Ex.: Conta de energia de julho"
           />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="adaptive-form-fields modal-field-group grid gap-3 sm:grid-cols-2">
           <Field label="Categoria">
             <select
               required={form.type !== 'transfer'}
@@ -420,7 +422,7 @@ export function TransactionModal({
             />
           </Field>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="adaptive-form-fields modal-field-group grid gap-3 sm:grid-cols-2">
           <Field label="Conta financeira">
             <select
               required
@@ -488,7 +490,7 @@ export function TransactionModal({
         </button>
         {advanced && (
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="adaptive-form-fields modal-field-group grid gap-4 sm:grid-cols-2">
               <Field label="Fornecedor">
                 <select
                   className="field"
@@ -545,6 +547,7 @@ export function TransactionModal({
             />
           </div>
         )}
+        </div>
         <ModalActions saving={saving} onClose={onClose} />
       </form>
     </FinanceModal>
@@ -595,16 +598,18 @@ export function PaymentModal({ item, accounts, onClose, onSaved }) {
       description="Confirme quanto foi pago, a data, a forma e a conta de onde o dinheiro saiu."
       onClose={onClose}
       disabled={saving}
+      formLayout
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div className="rounded-xl bg-muted/30 p-4">
-          <p className="text-sm font-bold">{item.description}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Saldo:{' '}
-            {formatCurrency(Number(item.amount) - Number(item.paid_amount))}
-          </p>
+      <form onSubmit={submit} className="modal-form">
+        <div className="modal-body space-y-4">
+          <div className="rounded-xl bg-muted/30 p-4">
+            <p className="text-sm font-bold">{item.description}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Saldo:{' '}
+              {formatCurrency(Number(item.amount) - Number(item.paid_amount))}
+            </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="adaptive-form-fields modal-field-group grid gap-4 sm:grid-cols-2">
           <Field label="Valor">
             <input
               required
@@ -672,6 +677,7 @@ export function PaymentModal({ item, accounts, onClose, onSaved }) {
           }
           label="Comprovante"
         />
+        </div>
         <ModalActions saving={saving} onClose={onClose} />
       </form>
     </FinanceModal>

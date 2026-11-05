@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React from 'react';
 import { BarChart3, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
@@ -91,15 +92,14 @@ export default function StockGridView({
               </div>
             </button>
             {onReport && (
-              <button
-                type="button"
+              <IconButton
+                compact
+                wrapperClassName="icon-action-overlay"
+                label={`Abrir relatório de ${product.name}`}
                 onClick={() => onReport(product)}
-                className="absolute right-1.5 top-1.5 grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground"
-                aria-label={`Abrir relatório de ${product.name}`}
-                title="Relatório"
               >
                 <BarChart3 className="h-4 w-4" />
-              </button>
+              </IconButton>
             )}
           </article>
         );

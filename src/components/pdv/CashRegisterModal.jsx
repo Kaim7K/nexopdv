@@ -113,6 +113,7 @@ export default function CashRegisterModal({
       <form
         ref={modalRef}
         onSubmit={submit}
+        data-modal-size={isOpenMode ? 'compact' : canSeeCashBalances ? 'wide' : 'standard'}
         className={`modal-panel cash-mobile-modal ${isOpenMode ? "sm:max-w-[30rem]" : canSeeCashBalances ? "sm:max-w-[56rem]" : "sm:max-w-[34rem]"}`}
         role="dialog"
         aria-modal="true"

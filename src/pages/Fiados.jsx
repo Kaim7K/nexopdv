@@ -1,3 +1,4 @@
+import ActiveFilters from '@/components/common/ActiveFilters';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
@@ -215,7 +216,7 @@ export default function Fiados() {
   };
 
   return (
-    <div className="page-shell !max-w-6xl">
+    <div className="page-shell ui-refined fiados-workspace !max-w-6xl">
       <PageHeader
         icon={HandCoins}
         eyebrow="Contas a receber"
@@ -230,8 +231,8 @@ export default function Fiados() {
         <MetricCard icon={Check} label="Total quitado" value={formatCurrency(totals.settled)} tone="green" />
       </div>
 
-      <FilterPanel aria-label="Filtros de fiados">
-        <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-2 xl:grid-cols-[minmax(15rem,1fr)_170px_160px_160px_auto]">
+      <FilterPanel className="unified-filters" aria-label="Filtros de fiados">
+        <div className="fiados-filter-primary">
           <label className="relative">
             <span className="sr-only">Buscar fiados</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -243,6 +244,12 @@ export default function Fiados() {
             <option value="quitado">Quitados</option>
             <option value="cancelado">Cancelados</option>
           </select>
+        </div>
+        <details className="unified-filter-extra" onKeyDown={event => {
+          if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+        }}>
+          <summary className="history-filter-toggle">Mais filtros {(settledFrom || settledTo) && <span className="history-filter-count">{Number(Boolean(settledFrom)) + Number(Boolean(settledTo))}</span>}</summary>
+          <div className="fiados-filter-dates">
           <label className="relative">
             <span className="pointer-events-none absolute left-9 top-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Quitados de</span>
             <CalendarRange className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -269,8 +276,14 @@ export default function Fiados() {
               className="h-9 w-full rounded-lg border border-border bg-background pb-0.5 pl-9 pr-2 pt-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10"
             />
           </label>
-          {hasFilters && <button type="button" onClick={clearFilters} className="min-h-9 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted sm:min-h-10">Limpar</button>}
-        </div>
+          </div>
+        </details>
+        <ActiveFilters items={[
+          search && { key: 'search', label: `Busca: ${search}`, onRemove: () => setSearch('') },
+          filterStatus && { key: 'status', label: { pendente: 'Pendentes', quitado: 'Quitados', cancelado: 'Cancelados' }[filterStatus], onRemove: () => setFilterStatus('') },
+          settledFrom && { key: 'from', label: `Quitados de: ${settledFrom.split('-').reverse().join('/')}`, onRemove: () => setSettledFrom('') },
+          settledTo && { key: 'to', label: `Quitados até: ${settledTo.split('-').reverse().join('/')}`, onRemove: () => setSettledTo('') },
+        ].filter(Boolean)} onClear={clearFilters} />
         {(settledFrom || settledTo) && filterStatus !== 'quitado' && (
           <p className="mt-2 text-xs text-muted-foreground">
             O período filtra apenas os quitados. Fiados pendentes continuam visíveis em qualquer data.
@@ -290,7 +303,7 @@ export default function Fiados() {
             const pending = item.status === 'pendente';
             const settled = item.status === 'quitado';
             return (
-              <article key={item.id} className="surface-card p-2.5 sm:p-3">
+              <article key={item.id} className="surface-card fiado-card p-2.5 sm:p-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <div className={`grid h-8 w-8 flex-none place-items-center rounded-lg sm:h-10 sm:w-10 ${pending ? 'bg-orange-500/10 text-orange-600' : settled ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
                     {pending ? <Clock className="h-5 w-5" /> : settled ? <Check className="h-5 w-5" /> : <Ban className="h-5 w-5" />}
@@ -309,7 +322,7 @@ export default function Fiados() {
                     {item.observation && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{item.observation}</p>}
                     {settled && item.settlement_date && <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">Quitado em {formatDateTime(item.settlement_date)} · {item.settlement_method || 'forma não informada'}</p>}
                   </div>
-                  <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
+                  <div className="fiado-balance flex items-center justify-between gap-3 sm:flex-col sm:items-end">
                     <strong className="text-base font-black tabular-nums sm:text-lg">{formatCurrency(item.total_amount)}</strong>
                     <div className="flex gap-2">
                       {pending && canManage(item) && (
@@ -345,7 +358,7 @@ export default function Fiados() {
 
       {settleFiado && (
         <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !processing && setSettleFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="modal-panel sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="settle-title">
+          <div ref={debtModalRef} tabIndex={-1} data-modal-size="compact" className="modal-panel ui-refined-modal sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="settle-title">
             <ModalHeader id="settle-title" title="Quitar fiado" subtitle={`${settleFiado.responsible_name} · ${formatCurrency(settleFiado.total_amount)}`} onClose={() => setSettleFiado(null)} disabled={processing} />
             <div className="modal-body space-y-3">
             <section className="rounded-lg border border-border/80 bg-muted/10 p-3">
@@ -392,6 +405,8 @@ export default function Fiados() {
                 </div>
               )}
             </section>
+            </div>
+            <div className="modal-footer">
             <p className="text-sm font-semibold">Selecione a forma de recebimento:</p>
             <div className="grid grid-cols-2 gap-2">
               {SETTLEMENT_METHODS.map(([method, label, Icon]) => <button key={method} type="button" disabled={processing} onClick={() => handleSettle(method)} className={`modal-button border disabled:opacity-50 ${getPaymentVisual(method).badge}`}><Icon className="h-4 w-4" />{label}</button>)}
@@ -403,7 +418,7 @@ export default function Fiados() {
 
       {cancelFiado && (
         <div className="modal-overlay" onMouseDown={event => event.target === event.currentTarget && !processing && setCancelFiado(null)} role="presentation">
-          <div ref={debtModalRef} tabIndex={-1} className="modal-panel sm:max-w-md" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
+          <div ref={debtModalRef} tabIndex={-1} data-modal-size="compact" className="modal-panel ui-refined-modal sm:max-w-md" role="alertdialog" aria-modal="true" aria-labelledby="cancel-fiado-title">
             <ModalHeader id="cancel-fiado-title" title="Cancelar fiado" subtitle={`${cancelFiado.responsible_name} · ${formatCurrency(cancelFiado.total_amount)}`} onClose={() => setCancelFiado(null)} disabled={processing} />
             <div className="modal-body"><div className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">O registro deixará de aparecer como pendente. Esta ação ficará registrada na auditoria.</div></div>
             <div className="modal-footer"><div className="modal-actions"><button type="button" disabled={processing} onClick={() => setCancelFiado(null)} className="modal-button border border-border hover:bg-muted disabled:opacity-50">Voltar</button><button type="button" disabled={processing} onClick={handleCancel} className="modal-button modal-actions-primary bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">{processing ? 'Cancelando...' : 'Confirmar'}</button></div></div>

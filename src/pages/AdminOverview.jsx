@@ -31,13 +31,13 @@ export default function AdminOverview() {
   }, []);
   if (!data && !error)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined admin-workspace admin-overview">
         <LoadingState label="Consolidando indicadores da plataforma..." />
       </div>
     );
   if (error && !data)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined admin-workspace admin-overview">
         <ErrorState description={error} onRetry={load} />
       </div>
     );
@@ -72,7 +72,7 @@ export default function AdminOverview() {
     ...(data.market_growth || []).map((item) => Number(item.markets || 0)),
   );
   return (
-    <div className="page-shell space-y-3 sm:space-y-4">
+    <div className="page-shell ui-refined admin-workspace admin-overview space-y-3 sm:space-y-4">
       <PageHeader
         icon={Gauge}
         eyebrow="Resumo da plataforma"

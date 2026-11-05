@@ -101,18 +101,18 @@ export default function AdminConfiguracoes() {
   };
   if (loading)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined admin-workspace platform-settings">
         <LoadingState label="Carregando configurações da plataforma..." />
       </div>
     );
   if (error)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined admin-workspace platform-settings">
         <ErrorState description={error} onRetry={load} />
       </div>
     );
   return (
-    <form onSubmit={save} className="page-shell space-y-3 sm:space-y-5">
+    <form onSubmit={save} className="page-shell ui-refined admin-workspace platform-settings space-y-3 sm:space-y-5">
       <header>
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <Blocks className="h-3.5 w-3.5" /> Configurações da plataforma

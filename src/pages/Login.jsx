@@ -72,7 +72,6 @@ export default function Login() {
         </div>
       )}
 
-      <Link to="/recuperar-acesso" className="mb-4 inline-block text-sm text-accent underline">Esqueci minha senha</Link>
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
@@ -99,7 +98,7 @@ export default function Login() {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <Label htmlFor="password">Senha</Label>
             <span className="text-xs text-muted-foreground">
               Contate o administrador para redefinir
@@ -126,7 +125,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword((current) => !current)}
-              className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="absolute right-0 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               aria-pressed={showPassword}
             >
@@ -139,15 +138,18 @@ export default function Login() {
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(event) => setRemember(event.target.checked)}
-            className="h-4 w-4 accent-[var(--market-primary)]"
-          />
-          <span>Lembrar-me</span>
-        </label>
+        <div className="auth-options">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(event) => setRemember(event.target.checked)}
+              className="h-4 w-4 accent-[var(--market-primary)]"
+            />
+            <span>Lembrar-me</span>
+          </label>
+          <Link to="/recuperar-acesso" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">Esqueci minha senha</Link>
+        </div>
 
         <Button
           type="submit"

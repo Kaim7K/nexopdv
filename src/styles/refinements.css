@@ -1,0 +1,318 @@
+/* Approved UI audit scope. Other workspaces retain their existing presentation. */
+.app-premium .ui-refined {
+  --refined-border: hsl(var(--border) / 0.85);
+  padding: 1.25rem;
+  line-height: 1.5;
+}
+
+.ui-refined .page-header {
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid var(--refined-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-premium .ui-refined .page-title,
+.app-premium .ui-refined > header h1 {
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.ui-refined .page-subtitle {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.app-premium .ui-refined :is(.surface-card, .mobile-dense-section, .filter-surface, .metric-tile, .user-card) {
+  border: 1px solid var(--refined-border) !important;
+  background: hsl(var(--card));
+  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.025) !important;
+}
+
+.ui-refined :is(.surface-card, .mobile-dense-section) {
+  border-radius: 1rem;
+}
+
+.ui-refined :is(.filter-surface, [aria-label="Filtros da auditoria"]) {
+  padding: 0.875rem;
+  margin-bottom: 1rem;
+  background: hsl(var(--card));
+}
+
+.ui-refined :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]), select),
+.ui-refined-modal :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]), select) {
+  min-height: 2.75rem;
+  border-color: hsl(var(--input));
+  border-radius: 0.625rem;
+  background-color: hsl(var(--background));
+  font-size: 0.875rem;
+}
+
+.ui-refined :is(input, textarea)::placeholder,
+.ui-refined-modal :is(input, textarea)::placeholder {
+  color: hsl(var(--muted-foreground) / 0.85);
+}
+
+.ui-refined :is(input, select, textarea):focus-visible,
+.ui-refined-modal :is(input, select, textarea):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.ui-refined .metric-tile {
+  padding: 1rem;
+  min-width: 0;
+}
+
+.ui-refined .metric-tile > strong {
+  margin-top: 0.5rem;
+  font-size: 1.25rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ui-refined .metric-tile > div > span:first-child {
+  display: block;
+  overflow: visible;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.ui-refined table :is(th, td) {
+  padding-block: 0.875rem;
+}
+
+.ui-refined :is(.empty-state, .audit-empty) {
+  display: flex;
+  min-height: 12rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1.5rem;
+  background: hsl(var(--card));
+}
+
+/* Forms opt in explicitly rather than changing all dialogs in the system. */
+.app-premium .ui-refined-modal {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.app-premium .ui-refined-modal .modal-header {
+  padding: 1.125rem 1.25rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.ui-refined-modal .modal-title { font-size: 1.125rem; line-height: 1.4; }
+.ui-refined-modal .modal-subtitle { margin-top: 0.375rem; line-height: 1.6; }
+.ui-refined-modal .modal-body { min-height: 0; padding: 1.25rem; background: hsl(var(--card)); }
+.ui-refined-modal .modal-footer { padding: 0.875rem 1.25rem; background: hsl(var(--card)); }
+.ui-refined-modal .modal-button { min-height: 2.75rem; }
+.ui-refined-modal .modal-icon-button { width: 2.75rem; height: 2.75rem; }
+.ui-refined-modal label { line-height: 1.6; }
+.ui-refined-modal .finance-field { display: grid; align-content: start; gap: 0.375rem; }
+.ui-refined-modal .finance-field .field { margin-top: 0; }
+
+.finance-form-modal .modal-footer {
+  position: sticky;
+  z-index: 2;
+  bottom: -1.25rem;
+  margin: 1.25rem -1.25rem -1.25rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.ui-refined-modal .purchase-item {
+  align-items: end;
+  padding: 1rem;
+  background: hsl(var(--muted) / 0.25);
+}
+.purchase-item label { display: grid; gap: 0.375rem; min-width: 0; font-size: 0.75rem; font-weight: 600; }
+.purchase-item .purchase-remove { width: 2.75rem; justify-self: end; }
+.ui-refined-modal .product-form-options { border-top: 1px solid hsl(var(--border)); padding-top: 1rem; }
+.ui-refined-modal .modal-body > div:has(#product-barcode),
+.ui-refined-modal .modal-body > div:has(#product-sale-price) {
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 1rem;
+}
+.ui-refined-modal .avatar-color-options { gap: 0.5rem; }
+.ui-refined-modal .avatar-color-options button {
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  flex: 0 0 2.75rem;
+  border-radius: 50%;
+}
+
+/* Authentication keeps the original two-panel composition and colors. */
+.auth-premium .auth-shell {
+  max-width: 62rem;
+  border-radius: 1.5rem;
+  background: hsl(var(--card));
+  box-shadow: 0 24px 72px hsl(164 50% 8% / 0.12);
+}
+.auth-premium .auth-story { min-height: 36rem; }
+.auth-premium .auth-card { padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.auth-premium .auth-form-panel { padding: 2.5rem; }
+.auth-premium :is(input:not([type="checkbox"]), button[type="submit"]) { min-height: 3rem; border-radius: 0.625rem; }
+.auth-premium input::placeholder { color: hsl(var(--muted-foreground) / 0.85); }
+.auth-premium label { font-size: 0.875rem; font-weight: 600; }
+.auth-options { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 1rem; }
+.auth-premium .auth-form-panel > p { margin-top: 1.5rem; }
+
+/* Context and data are distinct from actions in financial workspaces. */
+.finance-workspace .finance-navigation {
+  position: relative;
+  z-index: 25;
+  border-radius: 0.875rem;
+}
+.finance-navigation button[aria-current="page"] { box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.25); }
+.finance-navigation summary { border: 1px solid hsl(var(--border)); }
+.finance-workspace .finance-global-action { box-shadow: none; }
+.finance-workspace > .flex.flex-wrap { padding: 0.25rem 0; }
+.finance-workspace .finance-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.finance-workspace .finance-results { align-items: start; }
+.finance-workspace .finance-reference-layout { align-items: start; }
+.finance-workspace .finance-reference-layout > form {
+  border: 1px solid hsl(var(--border));
+  padding: 1rem;
+  background: hsl(var(--card));
+  border-radius: 0.875rem;
+}
+.finance-workspace .finance-reference-layout > form h3 { margin-bottom: 1rem; }
+
+/* Histories, identities and settings. */
+.users-workspace .user-card { padding: 1.25rem !important; }
+.users-workspace .user-card h2 { font-size: 1rem; }
+.users-workspace .user-card button { min-height: 2.75rem; }
+.users-workspace .user-card button[title="Excluir usuário"] { width: 2.75rem; margin-left: 0.375rem; }
+.fiados-workspace .fiado-card { padding: 1rem !important; }
+.fiados-workspace .fiado-balance { min-width: 12rem; }
+.fiados-workspace .fiado-balance > strong { font-size: 1.375rem; }
+.fiados-workspace .fiado-balance button { min-height: 2.75rem; }
+.cash-workspace .cash-history-values { gap: 1rem; padding: 1rem 0; border-block: 1px solid hsl(var(--border)); }
+.cash-workspace .cash-history-values dd { font-size: 1rem; }
+.cash-workspace .history-record-footer { padding-top: 0.75rem; gap: 1rem; }
+.cash-workspace .history-record-details { min-height: 2.75rem; }
+.ui-refined-modal .cash-detail-tabs > button { min-height: 2.75rem; font-size: 0.8125rem; }
+.ui-refined-modal .cash-detail-formula-row dt { font-size: 0.8125rem; }
+.ui-refined-modal .cash-detail-formula-row dd { font-size: 0.875rem; }
+.settings-workspace .settings-save-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: 0.25rem;
+  background: hsl(var(--background));
+}
+.settings-workspace .settings-save-header .page-header { margin-bottom: 0; }
+.settings-workspace section[id] { scroll-margin-top: 10rem; }
+.settings-workspace .settings-jump { margin-top: 1rem; }
+.settings-workspace .mobile-dense-section,
+.admin-workspace .mobile-dense-section { padding: 1.25rem; }
+.settings-workspace #config-reset { margin-top: 1.5rem; border-color: hsl(var(--destructive) / 0.4) !important; }
+.platform-settings > .sticky { z-index: 20; padding: 0.75rem; border: 1px solid hsl(var(--border)); border-radius: 0.875rem; background: hsl(var(--card)); }
+.markets-workspace article > div + div { border-top: 1px solid hsl(var(--border)); padding-top: 1rem; margin-top: 1rem; }
+.markets-workspace article h2 { white-space: normal; }
+.admin-overview > section:first-of-type { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-workspace :is(.empty-state, .loading-state) { min-height: 10rem; }
+.plans-workspace > section { scroll-margin-top: 1rem; }
+.product-workspace .product-facts dt { font-size: 0.75rem; }
+.product-workspace .product-facts dd { margin-top: 0.25rem; font-size: 0.875rem; overflow-wrap: anywhere; }
+.product-workspace .product-identity { padding: 1.25rem !important; }
+.reports-workspace .report-periods { gap: 0.375rem; padding: 0.375rem; border: 1px solid hsl(var(--border)); border-radius: 0.875rem; background: hsl(var(--card)); }
+.reports-workspace .report-periods > button { min-height: 2.75rem; border: 0; }
+.reports-workspace .payment-breakdown { align-items: center; }
+.reports-workspace .payment-legend article { padding: 0.875rem !important; }
+.reports-workspace .payment-legend strong { white-space: nowrap; }
+.reports-workspace .surface-card { padding: 1.25rem; }
+
+@media (min-width: 1024px) {
+  .finance-workspace .finance-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .admin-overview > section:first-of-type { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1023px) {
+  .auth-premium .auth-shell { max-width: 28rem; }
+}
+
+@media (max-width: 767px) {
+  /* A reserved mock-only dock, on approved workspaces only. */
+  body:has(.ui-refined):has(.mock-role-switcher) .workspace-panel::after {
+    content: '';
+    flex: none;
+    height: calc(3.5rem + env(safe-area-inset-bottom));
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+  body:has(.ui-refined) .mock-role-switcher { bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+  .app-premium .ui-refined { padding: 1rem 0.875rem; }
+  .app-premium .ui-refined .page-header { margin-bottom: 1rem; padding: 0.25rem 0 1rem; }
+  .app-premium .ui-refined .page-title,
+  .app-premium .ui-refined h1 { font-size: 1.375rem; }
+  .app-premium .ui-refined :is(.surface-card, .mobile-dense-section, .filter-surface, .user-card) { border-radius: 0.875rem !important; }
+  .app-premium .ui-refined :is(.surface-card, .mobile-dense-section) { padding: 1rem !important; }
+  .app-premium .ui-refined .metric-tile { padding: 0.75rem; }
+  .ui-refined .metric-tile > strong { font-size: 1.0625rem; }
+  .ui-refined .metric-tile > div > span:first-child { font-size: 0.625rem; }
+  .ui-refined .metric-tile > div > span:last-child:not(:first-child) { display: none; }
+  .ui-refined :is(button, summary) { min-height: 2.75rem; }
+  .ui-refined button:has(> svg:only-child) { min-width: 2.75rem; }
+  .app-premium .ui-refined-modal .modal-header { padding: 1rem; }
+  .ui-refined-modal .modal-body { padding: 1rem; }
+  .ui-refined-modal .modal-footer { padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom)); }
+  .finance-form-modal .modal-footer { bottom: -1rem; margin: 1rem -1rem -1rem; }
+  .ui-refined-modal .modal-subtitle { font-size: 0.8125rem; }
+  .auth-premium { padding: 4.5rem 1.25rem 2rem; }
+  .auth-premium .auth-form-panel { padding: 1.75rem 1.5rem; }
+  .auth-premium .auth-shell { border-radius: 1.25rem; }
+  .auth-options { gap: 0.25rem 0.75rem; }
+  .fiados-workspace .fiado-card > div { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 0.75rem; }
+  .fiados-workspace .fiado-card > div > div:first-child { width: 2.5rem; height: 2.5rem; }
+  .fiados-workspace .fiado-balance { grid-column: 1 / -1; border-top: 1px solid hsl(var(--border)); padding-top: 0.875rem; flex-wrap: wrap; }
+  .fiados-workspace .fiado-balance > div { margin-left: auto; flex-wrap: wrap; }
+  .cash-workspace .cash-history-values { column-gap: 0.5rem; }
+  .cash-workspace .cash-history-values dd { font-size: 0.875rem; }
+  .settings-workspace .settings-save-header .page-header > div:first-child > span { display: none; }
+  .settings-workspace .settings-save-header .page-subtitle { font-size: 0.75rem; }
+  .settings-workspace .settings-save-header .page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; padding: 0.75rem 0; }
+  .settings-workspace .settings-save-header .page-header > div { width: auto; }
+  .settings-workspace .settings-save-header .page-header h1 { font-size: 1.125rem; }
+  .settings-workspace section[id] { scroll-margin-top: 6rem; }
+  .product-workspace .product-identity-layout { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); align-items: start; }
+  .product-workspace .product-thumbnail { width: 3.5rem; }
+  .product-workspace .product-thumbnail svg { width: 1.75rem; height: 1.75rem; }
+  .product-workspace .product-facts { grid-column: 1 / -1; gap: 0.875rem; }
+  .product-workspace .product-identity-layout > div:last-child { display: contents; }
+  .product-workspace .product-identity-layout > div:last-child > div { min-width: 0; }
+  .product-workspace .product-identity-layout h1 { font-size: 1.125rem; }
+  .product-workspace .product-identity-layout button { width: 100%; }
+  .ui-refined-modal .product-name-control { flex-wrap: wrap; }
+  .ui-refined-modal .product-name-control > input { flex-basis: 100%; }
+  .ui-refined-modal .product-name-control > button { margin-left: auto; }
+  .ui-refined-modal .purchase-item { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .purchase-item label:first-child { grid-column: 1 / -1; }
+  .purchase-item .purchase-remove { grid-column: 1 / -1; }
+  .finance-workspace .finance-ledger-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  .finance-ledger-row > strong { grid-column: 2; text-align: right; }
+  .finance-ledger-row > div > strong { white-space: normal; }
+  .finance-workspace .finance-reconciliation-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .finance-reconciliation-kpis > :last-child { grid-column: 1 / -1; }
+}
+
+@media print {
+  body:has(.ui-refined):has(.mock-role-switcher) .workspace-panel::after { display: none; }
+  .settings-workspace .settings-save-header { position: static; }
+}

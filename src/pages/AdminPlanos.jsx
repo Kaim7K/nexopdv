@@ -239,7 +239,7 @@ export default function AdminPlanos() {
     [subscriptions, payments],
   );
   return (
-    <div className="page-shell space-y-3 sm:space-y-5">
+    <div className="page-shell ui-refined admin-workspace plans-workspace space-y-3 sm:space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -612,11 +612,12 @@ export default function AdminPlanos() {
             onSubmit={submit}
             role="dialog"
             aria-modal="true"
-            className="modal-panel sm:max-w-2xl"
+            aria-labelledby="plan-modal-title"
+            data-modal-size="wide" className="modal-panel ui-refined-modal sm:max-w-2xl"
           >
             <div className="modal-header">
               <div>
-                <h2 className="modal-title">
+                <h2 id="plan-modal-title" className="modal-title">
                   {editing ? 'Editar plano' : 'Novo plano'}
                 </h2>
                 <p className="modal-subtitle">
@@ -626,6 +627,7 @@ export default function AdminPlanos() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
+                aria-label="Fechar plano"
                 className="modal-icon-button"
               >
                 <X className="h-5 w-5" />

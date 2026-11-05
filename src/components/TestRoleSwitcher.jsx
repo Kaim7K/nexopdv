@@ -27,7 +27,7 @@ export default function TestRoleSwitcher() {
   };
 
   return (
-    <details className="group fixed bottom-3 right-3 z-[100] max-w-[calc(100vw-1.5rem)] rounded-xl border border-violet-300/60 bg-card/95 shadow-xl backdrop-blur">
+    <details className="mock-role-switcher group fixed bottom-3 right-3 z-[100] max-w-[calc(100vw-1.5rem)] rounded-xl border border-violet-300/60 bg-card/95 shadow-xl backdrop-blur">
       <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 px-3 text-xs font-black text-violet-700 dark:text-violet-300">
         <FlaskConical className="h-4 w-4" />
         Simular cargo

@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import { useState } from 'react';
 import { CalendarRange, ChevronDown, RefreshCw } from 'lucide-react';
 import { rangePreset } from '@/features/finance/finance-period';
@@ -5,7 +6,7 @@ import { rangePreset } from '@/features/finance/finance-period';
 export default function PeriodFilter({ range, setRange, loading, onRefresh }) {
   const [preset, setPreset] = useState('month');
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="finance-period-filter flex flex-wrap items-center gap-2" aria-label="Período financeiro">
       <select
         className="field mt-0 min-w-40 flex-1 sm:w-auto sm:flex-none"
         aria-label="Período rápido"
@@ -25,7 +26,8 @@ export default function PeriodFilter({ range, setRange, loading, onRefresh }) {
       </select>
       <details className="group relative">
         <summary className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold marker:hidden hover:bg-muted">
-          <CalendarRange className="h-4 w-4" />
+          <CalendarRange className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only sm:hidden">Escolher datas</span>
           <span className="hidden sm:inline">Escolher datas</span>
           <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
         </summary>
@@ -68,15 +70,10 @@ export default function PeriodFilter({ range, setRange, loading, onRefresh }) {
           </div>
         </div>
       </details>
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={loading}
-        aria-label="Atualizar"
-        className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-3 hover:bg-muted"
-      >
+      <IconButton label="Atualizar" onClick={onRefresh} disabled={loading} aria-busy={loading}>
         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      </button>
+      </IconButton>
+      <span className="finance-period-caption" aria-live="polite">{range.from?.split('-').reverse().join('/')} — {range.to?.split('-').reverse().join('/')}</span>
     </div>
   );
 }

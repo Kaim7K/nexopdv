@@ -1,5 +1,6 @@
 import React from 'react';
-import { FilterX, LayoutGrid, List, Search, SlidersHorizontal } from 'lucide-react';
+import ActiveFilters from '@/components/common/ActiveFilters';
+import { LayoutGrid, List, Search, SlidersHorizontal } from 'lucide-react';
 
 const controlClass =
   'h-9 min-w-0 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 sm:h-10';
@@ -117,6 +118,7 @@ function ViewModeControl({ viewMode, onViewModeChange }) {
     <div className="inline-flex min-w-0 overflow-hidden rounded-lg border border-border bg-background">
       <button
         type="button"
+        aria-pressed={viewMode === 'table'}
         onClick={() => onViewModeChange('table')}
         className={`inline-flex min-h-9 items-center gap-2 px-3 text-xs font-bold sm:min-h-10 sm:text-sm ${viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
       >
@@ -124,6 +126,7 @@ function ViewModeControl({ viewMode, onViewModeChange }) {
       </button>
       <button
         type="button"
+        aria-pressed={viewMode === 'grid'}
         onClick={() => onViewModeChange('grid')}
         className={`inline-flex min-h-9 items-center gap-2 border-l border-border px-3 text-xs font-bold sm:min-h-10 sm:text-sm ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
       >
@@ -151,7 +154,6 @@ export default function StockFilters({
   onPageSizeChange,
   viewMode,
   onViewModeChange,
-  hasFilters,
   onClearFilters,
 }) {
   const advancedProps = {
@@ -167,71 +169,29 @@ export default function StockFilters({
     onPageSizeChange,
   };
 
+  const activeFilters = [
+    search && { key: 'search', label: `Busca: ${search}`, onRemove: () => onSearchChange('') },
+    category && { key: 'category', label: category === '__uncategorized__' ? 'Sem categoria' : category, onRemove: () => onCategoryChange('') },
+    minPrice && { key: 'min', label: `Preço mín.: ${minPrice}`, onRemove: () => onMinPriceChange('') },
+    maxPrice && { key: 'max', label: `Preço máx.: ${maxPrice}`, onRemove: () => onMaxPriceChange('') },
+    stock !== 'todos' && { key: 'stock', label: { disponivel: 'Estoque normal', baixo: 'Estoque baixo', zerado: 'Sem estoque' }[stock], onRemove: () => onStockChange('todos') },
+    imageFilter !== 'all' && { key: 'image', label: imageFilter === 'with' ? 'Com imagem' : 'Sem imagem', onRemove: () => onImageFilterChange('all') },
+  ].filter(Boolean);
+  const extraCount = activeFilters.filter(item => !['search', 'category'].includes(item.key)).length;
   return (
-    <section
-      className="filter-surface mb-2.5 sm:mb-3"
-      aria-label="Filtros do estoque"
-    >
-      <div className="space-y-1.5 sm:hidden">
+    <section className="filter-surface unified-filters mb-3" aria-label="Filtros do estoque">
+      <div className="stock-filter-primary">
         <SearchField value={search} onChange={onSearchChange} />
-        <CategorySelect
-          value={category}
-          onChange={onCategoryChange}
-          categories={categories}
-        />
-        <div className="flex items-stretch justify-between gap-1.5">
-          <ViewModeControl viewMode={viewMode} onViewModeChange={onViewModeChange} />
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={onClearFilters}
-              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:bg-muted"
-            >
-              <FilterX className="h-4 w-4" /> Limpar
-            </button>
-          )}
-        </div>
-        <details className="group mobile-secondary-panel">
-          <summary className="mobile-secondary-summary">
-            <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> Mais filtros
-            </span>
-            <span className="text-xs text-muted-foreground group-open:hidden">
-              abrir
-            </span>
-            <span className="hidden text-xs text-muted-foreground group-open:inline">
-              fechar
-            </span>
-          </summary>
-          <div className="grid gap-1.5 border-t border-border p-1.5">
-            <AdvancedFilters {...advancedProps} />
-          </div>
-        </details>
+        <CategorySelect value={category} onChange={onCategoryChange} categories={categories} />
+        <ViewModeControl viewMode={viewMode} onViewModeChange={onViewModeChange} />
       </div>
-
-      <div className="hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_repeat(2,minmax(110px,.7fr))_repeat(2,minmax(145px,.9fr))_minmax(125px,.75fr)_auto]">
-        <div className="sm:col-span-2 lg:col-span-2 2xl:col-span-1">
-          <SearchField value={search} onChange={onSearchChange} />
-        </div>
-        <CategorySelect
-          value={category}
-          onChange={onCategoryChange}
-          categories={categories}
-        />
-        <AdvancedFilters {...advancedProps} />
-        <div className="sm:justify-self-start 2xl:justify-self-stretch">
-          <ViewModeControl viewMode={viewMode} onViewModeChange={onViewModeChange} />
-        </div>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-bold hover:bg-muted 2xl:col-start-8"
-          >
-            <FilterX className="h-4 w-4" /> Limpar
-          </button>
-        )}
-      </div>
+      <details className="unified-filter-extra" onKeyDown={event => {
+        if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+      }}>
+        <summary className="history-filter-toggle"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Mais filtros {extraCount > 0 && <span className="history-filter-count">{extraCount}</span>}</summary>
+        <div className="stock-filter-fields"><AdvancedFilters {...advancedProps} /></div>
+      </details>
+      <ActiveFilters items={activeFilters} onClear={onClearFilters} />
     </section>
   );
 }

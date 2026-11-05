@@ -22,7 +22,7 @@ function GenericMovementList({ items }) {
       {items.map((item) => (
         <article
           key={item.id}
-          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
+          className="finance-ledger-row flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
         >
           <div
             className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${item.type === 'revenue' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive'}`}

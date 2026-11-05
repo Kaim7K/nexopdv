@@ -209,7 +209,7 @@ export default function AdminMercados() {
   };
 
   return (
-    <div className="page-shell">
+    <div className="page-shell ui-refined admin-workspace markets-workspace">
       <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -516,7 +516,7 @@ export default function AdminMercados() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="modal-panel sm:max-w-2xl"
+            data-modal-size="wide" className="modal-panel ui-refined-modal sm:max-w-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-market-title"
@@ -721,7 +721,7 @@ export default function AdminMercados() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="market-detail-title"
-            className="modal-panel max-w-3xl"
+            data-modal-size="wide" className="modal-panel ui-refined-modal max-w-3xl"
           >
             <header className="modal-header">
               <div>

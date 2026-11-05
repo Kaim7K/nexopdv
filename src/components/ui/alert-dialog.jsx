@@ -13,7 +13,7 @@ const AlertDialogPortal = AlertDialogPrimitive.Portal
 const AlertDialogOverlay = React.forwardRef(/** @param {any} props */ ({ className, ...props }, ref) => (
     <AlertDialogPrimitive.Overlay
       className={cn(
-      "fixed inset-0 z-[2147483000] bg-slate-950/72 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "dialog-overlay fixed inset-0 z-[2147483000] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -27,7 +27,7 @@ const AlertDialogContent = React.forwardRef(/** @param {any} props */ ({ classNa
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-2 bottom-2 z-[2147483001] grid max-h-[calc(100dvh-1rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl border border-border/80 bg-card p-3 text-card-foreground shadow-[0_-16px_52px_rgba(0,0,0,0.24)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:p-4 sm:shadow-[0_22px_70px_rgba(0,0,0,0.3)] sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+        "confirmation-dialog fixed inset-x-2 bottom-2 z-[2147483001] flex flex-col max-h-[calc(100dvh-1rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl border border-border/80 bg-card p-3 text-card-foreground shadow-[0_-16px_52px_rgba(0,0,0,0.24)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:p-4 sm:shadow-[0_22px_70px_rgba(0,0,0,0.3)] sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
         className
       )}
       {...props} />
@@ -40,7 +40,7 @@ const AlertDialogHeader = ({
   ...props
 }) => (
   <div
-    className={cn("flex flex-col space-y-1.5 text-left", className)}
+    className={cn("confirmation-header flex flex-col space-y-2 text-left", className)}
     {...props} />
 )
 AlertDialogHeader.displayName = "AlertDialogHeader"
@@ -50,7 +50,7 @@ const AlertDialogFooter = ({
   ...props
 }) => (
   <div
-    className={cn("grid grid-cols-2 gap-2 sm:flex sm:justify-end", className)}
+    className={cn("confirmation-footer grid grid-cols-2 gap-2 sm:flex sm:justify-end", className)}
     {...props} />
 )
 AlertDialogFooter.displayName = "AlertDialogFooter"

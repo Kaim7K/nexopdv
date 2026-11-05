@@ -94,7 +94,7 @@ export default function AuditoriaGeral() {
   };
 
   return (
-    <div className="page-shell !max-w-6xl">
+    <div className="page-shell ui-refined audit-workspace !max-w-6xl">
       <div className="mb-3">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
           <ScrollText className="h-3.5 w-3.5" /> Histórico de ações
@@ -136,7 +136,7 @@ export default function AuditoriaGeral() {
       ) : loadError && !allEntries.length ? (
         <ErrorState description={loadError} onRetry={loadAudits} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card py-4 text-center"><ScrollText className="mx-auto h-7 w-7 text-muted-foreground/25" /><h2 className="mt-2 text-sm font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-xs text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground">Limpar</button>}</div>
+        <div className="audit-empty rounded-lg border border-dashed border-border bg-card py-4 text-center"><ScrollText className="mx-auto h-7 w-7 text-muted-foreground/60" /><h2 className="mt-2 text-sm font-bold">Nenhum registro encontrado</h2><p className="mt-1 text-xs text-muted-foreground">Altere os filtros para ampliar a busca.</p>{hasFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground">Limpar</button>}</div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/[0.025]">
           <div className="max-h-[calc(100dvh-230px)] divide-y divide-border overflow-y-auto">

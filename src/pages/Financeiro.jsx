@@ -168,12 +168,12 @@ function AdvancedFinance() {
     return <LoadingState label="Carregando financeiro..." />;
   if (error && !bootstrap)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined finance-workspace">
         <ErrorState description={error} onRetry={load} />
       </div>
     );
   return (
-    <div className="page-shell space-y-4">
+    <div className="page-shell ui-refined finance-workspace space-y-4">
       <header className="page-header mb-0">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
@@ -190,12 +190,12 @@ function AdvancedFinance() {
           type="button"
           onClick={() => setTransactionType('expense')}
           disabled={!bootstrap?.permissions?.create}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-sm sm:min-h-11 sm:px-4 font-bold text-accent-foreground shadow-sm hover:bg-accent/90 disabled:opacity-50"
+          className={`finance-global-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition disabled:opacity-50 ${active === 'overview' || active === 'expenses' ? 'border-accent bg-accent text-accent-foreground hover:bg-accent/90' : 'border-border bg-card text-foreground hover:bg-muted'}`}
         >
           <Plus className="h-4 w-4" /> Adicionar despesa
         </button>
       </header>
-      <section className="surface-card p-2 no-print">
+      <section className="finance-navigation surface-card p-2 no-print">
         <label className="sr-only" htmlFor="finance-section">
           Área financeira
         </label>

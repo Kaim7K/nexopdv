@@ -1,3 +1,4 @@
+import IconButton from '@/components/common/IconButton';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { nexoApi } from '@/api/nexoApi';
@@ -133,7 +134,7 @@ export default function Usuarios() {
   };
 
   return (
-    <div className="page-shell !max-w-6xl">
+    <div className="page-shell ui-refined users-workspace !max-w-6xl">
       <PageHeader
         icon={Users}
         eyebrow="Equipe e acessos"
@@ -185,15 +186,15 @@ export default function Usuarios() {
             const canEdit = user.role === 'admin' || item.role === 'vendedor' || item.id === user.id;
             const canDelete = item.id !== user.id && (user.role === 'admin' || (user.role === 'gerente' && item.role === 'vendedor'));
             return (
-              <article key={item.id} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:border-accent/35 hover:bg-muted/10 sm:p-3.5">
+              <article key={item.id} className="user-card min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:border-accent/35 hover:bg-muted/10 sm:p-3.5">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
                   <UserAvatar user={item} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h2 className="truncate font-bold">{item.full_name || item.email}</h2>
+                        <h2 className="break-words font-bold">{item.full_name || item.email}</h2>
                         <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                          <Mail className="h-3.5 w-3.5 flex-none" /> <span className="min-w-0 truncate">{item.email}</span>
+                          <Mail className="h-3.5 w-3.5 flex-none" /> <span className="min-w-0 break-all">{item.email}</span>
                         </div>
                       </div>
                       <span className={`flex-none rounded-full px-2 py-1 text-[11px] font-bold ${isActive ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'}`}>
@@ -206,26 +207,14 @@ export default function Usuarios() {
                       </span>
                       <div className="flex items-center gap-1.5">
                         {canEdit ? (
-                          <button
-                            type="button"
-                            onClick={() => setEdit(item)}
-                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            aria-label={`Editar ${item.full_name || item.email}`}
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> Editar
-                          </button>
+                          <IconButton label={`Editar ${item.full_name || item.email}`} onClick={() => setEdit(item)}>
+                            <Pencil />
+                          </IconButton>
                         ) : <span className="text-xs text-muted-foreground">Acesso protegido</span>}
                         {canDelete && (
-                          <button
-                            type="button"
-                            disabled={deletingId === item.id}
-                            onClick={() => removeUser(item)}
-                            className="grid h-9 w-9 place-items-center rounded-lg border border-destructive/25 text-destructive transition hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-50"
-                            aria-label={`Excluir ${item.full_name || item.email}`}
-                            title="Excluir usuário"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <IconButton variant="danger" label={`Excluir ${item.full_name || item.email}`} disabled={deletingId === item.id} onClick={() => removeUser(item)}>
+                            <Trash2 />
+                          </IconButton>
                         )}
                       </div>
                     </div>
@@ -256,7 +245,7 @@ export default function Usuarios() {
           <form
             ref={createModalRef}
             onSubmit={create}
-            className="modal-panel sm:max-w-lg"
+            data-modal-size="standard" className="modal-panel ui-refined-modal sm:max-w-lg"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-user-title"

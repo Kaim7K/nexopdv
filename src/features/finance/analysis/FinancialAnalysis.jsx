@@ -16,7 +16,7 @@ export function CashFlow({ data }) {
     outgoing = series.reduce((s, i) => s + i.expense, 0);
   return (
     <div className="space-y-4">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="finance-kpis grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Saldo inicial estimado"
           value={formatCurrency(
@@ -50,7 +50,7 @@ export function CashFlow({ data }) {
 }
 export function Results({ data }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="finance-results grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className="surface-card overflow-hidden">
         <div className="border-b border-border p-4">
           <h3 className="font-bold">DRE simplificada</h3>

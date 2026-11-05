@@ -70,6 +70,28 @@ export function useModalBehavior({ onClose, disabled = false, closeOnEscape = tr
   closeRef.current = onClose;
   disabledRef.current = disabled;
 
+  // Keep the scrollable body and its actions inside the visible area when a
+  // mobile keyboard or browser chrome changes the visual viewport.
+  useEffect(() => {
+    if (!active) return undefined;
+    const viewport = window.visualViewport;
+    const overlay = modalRef.current?.closest('.modal-overlay');
+    if (!viewport || !(overlay instanceof HTMLElement)) return undefined;
+    const syncViewport = () => {
+      overlay.style.setProperty('--modal-viewport-height', `${viewport.height}px`);
+      overlay.style.setProperty('--modal-viewport-top', `${viewport.offsetTop}px`);
+    };
+    syncViewport();
+    viewport.addEventListener('resize', syncViewport);
+    viewport.addEventListener('scroll', syncViewport);
+    return () => {
+      viewport.removeEventListener('resize', syncViewport);
+      viewport.removeEventListener('scroll', syncViewport);
+      overlay.style.removeProperty('--modal-viewport-height');
+      overlay.style.removeProperty('--modal-viewport-top');
+    };
+  }, [active]);
+
   useEffect(() => {
     if (!active) return undefined;
     const previousFocus = document.activeElement;
@@ -85,6 +107,11 @@ export function useModalBehavior({ onClose, disabled = false, closeOnEscape = tr
     const handleKeyDown = event => {
       const modal = modalRef.current;
       if (!modal) return;
+      // A nested dialog owns the keyboard until it closes. In particular,
+      // Escape must not also dismiss the workspace underneath it.
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"], [role="alertdialog"]'))
+        .filter(element => element.getClientRects().length && element.getAttribute('aria-hidden') !== 'true');
+      if (dialogs.at(-1) !== modal) return;
       if (event.key === 'Escape' && closeOnEscape && !disabledRef.current) {
         event.preventDefault();
         closeRef.current?.();

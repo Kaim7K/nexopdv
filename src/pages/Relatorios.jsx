@@ -240,13 +240,13 @@ function AdvancedReports() {
     );
   if (loadError && !sales.length)
     return (
-      <div className="page-shell">
+      <div className="page-shell ui-refined reports-workspace">
         <ErrorState description={loadError} onRetry={loadData} />
       </div>
     );
 
   return (
-    <div className="page-shell">
+    <div className="page-shell ui-refined reports-workspace">
       <PageHeader
         icon={BarChart3}
         eyebrow="Resultados do mercado"
@@ -265,7 +265,7 @@ function AdvancedReports() {
         </p>
       </div>
 
-      <div className="mb-2 flex flex-wrap items-center gap-1.5 sm:mb-3 sm:gap-2">
+      <div className="report-periods mb-4 flex flex-wrap items-center gap-1.5">
         {PERIODS.map((item) => (
           <button
             type="button"
@@ -506,7 +506,7 @@ function AdvancedReports() {
         <section className="surface-card p-2.5 text-card-foreground sm:p-3">
           <h3 className="mb-3 text-sm font-bold">Formas de pagamento</h3>
           {stats.paymentData.length ? (
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(240px,0.75fr)]">
+            <div className="payment-breakdown grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
               <Suspense fallback={<ChartLoading />}>
                 <PaymentChart data={stats.paymentData} />
               </Suspense>

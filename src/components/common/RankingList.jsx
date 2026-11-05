@@ -80,6 +80,7 @@ function RankingModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${title} completo`}
+        data-modal-size="standard"
         className={`modal-panel ${maxWidth} sm:max-h-[min(36rem,calc(100dvh-3rem))]`}
         onClick={(event) => event.stopPropagation()}
       >
@@ -100,7 +101,7 @@ function RankingModal({
           </button>
         </header>
         <div className="modal-body">
-          <div className={`${listClassName} max-h-[calc(100dvh-10rem)] overflow-y-auto pr-1`}>
+          <div className={listClassName}>
             {items.map(renderItem)}
           </div>
         </div>

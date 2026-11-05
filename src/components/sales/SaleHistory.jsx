@@ -289,7 +289,7 @@ export function SaleDetailModal({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="modal-panel sm:max-w-xl"
+        data-modal-size="wide" className="modal-panel sm:max-w-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -491,7 +491,7 @@ export function ConfirmSaleAction({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="modal-panel sm:max-w-md"
+        data-modal-size="compact" className="modal-panel sm:max-w-md"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="sale-action-title"

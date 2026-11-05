@@ -9,7 +9,7 @@ export default function Reconciliation({ range }) {
   if (loading) return <LoadingState />;
   return (
     <div className="space-y-4">
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="finance-reconciliation-kpis grid gap-3 sm:grid-cols-3">
         <MetricCard
           label="Vendas conciliadas"
           value={formatCurrency(data?.totals?.sales)}

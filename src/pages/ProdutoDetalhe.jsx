@@ -103,7 +103,7 @@ export default function ProdutoDetalhe() {
   if (loading) return <LoadingState className="min-h-[60vh]" label="Carregando produto..." />;
 
   return (
-    <div className="page-shell max-w-4xl">
+    <div className="page-shell ui-refined product-workspace max-w-4xl">
       <Link to="/estoque" className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar ao estoque
       </Link>
@@ -114,9 +114,9 @@ export default function ProdutoDetalhe() {
         <EmptyState icon={Package} title="Produto não encontrado" description="O item pode ter sido removido ou o endereço está incorreto." />
       ) : (
         <>
-          <section className="surface-card mb-3 p-3 sm:p-4" aria-labelledby="product-title">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="grid aspect-square w-24 flex-none place-items-center overflow-hidden rounded-xl border border-border bg-white sm:w-28">
+          <section className="surface-card product-identity mb-3 p-3 sm:p-4" aria-labelledby="product-title">
+            <div className="product-identity-layout flex flex-col gap-3 sm:flex-row sm:items-start">
+              <div className="product-thumbnail grid aspect-square w-24 flex-none place-items-center overflow-hidden rounded-xl border border-border bg-white sm:w-28">
                 {product.image_url ? (
                   <img src={product.image_url} alt={`Imagem de ${product.name}`} className="h-full w-full object-contain p-2" decoding="async" referrerPolicy="no-referrer" />
                 ) : (
@@ -137,7 +137,7 @@ export default function ProdutoDetalhe() {
                   </button>
                 </div>
 
-                <dl className="mt-3 grid gap-x-5 gap-y-2.5 border-t border-border pt-3 text-sm sm:grid-cols-2">
+                <dl className="product-facts mt-3 grid grid-cols-2 gap-x-5 gap-y-3 border-t border-border pt-3 text-sm">
                   <Detail label="Unidade" value={product.unit || 'Não informada'} />
                   <Detail label="Estoque" value={`${Number(product.quantity || 0).toLocaleString('pt-BR')} ${product.unit === 'peso' ? 'kg' : 'un.'}`} alert={Number(product.quantity || 0) <= 0} />
                   <Detail label="Preço de venda" value={formatCurrency(product.sale_price)} emphasis />
