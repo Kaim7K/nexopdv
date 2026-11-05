@@ -29,11 +29,11 @@ const TABLE_COLUMNS = [
     type: 'text',
   },
   {
-    key: 'barcode',
-    label: 'Cód. barras',
-    sortKey: 'barcode',
-    width: 'w-[125px]',
-    type: 'text',
+    key: 'quantity',
+    label: 'Qtd.',
+    sortKey: 'quantity',
+    width: 'w-[110px]',
+    type: 'number',
   },
   {
     key: 'sale_price',
@@ -43,11 +43,11 @@ const TABLE_COLUMNS = [
     type: 'number',
   },
   {
-    key: 'quantity',
-    label: 'Qtd.',
-    sortKey: 'quantity',
-    width: 'w-[90px]',
-    type: 'number',
+    key: 'barcode',
+    label: 'Cód. barras',
+    sortKey: 'barcode',
+    width: 'w-[125px]',
+    type: 'text',
   },
   {
     key: 'last_sale_at',
@@ -93,8 +93,10 @@ export default function StockTable({
   onInlineEdit,
   hasFilters,
   onClearFilters,
+  saving = false,
 }) {
   return (
+    <fieldset disabled={saving} className="contents" aria-label="Edição do estoque" aria-busy={saving}>
       <table className="stock-data-table hidden w-full min-w-[1270px] table-fixed border-separate border-spacing-0 text-sm xl:table">
       <colgroup>
         {TABLE_COLUMNS.map((column) => (
@@ -145,6 +147,7 @@ export default function StockTable({
         )}
       </tbody>
     </table>
+    </fieldset>
   );
 }
 
@@ -438,7 +441,7 @@ function InlineField({ value, onCommit, fixedDecimals = false, ...props }) {
   }, [value]);
 
   const commit = () => {
-    if (String(draft ?? '') !== String(value ?? '')) onCommit(draft);
+    if (String(draft ?? '') !== String(value ?? '') && onCommit(draft) === false) setDraft(value ?? '');
   };
 
   return (

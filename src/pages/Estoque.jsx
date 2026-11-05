@@ -59,6 +59,7 @@ export default function Estoque() {
   const tableRef = useRef(null);
   const pendingViewRef = useRef(null);
   const autosaveTimerRef = useRef(null);
+  const immediateStockSaveRef = useRef(false);
   const lowStockThreshold = Math.max(
     1,
     Number.parseInt(config?.limite_estoque_baixo, 10) || 5,
@@ -83,6 +84,7 @@ export default function Estoque() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [autosaveFailed, setAutosaveFailed] = useState(false);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -126,13 +128,14 @@ export default function Estoque() {
   }, [dirty]);
 
   useEffect(() => {
-    if (!dirty.size || loading || saving || importing) return undefined;
+    if (!dirty.size || loading || saving || importing || autosaveFailed) return undefined;
     window.clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = window.setTimeout(() => {
+      immediateStockSaveRef.current = false;
       if (dirty.size) void saveInline();
-    }, 900);
+    }, immediateStockSaveRef.current ? 0 : 900);
     return () => window.clearTimeout(autosaveTimerRef.current);
-  }, [dirty, loading, saving, importing, products]);
+  }, [dirty, loading, saving, importing, products, autosaveFailed]);
 
   const categories = useMemo(
     () =>
@@ -237,6 +240,15 @@ export default function Estoque() {
       if (product) void openProductModal('edit', product);
       return;
     }
+    if (key === 'quantity') {
+      if (String(value).trim() === '' || !Number.isFinite(Number(value)) || Number(value) < 0) {
+        toast.error('Informe uma quantidade válida, maior ou igual a zero.');
+        return false;
+      }
+      if (Number(value) === Number(products.find(product => product.id === id)?.quantity)) return false;
+      immediateStockSaveRef.current = true;
+    }
+    setAutosaveFailed(false);
     setProducts((current) =>
       current.map((product) =>
         product.id === id
@@ -263,6 +275,7 @@ export default function Estoque() {
       return;
     }
     setSaving(true);
+    setAutosaveFailed(false);
     try {
       captureView();
       await nexoApi.stock.bulkUpdate(
@@ -286,6 +299,7 @@ export default function Estoque() {
       await load();
       toast.success('Estoque atualizado.');
     } catch (error) {
+      setAutosaveFailed(true);
       toast.error(error.message);
     } finally {
       setSaving(false);
@@ -725,6 +739,7 @@ export default function Estoque() {
             onDuplicate={(product) => openProductModal('duplicate', product)}
             onDelete={handleDeleteProduct}
             onInlineEdit={editInline}
+            saving={saving}
             hasFilters={hasFilters}
             onClearFilters={clearFilters}
           />

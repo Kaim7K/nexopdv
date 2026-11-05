@@ -23,6 +23,7 @@ export default function StockProductViews({
   hasFilters,
   onClearFilters,
   advancedReports = true,
+  saving = false,
 }) {
   const viewRef = useRef(null);
   const commitFocusedField = useCallback(() => {
@@ -71,6 +72,7 @@ export default function StockProductViews({
         hasFilters={hasFilters}
         onClearFilters={onClearFilters}
       /> : <StockTable
+        saving={saving}
         products={products}
         lowStockThreshold={lowStockThreshold}
         dirty={dirty}
